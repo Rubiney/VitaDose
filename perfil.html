@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0F3460">
+  <title>VitaDose — Perfil</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="css/vitadose.css">
+</head>
+<body>
+
+  <!-- Header navy top strip (perfil usa header diferente) -->
+  <div class="perfil-header">
+    <div class="perfil-avatar-lg" id="perfil-avatar">?</div>
+    <p class="perfil-name" id="perfil-nome">—</p>
+    <p class="perfil-tag"  id="perfil-tag">—</p>
+  </div>
+
+  <!-- Info -->
+  <div class="card">
+    <div class="card-title">Dados do Paciente</div>
+    <div id="perfil-info" style="font-size:.88rem;color:var(--text-2);line-height:2">
+      Carregando...
+    </div>
+    <a href="cadastro.html" class="btn btn-outline btn-sm btn-full" style="margin-top:14px;display:block;text-align:center;text-decoration:none">
+      Editar cadastro
+    </a>
+  </div>
+
+  <!-- Backup -->
+  <div class="card">
+    <div class="card-title">Backup de Dados</div>
+    <p class="text-sm text-2" style="margin-bottom:14px">
+      Seus dados ficam no dispositivo. Exporte regularmente para não perder o histórico se trocar de celular.
+    </p>
+    <button class="btn btn-primary btn-full" onclick="fazerBackup()" style="margin-bottom:10px">
+      ↓ Exportar backup (JSON)
+    </button>
+    <label class="btn btn-outline btn-full" style="cursor:pointer;text-align:center;display:block">
+      ↑ Restaurar backup
+      <input type="file" accept=".json" style="display:none" onchange="handleImport(this)">
+    </label>
+  </div>
+
+  <!-- Trocar paciente / resetar -->
+  <div class="card">
+    <div class="card-title">Outros</div>
+    <button class="btn btn-outline btn-full" onclick="trocarPaciente()" style="margin-bottom:10px">
+      Trocar paciente
+    </button>
+    <button class="btn btn-danger btn-full" onclick="resetarApp()">
+      Apagar todos os dados
+    </button>
+  </div>
+
+  <!-- Rodapé -->
+  <div style="text-align:center;padding:20px;font-size:.72rem;color:var(--text-2)">
+    VitaDose v1.0 · Ecossistema <a href="https://guiadose.vercel.app" target="_blank" style="color:var(--gold)">GuiaDose</a><br>
+    Dados armazenados localmente · LGPD compliant
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <!-- Bottom nav -->
+  <nav class="bottom-nav">
+    <a class="nav-btn" href="index.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+      </svg>
+      Início
+    </a>
+    <a class="nav-btn" href="cadastro.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/>
+      </svg>
+      Medicamentos
+    </a>
+    <a class="nav-btn" href="historico.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+      </svg>
+      Histórico
+    </a>
+    <a class="nav-btn active" href="perfil.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+      </svg>
+      Perfil
+      <div class="nav-dot"></div>
+    </a>
+  </nav>
+
+  <script src="js/db.js"></script>
+  <script src="js/utils.js"></script>
+  <script>
+    const PERFIS = { adulto:'Adulto', idoso:'Idoso (60+)', pediatrico:'Pediátrico', renal:'Insuf. Renal', hepatico:'Insuf. Hepática', gestante:'Gestante' };
+
+    async function initPerfil() {
+      const pid = getActivePacienteId();
+      if (!pid) return;
+      const p = await dbGet('pacientes', pid);
+      if (!p) return;
+      document.getElementById('perfil-avatar').textContent = iniciaisNome(p.nome);
+      document.getElementById('perfil-nome').textContent   = p.nome;
+      document.getElementById('perfil-tag').textContent    = (PERFIS[p.perfil] || p.perfil) + (p.cuidador ? ` · Cuidador: ${p.cuidador}` : '');
+      document.getElementById('perfil-info').innerHTML = `
+        <div><b>Nome:</b> ${p.nome}</div>
+        <div><b>Perfil:</b> ${PERFIS[p.perfil] || p.perfil}</div>
+        ${p.cuidador ? `<div><b>Cuidador:</b> ${p.cuidador}</div>` : ''}
+        <div><b>Cadastrado em:</b> ${p.criadoEm ? new Date(p.criadoEm).toLocaleDateString('pt-BR') : '—'}</div>
+      `;
+    }
+
+    async function trocarPaciente() {
+      const todos = await dbGetAll('pacientes');
+      if (todos.length <= 1) { showToast('Apenas um paciente cadastrado'); return; }
+      const nomes = todos.map((p,i) => `${i+1}. ${p.nome}`).join('\n');
+      const idx   = parseInt(prompt(`Selecione o paciente:\n${nomes}`)) - 1;
+      if (isNaN(idx) || !todos[idx]) return;
+      setActivePacienteId(todos[idx].id);
+      window.location.reload();
+    }
+
+    async function resetarApp() {
+      if (!confirm('Apagar TODOS os dados do VitaDose? Esta ação não pode ser desfeita.')) return;
+      if (!confirm('Tem certeza? Todos os medicamentos e histórico serão perdidos.')) return;
+      localStorage.removeItem('vd_active');
+      localStorage.removeItem('vd_consent');
+      const d = await openDB();
+      const tx = d.transaction(['pacientes','medicamentos','doses'],'readwrite');
+      tx.objectStore('pacientes').clear();
+      tx.objectStore('medicamentos').clear();
+      tx.objectStore('doses').clear();
+      tx.oncomplete = () => { showToast('Dados apagados'); setTimeout(() => window.location.href='cadastro.html', 1200); };
+    }
+
+    async function fazerBackup()          { await exportarBackup(); showToast('✓ Backup exportado'); }
+    async function handleImport(input)    {
+      try { await importarBackup(input.files[0]); showToast('✓ Backup restaurado'); setTimeout(() => location.reload(), 1200); }
+      catch(e) { showToast('⚠ Arquivo inválido'); }
+    }
+
+    document.addEventListener('DOMContentLoaded', initPerfil);
+  </script>
+</body>
+</html>

@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0F3460">
+  <meta name="description" content="VitaDose — Seu companheiro de tratamento farmacêutico">
+  <title>VitaDose</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icons/icon-192.svg">
+  <link rel="stylesheet" href="css/vitadose.css">
+</head>
+<body>
+
+  <!-- LGPD -->
+  <div id="lgpd" class="lgpd hidden">
+    <p>O <strong>VitaDose</strong> armazena dados de saúde <strong>localmente no seu dispositivo</strong>, sem envio a servidores. Você pode exportar ou excluir seus dados a qualquer momento em Perfil → Backup. Ao continuar, você concorda com o uso local dos dados para gerenciamento do tratamento.</p>
+    <div class="lgpd-actions">
+      <button class="btn btn-gold" onclick="aceitarLGPD()">Entendi e aceito</button>
+    </div>
+  </div>
+
+  <!-- Header -->
+  <header class="header">
+    <div class="logo">
+      <span class="vita">Vita</span><span class="dose">Dose</span>
+      <span class="sub">Seu companheiro de tratamento</span>
+    </div>
+    <div class="avatar" id="avatar" onclick="window.location.href='perfil.html'">?</div>
+  </header>
+
+  <!-- Data -->
+  <div class="date-bar" id="date-bar">Carregando...</div>
+
+  <!-- Summary -->
+  <div class="summary">
+    <div class="sum-item">
+      <p class="sum-num green" id="sum-tomadas">0</p>
+      <p class="sum-label">Tomadas</p>
+    </div>
+    <div class="sum-item">
+      <p class="sum-num amber" id="sum-pendentes">0</p>
+      <p class="sum-label">Pendentes</p>
+    </div>
+    <div class="sum-item">
+      <p class="sum-num" id="sum-perdidas">0</p>
+      <p class="sum-label">Perdidas</p>
+    </div>
+    <div class="sum-item">
+      <p class="sum-num" id="sum-total">0</p>
+      <p class="sum-label">Total</p>
+    </div>
+  </div>
+
+  <!-- Progress -->
+  <div class="progress-wrap">
+    <div class="progress-bar">
+      <div class="progress-fill" id="progress-fill" style="width:0%"></div>
+    </div>
+    <p class="progress-lbl" id="progress-lbl">0 de 0 doses tomadas hoje</p>
+  </div>
+
+  <!-- Próxima dose -->
+  <div id="next-dose-wrap"></div>
+
+  <!-- Medicamentos do dia -->
+  <p class="sec-header">Medicamentos de Hoje</p>
+  <div id="med-list"></div>
+
+  <!-- Alertas clínicos -->
+  <div id="alertas-wrap"></div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <!-- Modal confirmar dose -->
+  <div class="modal-overlay hidden" id="confirm-modal">
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <p class="modal-title">Confirmar dose</p>
+      <p class="modal-desc" id="modal-med-name"></p>
+      <div class="modal-actions">
+        <button class="btn btn-outline flex-1" onclick="fecharConfirmar()">Cancelar</button>
+        <button class="btn btn-gold flex-1" onclick="confirmarDoseTomada()">✓ Tomei agora</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom nav -->
+  <nav class="bottom-nav">
+    <a class="nav-btn active" href="index.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+      </svg>
+      Início
+      <div class="nav-dot"></div>
+    </a>
+    <a class="nav-btn" href="cadastro.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/>
+      </svg>
+      Medicamentos
+    </a>
+    <a class="nav-btn" href="historico.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+      </svg>
+      Histórico
+    </a>
+    <a class="nav-btn" href="perfil.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+      </svg>
+      Perfil
+    </a>
+  </nav>
+
+  <script src="js/db.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/interacoes.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').catch(() => {});
+    }
+  </script>
+</body>
+</html>

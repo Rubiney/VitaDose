@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0F3460">
+  <title>VitaDose — Histórico</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="css/vitadose.css">
+</head>
+<body>
+
+  <header class="header">
+    <div class="logo">
+      <span class="vita">Vita</span><span class="dose">Dose</span>
+      <span class="sub">Histórico de Adesão</span>
+    </div>
+  </header>
+
+  <div id="historico-wrap" style="padding:8px 0 24px"></div>
+
+  <div class="toast" id="toast"></div>
+
+  <nav class="bottom-nav">
+    <a class="nav-btn" href="index.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+      </svg>
+      Início
+    </a>
+    <a class="nav-btn" href="cadastro.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/>
+      </svg>
+      Medicamentos
+    </a>
+    <a class="nav-btn active" href="historico.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+      </svg>
+      Histórico
+      <div class="nav-dot"></div>
+    </a>
+    <a class="nav-btn" href="perfil.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+      </svg>
+      Perfil
+    </a>
+  </nav>
+
+  <script src="js/db.js"></script>
+  <script src="js/utils.js"></script>
+  <script>
+    async function initHistorico() {
+      const pid = getActivePacienteId();
+      if (!pid) { window.location.href = 'cadastro.html'; return; }
+
+      const meds   = await dbGetByIndex('medicamentos', 'pacienteId', pid);
+      const doses  = await dbGetAll('doses');
+      const medMap = Object.fromEntries(meds.map(m => [m.id, m]));
+
+      // Agrupar por data (últimos 7 dias)
+      const dias = [];
+      for (let i = 0; i < 7; i++) {
+        const d = new Date(); d.setDate(d.getDate() - i);
+        dias.push(d.toISOString().slice(0,10));
+      }
+
+      const wrap = document.getElementById('historico-wrap');
+
+      if (!doses.length) {
+        wrap.innerHTML = `<div class="empty"><div class="icon">📋</div><p>Nenhuma dose registrada ainda.</p></div>`;
+        return;
+      }
+
+      let html = '';
+      for (const dia of dias) {
+        const doseDia = doses.filter(d => d.data === dia);
+        if (!doseDia.length) continue;
+
+        const tomadas = doseDia.filter(d => d.status === 'tomado').length;
+        const total   = doseDia.length;
+        const pct     = Math.round((tomadas/total)*100);
+
+        html += `
+          <p class="sec-header">${fmtDataLonga(dia)}</p>
+          <div class="card" style="margin-top:0">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+              <span class="text-sm" style="color:var(--text-2)">Adesão do dia</span>
+              <strong style="color:${pct>=80?'var(--green)':pct>=50?'var(--amber)':'var(--red)'}">${pct}%</strong>
+            </div>
+            <div class="progress-bar" style="margin-bottom:14px">
+              <div class="progress-fill" style="width:${pct}%;background:${pct>=80?'var(--green)':pct>=50?'var(--amber)':'var(--red)'}"></div>
+            </div>
+            ${doseDia.map(d => {
+              const med = medMap[d.medicamentoId];
+              const cor = d.status==='tomado' ? 'green' : 'red';
+              const txt = d.status==='tomado' ? '✓ Tomado' : '✗ Perdido';
+              return `<div class="med-list-item">
+                <div class="med-list-dot" style="background:var(--${cor})"></div>
+                <div class="med-list-info">
+                  <p class="med-list-name">${med ? med.nome : 'Medicamento removido'}</p>
+                  <p class="med-list-detail mono">${d.horario}</p>
+                </div>
+                <span class="badge ${d.status==='tomado'?'badge-green':'badge-gray'}">${txt}</span>
+              </div>`;
+            }).join('')}
+          </div>`;
+      }
+
+      wrap.innerHTML = html || `<div class="empty"><div class="icon">📋</div><p>Sem registros nos últimos 7 dias.</p></div>`;
+    }
+
+    document.addEventListener('DOMContentLoaded', initHistorico);
+  </script>
+</body>
+</html>
