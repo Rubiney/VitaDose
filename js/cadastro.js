@@ -3,6 +3,7 @@
 let pacienteAtual  = null;
 let medHorarios    = [];
 let _editandoMedId = null;
+let _fotoBase64    = null;
 
 /* ── Init ── */
 async function init() {
@@ -28,11 +29,48 @@ async function init() {
   document.getElementById('f-intervalo').addEventListener('change', calcLimiar);
 }
 
+/* ── Foto do paciente ── */
+function handleFotoUpload(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = 150; canvas.height = 150;
+      const ctx = canvas.getContext('2d');
+      const size = Math.min(img.width, img.height);
+      const ox = (img.width  - size) / 2;
+      const oy = (img.height - size) / 2;
+      ctx.drawImage(img, ox, oy, size, size, 0, 0, 150, 150);
+      _fotoBase64 = canvas.toDataURL('image/jpeg', 0.75);
+      _mostrarFotoPreview(_fotoBase64);
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function _mostrarFotoPreview(src) {
+  const imgEl  = document.getElementById('foto-img');
+  const iconEl = document.getElementById('foto-icon');
+  if (src) {
+    imgEl.src = src;
+    imgEl.style.display = 'block';
+    iconEl.style.display = 'none';
+  } else {
+    imgEl.style.display = 'none';
+    iconEl.style.display = '';
+  }
+}
+
 /* ── Preencher form paciente ── */
 function preencherFormPaciente(p) {
-  document.getElementById('f-nome').value    = p.nome    || '';
-  document.getElementById('f-perfil').value  = p.perfil  || 'adulto';
+  document.getElementById('f-nome').value     = p.nome     || '';
+  document.getElementById('f-perfil').value   = p.perfil   || 'adulto';
   document.getElementById('f-cuidador').value = p.cuidador || '';
+  _mostrarFotoPreview(p.foto || null);
 }
 
 /* ── Salvar paciente ── */
@@ -43,11 +81,13 @@ async function salvarPaciente() {
 
   if (!nome) { showToast('⚠ Informe o nome do paciente'); return; }
 
+  const foto = _fotoBase64 || pacienteAtual?.foto || null;
+
   if (pacienteAtual) {
-    pacienteAtual = { ...pacienteAtual, nome, perfil, cuidador };
+    pacienteAtual = { ...pacienteAtual, nome, perfil, cuidador, foto };
     await dbPut('pacientes', pacienteAtual);
   } else {
-    const id = await dbAdd('pacientes', { nome, perfil, cuidador, criadoEm: new Date().toISOString() });
+    const id = await dbAdd('pacientes', { nome, perfil, cuidador, foto, criadoEm: new Date().toISOString() });
     pacienteAtual = await dbGet('pacientes', id);
     setActivePacienteId(id);
     document.getElementById('sec-meds').classList.remove('hidden');

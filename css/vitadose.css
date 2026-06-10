@@ -64,6 +64,12 @@ body {
   font-weight: 700;
   display: flex; align-items: center; justify-content: center;
   cursor: pointer;
+  overflow: hidden;
+  border: 2px solid transparent;
+  transition: border-color .2s;
+}
+.avatar[style*="background-image"] {
+  border-color: var(--gold);
 }
 
 .date-bar {

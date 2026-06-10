@@ -29,7 +29,15 @@ async function init() {
   }
 
   // Avatar
-  document.getElementById('avatar').textContent = iniciaisNome(paciente.nome);
+  const avatarEl = document.getElementById('avatar');
+  if (paciente.foto) {
+    avatarEl.style.backgroundImage    = `url(${paciente.foto})`;
+    avatarEl.style.backgroundSize     = 'cover';
+    avatarEl.style.backgroundPosition = 'center';
+    avatarEl.textContent = '';
+  } else {
+    avatarEl.textContent = iniciaisNome(paciente.nome);
+  }
 
   // Medicamentos ativos (exclui tratamentos vencidos)
   const todos = await dbGetByIndex('medicamentos', 'pacienteId', pid);
