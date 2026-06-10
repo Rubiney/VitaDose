@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VitaDose — QR Code</title>
+  <link rel="manifest" href="manifest.json">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: #e8ecf3;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 32px 16px 100px;
+    }
+
+    /* ── Título da página ── */
+    .page-title {
+      font-size: .75rem;
+      font-weight: 600;
+      letter-spacing: .15em;
+      text-transform: uppercase;
+      color: #5f6476;
+      margin-bottom: 20px;
+    }
+
+    /* ── Card principal ── */
+    .card {
+      background: #fff;
+      border-radius: 20px;
+      width: 100%;
+      max-width: 340px;
+      overflow: hidden;
+      box-shadow: 0 8px 32px rgba(15,52,96,.18);
+    }
+
+    /* Header navy */
+    .card-header {
+      background: #0F3460;
+      padding: 28px 28px 22px;
+      text-align: center;
+    }
+    .logo-text {
+      font-size: 2rem;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      line-height: 1;
+    }
+    .logo-text .vita { color: #C9A84C; }
+    .logo-text .dose { color: #fff; }
+    .tagline {
+      font-size: .78rem;
+      color: rgba(255,255,255,.65);
+      margin-top: 6px;
+      letter-spacing: .02em;
+    }
+
+    /* Corpo */
+    .card-body {
+      padding: 24px 28px 28px;
+      text-align: center;
+    }
+
+    /* QR Code */
+    .qr-wrap {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 14px;
+    }
+    #qrcode img,
+    #qrcode canvas {
+      border-radius: 10px;
+      border: 3px solid #f0f0f0;
+    }
+
+    /* URL */
+    .url {
+      font-size: .88rem;
+      font-weight: 700;
+      color: #0F3460;
+      letter-spacing: .04em;
+      margin-bottom: 16px;
+    }
+
+    /* Divisor */
+    .divider {
+      height: 1px;
+      background: #eaedf4;
+      margin: 0 -28px 16px;
+    }
+
+    /* Badges */
+    .badges {
+      display: flex;
+      justify-content: center;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+    .badge {
+      background: #f0f4fb;
+      color: #1C4B87;
+      font-size: .67rem;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 99px;
+      letter-spacing: .04em;
+    }
+    .badge.gold { background: #fff8e6; color: #7a5800; }
+
+    /* Descrição */
+    .desc {
+      font-size: .8rem;
+      line-height: 1.6;
+      color: #5f6476;
+      margin-bottom: 18px;
+    }
+
+    /* Autor */
+    .author {
+      background: #f6f8fc;
+      border-radius: 10px;
+      padding: 12px 16px;
+      font-size: .77rem;
+      color: #5f6476;
+      line-height: 1.7;
+    }
+    .author strong {
+      color: #0F3460;
+      font-size: .85rem;
+    }
+    .author .cta {
+      display: block;
+      margin-top: 6px;
+      font-size: .7rem;
+      color: #C9A84C;
+      font-weight: 700;
+      letter-spacing: .04em;
+    }
+
+    /* ── Botões de ação (ocultos na impressão) ── */
+    .actions {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      width: 100%;
+      max-width: 340px;
+      margin-top: 20px;
+    }
+    .btn {
+      padding: 14px;
+      border-radius: 10px;
+      font-family: inherit;
+      font-size: .88rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      text-align: center;
+      text-decoration: none;
+      display: block;
+    }
+    .btn-navy   { background: #0F3460; color: #fff; }
+    .btn-outline { background: transparent; border: 1.5px solid #d0d5e8; color: #0F3460; }
+
+    /* ── Print ── */
+    @media print {
+      body {
+        background: #fff;
+        padding: 0;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+      }
+      .page-title, .actions { display: none !important; }
+      .card {
+        box-shadow: none;
+        border: 1px solid #ddd;
+        max-width: 100%;
+        width: 320px;
+        margin: auto;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <p class="page-title">QR Code de Divulgação — VitaDose</p>
+
+  <div class="card">
+
+    <div class="card-header">
+      <p class="logo-text"><span class="vita">Vita</span><span class="dose">Dose</span></p>
+      <p class="tagline">Companion farmacêutico para pacientes crônicos</p>
+    </div>
+
+    <div class="card-body">
+
+      <div class="qr-wrap">
+        <div id="qrcode"></div>
+      </div>
+
+      <p class="url">vitadose.vercel.app</p>
+
+      <div class="divider"></div>
+
+      <div class="badges">
+        <span class="badge gold">Gratuito</span>
+        <span class="badge">Sem cadastro</span>
+        <span class="badge">Seus dados no celular</span>
+        <span class="badge">PWA · offline</span>
+      </div>
+
+      <p class="desc">
+        Lembretes de dose, controle de estoque e alertas de interações medicamentosas — no seu celular, sem custo.
+      </p>
+
+      <div class="author">
+        Desenvolvido por<br>
+        <strong>Rubiney Alves</strong><br>
+        Farmacêutico Clínico · Gerente Comercial Sênior
+        <span class="cta">Escaneie e acesse agora →</span>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Ações (não aparecem na impressão) -->
+  <div class="actions">
+    <button class="btn btn-navy" onclick="window.print()">🖨 Imprimir / Salvar como PDF</button>
+    <a class="btn btn-outline" href="index.html">← Voltar ao VitaDose</a>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script>
+    new QRCode(document.getElementById('qrcode'), {
+      text         : 'https://vitadose.vercel.app/',
+      width        : 200,
+      height       : 200,
+      colorDark    : '#0F3460',
+      colorLight   : '#ffffff',
+      correctLevel : QRCode.CorrectLevel.H,
+    });
+  </script>
+</body>
+</html>

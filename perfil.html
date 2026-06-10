@@ -30,17 +30,38 @@
 
   <!-- Backup -->
   <div class="card">
-    <div class="card-title">Backup de Dados</div>
+    <div class="card-title">Cópia de Segurança</div>
+    <p class="text-sm text-2" style="margin-bottom:6px">
+      Seus dados ficam somente neste celular.
+    </p>
     <p class="text-sm text-2" style="margin-bottom:14px">
-      Seus dados ficam no dispositivo. Exporte regularmente para não perder o histórico se trocar de celular.
+      Salve uma cópia regularmente para não perder o histórico se trocar de aparelho.
     </p>
     <button class="btn btn-primary btn-full" onclick="fazerBackup()" style="margin-bottom:10px">
-      ↓ Exportar backup (JSON)
+      ☁ Salvar cópia de segurança no celular
     </button>
     <label class="btn btn-outline btn-full" style="cursor:pointer;text-align:center;display:block">
-      ↑ Restaurar backup
+      ↑ Restaurar cópia de segurança
       <input type="file" accept=".json" style="display:none" onchange="handleImport(this)">
     </label>
+  </div>
+
+  <!-- Acessibilidade -->
+  <div class="card">
+    <div class="card-title">Acessibilidade</div>
+
+    <p class="text-sm text-2" style="margin-bottom:8px">Tamanho do texto</p>
+    <div style="display:flex;gap:10px;margin-bottom:18px">
+      <button onclick="ajustarFonte(-1)" class="btn btn-outline" style="flex:1;font-size:1rem">A−</button>
+      <button onclick="ajustarFonte(0)"  class="btn btn-outline" style="flex:1;font-size:.85rem">Padrão</button>
+      <button onclick="ajustarFonte(1)"  class="btn btn-outline" style="flex:1;font-size:1.3rem">A+</button>
+    </div>
+
+    <p class="text-sm text-2" style="margin-bottom:8px">Aparência</p>
+    <div style="display:flex;gap:10px">
+      <button onclick="alternarTema('light')" id="btn-tema-light" class="btn btn-outline" style="flex:1">☀ Claro</button>
+      <button onclick="alternarTema('dark')"  id="btn-tema-dark"  class="btn btn-outline" style="flex:1">🌙 Noturno</button>
+    </div>
   </div>
 
   <!-- Trocar paciente / resetar -->
@@ -57,7 +78,8 @@
   <!-- Rodapé -->
   <div style="text-align:center;padding:20px;font-size:.72rem;color:var(--text-2)">
     VitaDose v1.0 · Ecossistema <a href="https://guiadose.vercel.app" target="_blank" style="color:var(--gold)">GuiaDose</a><br>
-    Dados armazenados localmente · LGPD compliant
+    Dados armazenados localmente · LGPD compliant<br><br>
+    <a href="qrcode.html" style="color:var(--gold);font-weight:600">📲 QR Code para compartilhar</a>
   </div>
 
   <!-- Toast -->
@@ -82,6 +104,12 @@
         <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
       </svg>
       Histórico
+    </a>
+    <a class="nav-btn" href="diario.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
+      </svg>
+      Diário
     </a>
     <a class="nav-btn active" href="perfil.html">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -141,6 +169,34 @@
       try { await importarBackup(input.files[0]); showToast('✓ Backup restaurado'); setTimeout(() => location.reload(), 1200); }
       catch(e) { showToast('⚠ Arquivo inválido'); }
     }
+
+    function alternarTema(tema) {
+      localStorage.setItem('vd_tema', tema);
+      if (tema === 'dark') {
+        document.documentElement.setAttribute('data-theme', 'dark');
+      } else {
+        document.documentElement.removeAttribute('data-theme');
+      }
+      document.getElementById('btn-tema-light').style.borderColor = tema === 'light' ? 'var(--gold)' : '';
+      document.getElementById('btn-tema-dark').style.borderColor  = tema === 'dark'  ? 'var(--gold)' : '';
+      showToast(tema === 'dark' ? '🌙 Modo noturno ativado' : '☀ Modo claro ativado');
+    }
+
+    function ajustarFonte(delta) {
+      const map  = { '-1': '14px', '0': '16px', '1': '18px' };
+      const atual = parseInt(localStorage.getItem('vd_fonte') || '0');
+      const novo  = delta === 0 ? 0 : Math.max(-1, Math.min(1, atual + delta));
+      localStorage.setItem('vd_fonte', novo);
+      document.documentElement.style.fontSize = map[novo] || '16px';
+      showToast(novo === 0 ? 'Tamanho padrão' : novo > 0 ? 'Texto maior' : 'Texto menor');
+    }
+
+    // Destacar botão de tema ativo
+    (function() {
+      const t = localStorage.getItem('vd_tema') || 'light';
+      document.getElementById('btn-tema-light').style.borderColor = t === 'light' ? 'var(--gold)' : '';
+      document.getElementById('btn-tema-dark').style.borderColor  = t === 'dark'  ? 'var(--gold)' : '';
+    })();
 
     document.addEventListener('DOMContentLoaded', initPerfil);
   </script>

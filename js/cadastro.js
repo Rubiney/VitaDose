@@ -1,7 +1,8 @@
 /* VitaDose — Cadastro de Paciente e Medicamentos */
 
-let pacienteAtual = null;
-let medHorarios   = [];
+let pacienteAtual  = null;
+let medHorarios    = [];
+let _editandoMedId = null;
 
 /* ── Init ── */
 async function init() {
@@ -77,10 +78,13 @@ function renderHorarioTags() {
   wrap.innerHTML = medHorarios.map(h =>
     `<span class="h-tag">${h}<button type="button" onclick="removerHorario('${h}')">×</button></span>`
   ).join('');
+  calcEstoque();
 }
 
 /* ── Calcular limiar automático ── */
 function calcLimiar() {
+  const duracao = parseInt(document.getElementById('f-duracao').value) || 0;
+  if (duracao) return; // tratamento com prazo — limiar não se aplica
   const caixa     = parseInt(document.getElementById('f-qtd-caixa').value) || 0;
   const intervalo = parseInt(document.getElementById('f-intervalo').value) || 24;
   const dosesPerDia = 24 / intervalo;
@@ -91,47 +95,134 @@ function calcLimiar() {
     limiar ? `Auto: ${limiar} un. = ${diasAntecedencia} dias de antecedência` : '';
 }
 
+/* ── Calcular estoque necessário (tratamentos com duração) ── */
+function calcEstoque() {
+  const duracao = parseInt(document.getElementById('f-duracao').value) || 0;
+  const hint    = document.getElementById('duracao-hint');
+  const qtdInput = document.getElementById('f-qtd-atual');
+  if (!duracao) {
+    hint.textContent = 'Sem duração = medicamento de uso contínuo';
+    return;
+  }
+  const dosesPorDia = medHorarios.length;
+  if (dosesPorDia) {
+    const total = duracao * dosesPorDia;
+    hint.textContent = `${dosesPorDia} dose/dia × ${duracao} dias = ${total} unidades necessárias`;
+    if (qtdInput.value === '') qtdInput.value = total;
+  } else {
+    hint.textContent = `Tratamento de ${duracao} dias`;
+  }
+}
+
+/* ── Editar medicamento ── */
+async function editarMed(id) {
+  const m = await dbGet('medicamentos', id);
+  if (!m) return;
+
+  _editandoMedId = id;
+
+  document.getElementById('f-med-nome').value  = m.nome       || '';
+  document.getElementById('f-indicacao').value = m.indicacao  || '';
+  document.getElementById('f-forma').value     = m.forma      || 'comprimido';
+  document.getElementById('f-dose').value      = m.dose       || '';
+  document.getElementById('f-unidade').value   = m.unidade    || 'mg';
+  document.getElementById('f-intervalo').value = m.intervalo  || 24;
+  document.getElementById('f-qtd-caixa').value = m.qtdCaixa   ?? '';
+  document.getElementById('f-qtd-atual').value = m.qtdAtual   ?? '';
+  document.getElementById('f-limiar').value    = m.limiarAlerta || '';
+  document.getElementById('f-duracao').value   = m.duracaoDias  || '';
+
+  medHorarios = [...(m.horarios || [])];
+  renderHorarioTags();
+
+  document.getElementById('btn-salvar-med').textContent  = '✓ Salvar Alterações';
+  document.getElementById('btn-cancelar-ed').style.display = '';
+
+  // Scroll até o formulário
+  document.getElementById('f-med-nome').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  showToast('Editando: ' + m.nome);
+}
+
+function cancelarEdicao() {
+  _editandoMedId = null;
+  limparFormMed();
+}
+
 /* ── Salvar medicamento ── */
 async function salvarMedicamento() {
   if (!pacienteAtual) { showToast('⚠ Salve o paciente primeiro'); return; }
 
-  const nome       = document.getElementById('f-med-nome').value.trim();
-  const indicacao  = document.getElementById('f-indicacao').value.trim();
-  const forma      = document.getElementById('f-forma').value;
-  const dose       = document.getElementById('f-dose').value.trim();
-  const unidade    = document.getElementById('f-unidade').value;
-  const intervalo  = parseInt(document.getElementById('f-intervalo').value) || 24;
-  const qtdCaixa   = parseInt(document.getElementById('f-qtd-caixa').value) || 0;
-  const qtdAtual   = parseInt(document.getElementById('f-qtd-atual').value) || 0;
-  const limiar     = parseInt(document.getElementById('f-limiar').value)    || 0;
+  const nome        = document.getElementById('f-med-nome').value.trim();
+  const indicacao   = document.getElementById('f-indicacao').value.trim();
+  const forma       = document.getElementById('f-forma').value;
+  const dose        = document.getElementById('f-dose').value.trim();
+  const unidade     = document.getElementById('f-unidade').value;
+  const intervalo   = parseInt(document.getElementById('f-intervalo').value) || 24;
+  const qtdCaixa    = parseInt(document.getElementById('f-qtd-caixa').value) || 0;
+  const qtdAtual    = parseInt(document.getElementById('f-qtd-atual').value) || 0;
+  const limiar      = parseInt(document.getElementById('f-limiar').value)    || 0;
+  const duracaoDias = parseInt(document.getElementById('f-duracao').value)   || 0;
 
-  if (!nome)             { showToast('⚠ Informe o nome do medicamento'); return; }
+  if (!nome)               { showToast('⚠ Informe o nome do medicamento'); return; }
   if (!medHorarios.length) { showToast('⚠ Adicione pelo menos um horário'); return; }
 
-  await dbAdd('medicamentos', {
-    pacienteId: pacienteAtual.id,
-    nome, indicacao, forma, dose, unidade,
-    intervalo, horarios: [...medHorarios],
-    qtdCaixa, qtdAtual, limiarAlerta: limiar,
-    ativo: true, criadoEm: new Date().toISOString(),
-  });
+  if (_editandoMedId) {
+    // ── Modo edição: preserva id, pacienteId, criadoEm e dataInicio original
+    const original = await dbGet('medicamentos', _editandoMedId);
+    const dataInicio = original.dataInicio || hoje();
+    const dataFim    = duracaoDias ? calcDataFim(dataInicio, duracaoDias) : null;
 
-  limparFormMed();
-  await renderMedList();
-  showToast('✓ Medicamento adicionado');
+    await dbPut('medicamentos', {
+      ...original,
+      nome, indicacao, forma, dose, unidade,
+      intervalo, horarios: [...medHorarios],
+      qtdCaixa, qtdAtual, limiarAlerta: limiar,
+      duracaoDias: duracaoDias || null,
+      dataInicio:  duracaoDias ? dataInicio : original.dataInicio,
+      dataFim,
+    });
+
+    limparFormMed();
+    await renderMedList();
+    showToast('✓ Medicamento atualizado');
+  } else {
+    // ── Modo adição
+    const dataInicio = hoje();
+    const dataFim    = duracaoDias ? calcDataFim(dataInicio, duracaoDias) : null;
+
+    await dbAdd('medicamentos', {
+      pacienteId: pacienteAtual.id,
+      nome, indicacao, forma, dose, unidade,
+      intervalo, horarios: [...medHorarios],
+      qtdCaixa, qtdAtual, limiarAlerta: limiar,
+      duracaoDias: duracaoDias || null,
+      dataInicio:  duracaoDias ? dataInicio : null,
+      dataFim,
+      ativo: true, criadoEm: new Date().toISOString(),
+    });
+
+    limparFormMed();
+    await renderMedList();
+    showToast('✓ Medicamento adicionado');
+  }
+
   document.getElementById('sec-meds').scrollIntoView({ behavior: 'smooth' });
 }
 
 function limparFormMed() {
-  ['f-med-nome','f-indicacao','f-dose','f-qtd-caixa','f-qtd-atual','f-limiar'].forEach(id => {
+  ['f-med-nome','f-indicacao','f-dose','f-qtd-caixa','f-qtd-atual','f-limiar','f-duracao'].forEach(id => {
     document.getElementById(id).value = '';
   });
-  document.getElementById('f-forma').value    = 'comprimido';
-  document.getElementById('f-unidade').value  = 'mg';
+  document.getElementById('f-forma').value     = 'comprimido';
+  document.getElementById('f-unidade').value   = 'mg';
   document.getElementById('f-intervalo').value = '24';
-  medHorarios = [];
+  medHorarios    = [];
+  _editandoMedId = null;
   renderHorarioTags();
-  document.getElementById('limiar-hint').textContent = '';
+  document.getElementById('limiar-hint').textContent  = '';
+  document.getElementById('duracao-hint').textContent = 'Sem duração = medicamento de uso contínuo';
+  document.getElementById('btn-salvar-med').textContent       = 'Adicionar Medicamento';
+  document.getElementById('btn-cancelar-ed').style.display    = 'none';
 }
 
 /* ── Listar medicamentos cadastrados ── */
@@ -150,9 +241,12 @@ async function renderMedList() {
       <div class="med-list-dot"></div>
       <div class="med-list-info">
         <p class="med-list-name">${m.nome} — ${m.dose}${m.unidade}</p>
-        <p class="med-list-detail">${(m.horarios||[]).join(' · ')} · Estoque: ${m.qtdAtual}/${m.qtdCaixa}</p>
+        <p class="med-list-detail">${(m.horarios||[]).join(' · ')} · Estoque: ${m.qtdAtual}/${m.qtdCaixa}${m.duracaoDias ? ` · ${m.duracaoDias}d` : ''}</p>
       </div>
-      <button class="btn btn-danger btn-sm" onclick="removerMed(${m.id})">Remover</button>
+      <div style="display:flex;gap:6px;flex-shrink:0">
+        <button class="btn btn-sm" style="background:var(--blue-bg);color:var(--blue);border:1px solid rgba(25,80,185,.15)" onclick="editarMed(${m.id})">Editar</button>
+        <button class="btn btn-danger btn-sm" onclick="removerMed(${m.id})">Remover</button>
+      </div>
     </div>`).join('');
 }
 
@@ -185,6 +279,15 @@ async function handleImport(input) {
   } catch(e) {
     showToast('⚠ Arquivo inválido');
   }
+}
+
+/* ── Toggle campos avançados ── */
+function toggleAvancado() {
+  const sec = document.getElementById('sec-avancado');
+  const btn = document.getElementById('btn-avancado');
+  const aberto = sec.style.display !== 'none';
+  sec.style.display = aberto ? 'none' : 'block';
+  btn.textContent   = (aberto ? '▸' : '▾') + ' Configurações avançadas';
 }
 
 /* ── Start ── */

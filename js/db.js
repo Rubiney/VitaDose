@@ -1,6 +1,6 @@
 /* VitaDose — IndexedDB wrapper */
 const DB_NAME    = 'vitadose';
-const DB_VERSION = 1;
+const DB_VERSION = 3;
 let _db = null;
 
 function openDB() {
@@ -21,10 +21,35 @@ function openDB() {
         const ds = d.createObjectStore('doses', { keyPath: 'id', autoIncrement: true });
         ds.createIndex('medData', ['medicamentoId', 'data'], { unique: false });
       }
+      if (!d.objectStoreNames.contains('config')) {
+        d.createObjectStore('config', { keyPath: 'key' });
+      }
+      if (!d.objectStoreNames.contains('diario')) {
+        const di = d.createObjectStore('diario', { keyPath: 'id', autoIncrement: true });
+        di.createIndex('data', 'data', { unique: false });
+      }
     };
 
     req.onsuccess  = (e) => { _db = e.target.result; resolve(_db); };
     req.onerror    = ()  => reject(req.error);
+  });
+}
+
+async function dbGetConfig(key) {
+  const d   = await openDB();
+  return new Promise((resolve, reject) => {
+    const req = d.transaction('config', 'readonly').objectStore('config').get(key);
+    req.onsuccess = () => resolve(req.result ? req.result.value : null);
+    req.onerror   = () => reject(req.error);
+  });
+}
+
+async function dbSetConfig(key, value) {
+  const d = await openDB();
+  return new Promise((resolve, reject) => {
+    const req = d.transaction('config', 'readwrite').objectStore('config').put({ key, value });
+    req.onsuccess = () => resolve();
+    req.onerror   = () => reject(req.error);
   });
 }
 
@@ -95,6 +120,36 @@ async function exportarBackup() {
   a.download = `vitadose-backup-${new Date().toISOString().slice(0,10)}.json`;
   a.click();
   URL.revokeObjectURL(url);
+}
+
+/* ── Diário Clínico ── */
+async function dbGetDiario(data) {
+  const d = await openDB();
+  return new Promise((resolve, reject) => {
+    const req = d.transaction('diario', 'readonly').objectStore('diario').index('data').getAll(data);
+    req.onsuccess = () => resolve(req.result);
+    req.onerror   = () => reject(req.error);
+  });
+}
+
+async function dbSalvarDiario(reg) {
+  const d = await openDB();
+  return new Promise((resolve, reject) => {
+    const store = d.transaction('diario', 'readwrite').objectStore('diario');
+    const req   = reg.id ? store.put(reg) : store.add(reg);
+    req.onsuccess = () => resolve(req.result);
+    req.onerror   = () => reject(req.error);
+  });
+}
+
+async function dbGetDiarioRange(inicio, fim) {
+  const d = await openDB();
+  return new Promise((resolve, reject) => {
+    const range = IDBKeyRange.bound(inicio, fim);
+    const req   = d.transaction('diario', 'readonly').objectStore('diario').index('data').getAll(range);
+    req.onsuccess = () => resolve(req.result);
+    req.onerror   = () => reject(req.error);
+  });
 }
 
 async function importarBackup(file) {

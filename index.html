@@ -12,6 +12,48 @@
 </head>
 <body>
 
+  <!-- Onboarding (exibido apenas no primeiro acesso) -->
+  <div id="onboarding" style="position:fixed;inset:0;z-index:200;background:rgba(8,14,34,.96);display:none;align-items:flex-end;justify-content:center">
+    <div style="background:#162040;border-radius:20px 20px 0 0;padding:36px 28px 48px;width:100%;max-width:480px">
+
+      <div id="ob-0" class="ob-slide">
+        <div style="text-align:center;margin-bottom:28px">
+          <div style="font-size:3rem;margin-bottom:16px">💊</div>
+          <h2 style="font-size:1.3rem;font-weight:600;color:#f0ead6;margin-bottom:10px">O que é o VitaDose?</h2>
+          <p style="font-size:.88rem;line-height:1.65;color:rgba(240,234,214,.65)">Seu companheiro farmacêutico digital para quem toma medicamentos todos os dias. Lembretes, controle de estoque e alertas clínicos — no seu celular, sem custo.</p>
+        </div>
+      </div>
+
+      <div id="ob-1" class="ob-slide" style="display:none">
+        <div style="text-align:center;margin-bottom:28px">
+          <div style="font-size:3rem;margin-bottom:16px">👴</div>
+          <h2 style="font-size:1.3rem;font-weight:600;color:#f0ead6;margin-bottom:10px">Para quem é?</h2>
+          <p style="font-size:.88rem;line-height:1.65;color:rgba(240,234,214,.65)">Para pacientes crônicos, idosos e cuidadores. Desenvolvido por um farmacêutico clínico brasileiro — com alertas de interação medicamentosa e orientação alimentar integrados.</p>
+        </div>
+      </div>
+
+      <div id="ob-2" class="ob-slide" style="display:none">
+        <div style="text-align:center;margin-bottom:28px">
+          <div style="font-size:3rem;margin-bottom:16px">🔒</div>
+          <h2 style="font-size:1.3rem;font-weight:600;color:#f0ead6;margin-bottom:10px">Seus dados ficam com você</h2>
+          <p style="font-size:.88rem;line-height:1.65;color:rgba(240,234,214,.65)">Nenhuma informação de saúde é enviada a servidores. Tudo fica armazenado neste celular. Gratuito, sem cadastro, sem cobrança. Sempre.</p>
+        </div>
+      </div>
+
+      <div style="display:flex;justify-content:center;gap:8px;margin-bottom:24px" id="ob-dots">
+        <div style="width:8px;height:8px;border-radius:50%;background:#C9A84C"></div>
+        <div style="width:8px;height:8px;border-radius:50%;background:rgba(240,234,214,.25)"></div>
+        <div style="width:8px;height:8px;border-radius:50%;background:rgba(240,234,214,.25)"></div>
+      </div>
+
+      <div style="display:flex;gap:10px">
+        <button id="ob-prev" onclick="obNav(-1)" style="flex:1;display:none;background:none;border:1px solid rgba(240,234,214,.2);color:#f0ead6;padding:14px;border-radius:8px;font-size:.82rem;cursor:pointer">← Anterior</button>
+        <button id="ob-next" onclick="obNav(1)"  style="flex:2;background:#C9A84C;color:#0F3460;border:none;padding:14px;border-radius:8px;font-size:.9rem;font-weight:700;cursor:pointer">Próximo →</button>
+      </div>
+
+    </div>
+  </div>
+
   <!-- LGPD -->
   <div id="lgpd" class="lgpd hidden">
     <p>O <strong>VitaDose</strong> armazena dados de saúde <strong>localmente no seu dispositivo</strong>, sem envio a servidores. Você pode exportar ou excluir seus dados a qualquer momento em Perfil → Backup. Ao continuar, você concorda com o uso local dos dados para gerenciamento do tratamento.</p>
@@ -107,6 +149,12 @@
       </svg>
       Histórico
     </a>
+    <a class="nav-btn" href="diario.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
+      </svg>
+      Diário
+    </a>
     <a class="nav-btn" href="perfil.html">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
@@ -115,14 +163,55 @@
     </a>
   </nav>
 
+  <!-- Vercel Analytics -->
+  <script defer src="/_vercel/insights/script.js"></script>
+
   <script src="js/db.js"></script>
   <script src="js/utils.js"></script>
   <script src="js/interacoes.js"></script>
+  <script src="js/notificacoes.js"></script>
   <script src="js/app.js"></script>
   <script>
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/sw.js').catch(() => {});
     }
+
+    /* ── Onboarding ── */
+    (function() {
+      if (localStorage.getItem('vd_onboarding')) return;
+      const el = document.getElementById('onboarding');
+      el.style.display = 'flex';
+      let slide = 0;
+      const TOTAL = 3;
+
+      function render() {
+        for (let i = 0; i < TOTAL; i++) {
+          document.getElementById('ob-' + i).style.display = i === slide ? 'block' : 'none';
+        }
+        const dots = document.getElementById('ob-dots').children;
+        for (let i = 0; i < TOTAL; i++) {
+          dots[i].style.background = i === slide ? '#C9A84C' : 'rgba(240,234,214,.25)';
+        }
+        const prev = document.getElementById('ob-prev');
+        const next = document.getElementById('ob-next');
+        prev.style.display = slide > 0 ? 'block' : 'none';
+        if (slide === TOTAL - 1) {
+          next.textContent = 'Começar ✓';
+        } else {
+          next.textContent = 'Próximo →';
+        }
+      }
+
+      window.obNav = function(delta) {
+        if (delta > 0 && slide === TOTAL - 1) {
+          localStorage.setItem('vd_onboarding', '1');
+          el.style.display = 'none';
+          return;
+        }
+        slide = Math.max(0, Math.min(TOTAL - 1, slide + delta));
+        render();
+      };
+    })();
   </script>
 </body>
 </html>

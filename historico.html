@@ -41,6 +41,12 @@
       Histórico
       <div class="nav-dot"></div>
     </a>
+    <a class="nav-btn" href="diario.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
+      </svg>
+      Diário
+    </a>
     <a class="nav-btn" href="perfil.html">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
@@ -52,33 +58,66 @@
   <script src="js/db.js"></script>
   <script src="js/utils.js"></script>
   <script>
+    const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho',
+                   'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+
+    let mesAtual  = new Date().toISOString().slice(0,7);
+    let _meds     = [];
+    let _doses    = [];
+    let _paciente = null;
+
     async function initHistorico() {
       const pid = getActivePacienteId();
       if (!pid) { window.location.href = 'cadastro.html'; return; }
+      [_paciente, _meds, _doses] = await Promise.all([
+        dbGet('pacientes', pid),
+        dbGetByIndex('medicamentos', 'pacienteId', pid),
+        dbGetAll('doses'),
+      ]);
+      renderMes();
+    }
 
-      const meds   = await dbGetByIndex('medicamentos', 'pacienteId', pid);
-      const doses  = await dbGetAll('doses');
-      const medMap = Object.fromEntries(meds.map(m => [m.id, m]));
+    function renderMes() {
+      const medMap = Object.fromEntries(_meds.map(m => [m.id, m]));
+      const [ano, mes] = mesAtual.split('-').map(Number);
+      const label = `${MESES[mes-1]} ${ano}`;
 
-      // Agrupar por data (últimos 7 dias)
-      const dias = [];
-      for (let i = 0; i < 7; i++) {
-        const d = new Date(); d.setDate(d.getDate() - i);
-        dias.push(d.toISOString().slice(0,10));
-      }
+      const diasComDoses = [...new Set(
+        _doses.filter(d => d.data && d.data.startsWith(mesAtual)).map(d => d.data)
+      )].sort().reverse();
+
+      const dosesDoMes = _doses.filter(d => d.data && d.data.startsWith(mesAtual));
+      const tomadasMes = dosesDoMes.filter(d => d.status === 'tomado').length;
+      const totalMes   = dosesDoMes.length;
+      const pctMes     = totalMes ? Math.round((tomadasMes/totalMes)*100) : null;
 
       const wrap = document.getElementById('historico-wrap');
 
-      if (!doses.length) {
-        wrap.innerHTML = `<div class="empty"><div class="icon">📋</div><p>Nenhuma dose registrada ainda.</p></div>`;
+      let html = `
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:0 16px 4px">
+          <button onclick="mudarMes(-1)" style="background:none;border:none;color:var(--gold);font-size:1.3rem;cursor:pointer;padding:8px">‹</button>
+          <div style="text-align:center">
+            <p style="font-size:.95rem;font-weight:600;color:var(--text)">${label}</p>
+            ${pctMes !== null
+              ? `<p style="font-size:.75rem;color:var(--text-2)">Adesão mensal: <strong style="color:${pctMes>=80?'var(--green)':pctMes>=50?'var(--amber)':'var(--red)'}">${pctMes}%</strong> (${tomadasMes}/${totalMes} doses)</p>`
+              : `<p style="font-size:.75rem;color:var(--text-2)">Sem registros neste mês</p>`
+            }
+          </div>
+          <button onclick="mudarMes(1)" style="background:none;border:none;color:var(--gold);font-size:1.3rem;cursor:pointer;padding:8px">›</button>
+        </div>
+        <div style="display:flex;gap:8px;padding:0 16px 12px">
+          <button onclick="gerarPDF('mensal')"  class="btn btn-outline btn-sm" style="flex:1;font-size:.72rem">📄 PDF Mensal</button>
+          <button onclick="gerarPDF('semanal')" class="btn btn-outline btn-sm" style="flex:1;font-size:.72rem">📄 PDF Semanal</button>
+        </div>`;
+
+      if (!diasComDoses.length) {
+        html += `<div class="empty"><div class="icon">📋</div><p>Sem registros em ${label}.</p></div>`;
+        wrap.innerHTML = html;
         return;
       }
 
-      let html = '';
-      for (const dia of dias) {
-        const doseDia = doses.filter(d => d.data === dia);
-        if (!doseDia.length) continue;
-
+      for (const dia of diasComDoses) {
+        const doseDia = _doses.filter(d => d.data === dia);
         const tomadas = doseDia.filter(d => d.status === 'tomado').length;
         const total   = doseDia.length;
         const pct     = Math.round((tomadas/total)*100);
@@ -109,7 +148,213 @@
           </div>`;
       }
 
-      wrap.innerHTML = html || `<div class="empty"><div class="icon">📋</div><p>Sem registros nos últimos 7 dias.</p></div>`;
+      wrap.innerHTML = html;
+    }
+
+    function mudarMes(delta) {
+      const [ano, mes] = mesAtual.split('-').map(Number);
+      const d = new Date(ano, mes - 1 + delta, 1);
+      if (d > new Date()) return;
+      mesAtual = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+      renderMes();
+    }
+
+    /* ── Geração de PDF (jsPDF + autoTable, carregados sob demanda) ── */
+    async function gerarPDF(tipo) {
+      showToast('Gerando PDF...');
+      try {
+        await carregarScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
+        await carregarScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js');
+      } catch(e) {
+        showToast('⚠ Sem conexão para gerar PDF');
+        return;
+      }
+
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+      const W = doc.internal.pageSize.getWidth();
+
+      const NAVY  = [15, 52, 96];
+      const GOLD  = [201, 168, 76];
+      const GREEN = [46, 184, 92];
+      const RED   = [220, 50, 50];
+      const AMBER = [245, 165, 30];
+      const GRAY  = [130, 140, 160];
+      const LIGHT = [245, 247, 251];
+
+      // Período
+      let labelPeriodo, dosesRel, nomeFicheiro;
+      if (tipo === 'semanal') {
+        const fim = new Date();
+        const ini = new Date(); ini.setDate(ini.getDate() - 6);
+        const di  = ini.toISOString().slice(0,10);
+        const df  = fim.toISOString().slice(0,10);
+        labelPeriodo = `Últimos 7 dias (${fmtDMY(di)} a ${fmtDMY(df)})`;
+        dosesRel     = _doses.filter(d => d.data >= di && d.data <= df);
+        nomeFicheiro = `VitaDose_Semanal_${df}`;
+      } else {
+        const [ano, mes] = mesAtual.split('-').map(Number);
+        labelPeriodo = `${MESES[mes-1]} de ${ano}`;
+        dosesRel     = _doses.filter(d => d.data && d.data.startsWith(mesAtual));
+        nomeFicheiro = `VitaDose_${mesAtual}`;
+      }
+      if (_paciente) nomeFicheiro += `_${_paciente.nome.replace(/\s+/g,'_')}`;
+
+      const tomadas = dosesRel.filter(d => d.status === 'tomado').length;
+      const total   = dosesRel.length;
+      const pct     = total ? Math.round((tomadas/total)*100) : 0;
+      const medMap  = Object.fromEntries(_meds.map(m => [m.id, m]));
+      const PERF = { adulto:'Adulto', idoso:'Idoso (60+)', pediatrico:'Pediátrico', renal:'Insuf. Renal', hepatico:'Insuf. Hepática', gestante:'Gestante' };
+
+      // ── Header ──
+      doc.setFillColor(...NAVY);
+      doc.rect(0, 0, W, 30, 'F');
+
+      doc.setTextColor(...GOLD);
+      doc.setFontSize(20);
+      doc.setFont('helvetica', 'bold');
+      doc.text('VitaDose', 14, 13);
+
+      doc.setTextColor(255,255,255);
+      doc.setFontSize(8.5);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Relatório ${tipo === 'semanal' ? 'Semanal' : 'Mensal'} de Adesão ao Tratamento`, 14, 21);
+
+      doc.setFontSize(9.5);
+      doc.setFont('helvetica', 'bold');
+      doc.text(labelPeriodo, W - 14, 17, { align: 'right' });
+
+      let y = 38;
+
+      // ── Paciente ──
+      if (_paciente) {
+        doc.setFillColor(...LIGHT);
+        doc.roundedRect(14, y - 5, W - 28, 16, 2, 2, 'F');
+        doc.setTextColor(...NAVY);
+        doc.setFontSize(9.5);
+        doc.setFont('helvetica', 'bold');
+        doc.text(_paciente.nome || '—', 20, y + 3);
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8);
+        doc.setTextColor(...GRAY);
+        doc.text(PERF[_paciente.perfil] || _paciente.perfil || '', W - 20, y + 3, { align: 'right' });
+        y += 18;
+      }
+
+      // ── Boxes de resumo ──
+      const boxW = (W - 28 - 8) / 3;
+      const boxH = 20;
+      const cRes = pct >= 80 ? GREEN : pct >= 50 ? AMBER : RED;
+      const boxes = [
+        { label: 'Adesão geral', valor: pct + '%',             cor: cRes  },
+        { label: 'Doses tomadas', valor: String(tomadas),       cor: GREEN },
+        { label: 'Doses perdidas', valor: String(total-tomadas), cor: total-tomadas > 0 ? RED : GRAY },
+      ];
+      boxes.forEach((b, i) => {
+        const bx = 14 + i*(boxW+4);
+        doc.setFillColor(...LIGHT);
+        doc.roundedRect(bx, y, boxW, boxH, 2, 2, 'F');
+        doc.setTextColor(...b.cor);
+        doc.setFontSize(16);
+        doc.setFont('helvetica', 'bold');
+        doc.text(b.valor, bx + boxW/2, y + 11, { align: 'center' });
+        doc.setTextColor(...GRAY);
+        doc.setFontSize(6.5);
+        doc.setFont('helvetica', 'normal');
+        doc.text(b.label.toUpperCase(), bx + boxW/2, y + 18, { align: 'center' });
+      });
+      y += boxH + 10;
+
+      // ── Medicamentos ──
+      if (_meds.length) {
+        doc.setTextColor(...NAVY);
+        doc.setFontSize(8.5);
+        doc.setFont('helvetica', 'bold');
+        doc.text('MEDICAMENTOS EM USO', 14, y);
+        y += 6;
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8);
+        doc.setTextColor(50, 60, 80);
+        _meds.forEach(m => {
+          doc.text(`• ${m.nome} ${m.dose}${m.unidade||''}   ${(m.horarios||[]).join(' · ')}`, 14, y);
+          y += 5.5;
+        });
+        y += 4;
+      }
+
+      // ── Tabela ──
+      doc.setTextColor(...NAVY);
+      doc.setFontSize(8.5);
+      doc.setFont('helvetica', 'bold');
+      doc.text('REGISTRO DETALHADO', 14, y);
+      y += 4;
+
+      const rows = dosesRel
+        .sort((a,b) => a.data.localeCompare(b.data) || a.horario.localeCompare(b.horario))
+        .map(d => {
+          const med = medMap[d.medicamentoId];
+          const [,mm,dd] = d.data.split('-');
+          return [
+            `${dd}/${mm}`,
+            med ? med.nome : '—',
+            med ? `${med.dose}${med.unidade||''}` : '—',
+            d.horario,
+            d.status === 'tomado' ? 'Tomado' : 'Perdido',
+          ];
+        });
+
+      doc.autoTable({
+        startY: y,
+        head  : [['Data','Medicamento','Dose','Horário','Status']],
+        body  : rows,
+        margin: { left: 14, right: 14 },
+        styles: { fontSize: 8, cellPadding: 3, textColor: [40,50,70] },
+        headStyles: { fillColor: NAVY, textColor: [255,255,255], fontStyle: 'bold', fontSize: 8 },
+        alternateRowStyles: { fillColor: [248,249,252] },
+        columnStyles: {
+          0: { cellWidth: 16 },
+          2: { cellWidth: 22 },
+          3: { cellWidth: 18 },
+          4: { cellWidth: 24 },
+        },
+        didParseCell(data) {
+          if (data.column.index === 4 && data.section === 'body') {
+            data.cell.styles.textColor = data.cell.text[0] === 'Tomado' ? GREEN : RED;
+            data.cell.styles.fontStyle = 'bold';
+          }
+        },
+      });
+
+      // ── Footer em todas as páginas ──
+      const pH = doc.internal.pageSize.getHeight();
+      const np = doc.getNumberOfPages();
+      for (let p = 1; p <= np; p++) {
+        doc.setPage(p);
+        doc.setFillColor(...NAVY);
+        doc.rect(0, pH - 12, W, 12, 'F');
+        doc.setTextColor(255,255,255);
+        doc.setFontSize(7);
+        doc.setFont('helvetica', 'normal');
+        doc.text(`Gerado pelo VitaDose · vitadose.vercel.app · ${new Date().toLocaleDateString('pt-BR')}`, 14, pH - 5);
+        doc.text(`${p} / ${np}`, W - 14, pH - 5, { align: 'right' });
+      }
+
+      doc.save(nomeFicheiro + '.pdf');
+      showToast('✓ PDF gerado com sucesso');
+    }
+
+    function carregarScript(src) {
+      return new Promise((resolve, reject) => {
+        if (document.querySelector(`script[src="${src}"]`)) { resolve(); return; }
+        const s = document.createElement('script');
+        s.src = src; s.onload = resolve; s.onerror = reject;
+        document.head.appendChild(s);
+      });
+    }
+
+    function fmtDMY(iso) {
+      const [,mm,dd] = iso.split('-');
+      return `${dd}/${mm}`;
     }
 
     document.addEventListener('DOMContentLoaded', initHistorico);

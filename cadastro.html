@@ -72,41 +72,71 @@
     <div class="card">
       <div class="card-title">Adicionar Medicamento</div>
 
+      <!-- Campos obrigatórios -->
       <div class="form-group">
         <label class="form-lbl" for="f-med-nome">Nome do medicamento *</label>
-        <input id="f-med-nome" class="form-input" type="text" placeholder="Ex: Losartana">
-      </div>
-
-      <div class="form-group">
-        <label class="form-lbl" for="f-indicacao">Indicação terapêutica</label>
-        <input id="f-indicacao" class="form-input" type="text" placeholder="Ex: Pressão arterial">
-      </div>
-
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-lbl" for="f-forma">Forma farmacêutica</label>
-          <select id="f-forma" class="form-select">
-            <option value="comprimido">Comprimido</option>
-            <option value="capsula">Cápsula</option>
-            <option value="solucao">Solução oral</option>
-            <option value="suspensao">Suspensão</option>
-            <option value="gotas">Gotas</option>
-            <option value="injetavel">Injetável</option>
-            <option value="adesivo">Adesivo</option>
-            <option value="outro">Outro</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label class="form-lbl" for="f-intervalo">Intervalo</label>
-          <select id="f-intervalo" class="form-select">
-            <option value="6">6/6h (4x/dia)</option>
-            <option value="8">8/8h (3x/dia)</option>
-            <option value="12">12/12h (2x/dia)</option>
-            <option value="24" selected>24h (1x/dia)</option>
-            <option value="48">48h (dias alternados)</option>
-            <option value="72">72h (2x semana)</option>
-          </select>
-        </div>
+        <input id="f-med-nome" class="form-input" type="text" placeholder="Ex: Losartana"
+          list="sugestoes-med" autocomplete="off">
+        <datalist id="sugestoes-med">
+          <!-- Cardiovascular -->
+          <option value="Losartana"><option value="Valsartana"><option value="Enalapril">
+          <option value="Captopril"><option value="Ramipril"><option value="Lisinopril">
+          <option value="Amlodipino"><option value="Nifedipino"><option value="Diltiazem">
+          <option value="Atenolol"><option value="Metoprolol"><option value="Carvedilol">
+          <option value="Bisoprolol"><option value="Furosemida"><option value="Hidroclorotiazida">
+          <option value="Espironolactona"><option value="Indapamida"><option value="Digoxina">
+          <option value="Ácido acetilsalicílico"><option value="Clopidogrel">
+          <option value="Warfarina"><option value="Rivaroxabana"><option value="Apixabana">
+          <!-- Lipídeos -->
+          <option value="Atorvastatina"><option value="Sinvastatina"><option value="Rosuvastatina">
+          <option value="Ezetimiba"><option value="Fenofibrato">
+          <!-- Diabetes -->
+          <option value="Metformina"><option value="Glibenclamida"><option value="Sitagliptina">
+          <option value="Empagliflozina"><option value="Dapagliflozina"><option value="Liraglutida">
+          <option value="Insulina NPH"><option value="Insulina Regular">
+          <option value="Insulina Glargina"><option value="Insulina Asparte">
+          <!-- Tireoide -->
+          <option value="Levotiroxina">
+          <!-- Gastrointestinal -->
+          <option value="Omeprazol"><option value="Pantoprazol"><option value="Esomeprazol">
+          <option value="Domperidona"><option value="Metoclopramida">
+          <!-- Psiquiátrico / Neurológico -->
+          <option value="Fluoxetina"><option value="Sertralina"><option value="Escitalopram">
+          <option value="Paroxetina"><option value="Amitriptilina"><option value="Nortriptilina">
+          <option value="Clonazepam"><option value="Diazepam"><option value="Alprazolam">
+          <option value="Risperidona"><option value="Quetiapina"><option value="Olanzapina">
+          <option value="Gabapentina"><option value="Pregabalina">
+          <option value="Levodopa + Carbidopa">
+          <!-- Analgésicos / Anti-inflamatórios -->
+          <option value="Dipirona"><option value="Paracetamol"><option value="Ibuprofeno">
+          <option value="Naproxeno"><option value="Diclofenaco"><option value="Meloxicam">
+          <option value="Celecoxibe"><option value="Tramadol"><option value="Codeína">
+          <!-- Antibióticos -->
+          <option value="Amoxicilina"><option value="Amoxicilina + Clavulanato">
+          <option value="Azitromicina"><option value="Claritromicina"><option value="Cefalexina">
+          <option value="Ciprofloxacino"><option value="Levofloxacino"><option value="Doxiciclina">
+          <option value="Metronidazol"><option value="Nitrofurantoína">
+          <!-- Corticoides -->
+          <option value="Prednisona"><option value="Prednisolona"><option value="Dexametasona">
+          <!-- Anticoncepcionais -->
+          <option value="Anticoncepcional oral combinado">
+          <option value="Desogestrel"><option value="Levonorgestrel">
+          <!-- Osteoporose -->
+          <option value="Alendronato"><option value="Ibandronato"><option value="Raloxifeno">
+          <option value="Denosumabe">
+          <!-- Suplementos -->
+          <option value="Vitamina D3"><option value="Carbonato de cálcio">
+          <option value="Sulfato ferroso"><option value="Ácido fólico">
+          <option value="Vitamina B12"><option value="Colecalciferol">
+          <!-- Respiratório / Alérgico -->
+          <option value="Loratadina"><option value="Cetirizina"><option value="Fexofenadina">
+          <option value="Salbutamol"><option value="Budesonida"><option value="Montelucaste">
+          <!-- Outros comuns -->
+          <option value="Alopurinol"><option value="Colchicina">
+          <option value="Finasterida"><option value="Tamsulosina"><option value="Sildenafila">
+          <option value="Metotrexato"><option value="Azatioprina">
+          <option value="Levamisol"><option value="Hidroxicloroquina">
+        </datalist>
       </div>
 
       <div class="form-row">
@@ -117,14 +147,42 @@
         <div class="form-group">
           <label class="form-lbl" for="f-unidade">Unidade</label>
           <select id="f-unidade" class="form-select">
-            <option value="mg">mg</option>
-            <option value="mcg">mcg</option>
-            <option value="g">g</option>
-            <option value="mL">mL</option>
-            <option value="UI">UI</option>
-            <option value="comp">comp.</option>
-            <option value="cap">cáp.</option>
-            <option value="gts">gts</option>
+            <optgroup label="— Comuns —">
+              <option value="mg">mg</option>
+              <option value="mcg">mcg</option>
+              <option value="g">g</option>
+              <option value="mL">mL</option>
+              <option value="UI">UI</option>
+              <option value="comp">comp.</option>
+              <option value="cap">cáp.</option>
+              <option value="gts">gts</option>
+            </optgroup>
+            <optgroup label="— Concentração —">
+              <option value="mg/mL">mg/mL</option>
+              <option value="mg/5mL">mg/5mL</option>
+              <option value="UI/mL">UI/mL</option>
+              <option value="mEq/mL">mEq/mL</option>
+              <option value="%">%</option>
+              <option value="mg/g">mg/g</option>
+            </optgroup>
+            <optgroup label="— Dose / Tempo —">
+              <option value="mg/dose">mg/dose</option>
+              <option value="mcg/dose">mcg/dose</option>
+              <option value="mg/hora">mg/hora</option>
+              <option value="mcg/hora">mcg/hora</option>
+              <option value="mU">mU (miliunidades)</option>
+            </optgroup>
+            <optgroup label="— Peso / Área —">
+              <option value="mg/kg">mg/kg</option>
+              <option value="mcg/kg">mcg/kg</option>
+              <option value="mg/m²">mg/m²</option>
+            </optgroup>
+            <optgroup label="— Outros —">
+              <option value="mEq">mEq</option>
+              <option value="UFC">UFC</option>
+              <option value="nmol">nmol</option>
+              <option value="mmol">mmol</option>
+            </optgroup>
           </select>
         </div>
       </div>
@@ -140,10 +198,10 @@
         <p class="form-hint">Adicione um horário por vez (ex: 08:00, 20:00)</p>
       </div>
 
-      <!-- Estoque -->
+      <!-- Estoque (sempre visível — funcionalidade principal) -->
       <div class="form-row">
         <div class="form-group">
-          <label class="form-lbl" for="f-qtd-caixa">Unidades na caixa</label>
+          <label class="form-lbl" for="f-qtd-caixa">Comprimidos na caixa</label>
           <input id="f-qtd-caixa" class="form-input mono" type="number" min="0" placeholder="Ex: 30">
         </div>
         <div class="form-group">
@@ -152,13 +210,79 @@
         </div>
       </div>
 
+      <!-- Duração do tratamento -->
       <div class="form-group">
-        <label class="form-lbl" for="f-limiar">Alerta de estoque baixo (unidades)</label>
-        <input id="f-limiar" class="form-input mono" type="number" min="0" placeholder="Auto">
-        <p class="form-hint" id="limiar-hint"></p>
+        <label class="form-lbl" for="f-duracao">
+          Duração do tratamento (dias)
+          <span style="font-size:.68rem;font-weight:400;color:var(--text-2)">— opcional</span>
+        </label>
+        <input id="f-duracao" class="form-input mono" type="number" min="1" max="365"
+          placeholder="Deixe em branco para uso contínuo" inputmode="numeric" oninput="calcEstoque()">
+        <p class="form-hint" id="duracao-hint">Sem duração = medicamento de uso contínuo</p>
       </div>
 
-      <button class="btn btn-gold btn-full" onclick="salvarMedicamento()">Adicionar Medicamento</button>
+      <!-- Toggle campos avançados -->
+      <button type="button" id="btn-avancado" onclick="toggleAvancado()"
+        style="background:none;border:none;color:var(--gold);font-size:.8rem;cursor:pointer;padding:4px 0 12px;letter-spacing:.04em;text-align:left;width:100%">
+        ▸ Configurações avançadas
+      </button>
+
+      <!-- Campos avançados (colapsados por padrão) -->
+      <div id="sec-avancado" style="display:none">
+
+        <div class="form-group">
+          <label class="form-lbl" for="f-indicacao">Indicação terapêutica</label>
+          <input id="f-indicacao" class="form-input" type="text" placeholder="Ex: Pressão arterial">
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-lbl" for="f-forma">Forma farmacêutica</label>
+            <select id="f-forma" class="form-select">
+              <option value="comprimido">Comprimido</option>
+              <option value="capsula">Cápsula</option>
+              <option value="solucao">Solução oral</option>
+              <option value="suspensao">Suspensão</option>
+              <option value="gotas">Gotas</option>
+              <option value="injetavel">Injetável</option>
+              <option value="adesivo">Adesivo</option>
+              <option value="outro">Outro</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-lbl" for="f-intervalo">Intervalo</label>
+            <select id="f-intervalo" class="form-select">
+              <optgroup label="— Diário —">
+                <option value="6">6/6h (4x/dia)</option>
+                <option value="8">8/8h (3x/dia)</option>
+                <option value="12">12/12h (2x/dia)</option>
+                <option value="24" selected>24h (1x/dia)</option>
+              </optgroup>
+              <optgroup label="— Dias alternados —">
+                <option value="48">48h (dias alternados)</option>
+                <option value="72">72h (2x/semana)</option>
+              </optgroup>
+              <optgroup label="— Semanal / Mensal —">
+                <option value="168">1x por semana (7 dias)</option>
+                <option value="336">Quinzenal (14 dias)</option>
+                <option value="504">A cada 21 dias</option>
+                <option value="672">Mensal (28 dias)</option>
+                <option value="720">Mensal (30 dias)</option>
+              </optgroup>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-lbl" for="f-limiar">Alerta de estoque baixo (unidades)</label>
+          <input id="f-limiar" class="form-input mono" type="number" min="0" placeholder="Auto">
+          <p class="form-hint" id="limiar-hint"></p>
+        </div>
+
+      </div>
+
+      <button id="btn-salvar-med" class="btn btn-gold btn-full" onclick="salvarMedicamento()">Adicionar Medicamento</button>
+      <button id="btn-cancelar-ed" class="btn btn-full" onclick="cancelarEdicao()" style="display:none;margin-top:8px;background:var(--border);color:var(--text-2)">✕ Cancelar edição</button>
     </div>
 
     <!-- Ir para home -->
@@ -191,6 +315,12 @@
         <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
       </svg>
       Histórico
+    </a>
+    <a class="nav-btn" href="diario.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
+      </svg>
+      Diário
     </a>
     <a class="nav-btn" href="perfil.html">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">

@@ -31,15 +31,17 @@ async function init() {
   // Avatar
   document.getElementById('avatar').textContent = iniciaisNome(paciente.nome);
 
-  // Medicamentos ativos
+  // Medicamentos ativos (exclui tratamentos vencidos)
   const todos = await dbGetByIndex('medicamentos', 'pacienteId', pid);
-  medicamentos = todos.filter(m => m.ativo !== false);
+  const hj = hoje();
+  medicamentos = todos.filter(m => m.ativo !== false && (!m.dataFim || m.dataFim >= hj));
 
   // Doses de hoje
   const allDoses = await dbGetAll('doses');
   dosesHoje = allDoses.filter(d => d.data === hoje());
 
   await render();
+  iniciarNotificacoes(medicamentos);
 }
 
 /* ── Render tudo ── */
@@ -105,7 +107,7 @@ function renderNextDose() {
         <p class="nd-name">${proxima.medNome} <span class="mono">${proxima.dose}</span></p>
         <p class="nd-time mono">${proxima.horario}</p>
       </div>
-      <button class="btn btn-gold btn-sm" onclick="abrirConfirmar(${proxima.medId}, '${proxima.horario}', '${proxima.medNome}')">
+      <button class="btn btn-gold btn-sm" onclick="abrirConfirmar(${proxima.medId}, '${proxima.horario}', '${proxima.medNome.replace(/'/g, "\\'")}')">
         Confirmar
       </button>
     </div>`;
@@ -187,7 +189,7 @@ function buildMedCard(med) {
   const temPendente = statuses.some(s => s === 'pendente');
   const proxH = horarios.find(h => getDoseStatus(med.id, h) === 'pendente');
   const btnConfirmar = temPendente
-    ? `<button class="btn btn-primary btn-sm" style="margin-top:8px" onclick="abrirConfirmar(${med.id},'${proxH}','${med.nome}')">Confirmar ${proxH}</button>`
+    ? `<button class="btn btn-primary btn-sm" style="margin-top:8px" onclick="abrirConfirmar(${med.id},'${proxH}','${med.nome.replace(/'/g, "\\'")}')">Confirmar ${proxH}</button>`
     : '';
 
   return `
@@ -209,6 +211,13 @@ function buildMedCard(med) {
           </div>
           <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
             ${badgeHtml}
+            ${(() => {
+              const d = diasParaFim(med.dataFim);
+              if (d === null) return '';
+              if (d === 0) return `<span class="badge badge-red">Último dia</span>`;
+              if (d <= 3)  return `<span class="badge badge-red">Termina em ${d}d</span>`;
+              return `<span class="badge badge-amber">Termina em ${d}d</span>`;
+            })()}
             <div class="horarios">${horariosHtml}</div>
           </div>
           ${btnConfirmar}
@@ -216,6 +225,13 @@ function buildMedCard(med) {
       </div>
       ${alertaHtml}
     </div>`;
+}
+
+function diasParaFim(dataFim) {
+  if (!dataFim) return null;
+  const hoje_ms = new Date(hoje() + 'T12:00:00').getTime();
+  const fim_ms  = new Date(dataFim + 'T12:00:00').getTime();
+  return Math.round((fim_ms - hoje_ms) / 86400000);
 }
 
 function getStripeColor(med) {
