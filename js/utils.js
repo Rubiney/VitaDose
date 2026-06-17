@@ -128,8 +128,8 @@ function diasRestantes(med) {
     ['android', 'ios'].forEach(id => {
       document.getElementById('vd-pnl-' + id).style.display = id === t ? 'block' : 'none';
       const btn = document.getElementById('vd-tab-' + id);
-      btn.style.background = id === t ? 'rgba(255,255,255,.18)' : 'rgba(255,255,255,.04)';
-      btn.style.color      = id === t ? '#fff' : 'rgba(255,255,255,.55)';
+      btn.style.background = id === t ? '#C9A84C' : 'transparent';
+      btn.style.color      = id === t ? '#0F3460' : 'rgba(240,234,214,.55)';
     });
   };
 
@@ -137,75 +137,115 @@ function diasRestantes(med) {
     const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
 
     const passo = (lista) => lista.map((s, i) =>
-      `<div style="display:flex;gap:11px;align-items:flex-start;${i < lista.length - 1 ? 'margin-bottom:12px' : ''}">
-        <div style="min-width:22px;height:22px;border-radius:50%;background:rgba(201,168,76,.2);color:#C9A84C;font-size:.68rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px">${i + 1}</div>
-        <p style="font-size:.84rem;color:rgba(255,255,255,.82);line-height:1.55;margin:0">${s}</p>
+      `<div style="display:flex;gap:13px;align-items:flex-start;${i < lista.length - 1 ? 'margin-bottom:14px' : ''}">
+        <div style="min-width:28px;height:28px;border-radius:50%;background:#C9A84C;color:#0F3460;font-size:.8rem;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px">${i + 1}</div>
+        <p style="font-size:.93rem;color:#f0ead6;line-height:1.5;margin:0;padding-top:4px">${s}</p>
       </div>`
     ).join('');
 
     const stAndroid = [
-      'Abra este link no <strong>Google Chrome</strong>',
-      'Toque nos <strong>3 pontos ⋮</strong> (canto superior direito)',
+      'Toque nos <strong>⋮</strong> (3 pontos) no canto superior direito do Chrome',
       'Toque em <strong>"Adicionar à tela inicial"</strong>',
       'Confirme tocando em <strong>"Adicionar"</strong>',
+      'Pronto! Abra o VitaDose pela tela inicial do celular',
     ];
     const stIOS = [
       'Abra este link no <strong>Safari</strong> (não funciona no Chrome do iPhone)',
-      'Toque no ícone de <strong>compartilhar ↑</strong> na barra inferior',
+      'Toque no ícone <strong>□↑</strong> (compartilhar) na barra inferior',
       'Role e toque em <strong>"Adicionar à Tela de Início"</strong>',
-      'Toque em <strong>"Adicionar"</strong> no canto superior direito',
+      'Pronto! Abra o VitaDose pela tela inicial do iPhone',
     ];
 
     const wall = document.createElement('div');
     wall.id = 'vd-wall';
-    wall.style.cssText = 'position:fixed;inset:0;z-index:9999;background:linear-gradient(160deg,#0F3460 0%,#0b1e3d 100%);display:flex;flex-direction:column;align-items:center;overflow-y:auto;font-family:"DM Sans",sans-serif;-webkit-font-smoothing:antialiased';
+    wall.style.cssText = 'position:fixed;inset:0;z-index:9999;background:#0F3460;display:block;overflow-y:auto;-webkit-overflow-scrolling:touch;font-family:"DM Sans",sans-serif;-webkit-font-smoothing:antialiased';
 
     wall.innerHTML = `
-      <div style="width:100%;background:rgba(0,0,0,.22);padding:15px 22px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
-        <span style="font-size:1.2rem;font-weight:700;letter-spacing:-.3px"><span style="color:#C9A84C">Vita</span><span style="color:#fff">Dose</span></span>
-        <span style="font-size:.6rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(201,168,76,.6)">Instalação necessária</span>
-      </div>
+      <div style="width:100%;max-width:440px;margin:0 auto;padding:44px 24px 64px;box-sizing:border-box">
 
-      <div style="text-align:center;padding:36px 28px 22px;max-width:360px">
-        <div style="font-size:2.8rem;margin-bottom:16px">📲</div>
-        <h1 style="font-size:1.25rem;font-weight:700;color:#fff;margin:0 0 10px;line-height:1.4">Instale o app para começar</h1>
-        <p style="font-size:.85rem;color:rgba(255,255,255,.58);line-height:1.65;margin:0">
-          VitaDose é gratuito e instala direto no celular, sem precisar de loja de aplicativos. Leva menos de 10 segundos.
-        </p>
-      </div>
-
-      <div style="display:flex;border:1px solid rgba(255,255,255,.12);border-radius:8px;overflow:hidden;margin-bottom:18px;width:calc(100% - 48px);max-width:320px;background:rgba(255,255,255,.04)">
-        <button id="vd-tab-android" onclick="_vdTab('android')"
-          style="flex:1;border:none;padding:10px 6px;font-size:.8rem;font-weight:600;cursor:pointer;font-family:inherit;background:${!isIOS ? 'rgba(255,255,255,.18)' : 'none'};color:${!isIOS ? '#fff' : 'rgba(255,255,255,.5)'}">
-          🤖 Android
-        </button>
-        <button id="vd-tab-ios" onclick="_vdTab('ios')"
-          style="flex:1;border:none;padding:10px 6px;font-size:.8rem;font-weight:600;cursor:pointer;font-family:inherit;background:${isIOS ? 'rgba(255,255,255,.18)' : 'none'};color:${isIOS ? '#fff' : 'rgba(255,255,255,.5)'}">
-          🍎 iPhone / iPad
-        </button>
-      </div>
-
-      <div id="vd-pnl-android" style="display:${!isIOS ? 'block' : 'none'};width:calc(100% - 48px);max-width:320px">
-        <button id="vd-btn-nativo" onclick="_vdInstalar()"
-          style="display:none;width:100%;background:#C9A84C;color:#0F3460;border:none;padding:14px;border-radius:10px;font-size:.95rem;font-weight:700;cursor:pointer;font-family:inherit;align-items:center;justify-content:center;gap:8px;margin-bottom:16px">
-          ✓ Instalar VitaDose agora
-        </button>
-        <div style="background:rgba(255,255,255,.07);border-radius:10px;padding:16px 15px">
-          <p style="font-size:.66rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:rgba(201,168,76,.7);margin:0 0 13px">Passo a passo — Chrome</p>
-          ${passo(stAndroid)}
+        <!-- Logo -->
+        <div style="text-align:center;margin-bottom:30px">
+          <div style="font-size:2.6rem;margin-bottom:10px">💊</div>
+          <div style="font-size:1.7rem;font-weight:800;letter-spacing:-.5px">
+            <span style="color:#f0ead6">Vita</span><span style="color:#C9A84C">Dose</span>
+          </div>
         </div>
-      </div>
 
-      <div id="vd-pnl-ios" style="display:${isIOS ? 'block' : 'none'};width:calc(100% - 48px);max-width:320px">
-        <div style="background:rgba(255,255,255,.07);border-radius:10px;padding:16px 15px">
-          <p style="font-size:.66rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:rgba(201,168,76,.7);margin:0 0 13px">Passo a passo — Safari</p>
-          ${passo(stIOS)}
+        <!-- Headline emocional -->
+        <div style="text-align:center;margin-bottom:22px">
+          <h1 style="font-size:1.55rem;font-weight:800;color:#f0ead6;line-height:1.3;margin:0 0 12px">
+            Cuide de quem você ama.<br>Sem complicação.
+          </h1>
+          <p style="font-size:.9rem;color:rgba(240,234,214,.7);line-height:1.6;margin:0">
+            VitaDose é gratuito e instala em 10 segundos — sem cadastro.
+          </p>
         </div>
-      </div>
 
-      <p style="margin-top:26px;margin-bottom:40px;font-size:.68rem;color:rgba(255,255,255,.25);text-align:center;padding:0 24px">
-        Gratuito · Sem cadastro · Seus dados ficam no celular
-      </p>
+        <!-- Trust bar -->
+        <div style="display:flex;justify-content:center;gap:16px;background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.28);border-radius:12px;padding:13px 10px;margin-bottom:24px">
+          <span style="font-size:.82rem;color:#f0ead6;font-weight:600">✅ Gratuito</span>
+          <span style="font-size:.82rem;color:#f0ead6;font-weight:600">🔒 Privado</span>
+          <span style="font-size:.82rem;color:#f0ead6;font-weight:600">📴 Offline</span>
+        </div>
+
+        <!-- Micro-benefícios -->
+        <div style="margin-bottom:26px">
+          <p style="font-size:.68rem;font-weight:700;color:rgba(240,234,214,.4);text-transform:uppercase;letter-spacing:1.2px;text-align:center;margin:0 0 12px">O que você vai ter</p>
+          <div style="display:flex;flex-direction:column;gap:9px">
+            <div style="display:flex;align-items:center;gap:13px;background:rgba(240,234,214,.06);border-radius:10px;padding:12px 14px">
+              <span style="font-size:1.2rem">💊</span>
+              <span style="font-size:.88rem;color:#f0ead6">Alertas no horário certo</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:13px;background:rgba(240,234,214,.06);border-radius:10px;padding:12px 14px">
+              <span style="font-size:1.2rem">📦</span>
+              <span style="font-size:.88rem;color:#f0ead6">Aviso quando o remédio acabar</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:13px;background:rgba(240,234,214,.06);border-radius:10px;padding:12px 14px">
+              <span style="font-size:1.2rem">🥗</span>
+              <span style="font-size:.88rem;color:#f0ead6">Alertas de alimentação</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Toggle Android / iPhone -->
+        <div style="display:flex;background:rgba(240,234,214,.07);border:1px solid rgba(240,234,214,.12);border-radius:10px;padding:4px;margin-bottom:18px">
+          <button id="vd-tab-android" onclick="_vdTab('android')"
+            style="flex:1;border:none;padding:11px;border-radius:8px;font-size:.88rem;font-weight:700;cursor:pointer;font-family:inherit;background:${!isIOS ? '#C9A84C' : 'transparent'};color:${!isIOS ? '#0F3460' : 'rgba(240,234,214,.55)'}">
+            Android
+          </button>
+          <button id="vd-tab-ios" onclick="_vdTab('ios')"
+            style="flex:1;border:none;padding:11px;border-radius:8px;font-size:.88rem;font-weight:600;cursor:pointer;font-family:inherit;background:${isIOS ? '#C9A84C' : 'transparent'};color:${isIOS ? '#0F3460' : 'rgba(240,234,214,.55)'}">
+            iPhone / iPad
+          </button>
+        </div>
+
+        <!-- Painel Android -->
+        <div id="vd-pnl-android" style="display:${!isIOS ? 'block' : 'none'};margin-bottom:16px">
+          <button id="vd-btn-nativo" onclick="_vdInstalar()"
+            style="display:none;width:100%;background:#C9A84C;color:#0F3460;border:none;padding:14px;border-radius:10px;font-size:.95rem;font-weight:700;cursor:pointer;font-family:inherit;align-items:center;justify-content:center;gap:8px;margin-bottom:14px">
+            ✓ Instalar VitaDose agora
+          </button>
+          <div style="background:rgba(240,234,214,.06);border-radius:10px;padding:18px 16px">
+            <p style="font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:rgba(201,168,76,.7);margin:0 0 16px">Passo a passo — Chrome</p>
+            ${passo(stAndroid)}
+          </div>
+        </div>
+
+        <!-- Painel iOS -->
+        <div id="vd-pnl-ios" style="display:${isIOS ? 'block' : 'none'};margin-bottom:16px">
+          <div style="background:rgba(240,234,214,.06);border-radius:10px;padding:18px 16px">
+            <p style="font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:rgba(201,168,76,.7);margin:0 0 16px">Passo a passo — Safari</p>
+            ${passo(stIOS)}
+          </div>
+        </div>
+
+        <!-- CTA pós-instalação -->
+        <button onclick="document.getElementById('vd-wall').remove()"
+          style="width:100%;background:#C9A84C;color:#0F3460;border:none;padding:17px;border-radius:12px;font-size:1rem;font-weight:800;cursor:pointer;font-family:inherit;letter-spacing:.3px;box-shadow:0 4px 20px rgba(201,168,76,.3)">
+          Já instalei — Abrir VitaDose →
+        </button>
+
+      </div>
     `;
 
     document.body.appendChild(wall);
