@@ -128,8 +128,8 @@ function diasRestantes(med) {
     ['android', 'ios'].forEach(id => {
       document.getElementById('vd-pnl-' + id).style.display = id === t ? 'block' : 'none';
       const btn = document.getElementById('vd-tab-' + id);
-      btn.style.background = id === t ? 'rgba(255,255,255,.18)' : 'none';
-      btn.style.color      = id === t ? '#fff' : 'rgba(255,255,255,.5)';
+      btn.style.background = id === t ? 'rgba(255,255,255,.18)' : 'rgba(255,255,255,.04)';
+      btn.style.color      = id === t ? '#fff' : 'rgba(255,255,255,.55)';
     });
   };
 
@@ -174,7 +174,7 @@ function diasRestantes(med) {
         </p>
       </div>
 
-      <div style="display:flex;border:1px solid rgba(255,255,255,.12);border-radius:8px;overflow:hidden;margin-bottom:18px;width:calc(100% - 48px);max-width:320px">
+      <div style="display:flex;border:1px solid rgba(255,255,255,.12);border-radius:8px;overflow:hidden;margin-bottom:18px;width:calc(100% - 48px);max-width:320px;background:rgba(255,255,255,.04)">
         <button id="vd-tab-android" onclick="_vdTab('android')"
           style="flex:1;border:none;padding:10px 6px;font-size:.8rem;font-weight:600;cursor:pointer;font-family:inherit;background:${!isIOS ? 'rgba(255,255,255,.18)' : 'none'};color:${!isIOS ? '#fff' : 'rgba(255,255,255,.5)'}">
           🤖 Android
