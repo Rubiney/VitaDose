@@ -150,8 +150,8 @@ function diasRestantes(med) {
       'Pronto! Abra o VitaDose pela tela inicial do celular',
     ];
     const stIOS = [
-      'Abra este link no <strong>Safari</strong> (não funciona no Chrome do iPhone)',
-      'Toque no ícone <strong>□↑</strong> (compartilhar) na barra inferior',
+      'Abra este link no <strong>Safari</strong> — não funciona no Chrome do iPhone',
+      'Toque no ícone <strong>□↑</strong> (compartilhar) na barra inferior do Safari',
       'Role e toque em <strong>"Adicionar à Tela de Início"</strong>',
       'Pronto! Abra o VitaDose pela tela inicial do iPhone',
     ];
@@ -177,7 +177,7 @@ function diasRestantes(med) {
             Cuide de quem você ama.<br>Sem complicação.
           </h1>
           <p style="font-size:.9rem;color:rgba(240,234,214,.7);line-height:1.6;margin:0">
-            VitaDose é gratuito e instala em 10 segundos — sem cadastro.
+            VitaDose é gratuito, sem cadastro e instala em 10 segundos — sem loja de apps.
           </p>
         </div>
 
@@ -193,16 +193,16 @@ function diasRestantes(med) {
           <p style="font-size:.68rem;font-weight:700;color:rgba(240,234,214,.4);text-transform:uppercase;letter-spacing:1.2px;text-align:center;margin:0 0 12px">O que você vai ter</p>
           <div style="display:flex;flex-direction:column;gap:9px">
             <div style="display:flex;align-items:center;gap:13px;background:rgba(240,234,214,.06);border-radius:10px;padding:12px 14px">
-              <span style="font-size:1.2rem">💊</span>
-              <span style="font-size:.88rem;color:#f0ead6">Alertas no horário certo</span>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#C9A84C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2v-4M9 21H5a2 2 0 0 1-2-2v-4m0 0h18"/></svg>
+              <div><p style="font-size:.88rem;color:#f0ead6;margin:0;font-weight:600">Alertas no horário certo</p><p style="font-size:.75rem;color:rgba(240,234,214,.55);margin:0">Nunca mais esqueça uma dose</p></div>
             </div>
             <div style="display:flex;align-items:center;gap:13px;background:rgba(240,234,214,.06);border-radius:10px;padding:12px 14px">
-              <span style="font-size:1.2rem">📦</span>
-              <span style="font-size:.88rem;color:#f0ead6">Aviso quando o remédio acabar</span>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#C9A84C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+              <div><p style="font-size:.88rem;color:#f0ead6;margin:0;font-weight:600">Aviso quando o remédio acabar</p><p style="font-size:.75rem;color:rgba(240,234,214,.55);margin:0">Estoque monitorado em tempo real</p></div>
             </div>
             <div style="display:flex;align-items:center;gap:13px;background:rgba(240,234,214,.06);border-radius:10px;padding:12px 14px">
-              <span style="font-size:1.2rem">🥗</span>
-              <span style="font-size:.88rem;color:#f0ead6">Alertas de alimentação</span>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#C9A84C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              <div><p style="font-size:.88rem;color:#f0ead6;margin:0;font-weight:600">Alertas de alimentação</p><p style="font-size:.75rem;color:rgba(240,234,214,.55);margin:0">Saiba o que evitar com cada remédio</p></div>
             </div>
           </div>
         </div>
