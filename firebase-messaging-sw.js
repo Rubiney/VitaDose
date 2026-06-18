@@ -2,12 +2,12 @@ importScripts('https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js
 importScripts('https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging-compat.js');
 
 firebase.initializeApp({
-  apiKey:            "SUBSTITUIR_API_KEY",
-  authDomain:        "SUBSTITUIR_PROJECT_ID.firebaseapp.com",
-  projectId:         "SUBSTITUIR_PROJECT_ID",
-  storageBucket:     "SUBSTITUIR_PROJECT_ID.appspot.com",
-  messagingSenderId: "SUBSTITUIR_SENDER_ID",
-  appId:             "SUBSTITUIR_APP_ID"
+  apiKey:            "AIzaSyDB80c9ambFWPz8qwO5fP8AZ4oNKS3imjg",
+  authDomain:        "vitadose-d5522.firebaseapp.com",
+  projectId:         "vitadose-d5522",
+  storageBucket:     "vitadose-d5522.firebasestorage.app",
+  messagingSenderId: "695847450957",
+  appId:             "1:695847450957:web:5ad11988f77c92dcec5f04"
 });
 
 const messaging = firebase.messaging();
