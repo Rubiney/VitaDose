@@ -1,5 +1,14 @@
 import crypto from 'crypto';
 
+function normalizarChave(raw) {
+  const base64 = raw
+    .replace(/-----BEGIN PRIVATE KEY-----/g, '')
+    .replace(/-----END PRIVATE KEY-----/g, '')
+    .replace(/\\n/g, '').replace(/\r/g, '').replace(/\n/g, '').replace(/\s/g, '');
+  const linhas = base64.match(/.{1,64}/g) || [];
+  return `-----BEGIN PRIVATE KEY-----\n${linhas.join('\n')}\n-----END PRIVATE KEY-----\n`;
+}
+
 function criarJWT(clientEmail, privateKey) {
   const now    = Math.floor(Date.now() / 1000);
   const header  = Buffer.from(JSON.stringify({ alg: 'RS256', typ: 'JWT' })).toString('base64url');
@@ -96,7 +105,7 @@ export default async function handler(req, res) {
 
   const projectId   = process.env.FIREBASE_PROJECT_ID;
   const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
-  const privateKey  = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n');
+  const privateKey  = normalizarChave(process.env.FIREBASE_PRIVATE_KEY || '');
 
   if (!projectId || !clientEmail || !privateKey) {
     return res.status(500).json({ error: 'Credenciais Firebase ausentes' });
