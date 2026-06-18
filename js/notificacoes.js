@@ -71,5 +71,8 @@ async function iniciarNotificacoes(meds) {
   const ok = await solicitarPermissao();
   await salvarAgendaSW(meds);
   await registrarSync();
-  if (ok) agendarLocais(meds);
+  if (ok) {
+    agendarLocais(meds);
+    iniciarFirebasePush(meds);
+  }
 }
