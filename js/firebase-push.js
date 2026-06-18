@@ -9,7 +9,7 @@ const _FB_CONFIG = {
   appId:             "1:695847450957:web:5ad11988f77c92dcec5f04"
 };
 
-const _VAPID_KEY = "SUBSTITUIR_VAPID_KEY";
+const _VAPID_KEY = "BNKfpA-hNeSGCVZg8W91nM8GUnws52RArE5H7ACmb5SP4iEMdXdp7exy-CoFffTgN1VdRv0DOhzvyVu5tbvMvEQ";
 
 function _deviceId() {
   let id = localStorage.getItem('vd_device_id');
