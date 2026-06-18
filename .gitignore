@@ -8,3 +8,5 @@ diadose_v2.png
 *.txt
 *firebase-adminsdk*.json
 *.serviceAccount.json
+img/
+Agulhas/
