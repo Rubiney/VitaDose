@@ -6,3 +6,5 @@ card-*.png
 leao.png
 diadose_v2.png
 *.txt
+*firebase-adminsdk*.json
+*.serviceAccount.json
