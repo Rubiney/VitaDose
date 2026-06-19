@@ -4,6 +4,7 @@ let pacienteAtual  = null;
 let medHorarios    = [];
 let _editandoMedId = null;
 let _fotoBase64    = null;
+let isManipulado   = false;
 
 /* ── Init ── */
 async function init() {
@@ -174,11 +175,28 @@ async function editarMed(id) {
 
   _editandoMedId = id;
 
-  document.getElementById('f-med-nome').value  = m.nome       || '';
+  if (m.manipulado && m.componentes?.length) {
+    // ── modo manipulado
+    if (!isManipulado) toggleManipulado();
+    const apelido = m.nome.startsWith('Manipulado: ') ? '' : m.nome;
+    document.getElementById('f-manip-apelido').value = apelido;
+    const rows = document.querySelectorAll('#sec-manipulado .comp-row');
+    m.componentes.forEach((comp, i) => {
+      if (!rows[i]) return;
+      rows[i].querySelector('.comp-nome').value    = comp.nome;
+      rows[i].querySelector('.comp-dose').value    = comp.dose;
+      rows[i].querySelector('.comp-unidade').value = comp.unidade || 'mg';
+    });
+  } else {
+    // ── modo simples
+    if (isManipulado) toggleManipulado();
+    document.getElementById('f-med-nome').value  = m.nome      || '';
+    document.getElementById('f-dose').value      = m.dose      || '';
+    document.getElementById('f-unidade').value   = m.unidade   || 'mg';
+  }
+
   document.getElementById('f-indicacao').value = m.indicacao  || '';
   document.getElementById('f-forma').value     = m.forma      || 'comprimido';
-  document.getElementById('f-dose').value      = m.dose       || '';
-  document.getElementById('f-unidade').value   = m.unidade    || 'mg';
   document.getElementById('f-intervalo').value = m.intervalo  || 24;
   document.getElementById('f-qtd-caixa').value = m.qtdCaixa   ?? '';
   document.getElementById('f-qtd-atual').value = m.qtdAtual   ?? '';
@@ -188,11 +206,10 @@ async function editarMed(id) {
   medHorarios = [...(m.horarios || [])];
   renderHorarioTags();
 
-  document.getElementById('btn-salvar-med').textContent  = '✓ Salvar Alterações';
+  document.getElementById('btn-salvar-med').textContent    = '✓ Salvar Alterações';
   document.getElementById('btn-cancelar-ed').style.display = '';
 
-  // Scroll até o formulário
-  document.getElementById('f-med-nome').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  document.getElementById('btn-manip-toggle').scrollIntoView({ behavior: 'smooth', block: 'center' });
   showToast('Editando: ' + m.nome);
 }
 
@@ -205,23 +222,44 @@ function cancelarEdicao() {
 async function salvarMedicamento() {
   if (!pacienteAtual) { showToast('⚠ Salve o paciente primeiro'); return; }
 
-  const nome        = document.getElementById('f-med-nome').value.trim();
+  let nome, dose, unidade, componentes = null;
+
+  if (isManipulado) {
+    // coleta componentes
+    const rows = document.querySelectorAll('#sec-manipulado .comp-row');
+    componentes = [];
+    rows.forEach(row => {
+      const n = row.querySelector('.comp-nome').value.trim();
+      const d = row.querySelector('.comp-dose').value.trim();
+      const u = row.querySelector('.comp-unidade').value;
+      if (n) componentes.push({ nome: n, dose: d, unidade: u });
+    });
+    if (!componentes.length) { showToast('⚠ Informe pelo menos 1 princípio ativo'); return; }
+    const apelido = document.getElementById('f-manip-apelido').value.trim();
+    nome    = apelido || 'Manipulado: ' + componentes.map(c => c.nome).join(' + ');
+    dose    = '1';
+    unidade = 'cáp.';
+  } else {
+    nome    = document.getElementById('f-med-nome').value.trim();
+    dose    = document.getElementById('f-dose').value.trim();
+    unidade = document.getElementById('f-unidade').value;
+    if (!nome) { showToast('⚠ Informe o nome do medicamento'); return; }
+  }
+
   const indicacao   = document.getElementById('f-indicacao').value.trim();
-  const forma       = document.getElementById('f-forma').value;
-  const dose        = document.getElementById('f-dose').value.trim();
-  const unidade     = document.getElementById('f-unidade').value;
+  const forma       = isManipulado ? 'capsula' : document.getElementById('f-forma').value;
   const intervalo   = parseInt(document.getElementById('f-intervalo').value) || 24;
   const qtdCaixa    = parseInt(document.getElementById('f-qtd-caixa').value) || 0;
   const qtdAtual    = parseInt(document.getElementById('f-qtd-atual').value) || 0;
   const limiar      = parseInt(document.getElementById('f-limiar').value)    || 0;
   const duracaoDias = parseInt(document.getElementById('f-duracao').value)   || 0;
 
-  if (!nome)               { showToast('⚠ Informe o nome do medicamento'); return; }
   if (!medHorarios.length) { showToast('⚠ Adicione pelo menos um horário'); return; }
 
+  const extras = isManipulado ? { manipulado: true, componentes } : {};
+
   if (_editandoMedId) {
-    // ── Modo edição: preserva id, pacienteId, criadoEm e dataInicio original
-    const original = await dbGet('medicamentos', _editandoMedId);
+    const original   = await dbGet('medicamentos', _editandoMedId);
     const dataInicio = original.dataInicio || hoje();
     const dataFim    = duracaoDias ? calcDataFim(dataInicio, duracaoDias) : null;
 
@@ -232,14 +270,13 @@ async function salvarMedicamento() {
       qtdCaixa, qtdAtual, limiarAlerta: limiar,
       duracaoDias: duracaoDias || null,
       dataInicio:  duracaoDias ? dataInicio : original.dataInicio,
-      dataFim,
+      dataFim, ...extras,
     });
 
     limparFormMed();
     await renderMedList();
     showToast('✓ Medicamento atualizado');
   } else {
-    // ── Modo adição
     const dataInicio = hoje();
     const dataFim    = duracaoDias ? calcDataFim(dataInicio, duracaoDias) : null;
 
@@ -250,8 +287,9 @@ async function salvarMedicamento() {
       qtdCaixa, qtdAtual, limiarAlerta: limiar,
       duracaoDias: duracaoDias || null,
       dataInicio:  duracaoDias ? dataInicio : null,
-      dataFim,
-      ativo: true, criadoEm: new Date().toISOString(),
+      dataFim, ativo: true,
+      criadoEm: new Date().toISOString(),
+      ...extras,
     });
 
     limparFormMed();
@@ -274,8 +312,10 @@ function limparFormMed() {
   renderHorarioTags();
   document.getElementById('limiar-hint').textContent  = '';
   document.getElementById('duracao-hint').textContent = 'Sem duração = medicamento de uso contínuo';
-  document.getElementById('btn-salvar-med').textContent       = 'Adicionar Medicamento';
-  document.getElementById('btn-cancelar-ed').style.display    = 'none';
+  document.getElementById('btn-salvar-med').textContent    = 'Adicionar Medicamento';
+  document.getElementById('btn-cancelar-ed').style.display = 'none';
+  if (isManipulado) toggleManipulado();
+  _limparCompRows();
 }
 
 /* ── Listar medicamentos cadastrados ── */
@@ -289,18 +329,27 @@ async function renderMedList() {
     return;
   }
 
-  el.innerHTML = meds.map(m => `
+  el.innerHTML = meds.map(m => {
+    const nomeDisplay = m.manipulado
+      ? `${m.nome} <span class="manip-badge">Manipulado</span>`
+      : `${m.nome} — ${m.dose}${m.unidade}`;
+    const detalheComp = m.manipulado && m.componentes?.length
+      ? m.componentes.map(c => `${c.nome} ${c.dose}${c.unidade}`).join(' · ')
+      : '';
+    return `
     <div class="med-list-item">
       <div class="med-list-dot"></div>
       <div class="med-list-info">
-        <p class="med-list-name">${m.nome} — ${m.dose}${m.unidade}</p>
+        <p class="med-list-name">${nomeDisplay}</p>
+        ${detalheComp ? `<p class="med-list-detail" style="font-size:.72rem">${detalheComp}</p>` : ''}
         <p class="med-list-detail">${(m.horarios||[]).join(' · ')} · Estoque: ${m.qtdAtual}/${m.qtdCaixa}${m.duracaoDias ? ` · ${m.duracaoDias}d` : ''}</p>
       </div>
       <div style="display:flex;gap:6px;flex-shrink:0">
         <button class="btn btn-sm" style="background:var(--blue-bg);color:var(--blue);border:1px solid rgba(25,80,185,.15)" onclick="editarMed(${m.id})">Editar</button>
         <button class="btn btn-danger btn-sm" onclick="removerMed(${m.id})">Remover</button>
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 
 async function removerMed(id) {
@@ -332,6 +381,23 @@ async function handleImport(input) {
   } catch(e) {
     showToast('⚠ Arquivo inválido');
   }
+}
+
+/* ── Toggle manipulado / simples ── */
+function toggleManipulado() {
+  isManipulado = !isManipulado;
+  document.getElementById('btn-manip-toggle').classList.toggle('ativo', isManipulado);
+  document.getElementById('sec-med-normal').style.display = isManipulado ? 'none' : '';
+  document.getElementById('sec-manipulado').style.display = isManipulado ? 'block' : 'none';
+}
+
+function _limparCompRows() {
+  document.querySelectorAll('#sec-manipulado .comp-row').forEach(row => {
+    row.querySelector('.comp-nome').value    = '';
+    row.querySelector('.comp-dose').value    = '';
+    row.querySelector('.comp-unidade').value = 'mg';
+  });
+  document.getElementById('f-manip-apelido').value = '';
 }
 
 /* ── Toggle campos avançados ── */

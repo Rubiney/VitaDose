@@ -228,6 +228,19 @@ body {
 .h-preset.ativo { background: rgba(201,168,76,.18); border-color: var(--gold); color: var(--navy); }
 .h-custom-toggle { font-size: .76rem; color: var(--text-2); cursor: pointer; text-decoration: underline; text-underline-offset: 2px; display: inline-block; margin-top: 4px; }
 
+/* Medicamento manipulado */
+.manip-toggle-btn { display: flex; align-items: center; gap: 10px; background: none; border: 1.5px dashed var(--border); border-radius: 10px; padding: 11px 14px; cursor: pointer; font-size: .84rem; font-weight: 600; color: var(--text-2); transition: all .15s; width: 100%; margin-bottom: 14px; text-align: left; -webkit-tap-highlight-color: transparent; }
+.manip-toggle-btn.ativo { background: rgba(201,168,76,.1); border-color: var(--gold); border-style: solid; color: var(--navy); }
+.manip-dot { width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--border); display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: background .15s, border-color .15s; }
+.manip-toggle-btn.ativo .manip-dot { background: var(--gold); border-color: var(--gold); }
+.manip-dot::after { content: ''; display: block; width: 8px; height: 8px; border-radius: 50%; background: transparent; transition: background .15s; }
+.manip-toggle-btn.ativo .manip-dot::after { background: var(--navy); }
+.comp-grid { display: flex; flex-direction: column; gap: 7px; }
+.comp-row { display: grid; grid-template-columns: 1fr 72px 68px; gap: 6px; align-items: center; }
+.comp-row .form-input { padding: 8px 10px; font-size: .85rem; }
+.comp-row .form-select { padding: 8px 4px; font-size: .8rem; }
+.manip-badge { display: inline-flex; align-items: center; background: rgba(201,168,76,.15); border: 1px solid rgba(201,168,76,.35); border-radius: 6px; padding: 2px 8px; font-size: .68rem; font-weight: 700; color: #7a5e10; vertical-align: middle; margin-left: 5px; letter-spacing: .3px; }
+
 /* Med list item (cadastro) */
 .med-list-item { display: flex; align-items: center; gap: 12px; padding: 10px 10px; margin: 0 -4px; border-radius: var(--radius-sm); border-bottom: 1px solid var(--border); border-left: 3px solid var(--gold); background: linear-gradient(90deg, rgba(201,168,76,0.06) 0%, transparent 60%); }
 .med-list-item:last-child { border-bottom: none; }
@@ -284,6 +297,9 @@ body {
 [data-theme="dark"] .h-tag   { background: #1E2a3d; color: var(--gold-l); border-color: rgba(201,168,76,0.2); }
 [data-theme="dark"] .h-preset { background: #1a2236; border-color: rgba(201,168,76,0.2); color: var(--cream); }
 [data-theme="dark"] .h-preset.ativo { background: rgba(201,168,76,.2); border-color: var(--gold); color: var(--gold-l); }
+[data-theme="dark"] .manip-toggle-btn { color: var(--text-2); border-color: var(--border); }
+[data-theme="dark"] .manip-toggle-btn.ativo { color: var(--gold-l); background: rgba(201,168,76,.12); }
+[data-theme="dark"] .manip-badge { color: var(--gold-l); background: rgba(201,168,76,.12); border-color: rgba(201,168,76,.3); }
 [data-theme="dark"] .badge-gray { background: #1E2530; }
 [data-theme="dark"] .btn-outline { border-color: var(--border); color: var(--text); }
 [data-theme="dark"] .form-input,

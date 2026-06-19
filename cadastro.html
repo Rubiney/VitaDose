@@ -83,7 +83,14 @@
     <div class="card">
       <div class="card-title">Adicionar Medicamento</div>
 
-      <!-- Campos obrigatórios -->
+      <!-- Toggle: simples / manipulado -->
+      <button type="button" id="btn-manip-toggle" class="manip-toggle-btn" onclick="toggleManipulado()">
+        <span class="manip-dot"></span>
+        Medicamento manipulado (fórmula com múltiplos princípios ativos)
+      </button>
+
+      <!-- Campos — medicamento simples -->
+      <div id="sec-med-normal">
       <div class="form-group">
         <label class="form-lbl" for="f-med-nome">Nome do medicamento *</label>
         <input id="f-med-nome" class="form-input" type="text" placeholder="Ex: Losartana"
@@ -195,6 +202,52 @@
               <option value="mmol">mmol</option>
             </optgroup>
           </select>
+        </div>
+      </div>
+      </div><!-- /sec-med-normal -->
+
+      <!-- Campos — medicamento manipulado -->
+      <div id="sec-manipulado" style="display:none">
+        <div class="form-group" style="margin-bottom:12px">
+          <label class="form-lbl" for="f-manip-apelido">Nome da fórmula (opcional)</label>
+          <input id="f-manip-apelido" class="form-input" type="text" placeholder="Ex: Fórmula Cardiovascular">
+          <p class="form-hint">Se vazio, o nome é gerado automaticamente dos ativos</p>
+        </div>
+        <div class="form-group">
+          <label class="form-lbl">Princípios ativos (até 6) *</label>
+          <div class="comp-grid">
+            <div class="comp-row">
+              <input class="form-input comp-nome" type="text" placeholder="1. Ativo (ex: Rosuvastatina)" list="sugestoes-med" autocomplete="off">
+              <input class="form-input mono comp-dose" type="text" placeholder="Dose">
+              <select class="form-select comp-unidade"><option>mg</option><option>mcg</option><option>g</option><option>mL</option><option>UI</option><option>%</option><option>U</option><option>mg/mL</option></select>
+            </div>
+            <div class="comp-row">
+              <input class="form-input comp-nome" type="text" placeholder="2. Ativo (ex: AAS)" list="sugestoes-med" autocomplete="off">
+              <input class="form-input mono comp-dose" type="text" placeholder="Dose">
+              <select class="form-select comp-unidade"><option>mg</option><option>mcg</option><option>g</option><option>mL</option><option>UI</option><option>%</option><option>U</option><option>mg/mL</option></select>
+            </div>
+            <div class="comp-row">
+              <input class="form-input comp-nome" type="text" placeholder="3. Ativo (ex: Ebastina)" list="sugestoes-med" autocomplete="off">
+              <input class="form-input mono comp-dose" type="text" placeholder="Dose">
+              <select class="form-select comp-unidade"><option>mg</option><option>mcg</option><option>g</option><option>mL</option><option>UI</option><option>%</option><option>U</option><option>mg/mL</option></select>
+            </div>
+            <div class="comp-row">
+              <input class="form-input comp-nome" type="text" placeholder="4. Ativo (opcional)" list="sugestoes-med" autocomplete="off">
+              <input class="form-input mono comp-dose" type="text" placeholder="Dose">
+              <select class="form-select comp-unidade"><option>mg</option><option>mcg</option><option>g</option><option>mL</option><option>UI</option><option>%</option><option>U</option><option>mg/mL</option></select>
+            </div>
+            <div class="comp-row">
+              <input class="form-input comp-nome" type="text" placeholder="5. Ativo (opcional)" list="sugestoes-med" autocomplete="off">
+              <input class="form-input mono comp-dose" type="text" placeholder="Dose">
+              <select class="form-select comp-unidade"><option>mg</option><option>mcg</option><option>g</option><option>mL</option><option>UI</option><option>%</option><option>U</option><option>mg/mL</option></select>
+            </div>
+            <div class="comp-row">
+              <input class="form-input comp-nome" type="text" placeholder="6. Ativo (opcional)" list="sugestoes-med" autocomplete="off">
+              <input class="form-input mono comp-dose" type="text" placeholder="Dose">
+              <select class="form-select comp-unidade"><option>mg</option><option>mcg</option><option>g</option><option>mL</option><option>UI</option><option>%</option><option>U</option><option>mg/mL</option></select>
+            </div>
+          </div>
+          <p class="form-hint" style="margin-top:8px">Linhas em branco são ignoradas · Estoque conta 1 cápsula por dose</p>
         </div>
       </div>
 
