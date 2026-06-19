@@ -1,12 +1,32 @@
+# Vercel
 .vercel
+
+# Cloudflare
+.wrangler/
+
+# Build output
+dist/
+build/
+out/
+
+# Dependências
 node_modules/
+
+# Arquivos sensíveis
+*firebase-adminsdk*.json
+*.serviceAccount.json
+
+# Arquivos locais não deployados
 marketing/
 keygen.html
+Agulhas/
+
+# Imagens locais
 card-*.png
 leao.png
 diadose_v2.png
-*.txt
-*firebase-adminsdk*.json
-*.serviceAccount.json
 img/
-Agulhas/
+
+# Logs e textos internos
+*.txt
+*.log
