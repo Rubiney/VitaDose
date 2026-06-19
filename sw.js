@@ -1,5 +1,6 @@
 /* VitaDose — Service Worker (offline cache + notificações) */
-const CACHE = 'vitadose-v21';
+const CACHE = 'vitadose-v22';
+
 const ASSETS = [
   '/',
   '/index.html',
@@ -18,33 +19,57 @@ const ASSETS = [
   '/js/cadastro.js',
   '/js/diario.js',
   '/js/notificacoes.js',
+  '/js/firebase-push.js',
   '/manifest.json',
   '/icons/icon-192.svg',
   '/icons/icon-512.svg',
 ];
 
+/* ── Install: precache resiliente (allSettled — 1 falha não trava tudo) ── */
 self.addEventListener('install', (e) => {
   e.waitUntil(
-    caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting())
+    caches.open(CACHE)
+      .then(cache => Promise.allSettled(ASSETS.map(url => cache.add(url))))
+      .then(() => self.skipWaiting())
   );
 });
 
+/* ── Activate: limpa caches antigos ── */
 self.addEventListener('activate', (e) => {
   e.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
-    ).then(() => self.clients.claim())
+    caches.keys()
+      .then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k))))
+      .then(() => self.clients.claim())
   );
 });
 
+/* ── Fetch: cache-first same-origin; rede para externo/API ── */
 self.addEventListener('fetch', (e) => {
   if (e.request.method !== 'GET') return;
+
+  const url = new URL(e.request.url);
+
+  // Passa direto: origens externas (Firebase CDN, Vercel analytics)
+  if (url.origin !== self.location.origin) return;
+
+  // Passa direto: rotas de API (sempre precisam de rede)
+  if (url.pathname.startsWith('/api/')) return;
+
   e.respondWith(
-    caches.match(e.request).then(cached => cached || fetch(e.request).then(res => {
-      const clone = res.clone();
-      caches.open(CACHE).then(c => c.put(e.request, clone));
-      return res;
-    }))
+    caches.match(e.request).then(cached => {
+      if (cached) return cached;
+
+      return fetch(e.request).then(res => {
+        if (res.ok) {
+          const clone = res.clone();
+          caches.open(CACHE).then(c => c.put(e.request, clone));
+        }
+        return res;
+      }).catch(() => {
+        // Fallback offline: navegação → index.html; demais → sem resposta
+        if (e.request.mode === 'navigate') return caches.match('/index.html');
+      });
+    })
   );
 });
 
