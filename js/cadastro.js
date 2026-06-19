@@ -97,11 +97,21 @@ async function salvarPaciente() {
 }
 
 /* ── Horários builder ── */
+function toggleHorarioPreset(h) {
+  if (medHorarios.includes(h)) {
+    medHorarios = medHorarios.filter(x => x !== h);
+  } else {
+    medHorarios.push(h);
+    medHorarios.sort();
+  }
+  renderHorarioTags();
+}
+
 function adicionarHorario() {
   const input = document.getElementById('input-horario');
   const val   = input.value.trim();
   if (!val || !/^\d{2}:\d{2}$/.test(val)) { showToast('⚠ Use o formato HH:MM'); return; }
-  if (medHorarios.includes(val))            { showToast('Horário já adicionado'); return; }
+  if (medHorarios.includes(val))           { showToast('Horário já adicionado'); return; }
   medHorarios.push(val);
   medHorarios.sort();
   input.value = '';
@@ -118,6 +128,9 @@ function renderHorarioTags() {
   wrap.innerHTML = medHorarios.map(h =>
     `<span class="h-tag">${h}<button type="button" onclick="removerHorario('${h}')">×</button></span>`
   ).join('');
+  document.querySelectorAll('.h-preset').forEach(btn => {
+    btn.classList.toggle('ativo', medHorarios.includes(btn.textContent.trim()));
+  });
   calcEstoque();
 }
 

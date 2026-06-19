@@ -222,6 +222,12 @@ body {
 .h-input-row { display: flex; gap: 8px; align-items: center; margin-top: 8px; }
 .h-input-row input { width: 110px; padding: 8px 10px; border: 1.5px solid var(--border); border-radius: var(--radius-sm); font-family: 'DM Mono', monospace; font-size: 0.9rem; }
 
+/* Grade de horários pré-definidos */
+.h-preset-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+.h-preset { padding: 11px 14px; border: 1.5px solid var(--border); border-radius: 9px; background: var(--bg); color: var(--text); font-family: 'DM Mono', monospace; font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: background .13s, border-color .13s, color .13s; min-width: 66px; text-align: center; -webkit-tap-highlight-color: transparent; }
+.h-preset.ativo { background: rgba(201,168,76,.18); border-color: var(--gold); color: var(--navy); }
+.h-custom-toggle { font-size: .76rem; color: var(--text-2); cursor: pointer; text-decoration: underline; text-underline-offset: 2px; display: inline-block; margin-top: 4px; }
+
 /* Med list item (cadastro) */
 .med-list-item { display: flex; align-items: center; gap: 12px; padding: 10px 10px; margin: 0 -4px; border-radius: var(--radius-sm); border-bottom: 1px solid var(--border); border-left: 3px solid var(--gold); background: linear-gradient(90deg, rgba(201,168,76,0.06) 0%, transparent 60%); }
 .med-list-item:last-child { border-bottom: none; }
@@ -276,6 +282,8 @@ body {
 [data-theme="dark"] .card { border-top-color: var(--gold); box-shadow: 0 3px 12px rgba(0,0,0,0.3); }
 [data-theme="dark"] .h-pill  { background: #1E2a3d; color: var(--gold); border-color: rgba(201,168,76,0.2); }
 [data-theme="dark"] .h-tag   { background: #1E2a3d; color: var(--gold-l); border-color: rgba(201,168,76,0.2); }
+[data-theme="dark"] .h-preset { background: #1a2236; border-color: rgba(201,168,76,0.2); color: var(--cream); }
+[data-theme="dark"] .h-preset.ativo { background: rgba(201,168,76,.2); border-color: var(--gold); color: var(--gold-l); }
 [data-theme="dark"] .badge-gray { background: #1E2530; }
 [data-theme="dark"] .btn-outline { border-color: var(--border); color: var(--text); }
 [data-theme="dark"] .form-input,

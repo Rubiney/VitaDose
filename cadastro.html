@@ -201,12 +201,26 @@
       <!-- Horários -->
       <div class="form-group">
         <label class="form-lbl">Horários das doses *</label>
-        <div id="horario-tags" class="h-builder" style="margin-bottom:8px"></div>
-        <div class="h-input-row">
-          <input id="input-horario" type="time" class="form-input" style="width:130px" placeholder="08:00">
-          <button id="btn-add-horario" class="btn btn-outline btn-sm" type="button">+ Adicionar</button>
+        <div id="horario-tags" class="h-builder" style="margin-bottom:10px"></div>
+        <div class="h-preset-grid">
+          <button type="button" class="h-preset" onclick="toggleHorarioPreset('06:00')">06:00</button>
+          <button type="button" class="h-preset" onclick="toggleHorarioPreset('07:00')">07:00</button>
+          <button type="button" class="h-preset" onclick="toggleHorarioPreset('08:00')">08:00</button>
+          <button type="button" class="h-preset" onclick="toggleHorarioPreset('09:00')">09:00</button>
+          <button type="button" class="h-preset" onclick="toggleHorarioPreset('10:00')">10:00</button>
+          <button type="button" class="h-preset" onclick="toggleHorarioPreset('12:00')">12:00</button>
+          <button type="button" class="h-preset" onclick="toggleHorarioPreset('14:00')">14:00</button>
+          <button type="button" class="h-preset" onclick="toggleHorarioPreset('16:00')">16:00</button>
+          <button type="button" class="h-preset" onclick="toggleHorarioPreset('18:00')">18:00</button>
+          <button type="button" class="h-preset" onclick="toggleHorarioPreset('20:00')">20:00</button>
+          <button type="button" class="h-preset" onclick="toggleHorarioPreset('21:00')">21:00</button>
+          <button type="button" class="h-preset" onclick="toggleHorarioPreset('22:00')">22:00</button>
         </div>
-        <p class="form-hint">Adicione um horário por vez (ex: 08:00, 20:00)</p>
+        <span class="h-custom-toggle" onclick="document.getElementById('h-custom-row').style.display='flex'">+ Outro horário</span>
+        <div class="h-input-row" id="h-custom-row" style="display:none;margin-top:6px">
+          <input id="input-horario" type="time" class="form-input" style="width:130px">
+          <button id="btn-add-horario" class="btn btn-outline btn-sm" type="button">Adicionar</button>
+        </div>
       </div>
 
       <!-- Estoque (sempre visível — funcionalidade principal) -->
