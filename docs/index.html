@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="VitaDose — Lembretes de medicamento, controle de estoque e alertas de interação. Gratuito, sem cadastro, funciona offline.">
+  <title>VitaDose — Instale agora, grátis</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #f0f2f7;
+      color: #1a1a2e;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Hero */
+    .hero {
+      background: linear-gradient(160deg, #0F3460 0%, #0b1e3d 100%);
+      padding: 56px 24px 48px;
+      text-align: center;
+    }
+    .logo { font-size: 2.8rem; font-weight: 800; letter-spacing: -.5px; line-height: 1; margin-bottom: 8px; }
+    .logo .vita { color: #C9A84C; }
+    .logo .dose { color: #fff; }
+    .tagline { font-size: 1.1rem; color: rgba(255,255,255,.7); margin-bottom: 28px; line-height: 1.5; }
+    .pills { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
+    .pill {
+      background: rgba(201,168,76,.15);
+      border: 1px solid rgba(201,168,76,.3);
+      color: #C9A84C;
+      font-size: .75rem; font-weight: 700;
+      padding: 5px 14px; border-radius: 99px;
+      letter-spacing: .04em;
+    }
+
+    /* Section */
+    .sec { padding: 40px 20px; max-width: 480px; margin: 0 auto; }
+    .sec-title {
+      font-size: .68rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .15em; color: #8892a4; margin-bottom: 20px; text-align: center;
+    }
+
+    /* Features */
+    .features { display: flex; flex-direction: column; gap: 12px; margin-bottom: 36px; }
+    .feat {
+      background: #fff; border-radius: 14px;
+      padding: 16px 18px;
+      display: flex; align-items: center; gap: 16px;
+      box-shadow: 0 2px 8px rgba(15,52,96,.06);
+    }
+    .feat-icon {
+      width: 42px; height: 42px; border-radius: 12px;
+      background: rgba(15,52,96,.07);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; font-size: 1.3rem;
+    }
+    .feat h3 { font-size: .92rem; font-weight: 700; color: #0F3460; margin-bottom: 2px; }
+    .feat p  { font-size: .78rem; color: #6b7280; line-height: 1.4; }
+
+    /* QR Section */
+    .qr-section {
+      background: #fff; border-radius: 20px;
+      padding: 28px 24px; margin-bottom: 16px;
+      box-shadow: 0 4px 20px rgba(15,52,96,.08);
+      text-align: center;
+    }
+    .qr-label {
+      font-size: .7rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .12em; margin-bottom: 14px;
+    }
+    .qr-label.primary { color: #0F3460; }
+    .qr-label.mirror  { color: #8892a4; }
+    .qr-wrap { display: flex; justify-content: center; margin-bottom: 12px; }
+    .qr-url {
+      font-size: .82rem; font-weight: 700; word-break: break-all;
+      margin-bottom: 4px;
+    }
+    .qr-url.primary { color: #0F3460; }
+    .qr-url.mirror  { color: #8892a4; }
+    .qr-note { font-size: .7rem; color: #aab0be; }
+    .qr-divider { height: 1px; background: #eef0f5; margin: 20px 0; }
+
+    /* Install steps */
+    .install-card {
+      background: #fff; border-radius: 20px;
+      padding: 24px 20px; margin-bottom: 12px;
+      box-shadow: 0 2px 10px rgba(15,52,96,.06);
+    }
+    .install-title {
+      font-size: .78rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .1em; color: #C9A84C; margin-bottom: 16px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .step { display: flex; gap: 13px; align-items: flex-start; margin-bottom: 13px; }
+    .step:last-child { margin-bottom: 0; }
+    .step-num {
+      min-width: 26px; height: 26px; border-radius: 50%;
+      background: #0F3460; color: #C9A84C;
+      font-size: .75rem; font-weight: 800;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; margin-top: 1px;
+    }
+    .step p { font-size: .88rem; color: #374151; line-height: 1.5; }
+    .step strong { color: #0F3460; }
+
+    /* CTA buttons */
+    .cta-wrap { display: flex; flex-direction: column; gap: 10px; margin-bottom: 32px; }
+    .btn-cta {
+      display: block; text-align: center; text-decoration: none;
+      padding: 16px; border-radius: 13px;
+      font-size: .95rem; font-weight: 700; letter-spacing: .02em;
+    }
+    .btn-primary { background: #0F3460; color: #C9A84C; }
+    .btn-mirror  { background: #f0f2f7; color: #6b7280; font-size: .85rem; }
+
+    /* Footer */
+    footer {
+      text-align: center; padding: 24px 20px 40px;
+      font-size: .72rem; color: #aab0be; line-height: 1.8;
+    }
+    footer a { color: #C9A84C; text-decoration: none; }
+  </style>
+</head>
+<body>
+
+  <!-- Hero -->
+  <div class="hero">
+    <div class="logo"><span class="vita">Vita</span><span class="dose">Dose</span></div>
+    <p class="tagline">Cuide de quem você ama.<br>Sem complicação.</p>
+    <div class="pills">
+      <span class="pill">Gratuito</span>
+      <span class="pill">Sem cadastro</span>
+      <span class="pill">Offline</span>
+      <span class="pill">Seus dados no celular</span>
+    </div>
+  </div>
+
+  <!-- Features -->
+  <div class="sec">
+    <p class="sec-title">O que você vai ter</p>
+    <div class="features">
+      <div class="feat">
+        <div class="feat-icon">💊</div>
+        <div>
+          <h3>Lembretes de dose no horário certo</h3>
+          <p>Notificação mesmo com o app fechado — nunca mais esqueça um remédio</p>
+        </div>
+      </div>
+      <div class="feat">
+        <div class="feat-icon">📦</div>
+        <div>
+          <h3>Aviso quando o remédio acabar</h3>
+          <p>Controle de estoque automático — saiba quantos dias restam</p>
+        </div>
+      </div>
+      <div class="feat">
+        <div class="feat-icon">⚠️</div>
+        <div>
+          <h3>Alertas de interação medicamentosa</h3>
+          <p>Saiba o que evitar com cada medicamento</p>
+        </div>
+      </div>
+      <div class="feat">
+        <div class="feat-icon">📴</div>
+        <div>
+          <h3>Funciona sem internet</h3>
+          <p>Todos os dados ficam no seu celular — sem nuvem, sem vazamento</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- QR Codes -->
+    <p class="sec-title">Escaneie para instalar</p>
+
+    <div class="qr-section">
+      <p class="qr-label primary">Link principal</p>
+      <div class="qr-wrap"><div id="qr1"></div></div>
+      <p class="qr-url primary">vitadose.vercel.app</p>
+      <p class="qr-note">Servidor principal</p>
+
+      <div class="qr-divider"></div>
+
+      <p class="qr-label mirror">Link espelho (backup)</p>
+      <div class="qr-wrap"><div id="qr2"></div></div>
+      <p class="qr-url mirror">odd-flower-f26c.rubineyram.workers.dev</p>
+      <p class="qr-note">Use este se o link principal não abrir</p>
+    </div>
+
+    <!-- CTAs -->
+    <div class="cta-wrap">
+      <a class="btn-cta btn-primary" href="https://vitadose.vercel.app" target="_blank">
+        Abrir VitaDose →
+      </a>
+      <a class="btn-cta btn-mirror" href="https://odd-flower-f26c.rubineyram.workers.dev" target="_blank">
+        Link espelho (backup)
+      </a>
+    </div>
+
+    <!-- Instruções Android -->
+    <div class="install-card">
+      <div class="install-title">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="#C9A84C"><path d="M17.523 15.341l-.002-.014A9.97 9.97 0 0018 12c0-5.523-4.477-10-10-10S-2 6.477-2 12s4.477 10 10 10a9.97 9.97 0 003.341-.577l-.014-.002L17.523 15.341z" fill="none"/><path d="M6 18l8.5-6L6 6v12z" fill="#C9A84C"/></svg>
+        Android — Chrome
+      </div>
+      <div class="step"><div class="step-num">1</div><p>Abra o link no <strong>Chrome</strong></p></div>
+      <div class="step"><div class="step-num">2</div><p>Toque nos <strong>⋮ três pontos</strong> no canto superior direito</p></div>
+      <div class="step"><div class="step-num">3</div><p>Toque em <strong>"Adicionar à tela inicial"</strong></p></div>
+      <div class="step"><div class="step-num">4</div><p>Confirme tocando em <strong>"Adicionar"</strong> — pronto!</p></div>
+    </div>
+
+    <!-- Instruções iPhone -->
+    <div class="install-card">
+      <div class="install-title">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C9A84C" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12" y2="18"/></svg>
+        iPhone / iPad — Safari
+      </div>
+      <div class="step"><div class="step-num">1</div><p>Abra o link no <strong>Safari</strong> — não funciona no Chrome do iPhone</p></div>
+      <div class="step"><div class="step-num">2</div><p>Toque no ícone <strong>□↑ compartilhar</strong> na barra inferior</p></div>
+      <div class="step"><div class="step-num">3</div><p>Role e toque em <strong>"Adicionar à Tela de Início"</strong></p></div>
+      <div class="step"><div class="step-num">4</div><p>Toque em <strong>"Adicionar"</strong> — pronto!</p></div>
+    </div>
+  </div>
+
+  <footer>
+    VitaDose — Ecossistema <a href="https://guiadose.vercel.app" target="_blank">GuiaDose</a><br>
+    Desenvolvido por <strong>Rubiney Alves</strong> · Farmacêutico Clínico<br>
+    Dados armazenados localmente · LGPD compliant
+  </footer>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script>
+    new QRCode(document.getElementById('qr1'), {
+      text: 'https://vitadose.vercel.app/',
+      width: 180, height: 180,
+      colorDark: '#0F3460', colorLight: '#ffffff',
+      correctLevel: QRCode.CorrectLevel.H,
+    });
+    new QRCode(document.getElementById('qr2'), {
+      text: 'https://odd-flower-f26c.rubineyram.workers.dev/',
+      width: 150, height: 150,
+      colorDark: '#8892a4', colorLight: '#ffffff',
+      correctLevel: QRCode.CorrectLevel.M,
+    });
+  </script>
+</body>
+</html>

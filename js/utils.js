@@ -245,6 +245,15 @@ function diasRestantes(med) {
           Já instalei — Abrir VitaDose →
         </button>
 
+        <!-- Link espelho -->
+        <p style="text-align:center;margin-top:16px;font-size:.72rem;color:rgba(240,234,214,.3);line-height:1.6">
+          Link principal não abre?<br>
+          <a href="https://odd-flower-f26c.rubineyram.workers.dev" target="_blank"
+            style="color:rgba(201,168,76,.55);text-decoration:none;font-weight:600">
+            Acessar link espelho →
+          </a>
+        </p>
+
       </div>
     `;
 

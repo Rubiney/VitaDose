@@ -210,6 +210,15 @@
 
       <div class="divider"></div>
 
+      <!-- QR espelho Cloudflare -->
+      <p style="font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:#5f6476;margin-bottom:10px">Link espelho (backup)</p>
+      <div class="qr-wrap" style="margin-bottom:8px">
+        <div id="qrcode2"></div>
+      </div>
+      <p style="font-size:.72rem;color:#5f6476;margin-bottom:16px;word-break:break-all">odd-flower-f26c.rubineyram.workers.dev</p>
+
+      <div class="divider"></div>
+
       <div class="badges">
         <span class="badge gold">Gratuito</span>
         <span class="badge">Sem cadastro</span>
@@ -246,6 +255,14 @@
       colorDark    : '#0F3460',
       colorLight   : '#ffffff',
       correctLevel : QRCode.CorrectLevel.H,
+    });
+    new QRCode(document.getElementById('qrcode2'), {
+      text         : 'https://odd-flower-f26c.rubineyram.workers.dev/',
+      width        : 140,
+      height       : 140,
+      colorDark    : '#5f6476',
+      colorLight   : '#ffffff',
+      correctLevel : QRCode.CorrectLevel.M,
     });
   </script>
 </body>
