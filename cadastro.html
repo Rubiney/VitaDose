@@ -157,6 +157,10 @@
           <option value="Soro Fisiológico 0,9%"><option value="Ambroxol"><option value="Fenoterol">
           <option value="Ipratrópio"><option value="Brometo de Ipratrópio"><option value="Fluticasona">
           <option value="Acetilcisteína"><option value="Dexametasona"><option value="Tobramicina">
+          <!-- Colírios / Oftálmicos -->
+          <option value="Timolol Maleato"><option value="Latanoprosta"><option value="Brimonidina">
+          <option value="Dorzolamida"><option value="Betaxolol"><option value="Carboximetilcelose">
+          <option value="Ciclosporina"><option value="Prednisolona (colírio)"><option value="Ciprofloxacino (colírio)">
           <!-- Outros comuns -->
           <option value="Alopurinol"><option value="Colchicina">
           <option value="Finasterida"><option value="Tamsulosina"><option value="Sildenafila">
@@ -379,6 +383,7 @@
               <option value="solucao">Solução oral</option>
               <option value="suspensao">Suspensão</option>
               <option value="gotas">Gotas</option>
+              <option value="colirio">Colírio / Oftálmico</option>
               <option value="inalacao">Inalação / Nebulização</option>
               <option value="injetavel">Injetável (ampola)</option>
               <option value="adesivo">Adesivo</option>
@@ -408,6 +413,16 @@
               </optgroup>
             </select>
           </div>
+        </div>
+
+        <!-- Campo olho — visível apenas para colírio -->
+        <div id="sec-colirio" class="form-group" style="display:none">
+          <label class="form-lbl" for="f-olho">Aplicação nos olhos</label>
+          <select id="f-olho" class="form-select">
+            <option value="ao">Ambos os olhos (AO)</option>
+            <option value="od">Olho direito (OD)</option>
+            <option value="oe">Olho esquerdo (OE)</option>
+          </select>
         </div>
 
         <div class="form-group">

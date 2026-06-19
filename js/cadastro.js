@@ -213,6 +213,7 @@ async function editarMed(id) {
 
   document.getElementById('f-indicacao').value = m.indicacao  || '';
   document.getElementById('f-forma').value     = m.forma      || 'comprimido';
+  document.getElementById('f-olho').value      = m.olho       || 'ao';
   document.getElementById('f-intervalo').value = m.intervalo  || 24;
   document.getElementById('f-qtd-caixa').value = m.qtdCaixa   ?? '';
   document.getElementById('f-qtd-atual').value = m.qtdAtual   ?? '';
@@ -285,6 +286,7 @@ async function salvarMedicamento() {
 
   const indicacao   = document.getElementById('f-indicacao').value.trim();
   const forma       = isNebulizacao ? 'inalacao' : isManipulado ? 'capsula' : document.getElementById('f-forma').value;
+  const olho        = forma === 'colirio' ? (document.getElementById('f-olho')?.value || 'ao') : null;
   const intervalo   = parseInt(document.getElementById('f-intervalo').value) || 24;
   const qtdCaixa    = parseInt(document.getElementById('f-qtd-caixa').value) || 0;
   const qtdAtual    = parseInt(document.getElementById('f-qtd-atual').value) || 0;
@@ -301,7 +303,7 @@ async function salvarMedicamento() {
 
     await dbPut('medicamentos', {
       ...original,
-      nome, indicacao, forma, dose, unidade,
+      nome, indicacao, forma, dose, unidade, olho,
       intervalo, horarios: [...medHorarios],
       qtdCaixa, qtdAtual, limiarAlerta: limiar,
       duracaoDias: duracaoDias || null,
@@ -318,7 +320,7 @@ async function salvarMedicamento() {
 
     await dbAdd('medicamentos', {
       pacienteId: pacienteAtual.id,
-      nome, indicacao, forma, dose, unidade,
+      nome, indicacao, forma, dose, unidade, olho,
       intervalo, horarios: [...medHorarios],
       qtdCaixa, qtdAtual, limiarAlerta: limiar,
       duracaoDias: duracaoDias || null,
@@ -341,6 +343,7 @@ function limparFormMed() {
     document.getElementById(id).value = '';
   });
   document.getElementById('f-forma').value     = 'comprimido';
+  document.getElementById('f-olho').value      = 'ao';
   document.getElementById('f-unidade').value   = 'mg';
   document.getElementById('f-intervalo').value = '24';
   medHorarios    = [];
@@ -432,6 +435,7 @@ const _ESTOQUE_LABELS = {
   solucao:    { caixa: 'Doses por frasco',         atual: 'Doses restantes'    },
   suspensao:  { caixa: 'Doses por frasco',         atual: 'Doses restantes'    },
   gotas:      { caixa: 'Doses por frasco',         atual: 'Doses restantes'    },
+  colirio:    { caixa: 'Gotas no frasco',          atual: 'Gotas restantes'    },
   inalacao:   { caixa: 'Sessões por frascos',      atual: 'Sessões restantes'  },
   injetavel:  { caixa: 'Ampolas / frascos',        atual: 'Estoque atual'      },
   adesivo:    { caixa: 'Adesivos na embalagem',    atual: 'Estoque atual'      },
@@ -447,6 +451,8 @@ function atualizarLabelEstoque() {
   const lblAtual = document.getElementById('lbl-qtd-atual');
   if (lblCaixa) lblCaixa.textContent = labels.caixa;
   if (lblAtual) lblAtual.textContent = labels.atual;
+  const secColirio = document.getElementById('sec-colirio');
+  if (secColirio) secColirio.style.display = forma === 'colirio' ? '' : 'none';
 }
 
 /* ── Toggle manipulado / simples ── */

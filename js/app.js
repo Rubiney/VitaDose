@@ -226,6 +226,7 @@ function buildMedCard(med) {
               if (d <= 3)  return `<span class="badge badge-red">Termina em ${d}d</span>`;
               return `<span class="badge badge-amber">Termina em ${d}d</span>`;
             })()}
+            ${med.olho ? `<span style="background:rgba(15,52,96,.1);border:1px solid rgba(15,52,96,.2);border-radius:5px;padding:2px 8px;font-size:.65rem;font-weight:700;color:var(--navy);letter-spacing:.5px">${med.olho === 'od' ? 'OD' : med.olho === 'oe' ? 'OE' : 'AO'}</span>` : ''}
             <div class="horarios">${horariosHtml}</div>
           </div>
           ${btnConfirmar}
