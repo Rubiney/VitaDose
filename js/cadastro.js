@@ -5,6 +5,7 @@ let medHorarios    = [];
 let _editandoMedId = null;
 let _fotoBase64    = null;
 let isManipulado   = false;
+let isNebulizacao  = false;
 
 /* ── Init ── */
 async function init() {
@@ -175,7 +176,21 @@ async function editarMed(id) {
 
   _editandoMedId = id;
 
-  if (m.manipulado && m.componentes?.length) {
+  if (m.nebulizacao && m.componentes?.length) {
+    // ── modo nebulização
+    if (!isNebulizacao) toggleNebulizacao();
+    const apelido = m.nome.startsWith('Nebulização: ') ? '' : m.nome;
+    document.getElementById('f-nebul-apelido').value      = apelido;
+    document.getElementById('f-nebul-diluente').value     = m.diluente?.nome   || 'Soro Fisiológico 0,9%';
+    document.getElementById('f-nebul-diluente-vol').value = m.diluente?.volume || '';
+    const rowsN = document.querySelectorAll('#sec-nebulizacao .nebul-row');
+    m.componentes.forEach((comp, i) => {
+      if (!rowsN[i]) return;
+      rowsN[i].querySelector('.nebul-nome').value    = comp.nome;
+      rowsN[i].querySelector('.nebul-dose').value    = comp.dose;
+      rowsN[i].querySelector('.nebul-unidade').value = comp.unidade || 'mL';
+    });
+  } else if (m.manipulado && m.componentes?.length) {
     // ── modo manipulado
     if (!isManipulado) toggleManipulado();
     const apelido = m.nome.startsWith('Manipulado: ') ? '' : m.nome;
@@ -189,7 +204,8 @@ async function editarMed(id) {
     });
   } else {
     // ── modo simples
-    if (isManipulado) toggleManipulado();
+    if (isManipulado)  toggleManipulado();
+    if (isNebulizacao) toggleNebulizacao();
     document.getElementById('f-med-nome').value  = m.nome      || '';
     document.getElementById('f-dose').value      = m.dose      || '';
     document.getElementById('f-unidade').value   = m.unidade   || 'mg';
@@ -223,9 +239,28 @@ function cancelarEdicao() {
 async function salvarMedicamento() {
   if (!pacienteAtual) { showToast('⚠ Salve o paciente primeiro'); return; }
 
-  let nome, dose, unidade, componentes = null;
+  let nome, dose, unidade, componentes = null, extras = {};
 
-  if (isManipulado) {
+  if (isNebulizacao) {
+    const rows = document.querySelectorAll('#sec-nebulizacao .nebul-row');
+    componentes = [];
+    rows.forEach(row => {
+      const n = row.querySelector('.nebul-nome').value.trim();
+      const d = row.querySelector('.nebul-dose').value.trim();
+      const u = row.querySelector('.nebul-unidade').value;
+      if (n) componentes.push({ nome: n, dose: d, unidade: u });
+    });
+    if (!componentes.length) { showToast('⚠ Informe pelo menos 1 medicamento inalatório'); return; }
+    const apelido  = document.getElementById('f-nebul-apelido').value.trim();
+    const diluente = {
+      nome:   document.getElementById('f-nebul-diluente').value.trim(),
+      volume: document.getElementById('f-nebul-diluente-vol').value.trim()
+    };
+    nome    = apelido || 'Nebulização: ' + componentes.map(c => c.nome).join(' + ');
+    dose    = '1';
+    unidade = 'sessão';
+    extras  = { nebulizacao: true, diluente, componentes };
+  } else if (isManipulado) {
     // coleta componentes
     const rows = document.querySelectorAll('#sec-manipulado .comp-row');
     componentes = [];
@@ -240,6 +275,7 @@ async function salvarMedicamento() {
     nome    = apelido || 'Manipulado: ' + componentes.map(c => c.nome).join(' + ');
     dose    = '1';
     unidade = 'cáp.';
+    extras  = { manipulado: true, componentes };
   } else {
     nome    = document.getElementById('f-med-nome').value.trim();
     dose    = document.getElementById('f-dose').value.trim();
@@ -248,7 +284,7 @@ async function salvarMedicamento() {
   }
 
   const indicacao   = document.getElementById('f-indicacao').value.trim();
-  const forma       = isManipulado ? 'capsula' : document.getElementById('f-forma').value;
+  const forma       = isNebulizacao ? 'inalacao' : isManipulado ? 'capsula' : document.getElementById('f-forma').value;
   const intervalo   = parseInt(document.getElementById('f-intervalo').value) || 24;
   const qtdCaixa    = parseInt(document.getElementById('f-qtd-caixa').value) || 0;
   const qtdAtual    = parseInt(document.getElementById('f-qtd-atual').value) || 0;
@@ -257,7 +293,6 @@ async function salvarMedicamento() {
 
   if (!medHorarios.length) { showToast('⚠ Adicione pelo menos um horário'); return; }
 
-  const extras = isManipulado ? { manipulado: true, componentes } : {};
 
   if (_editandoMedId) {
     const original   = await dbGet('medicamentos', _editandoMedId);
@@ -315,8 +350,10 @@ function limparFormMed() {
   document.getElementById('duracao-hint').textContent = 'Sem duração = medicamento de uso contínuo';
   document.getElementById('btn-salvar-med').textContent    = 'Adicionar Medicamento';
   document.getElementById('btn-cancelar-ed').style.display = 'none';
-  if (isManipulado) toggleManipulado();
+  if (isManipulado)  toggleManipulado();
+  if (isNebulizacao) toggleNebulizacao();
   _limparCompRows();
+  _limparNebulRows();
   atualizarLabelEstoque();
 }
 
@@ -332,10 +369,12 @@ async function renderMedList() {
   }
 
   el.innerHTML = meds.map(m => {
-    const nomeDisplay = m.manipulado
-      ? `${m.nome} <span class="manip-badge">Manipulado</span>`
-      : `${m.nome} — ${m.dose}${m.unidade}`;
-    const detalheComp = m.manipulado && m.componentes?.length
+    const nomeDisplay = m.nebulizacao
+      ? `${m.nome} <span class="nebul-badge">Nebulização</span>`
+      : m.manipulado
+        ? `${m.nome} <span class="manip-badge">Manipulado</span>`
+        : `${m.nome} — ${m.dose}${m.unidade}`;
+    const detalheComp = (m.nebulizacao || m.manipulado) && m.componentes?.length
       ? m.componentes.map(c => `${c.nome} ${c.dose}${c.unidade}`).join(' · ')
       : '';
     return `
@@ -393,6 +432,7 @@ const _ESTOQUE_LABELS = {
   solucao:    { caixa: 'Doses por frasco',         atual: 'Doses restantes'    },
   suspensao:  { caixa: 'Doses por frasco',         atual: 'Doses restantes'    },
   gotas:      { caixa: 'Doses por frasco',         atual: 'Doses restantes'    },
+  inalacao:   { caixa: 'Sessões por frascos',      atual: 'Sessões restantes'  },
   injetavel:  { caixa: 'Ampolas / frascos',        atual: 'Estoque atual'      },
   adesivo:    { caixa: 'Adesivos na embalagem',    atual: 'Estoque atual'      },
   creme:      { caixa: 'Tubos / embalagens',       atual: 'Estoque atual'      },
@@ -400,7 +440,7 @@ const _ESTOQUE_LABELS = {
 };
 
 function atualizarLabelEstoque() {
-  if (isManipulado) return; // manipulado tem label próprio
+  if (isManipulado || isNebulizacao) return;
   const forma  = document.getElementById('f-forma')?.value || 'comprimido';
   const labels = _ESTOQUE_LABELS[forma] || _ESTOQUE_LABELS.comprimido;
   const lblCaixa = document.getElementById('lbl-qtd-caixa');
@@ -412,6 +452,11 @@ function atualizarLabelEstoque() {
 /* ── Toggle manipulado / simples ── */
 function toggleManipulado() {
   isManipulado = !isManipulado;
+  if (isManipulado && isNebulizacao) {
+    isNebulizacao = false;
+    document.getElementById('btn-nebul-toggle').classList.remove('ativo');
+    document.getElementById('sec-nebulizacao').style.display = 'none';
+  }
   document.getElementById('btn-manip-toggle').classList.toggle('ativo', isManipulado);
   document.getElementById('sec-med-normal').style.display = isManipulado ? 'none' : '';
   document.getElementById('sec-manipulado').style.display = isManipulado ? 'block' : 'none';
@@ -425,6 +470,26 @@ function toggleManipulado() {
   }
 }
 
+function toggleNebulizacao() {
+  isNebulizacao = !isNebulizacao;
+  if (isNebulizacao && isManipulado) {
+    isManipulado = false;
+    document.getElementById('btn-manip-toggle').classList.remove('ativo');
+    document.getElementById('sec-manipulado').style.display = 'none';
+  }
+  document.getElementById('btn-nebul-toggle').classList.toggle('ativo', isNebulizacao);
+  document.getElementById('sec-med-normal').style.display = isNebulizacao ? 'none' : '';
+  document.getElementById('sec-nebulizacao').style.display = isNebulizacao ? 'block' : 'none';
+  const lblCaixa = document.getElementById('lbl-qtd-caixa');
+  const lblAtual = document.getElementById('lbl-qtd-atual');
+  if (isNebulizacao) {
+    if (lblCaixa) lblCaixa.textContent = 'Sessões por frascos';
+    if (lblAtual) lblAtual.textContent = 'Sessões restantes';
+  } else {
+    atualizarLabelEstoque();
+  }
+}
+
 function _limparCompRows() {
   document.querySelectorAll('#sec-manipulado .comp-row').forEach(row => {
     row.querySelector('.comp-nome').value    = '';
@@ -432,6 +497,17 @@ function _limparCompRows() {
     row.querySelector('.comp-unidade').value = 'mg';
   });
   document.getElementById('f-manip-apelido').value = '';
+}
+
+function _limparNebulRows() {
+  document.querySelectorAll('#sec-nebulizacao .nebul-row').forEach(row => {
+    row.querySelector('.nebul-nome').value    = '';
+    row.querySelector('.nebul-dose').value    = '';
+    row.querySelector('.nebul-unidade').value = 'mL';
+  });
+  document.getElementById('f-nebul-apelido').value      = '';
+  document.getElementById('f-nebul-diluente').value     = 'Soro Fisiológico 0,9%';
+  document.getElementById('f-nebul-diluente-vol').value = '';
 }
 
 /* ── Toggle campos avançados ── */

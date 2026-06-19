@@ -83,10 +83,14 @@
     <div class="card">
       <div class="card-title">Adicionar Medicamento</div>
 
-      <!-- Toggle: simples / manipulado -->
+      <!-- Toggle: simples / manipulado / nebulização -->
       <button type="button" id="btn-manip-toggle" class="manip-toggle-btn" onclick="toggleManipulado()">
         <span class="manip-dot"></span>
         Medicamento manipulado (fórmula com múltiplos princípios ativos)
+      </button>
+      <button type="button" id="btn-nebul-toggle" class="manip-toggle-btn" onclick="toggleNebulizacao()">
+        <span class="manip-dot"></span>
+        Protocolo de Nebulização (inalação/aerossol com diluente)
       </button>
 
       <!-- Campos — medicamento simples -->
@@ -149,6 +153,10 @@
           <!-- Respiratório / Alérgico -->
           <option value="Loratadina"><option value="Cetirizina"><option value="Fexofenadina">
           <option value="Salbutamol"><option value="Budesonida"><option value="Montelucaste">
+          <!-- Inalatórios / Nebulização -->
+          <option value="Soro Fisiológico 0,9%"><option value="Ambroxol"><option value="Fenoterol">
+          <option value="Ipratrópio"><option value="Brometo de Ipratrópio"><option value="Fluticasona">
+          <option value="Acetilcisteína"><option value="Dexametasona"><option value="Tobramicina">
           <!-- Outros comuns -->
           <option value="Alopurinol"><option value="Colchicina">
           <option value="Finasterida"><option value="Tamsulosina"><option value="Sildenafila">
@@ -251,6 +259,54 @@
         </div>
       </div>
 
+      <!-- Campos — protocolo de nebulização -->
+      <div id="sec-nebulizacao" style="display:none">
+        <div class="form-group" style="margin-bottom:12px">
+          <label class="form-lbl" for="f-nebul-apelido">Nome da sessão (opcional)</label>
+          <input id="f-nebul-apelido" class="form-input" type="text" placeholder="Ex: Nebulização Broncodilatadora">
+          <p class="form-hint">Se vazio, gerado automaticamente dos medicamentos</p>
+        </div>
+        <div class="form-group" style="margin-bottom:12px">
+          <label class="form-lbl">Diluente</label>
+          <div style="display:flex;gap:8px;align-items:center">
+            <input id="f-nebul-diluente" class="form-input" type="text" value="Soro Fisiológico 0,9%" style="flex:1" list="sugestoes-med" autocomplete="off">
+            <input id="f-nebul-diluente-vol" class="form-input mono" type="number" min="0.5" max="20" step="0.5" placeholder="3" style="width:72px">
+            <span style="font-size:.8rem;color:var(--text-2);white-space:nowrap">mL</span>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-lbl">Medicamentos inalatórios (até 5)</label>
+          <div class="comp-grid">
+            <div class="comp-row nebul-row">
+              <input class="form-input nebul-nome" type="text" placeholder="1. Med (ex: Ambroxol)" list="sugestoes-med" autocomplete="off">
+              <input class="form-input mono nebul-dose" type="text" placeholder="Dose">
+              <select class="form-select nebul-unidade"><option>mL</option><option>gotas</option><option>mg</option><option>mcg</option><option>mg/mL</option><option>UI</option></select>
+            </div>
+            <div class="comp-row nebul-row">
+              <input class="form-input nebul-nome" type="text" placeholder="2. Med (ex: Fenoterol)" list="sugestoes-med" autocomplete="off">
+              <input class="form-input mono nebul-dose" type="text" placeholder="Dose">
+              <select class="form-select nebul-unidade"><option>mL</option><option>gotas</option><option>mg</option><option>mcg</option><option>mg/mL</option><option>UI</option></select>
+            </div>
+            <div class="comp-row nebul-row">
+              <input class="form-input nebul-nome" type="text" placeholder="3. Med (ex: Ipratrópio)" list="sugestoes-med" autocomplete="off">
+              <input class="form-input mono nebul-dose" type="text" placeholder="Dose">
+              <select class="form-select nebul-unidade"><option>mL</option><option>gotas</option><option>mg</option><option>mcg</option><option>mg/mL</option><option>UI</option></select>
+            </div>
+            <div class="comp-row nebul-row">
+              <input class="form-input nebul-nome" type="text" placeholder="4. Med (opcional)" list="sugestoes-med" autocomplete="off">
+              <input class="form-input mono nebul-dose" type="text" placeholder="Dose">
+              <select class="form-select nebul-unidade"><option>mL</option><option>gotas</option><option>mg</option><option>mcg</option><option>mg/mL</option><option>UI</option></select>
+            </div>
+            <div class="comp-row nebul-row">
+              <input class="form-input nebul-nome" type="text" placeholder="5. Med (opcional)" list="sugestoes-med" autocomplete="off">
+              <input class="form-input mono nebul-dose" type="text" placeholder="Dose">
+              <select class="form-select nebul-unidade"><option>mL</option><option>gotas</option><option>mg</option><option>mcg</option><option>mg/mL</option><option>UI</option></select>
+            </div>
+          </div>
+          <p class="form-hint" style="margin-top:8px">Linhas em branco são ignoradas · Estoque conta 1 sessão por dose confirmada</p>
+        </div>
+      </div>
+
       <!-- Horários -->
       <div class="form-group">
         <label class="form-lbl">Horários das doses *</label>
@@ -323,6 +379,7 @@
               <option value="solucao">Solução oral</option>
               <option value="suspensao">Suspensão</option>
               <option value="gotas">Gotas</option>
+              <option value="inalacao">Inalação / Nebulização</option>
               <option value="injetavel">Injetável (ampola)</option>
               <option value="adesivo">Adesivo</option>
               <option value="creme">Creme / Pomada</option>

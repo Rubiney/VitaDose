@@ -240,6 +240,7 @@ body {
 .comp-row .form-input { padding: 8px 10px; font-size: .85rem; }
 .comp-row .form-select { padding: 8px 4px; font-size: .8rem; }
 .manip-badge { display: inline-flex; align-items: center; background: rgba(201,168,76,.15); border: 1px solid rgba(201,168,76,.35); border-radius: 6px; padding: 2px 8px; font-size: .68rem; font-weight: 700; color: #7a5e10; vertical-align: middle; margin-left: 5px; letter-spacing: .3px; }
+.nebul-badge { display: inline-flex; align-items: center; background: rgba(14,116,144,.12); border: 1px solid rgba(14,116,144,.3); border-radius: 6px; padding: 2px 8px; font-size: .68rem; font-weight: 700; color: #0e7490; vertical-align: middle; margin-left: 5px; letter-spacing: .3px; }
 
 /* Med list item (cadastro) */
 .med-list-item { display: flex; align-items: center; gap: 12px; padding: 10px 10px; margin: 0 -4px; border-radius: var(--radius-sm); border-bottom: 1px solid var(--border); border-left: 3px solid var(--gold); background: linear-gradient(90deg, rgba(201,168,76,0.06) 0%, transparent 60%); }
@@ -300,6 +301,7 @@ body {
 [data-theme="dark"] .manip-toggle-btn { color: var(--text-2); border-color: var(--border); }
 [data-theme="dark"] .manip-toggle-btn.ativo { color: var(--gold-l); background: rgba(201,168,76,.12); }
 [data-theme="dark"] .manip-badge { color: var(--gold-l); background: rgba(201,168,76,.12); border-color: rgba(201,168,76,.3); }
+[data-theme="dark"] .nebul-badge { color: #67e8f9; background: rgba(14,116,144,.15); border-color: rgba(14,116,144,.35); }
 [data-theme="dark"] .badge-gray { background: #1E2530; }
 [data-theme="dark"] .btn-outline { border-color: var(--border); color: var(--text); }
 [data-theme="dark"] .form-input,

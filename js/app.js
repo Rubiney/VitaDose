@@ -207,8 +207,8 @@ function buildMedCard(med) {
         <div class="med-body">
           <div class="med-top">
             <div>
-              <p class="med-name">${med.nome}${med.manipulado ? ' <span style="display:inline-flex;align-items:center;background:rgba(201,168,76,.15);border:1px solid rgba(201,168,76,.35);border-radius:5px;padding:1px 7px;font-size:.65rem;font-weight:700;color:#7a5e10;margin-left:5px;vertical-align:middle">Manipulado</span>' : ` <span class="mono" style="font-size:.8rem;color:var(--text-2)">${med.dose}${med.unidade || ''}</span>`}</p>
-              ${med.manipulado && med.componentes?.length ? `<p class="med-ind" style="font-size:.72rem">${med.componentes.map(c=>`${c.nome} ${c.dose}${c.unidade}`).join(' · ')}</p>` : `<p class="med-ind">${med.indicacao || ''}</p>`}
+              <p class="med-name">${med.nome}${med.nebulizacao ? ' <span style="display:inline-flex;align-items:center;background:rgba(14,116,144,.12);border:1px solid rgba(14,116,144,.3);border-radius:5px;padding:1px 7px;font-size:.65rem;font-weight:700;color:#0e7490;margin-left:5px;vertical-align:middle">Nebulização</span>' : med.manipulado ? ' <span style="display:inline-flex;align-items:center;background:rgba(201,168,76,.15);border:1px solid rgba(201,168,76,.35);border-radius:5px;padding:1px 7px;font-size:.65rem;font-weight:700;color:#7a5e10;margin-left:5px;vertical-align:middle">Manipulado</span>' : ` <span class="mono" style="font-size:.8rem;color:var(--text-2)">${med.dose}${med.unidade || ''}</span>`}</p>
+              ${(med.nebulizacao || med.manipulado) && med.componentes?.length ? `<p class="med-ind" style="font-size:.72rem">${med.componentes.map(c=>`${c.nome} ${c.dose}${c.unidade}`).join(' · ')}</p>` : `<p class="med-ind">${med.indicacao || ''}</p>`}
             </div>
             <div class="stock-mini">
               <p class="stock-num">${med.qtdAtual ?? '—'} / ${med.qtdCaixa ?? '—'}</p>
