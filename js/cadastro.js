@@ -209,6 +209,7 @@ async function editarMed(id) {
   document.getElementById('btn-salvar-med').textContent    = '✓ Salvar Alterações';
   document.getElementById('btn-cancelar-ed').style.display = '';
 
+  atualizarLabelEstoque();
   document.getElementById('btn-manip-toggle').scrollIntoView({ behavior: 'smooth', block: 'center' });
   showToast('Editando: ' + m.nome);
 }
@@ -316,6 +317,7 @@ function limparFormMed() {
   document.getElementById('btn-cancelar-ed').style.display = 'none';
   if (isManipulado) toggleManipulado();
   _limparCompRows();
+  atualizarLabelEstoque();
 }
 
 /* ── Listar medicamentos cadastrados ── */
@@ -383,6 +385,30 @@ async function handleImport(input) {
   }
 }
 
+/* ── Labels de estoque por forma farmacêutica ── */
+const _ESTOQUE_LABELS = {
+  comprimido: { caixa: 'Comprimidos na caixa',    atual: 'Estoque atual'      },
+  capsula:    { caixa: 'Cápsulas na embalagem',   atual: 'Estoque atual'      },
+  xarope:     { caixa: 'Doses por frasco',         atual: 'Doses restantes'    },
+  solucao:    { caixa: 'Doses por frasco',         atual: 'Doses restantes'    },
+  suspensao:  { caixa: 'Doses por frasco',         atual: 'Doses restantes'    },
+  gotas:      { caixa: 'Doses por frasco',         atual: 'Doses restantes'    },
+  injetavel:  { caixa: 'Ampolas / frascos',        atual: 'Estoque atual'      },
+  adesivo:    { caixa: 'Adesivos na embalagem',    atual: 'Estoque atual'      },
+  creme:      { caixa: 'Tubos / embalagens',       atual: 'Estoque atual'      },
+  outro:      { caixa: 'Unidades na embalagem',    atual: 'Estoque atual'      },
+};
+
+function atualizarLabelEstoque() {
+  if (isManipulado) return; // manipulado tem label próprio
+  const forma  = document.getElementById('f-forma')?.value || 'comprimido';
+  const labels = _ESTOQUE_LABELS[forma] || _ESTOQUE_LABELS.comprimido;
+  const lblCaixa = document.getElementById('lbl-qtd-caixa');
+  const lblAtual = document.getElementById('lbl-qtd-atual');
+  if (lblCaixa) lblCaixa.textContent = labels.caixa;
+  if (lblAtual) lblAtual.textContent = labels.atual;
+}
+
 /* ── Toggle manipulado / simples ── */
 function toggleManipulado() {
   isManipulado = !isManipulado;
@@ -390,7 +416,13 @@ function toggleManipulado() {
   document.getElementById('sec-med-normal').style.display = isManipulado ? 'none' : '';
   document.getElementById('sec-manipulado').style.display = isManipulado ? 'block' : 'none';
   const lblCaixa = document.getElementById('lbl-qtd-caixa');
-  if (lblCaixa) lblCaixa.textContent = isManipulado ? 'Cápsulas na embalagem' : 'Comprimidos na caixa';
+  const lblAtual = document.getElementById('lbl-qtd-atual');
+  if (isManipulado) {
+    if (lblCaixa) lblCaixa.textContent = 'Cápsulas na embalagem';
+    if (lblAtual) lblAtual.textContent = 'Estoque atual';
+  } else {
+    atualizarLabelEstoque();
+  }
 }
 
 function _limparCompRows() {

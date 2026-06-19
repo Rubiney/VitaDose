@@ -283,7 +283,7 @@
           <input id="f-qtd-caixa" class="form-input mono" type="number" min="0" placeholder="Ex: 30">
         </div>
         <div class="form-group">
-          <label class="form-lbl" for="f-qtd-atual">Estoque atual</label>
+          <label class="form-lbl" for="f-qtd-atual" id="lbl-qtd-atual">Estoque atual</label>
           <input id="f-qtd-atual" class="form-input mono" type="number" min="0" placeholder="Ex: 22">
         </div>
       </div>
@@ -316,14 +316,16 @@
         <div class="form-row">
           <div class="form-group">
             <label class="form-lbl" for="f-forma">Forma farmacêutica</label>
-            <select id="f-forma" class="form-select">
+            <select id="f-forma" class="form-select" onchange="atualizarLabelEstoque()">
               <option value="comprimido">Comprimido</option>
               <option value="capsula">Cápsula</option>
+              <option value="xarope">Xarope</option>
               <option value="solucao">Solução oral</option>
               <option value="suspensao">Suspensão</option>
               <option value="gotas">Gotas</option>
-              <option value="injetavel">Injetável</option>
+              <option value="injetavel">Injetável (ampola)</option>
               <option value="adesivo">Adesivo</option>
+              <option value="creme">Creme / Pomada</option>
               <option value="outro">Outro</option>
             </select>
           </div>
