@@ -389,6 +389,8 @@ function toggleManipulado() {
   document.getElementById('btn-manip-toggle').classList.toggle('ativo', isManipulado);
   document.getElementById('sec-med-normal').style.display = isManipulado ? 'none' : '';
   document.getElementById('sec-manipulado').style.display = isManipulado ? 'block' : 'none';
+  const lblCaixa = document.getElementById('lbl-qtd-caixa');
+  if (lblCaixa) lblCaixa.textContent = isManipulado ? 'Cápsulas na embalagem' : 'Comprimidos na caixa';
 }
 
 function _limparCompRows() {
