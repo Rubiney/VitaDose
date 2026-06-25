@@ -358,3 +358,93 @@ body {
 .text-xs { font-size: 0.73rem; }
 .text-2  { color: var(--text-2); }
 .w-full  { width: 100%; }
+
+/* ── Alerta Visual de Dose (in-app) ── */
+#vd-dose-alert {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  animation: vd-fadein 0.2s ease;
+}
+#vd-dose-alert.vd-alert-saindo { animation: vd-fadeout 0.25s ease forwards; }
+
+@keyframes vd-fadein  { from { opacity: 0; } to { opacity: 1; } }
+@keyframes vd-fadeout { from { opacity: 1; } to { opacity: 0; } }
+
+.vd-alert-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 52, 96, 0.55);
+  backdrop-filter: blur(3px);
+}
+
+.vd-alert-sheet {
+  position: relative;
+  background: var(--white);
+  border-radius: 20px 20px 0 0;
+  padding: 28px 24px 40px;
+  width: 100%;
+  max-width: 430px;
+  text-align: center;
+  animation: vd-slideup 0.3s cubic-bezier(0.34, 1.2, 0.64, 1);
+}
+#vd-dose-alert.vd-alert-saindo .vd-alert-sheet {
+  animation: vd-slidedown 0.25s ease forwards;
+}
+
+@keyframes vd-slideup   { from { transform: translateY(100%); } to { transform: translateY(0); } }
+@keyframes vd-slidedown { from { transform: translateY(0);    } to { transform: translateY(110%); } }
+
+.vd-alert-pulse {
+  font-size: 3rem;
+  margin-bottom: 6px;
+  display: inline-block;
+  animation: vd-pulse 1s ease-in-out infinite;
+}
+@keyframes vd-pulse {
+  0%, 100% { transform: scale(1);    }
+  50%       { transform: scale(1.2); }
+}
+
+.vd-alert-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--text-2);
+  margin-bottom: 10px;
+}
+
+.vd-alert-med {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--navy);
+  margin-bottom: 4px;
+  line-height: 1.3;
+}
+
+.vd-alert-info {
+  font-size: 0.9rem;
+  color: var(--text-2);
+  font-family: 'DM Mono', monospace;
+  margin-bottom: 20px;
+}
+
+.vd-alert-mais {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--amber);
+  margin-bottom: 16px;
+}
+
+.vd-alert-actions {
+  display: flex;
+  gap: 10px;
+}
+.vd-alert-actions .btn { flex: 1; }
+
+[data-theme="dark"] .vd-alert-sheet { background: #1a2236; }
+[data-theme="dark"] .vd-alert-med   { color: var(--gold-l); }
