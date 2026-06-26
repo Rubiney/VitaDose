@@ -189,7 +189,7 @@ function buildMedCard(med) {
     <div class="alert-inline ${med.qtdAtual <= 0 ? 'red' : 'amber'}">
       ⚠ ${med.qtdAtual <= 0
         ? 'Estoque zerado — renove a prescrição urgentemente'
-        : `${med.qtdAtual} ${med.unidade || 'un'} restantes — providencie nova caixa (${dias}d)`}
+        : `${med.qtdAtual} ${getUnidadeEstoque(med)} restantes — providencie nova caixa (${dias}d)`}
       <button onclick="event.stopPropagation()">×</button>
     </div>` : '';
 
@@ -250,6 +250,18 @@ function getStripeColor(med) {
   if (statuses.some(s  => s === 'pendente')) return 'amber';
   if (statuses.some(s  => s === 'perdido'))  return 'red';
   return 'gray';
+}
+
+function getUnidadeEstoque(med) {
+  if (med.nebulizacao) return 'sessões';
+  if (med.manipulado)  return 'cápsulas';
+  const map = {
+    comprimido: 'comprimidos', capsula: 'cápsulas',
+    xarope: 'doses', solucao: 'doses', suspensao: 'doses', gotas: 'doses',
+    colirio: 'gotas', inalacao: 'sessões', injetavel: 'ampolas',
+    adesivo: 'adesivos', creme: 'unidades', outro: 'unidades',
+  };
+  return map[med.forma] || 'unidades';
 }
 
 /* ── Alertas clínicos ── */
