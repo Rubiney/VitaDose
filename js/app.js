@@ -203,8 +203,28 @@ function buildMedCard(med) {
     ? `<button class="med-receita-btn" onclick="event.stopPropagation();abrirLightbox(_fotosMap['r-${med.id}'])">📄 Receita</button>`
     : '';
 
-  const marcasHtml   = `<button class="med-receita-btn" onclick="event.stopPropagation();mostrarMarcas('${med.nome.replace(/'/g, "\\'")}')">📦 Marcas</button>`;
-  const reacoesHtml  = `<button class="med-receita-btn" onclick="event.stopPropagation();abrirReacoes(${med.id},'${med.nome.replace(/'/g, "\\'")}')">⚠️ Reações</button>`;
+  const marcasHtml  = `<button class="med-receita-btn" onclick="event.stopPropagation();mostrarMarcas('${med.nome.replace(/'/g, "\\'")}')">📦 Marcas</button>`;
+  const reacoesHtml = `<button class="med-receita-btn" onclick="event.stopPropagation();abrirReacoes(${med.id},'${med.nome.replace(/'/g, "\\'")}')">⚠️ Reações</button>`;
+
+  // Badge ajuste renal (aparece só se paciente tem TFG salvo e há alerta para este med)
+  let renalHtml = '';
+  if (paciente && paciente.tfg && typeof buscarAjusteRenal === 'function') {
+    const aj = buscarAjusteRenal(med.nome, paciente.tfg);
+    if (aj) {
+      const cores = {
+        contraindicado: { bg:'#fee2e2', txt:'#991b1b', icone:'🔴' },
+        reduzir:        { bg:'#ffedd5', txt:'#9a3412', icone:'🟠' },
+        cautela:        { bg:'#fef9c3', txt:'#854d0e', icone:'🟡' },
+      };
+      const c = cores[aj.nivel] || cores.cautela;
+      const nomeEsc = med.nome.replace(/'/g, "\\'");
+      const textoEsc = aj.texto.replace(/'/g, "\\'");
+      renalHtml = `<button class="med-receita-btn"
+        style="background:${c.bg};color:${c.txt};border-color:${c.txt}40"
+        onclick="event.stopPropagation();abrirAjusteRenal('${nomeEsc}','${textoEsc}','${aj.nivel}')">
+        ${c.icone} Renal</button>`;
+    }
+  }
 
   const horariosHtml = horarios.map(h => {
     const st = getDoseStatus(med.id, h);
@@ -264,6 +284,7 @@ function buildMedCard(med) {
             ${receitaHtml}
             ${marcasHtml}
             ${reacoesHtml}
+            ${renalHtml}
             ${(() => {
               const d = diasParaFim(med.dataFim);
               if (d === null) return '';
@@ -474,6 +495,43 @@ async function salvarReacoesObs(medId) {
   await dbPut('medicamentos', med);
   document.getElementById('vd-reacoes-popup')?.remove();
   showToast('✓ Observação salva');
+}
+
+/* ── Ajuste Renal — modal de detalhe ── */
+function abrirAjusteRenal(nomeMed, texto, nivel) {
+  document.getElementById('vd-renal-popup')?.remove();
+  const cores = {
+    contraindicado: { bg:'#fee2e2', borda:'#f87171', titulo:'#991b1b', icone:'🔴', label:'CONTRAINDICADO / EVITAR' },
+    reduzir:        { bg:'#ffedd5', borda:'#fb923c', titulo:'#9a3412', icone:'🟠', label:'REDUZIR DOSE' },
+    cautela:        { bg:'#fef9c3', borda:'#fbbf24', titulo:'#854d0e', icone:'🟡', label:'USAR COM CAUTELA' },
+  };
+  const c   = cores[nivel] || cores.cautela;
+  const tfg = paciente?.tfg;
+  const est = tfg ? estagioRenal(tfg) : null;
+
+  const el  = document.createElement('div');
+  el.id     = 'vd-renal-popup';
+  el.style.cssText = 'position:fixed;inset:0;z-index:600;background:rgba(0,0,0,.5);display:flex;align-items:flex-end';
+  el.innerHTML = `
+    <div style="background:var(--card);border-radius:22px 22px 0 0;width:100%;padding:22px 20px 36px;max-height:80vh;overflow-y:auto">
+      <p style="font-size:.65rem;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:${c.titulo};margin-bottom:6px">
+        ${c.icone} ${c.label}
+      </p>
+      <p style="font-size:1.05rem;font-weight:800;color:var(--navy);margin-bottom:14px">${nomeMed}</p>
+      <div style="background:${c.bg};border:1.5px solid ${c.borda};border-radius:12px;padding:14px 16px;margin-bottom:14px">
+        <p style="font-size:.88rem;color:${c.titulo};font-weight:600;line-height:1.5;margin:0">${texto}</p>
+      </div>
+      ${est ? `<p style="font-size:.78rem;color:var(--text-2);margin-bottom:14px">
+        TFG atual do paciente: <strong style="color:${est.cor}">${tfg} mL/min</strong> — Estágio ${est.estadio} (${est.descricao})
+      </p>` : ''}
+      <p style="font-size:.72rem;color:var(--text-2);margin-bottom:14px;line-height:1.4">
+        ⚕️ Esta informação é de apoio à decisão clínica. A conduta final deve ser avaliada pelo profissional de saúde responsável.
+      </p>
+      <button class="btn btn-primary btn-full"
+        onclick="document.getElementById('vd-renal-popup').remove()">Fechar</button>
+    </div>`;
+  el.addEventListener('click', e => { if (e.target === el) el.remove(); });
+  document.body.appendChild(el);
 }
 
 /* ── Nomes comerciais ── */
