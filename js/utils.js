@@ -465,3 +465,21 @@ function diasRestantes(med) {
     criarPaywall();
   }
 })();
+
+/* ── Lightbox de fotos ── */
+function abrirLightbox(src) {
+  let lb = document.getElementById('vd-lightbox');
+  if (!lb) {
+    lb = document.createElement('div');
+    lb.id = 'vd-lightbox';
+    lb.innerHTML = `<img id="vd-lb-img"><button onclick="fecharLightbox()">×</button>`;
+    lb.addEventListener('click', e => { if (e.target === lb) fecharLightbox(); });
+    document.body.appendChild(lb);
+  }
+  document.getElementById('vd-lb-img').src = src;
+  lb.style.display = 'flex';
+}
+function fecharLightbox() {
+  const lb = document.getElementById('vd-lightbox');
+  if (lb) lb.style.display = 'none';
+}

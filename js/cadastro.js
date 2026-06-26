@@ -3,9 +3,73 @@
 let pacienteAtual  = null;
 let medHorarios    = [];
 let _editandoMedId = null;
-let _fotoBase64    = null;
+let _fotoBase64     = null;
+let _fotoCaixaB64   = null;
+let _fotoReceitaB64 = null;
 let isManipulado   = false;
 let isNebulizacao  = false;
+
+/* ── Fotos do medicamento ── */
+function _processarFotoMed(file, maxPx, quadrado, callback) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = new Image();
+    img.onload = () => {
+      let w = img.width, h = img.height;
+      const canvas = document.createElement('canvas');
+      if (quadrado) {
+        const s = Math.min(w, h, maxPx);
+        canvas.width = s; canvas.height = s;
+        const ox = (w - Math.min(w,h)) / 2, oy = (h - Math.min(w,h)) / 2;
+        canvas.getContext('2d').drawImage(img, ox, oy, Math.min(w,h), Math.min(w,h), 0, 0, s, s);
+      } else {
+        const r = Math.min(1, maxPx / Math.max(w, h));
+        w = Math.round(w*r); h = Math.round(h*r);
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      }
+      callback(canvas.toDataURL('image/jpeg', quadrado ? 0.70 : 0.75));
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function _setFotoMedPreview(elId, inputId, b64, emoji) {
+  const el = document.getElementById(elId);
+  if (!el) return;
+  if (b64) {
+    el.innerHTML = `
+      <img src="${b64}" style="width:100%;height:100%;object-fit:cover">
+      <button class="foto-med-del" onclick="event.stopPropagation();_removerFotoMed('${elId}','${inputId}','${emoji}')">×</button>`;
+    el.onclick = () => abrirLightbox(b64);
+  } else {
+    el.innerHTML = `<span style="font-size:1.6rem">${emoji}</span><span style="font-size:.65rem;color:var(--text-2)">Toque para fotografar</span>`;
+    el.onclick = () => document.getElementById(inputId).click();
+  }
+}
+
+function _removerFotoMed(elId, inputId, emoji) {
+  if (elId === 'foto-caixa-preview')   _fotoCaixaB64   = null;
+  else                                  _fotoReceitaB64 = null;
+  _setFotoMedPreview(elId, inputId, null, emoji);
+  document.getElementById(inputId).value = '';
+}
+
+function handleFotoCaixa(input) {
+  _processarFotoMed(input.files[0], 400, true, b64 => {
+    _fotoCaixaB64 = b64;
+    _setFotoMedPreview('foto-caixa-preview', 'input-foto-caixa', b64, '📦');
+  });
+}
+
+function handleFotoReceita(input) {
+  _processarFotoMed(input.files[0], 1200, false, b64 => {
+    _fotoReceitaB64 = b64;
+    _setFotoMedPreview('foto-receita-preview', 'input-foto-receita', b64, '📄');
+  });
+}
 
 /* ── Init ── */
 async function init() {
@@ -19,6 +83,10 @@ async function init() {
     document.getElementById('sec-meds').classList.remove('hidden');
     await renderMedList();
   }
+
+  // Fotos med — estado inicial (vazio → abre câmera)
+  _setFotoMedPreview('foto-caixa-preview',   'input-foto-caixa',   null, '📦');
+  _setFotoMedPreview('foto-receita-preview', 'input-foto-receita', null, '📄');
 
   // Horário input
   document.getElementById('btn-add-horario').addEventListener('click', adicionarHorario);
@@ -223,6 +291,12 @@ async function editarMed(id) {
   medHorarios = [...(m.horarios || [])];
   renderHorarioTags();
 
+  // Restaurar fotos
+  _fotoCaixaB64   = m.fotoCaixa   || null;
+  _fotoReceitaB64 = m.fotoReceita || null;
+  _setFotoMedPreview('foto-caixa-preview',   'input-foto-caixa',   _fotoCaixaB64,   '📦');
+  _setFotoMedPreview('foto-receita-preview', 'input-foto-receita', _fotoReceitaB64, '📄');
+
   document.getElementById('btn-salvar-med').textContent    = '✓ Salvar Alterações';
   document.getElementById('btn-cancelar-ed').style.display = '';
 
@@ -308,7 +382,10 @@ async function salvarMedicamento() {
       qtdCaixa, qtdAtual, limiarAlerta: limiar,
       duracaoDias: duracaoDias || null,
       dataInicio:  duracaoDias ? dataInicio : original.dataInicio,
-      dataFim, ...extras,
+      dataFim,
+      fotoCaixa:   _fotoCaixaB64,
+      fotoReceita: _fotoReceitaB64,
+      ...extras,
     });
 
     limparFormMed();
@@ -327,6 +404,8 @@ async function salvarMedicamento() {
       dataInicio:  duracaoDias ? dataInicio : null,
       dataFim, ativo: true,
       criadoEm: new Date().toISOString(),
+      fotoCaixa:   _fotoCaixaB64,
+      fotoReceita: _fotoReceitaB64,
       ...extras,
     });
 
@@ -346,8 +425,12 @@ function limparFormMed() {
   document.getElementById('f-olho').value      = 'ao';
   document.getElementById('f-unidade').value   = 'mg';
   document.getElementById('f-intervalo').value = '24';
-  medHorarios    = [];
-  _editandoMedId = null;
+  medHorarios     = [];
+  _editandoMedId  = null;
+  _fotoCaixaB64   = null;
+  _fotoReceitaB64 = null;
+  _setFotoMedPreview('foto-caixa-preview',   'input-foto-caixa',   null, '📦');
+  _setFotoMedPreview('foto-receita-preview', 'input-foto-receita', null, '📄');
   renderHorarioTags();
   document.getElementById('limiar-hint').textContent  = '';
   document.getElementById('duracao-hint').textContent = 'Sem duração = medicamento de uso contínuo';

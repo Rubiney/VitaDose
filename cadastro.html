@@ -433,6 +433,26 @@
 
       </div>
 
+      <!-- Fotos do medicamento -->
+      <div class="foto-med-row">
+        <div class="foto-med-item">
+          <div id="foto-caixa-preview" class="foto-med-preview">
+            <span style="font-size:1.6rem">📦</span>
+            <span style="font-size:.65rem;color:var(--text-2)">Toque para fotografar</span>
+          </div>
+          <p class="foto-med-lbl">Foto da caixa</p>
+          <input type="file" id="input-foto-caixa" accept="image/*" capture="environment" style="display:none" onchange="handleFotoCaixa(this)">
+        </div>
+        <div class="foto-med-item">
+          <div id="foto-receita-preview" class="foto-med-preview">
+            <span style="font-size:1.6rem">📄</span>
+            <span style="font-size:.65rem;color:var(--text-2)">Toque para fotografar</span>
+          </div>
+          <p class="foto-med-lbl">Receita médica</p>
+          <input type="file" id="input-foto-receita" accept="image/*" capture="environment" style="display:none" onchange="handleFotoReceita(this)">
+        </div>
+      </div>
+
       <button id="btn-salvar-med" class="btn btn-gold btn-full" onclick="salvarMedicamento()">Adicionar Medicamento</button>
       <button id="btn-cancelar-ed" class="btn btn-full" onclick="cancelarEdicao()" style="display:none;margin-top:8px;background:var(--border);color:var(--text-2)">✕ Cancelar edição</button>
     </div>
