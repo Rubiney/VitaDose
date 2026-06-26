@@ -64,6 +64,18 @@
     </div>
   </div>
 
+  <!-- Alertas e Notificações -->
+  <div class="card">
+    <div class="card-title">Alertas e Notificações</div>
+    <p class="text-sm text-2" style="margin-bottom:14px">
+      Toque no botão abaixo para ativar o som e ver como o alerta aparece na tela.
+      Faça isso pelo menos uma vez ao configurar o app.
+    </p>
+    <button class="btn btn-primary btn-full" onclick="testarAlerta()">
+      🔔 Testar alerta de dose
+    </button>
+  </div>
+
   <!-- Trocar paciente / resetar -->
   <div class="card">
     <div class="card-title">Outros</div>
@@ -197,6 +209,34 @@
       document.getElementById('btn-tema-light').style.borderColor = t === 'light' ? 'var(--gold)' : '';
       document.getElementById('btn-tema-dark').style.borderColor  = t === 'dark'  ? 'var(--gold)' : '';
     })();
+
+    function testarAlerta() {
+      tocarAlertaSonoro();
+      if (document.getElementById('vd-demo-alert')) return;
+      const el = document.createElement('div');
+      el.id = 'vd-demo-alert';
+      el.style.cssText = 'position:fixed;inset:0;z-index:500;display:flex;align-items:flex-end;justify-content:center';
+      el.innerHTML = `
+        <div style="position:absolute;inset:0;background:rgba(15,52,96,.55);backdrop-filter:blur(3px)"
+          onclick="document.getElementById('vd-demo-alert').remove()"></div>
+        <div style="position:relative;background:var(--white);border-radius:20px 20px 0 0;
+          padding:28px 24px 40px;width:100%;max-width:430px;text-align:center;
+          animation:vd-slideup .3s cubic-bezier(.34,1.2,.64,1)">
+          <div style="font-size:3rem;margin-bottom:6px;display:inline-block;animation:vd-pulse 1s ease-in-out infinite">💊</div>
+          <p style="font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:var(--text-2);margin-bottom:10px">Hora do Remédio</p>
+          <p style="font-size:1.3rem;font-weight:700;color:var(--navy);margin-bottom:4px">Losartana</p>
+          <p style="font-size:.9rem;color:var(--text-2);font-family:'DM Mono',monospace;margin-bottom:20px">50mg — 08:00</p>
+          <div style="display:flex;gap:10px;margin-bottom:8px">
+            <button class="btn btn-outline" style="flex:1"
+              onclick="document.getElementById('vd-demo-alert').remove()">Depois</button>
+            <button class="btn btn-outline" style="flex:1"
+              onclick="document.getElementById('vd-demo-alert').remove();showToast('⏰ Lembrete em 15 minutos')">⏰ 15 min</button>
+          </div>
+          <button class="btn btn-gold" style="width:100%"
+            onclick="document.getElementById('vd-demo-alert').remove();showToast('✓ Apenas uma demonstração!')">✓ Tomei agora</button>
+        </div>`;
+      document.body.appendChild(el);
+    }
 
     document.addEventListener('DOMContentLoaded', initPerfil);
   </script>

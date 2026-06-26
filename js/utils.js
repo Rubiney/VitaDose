@@ -480,6 +480,39 @@ if ('serviceWorker' in navigator) {
   });
 }
 
+/* ── Áudio para alertas (compartilhado entre todas as páginas) ── */
+let _audioCtx = null;
+function _initAudio() {
+  if (_audioCtx) return;
+  try { _audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {}
+}
+document.addEventListener('click',      _initAudio, { once: true });
+document.addEventListener('touchstart', _initAudio, { once: true });
+
+function tocarAlertaSonoro() {
+  if (!_audioCtx) { _initAudio(); }
+  if (!_audioCtx) return;
+  if (_audioCtx.state === 'suspended') _audioCtx.resume();
+  const bip = (freq, t0, dur) => {
+    const osc  = _audioCtx.createOscillator();
+    const gain = _audioCtx.createGain();
+    osc.connect(gain);
+    gain.connect(_audioCtx.destination);
+    osc.frequency.value = freq;
+    osc.type = 'sine';
+    gain.gain.setValueAtTime(0, t0);
+    gain.gain.linearRampToValueAtTime(0.35, t0 + 0.02);
+    gain.gain.setValueAtTime(0.35, t0 + dur - 0.05);
+    gain.gain.linearRampToValueAtTime(0, t0 + dur);
+    osc.start(t0);
+    osc.stop(t0 + dur + 0.01);
+  };
+  const t = _audioCtx.currentTime;
+  bip(880,  t,        0.18);
+  bip(880,  t + 0.25, 0.18);
+  bip(1100, t + 0.50, 0.28);
+}
+
 /* ── Lightbox de fotos ── */
 function abrirLightbox(src) {
   let lb = document.getElementById('vd-lightbox');

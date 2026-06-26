@@ -1,41 +1,10 @@
 /* VitaDose — Notificações locais + periodicSync */
+/* Áudio: tocarAlertaSonoro() vive em utils.js */
 
-let _timers = [];
-let _audioCtx = null;
-let _alertaQueue = [];
-let _alertaAtivo = false;
-
-/* ── AudioContext: inicializa na primeira interação do usuário (requisito iOS/Android) ── */
-function _initAudio() {
-  if (_audioCtx) return;
-  try { _audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {}
-}
-document.addEventListener('click',      _initAudio, { once: true });
-document.addEventListener('touchstart', _initAudio, { once: true });
-
-/* ── Toca 3 bipes via Web Audio API ── */
-function tocarAlertaSonoro() {
-  if (!_audioCtx) return;
-  if (_audioCtx.state === 'suspended') _audioCtx.resume();
-  const bip = (freq, t0, dur) => {
-    const osc  = _audioCtx.createOscillator();
-    const gain = _audioCtx.createGain();
-    osc.connect(gain);
-    gain.connect(_audioCtx.destination);
-    osc.frequency.value = freq;
-    osc.type = 'sine';
-    gain.gain.setValueAtTime(0, t0);
-    gain.gain.linearRampToValueAtTime(0.35, t0 + 0.02);
-    gain.gain.setValueAtTime(0.35, t0 + dur - 0.05);
-    gain.gain.linearRampToValueAtTime(0, t0 + dur);
-    osc.start(t0);
-    osc.stop(t0 + dur + 0.01);
-  };
-  const t = _audioCtx.currentTime;
-  bip(880,  t,        0.18);
-  bip(880,  t + 0.25, 0.18);
-  bip(1100, t + 0.50, 0.28);
-}
+let _timers       = [];
+let _alertaQueue  = [];
+let _alertaAtivo  = false;
+let _snoozePending = {};  // { `${medId}-${horario}`: med }
 
 /* ── Banner visual in-app (fila para múltiplas doses simultâneas) ── */
 function exibirAlertaVisual(med, horario) {
@@ -50,6 +19,8 @@ function _processarProximoAlerta() {
 
   const antigo = document.getElementById('vd-dose-alert');
   if (antigo) antigo.remove();
+
+  _snoozePending[`${med.id}-${horario}`] = med;
 
   const nomeSafe = med.nome.replace(/'/g, "\\'");
   const detalhe  = `${med.dose}${med.unidade || ''} — ${horario}`;
@@ -70,8 +41,10 @@ function _processarProximoAlerta() {
       ${maisHtml}
       <div class="vd-alert-actions">
         <button class="btn btn-outline" onclick="fecharAlertaDose()">Depois</button>
-        <button class="btn btn-gold" onclick="confirmarDoAlert(${med.id},'${horario}','${nomeSafe}')">✓ Tomei</button>
+        <button class="btn btn-outline" onclick="snoozeAlerta(${med.id},'${horario}')">⏰ 15 min</button>
       </div>
+      <button class="btn btn-gold" style="width:100%;margin-top:8px"
+        onclick="confirmarDoAlert(${med.id},'${horario}','${nomeSafe}')">✓ Tomei agora</button>
     </div>`;
 
   document.body.appendChild(el);
@@ -91,6 +64,28 @@ window.confirmarDoAlert = function(medId, horario, medNome) {
   _alertaAtivo = false;
   _processarProximoAlerta();
   if (typeof abrirConfirmar === 'function') abrirConfirmar(medId, horario, medNome);
+};
+
+window.snoozeAlerta = function(medId, horario) {
+  const med = _snoozePending[`${medId}-${horario}`];
+  fecharAlertaDose();
+  if (!med) return;
+  setTimeout(() => {
+    if (!document.hidden) {
+      tocarAlertaSonoro();
+      exibirAlertaVisual(med, horario);
+    }
+    if (Notification.permission === 'granted') {
+      new Notification('⏰ Lembrete — VitaDose', {
+        body  : `${med.nome} ${med.dose}${med.unidade || ''} — ${horario}`,
+        icon  : '/icons/icon-192.svg',
+        badge : '/icons/icon-192.svg',
+        tag   : `vd-snooze-${medId}-${horario}`,
+        silent: false,
+      });
+    }
+  }, 15 * 60 * 1000);
+  showToast('⏰ Lembrete em 15 minutos');
 };
 
 /* ── Solicita permissão ao usuário ── */
@@ -117,12 +112,10 @@ function agendarLocais(meds) {
       const ms = alvo.getTime() - agora;
       if (ms > 0 && ms < 14 * 60 * 60 * 1000) {
         _timers.push(setTimeout(() => {
-          // App em foreground: som + banner visual
           if (!document.hidden) {
             tocarAlertaSonoro();
             exibirAlertaVisual(med, h);
           }
-          // Notificação do sistema (funciona em background se permissão concedida)
           if (Notification.permission === 'granted') {
             new Notification('💊 Hora do remédio — VitaDose', {
               body  : `${med.nome} ${med.dose}${med.unidade || ''} — ${h}`,
