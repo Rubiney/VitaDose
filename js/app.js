@@ -206,6 +206,25 @@ function buildMedCard(med) {
   const marcasHtml  = `<button class="med-receita-btn" onclick="event.stopPropagation();mostrarMarcas('${med.nome.replace(/'/g, "\\'")}')">📦 Marcas</button>`;
   const reacoesHtml = `<button class="med-receita-btn" onclick="event.stopPropagation();abrirReacoes(${med.id},'${med.nome.replace(/'/g, "\\'")}')">⚠️ Reações</button>`;
 
+  // Badge Critérios de Beers (aparece só se paciente é idoso)
+  let beersHtml = '';
+  if (typeof buscarBeers === 'function' && typeof pacienteIdoso === 'function' && pacienteIdoso(paciente)) {
+    const b = buscarBeers(med.nome);
+    if (b) {
+      const coresB = {
+        alto:     { bg:'#fee2e2', txt:'#991b1b', icone:'🔴' },
+        moderado: { bg:'#ffedd5', txt:'#9a3412', icone:'🟠' },
+        cautela:  { bg:'#fef9c3', txt:'#854d0e', icone:'🟡' },
+      };
+      const cb = coresB[b.risco] || coresB.cautela;
+      const nomeEsc = med.nome.replace(/'/g, "\\'");
+      beersHtml = `<button class="med-receita-btn"
+        style="background:${cb.bg};color:${cb.txt};border-color:${cb.txt}40"
+        onclick="event.stopPropagation();abrirBeers('${nomeEsc}')">
+        ${cb.icone} Beers</button>`;
+    }
+  }
+
   // Badge ajuste renal (aparece só se paciente tem TFG salvo e há alerta para este med)
   let renalHtml = '';
   if (paciente && paciente.tfg && typeof buscarAjusteRenal === 'function') {
@@ -284,6 +303,7 @@ function buildMedCard(med) {
             ${receitaHtml}
             ${marcasHtml}
             ${reacoesHtml}
+            ${beersHtml}
             ${renalHtml}
             ${(() => {
               const d = diasParaFim(med.dataFim);
@@ -495,6 +515,51 @@ async function salvarReacoesObs(medId) {
   await dbPut('medicamentos', med);
   document.getElementById('vd-reacoes-popup')?.remove();
   showToast('✓ Observação salva');
+}
+
+/* ── Critérios de Beers — modal de detalhe ── */
+function abrirBeers(nomeMed) {
+  document.getElementById('vd-beers-popup')?.remove();
+  if (typeof buscarBeers !== 'function') return;
+  const b = buscarBeers(nomeMed);
+  if (!b) return;
+
+  const cores = {
+    alto:     { bg:'#fee2e2', borda:'#f87171', titulo:'#991b1b', icone:'🔴', label:'ALTO RISCO — Critérios de Beers' },
+    moderado: { bg:'#ffedd5', borda:'#fb923c', titulo:'#9a3412', icone:'🟠', label:'RISCO MODERADO — Critérios de Beers' },
+    cautela:  { bg:'#fef9c3', borda:'#fbbf24', titulo:'#854d0e', icone:'🟡', label:'USO COM CAUTELA — Critérios de Beers' },
+  };
+  const c = cores[b.risco] || cores.cautela;
+
+  const el = document.createElement('div');
+  el.id    = 'vd-beers-popup';
+  el.style.cssText = 'position:fixed;inset:0;z-index:600;background:rgba(0,0,0,.5);display:flex;align-items:flex-end';
+  el.innerHTML = `
+    <div style="background:var(--card);border-radius:22px 22px 0 0;width:100%;padding:22px 20px 36px;max-height:85vh;overflow-y:auto">
+      <p style="font-size:.65rem;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:${c.titulo};margin-bottom:4px">
+        ${c.icone} ${c.label}
+      </p>
+      <p style="font-size:1.05rem;font-weight:800;color:var(--navy);margin-bottom:4px">${nomeMed}</p>
+      <p style="font-size:.76rem;color:var(--text-2);margin-bottom:14px">${b.categoria}</p>
+
+      <div style="background:${c.bg};border:1.5px solid ${c.borda};border-radius:12px;padding:14px 16px;margin-bottom:12px">
+        <p style="font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:${c.titulo};margin-bottom:6px">⚠️ Por que é inapropriado em idosos?</p>
+        <p style="font-size:.86rem;color:${c.titulo};line-height:1.55;margin:0">${b.motivo}</p>
+      </div>
+
+      ${b.alternativa ? `<div style="background:#f0fdf4;border:1.5px solid #86efac;border-radius:12px;padding:12px 14px;margin-bottom:14px">
+        <p style="font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:#166534;margin-bottom:4px">✅ Alternativa mais segura</p>
+        <p style="font-size:.86rem;color:#166534;line-height:1.5;margin:0">${b.alternativa}</p>
+      </div>` : ''}
+
+      <p style="font-size:.7rem;color:var(--text-2);margin-bottom:14px;line-height:1.4">
+        📚 Fonte: AGS Beers Criteria® 2023 · A conduta final deve ser avaliada pelo médico e farmacêutico responsáveis.
+      </p>
+      <button class="btn btn-primary btn-full"
+        onclick="document.getElementById('vd-beers-popup').remove()">Fechar</button>
+    </div>`;
+  el.addEventListener('click', e => { if (e.target === el) el.remove(); });
+  document.body.appendChild(el);
 }
 
 /* ── Ajuste Renal — modal de detalhe ── */
