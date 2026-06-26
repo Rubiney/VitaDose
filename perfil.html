@@ -123,6 +123,47 @@
     </button>
   </div>
 
+  <!-- Saúde & Cuidados -->
+  <div class="card">
+    <div class="card-title">Saúde &amp; Cuidados</div>
+
+    <!-- Abas -->
+    <div class="sc-tabs">
+      <button class="sc-tab active" onclick="scTab('suplementos')">💊 Suplementos</button>
+      <button class="sc-tab"        onclick="scTab('curativos')">🩹 Curativos</button>
+      <button class="sc-tab"        onclick="scTab('nutricao')">🥗 Nutrição</button>
+    </div>
+
+    <!-- Suplementação -->
+    <div id="sc-suplementos">
+      <p class="text-sm text-2" style="margin-bottom:12px">Toque para selecionar e anote dose, marca e horário.</p>
+      <div id="supl-wrap"></div>
+      <div class="ds-nova-row">
+        <input id="supl-nova-input" class="ds-nova-input" type="text"
+          placeholder="Outro suplemento..."
+          onkeydown="if(event.key==='Enter'){event.preventDefault();adicionarSuplCustom()}">
+        <button class="btn btn-outline" onclick="adicionarSuplCustom()">+ Adicionar</button>
+      </div>
+      <button class="btn btn-primary btn-full" style="margin-top:14px" onclick="salvarSaude()">✓ Salvar suplementação</button>
+    </div>
+
+    <!-- Curativos & Pomadas -->
+    <div id="sc-curativos" style="display:none">
+      <p class="text-sm text-2" style="margin-bottom:10px">Registre pomadas, curativos, cremes e cuidados tópicos em uso.</p>
+      <textarea id="curativos-obs" class="hc-textarea" rows="5"
+        placeholder="Ex: Bepantol nas mãos à noite · Curativo hidrocoloide no calcanhar · Hidratante corporal Nívea..."></textarea>
+      <button class="btn btn-primary btn-full" style="margin-top:14px" onclick="salvarSaude()">✓ Salvar curativos e pomadas</button>
+    </div>
+
+    <!-- Orientações Nutricionais -->
+    <div id="sc-nutricao" style="display:none">
+      <p class="text-sm text-2" style="margin-bottom:10px">Anotações do nutricionista ou médico sobre alimentação e restrições.</p>
+      <textarea id="nutricao-obs" class="hc-textarea" rows="5"
+        placeholder="Ex: Dieta hiposódica · Evitar frituras · Proteína em todas as refeições · 2L de água por dia..."></textarea>
+      <button class="btn btn-primary btn-full" style="margin-top:14px" onclick="salvarSaude()">✓ Salvar orientações nutricionais</button>
+    </div>
+  </div>
+
   <!-- Trocar paciente / resetar -->
   <div class="card">
     <div class="card-title">Outros</div>
@@ -205,6 +246,14 @@
       _dsData   = Object.assign({}, p.doencasSazonais   || {});
       _dsCustom = (p.doencasSazonaisCustom || []).slice();
       _renderDoencas();
+      // Inicializa saúde & cuidados
+      _suplData   = Object.assign({}, p.suplementacao       || {});
+      _suplCustom = (p.suplementacaoCustom || []).slice();
+      _renderSuplementos();
+      const co = document.getElementById('curativos-obs');
+      const no = document.getElementById('nutricao-obs');
+      if (co) co.value = p.curativosPomadas          || '';
+      if (no) no.value = p.orientacoesNutricionais   || '';
     }
 
     async function trocarPaciente() {
@@ -379,6 +428,113 @@
       p.doencasSazonaisCustom = _dsCustom;
       await dbPut('pacientes', p);
       showToast('✓ Doenças sazonais salvas');
+    }
+
+    /* ── Saúde & Cuidados ── */
+    const _SUPLEMENTOS = [
+      'Whey Protein','Vitamina D','Cálcio','Ômega-3','Creatina',
+      'Vitamina B12','Complexo B','Magnésio','Ferro','Zinco',
+      'Vitamina C','Probióticos','Colágeno','Melatonina','Coenzima Q10',
+      'Vitamina E','Vitamina A','Biotina','Ácido Fólico','Selênio'
+    ];
+
+    let _suplData   = {}; // { 'Vitamina D': { dose:'1000 UI', obs:'com almoço' } }
+    let _suplCustom = [];
+
+    function scTab(aba) {
+      ['suplementos','curativos','nutricao'].forEach(id => {
+        const el = document.getElementById('sc-' + id);
+        if (el) el.style.display = id === aba ? 'block' : 'none';
+      });
+      document.querySelectorAll('.sc-tab').forEach((btn, i) => {
+        btn.classList.toggle('active', ['suplementos','curativos','nutricao'][i] === aba);
+      });
+    }
+
+    function _renderSuplementos() {
+      const wrap = document.getElementById('supl-wrap');
+      if (!wrap) return;
+      const todos = [..._SUPLEMENTOS, ..._suplCustom];
+      let html = '<div class="ds-chips" style="margin-bottom:14px">';
+      for (const s of todos) {
+        const at  = s in _suplData;
+        const cst = _suplCustom.includes(s);
+        html += `<button type="button" class="ds-chip${at ? ' ativa' : ''}"
+          onclick="toggleSupl('${_safe(s)}')">${s}${cst
+          ? ` <span class="ds-rm" onclick="event.stopPropagation();removerSuplCustom('${_safe(s)}')">×</span>`
+          : ''}</button>`;
+      }
+      html += '</div>';
+      // Detalhes de cada selecionado
+      for (const s of todos) {
+        if (!(s in _suplData)) continue;
+        const d = _suplData[s];
+        const sq = s.replace(/"/g,'&quot;');
+        html += `<div class="supl-detalhe">
+          <p class="supl-detalhe-title">💊 ${s}</p>
+          <label class="supl-field-label">Dose / Marca</label>
+          <input type="text" class="supl-field-input"
+            data-supl="${sq}" data-field="dose"
+            placeholder="Ex: 1000 UI · Marca X"
+            value="${(d.dose||'').replace(/"/g,'&quot;')}">
+          <label class="supl-field-label">Horário / Observações</label>
+          <input type="text" class="supl-field-input"
+            data-supl="${sq}" data-field="obs"
+            placeholder="Ex: Com o almoço · Indicado pelo nutricionista"
+            value="${(d.obs||'').replace(/"/g,'&quot;')}">
+        </div>`;
+      }
+      wrap.innerHTML = html;
+    }
+
+    function _coletarSupl() {
+      document.querySelectorAll('[data-supl]').forEach(el => {
+        const nome  = el.dataset.supl;
+        const field = el.dataset.field;
+        if (nome && field && nome in _suplData) _suplData[nome][field] = el.value;
+      });
+    }
+
+    function toggleSupl(nome) {
+      _coletarSupl();
+      if (nome in _suplData) delete _suplData[nome];
+      else _suplData[nome] = { dose: '', obs: '' };
+      _renderSuplementos();
+    }
+
+    function adicionarSuplCustom() {
+      const input = document.getElementById('supl-nova-input');
+      const nome  = input ? input.value.trim() : '';
+      if (!nome) return;
+      const todos = [..._SUPLEMENTOS, ..._suplCustom];
+      if (todos.some(s => s.toLowerCase() === nome.toLowerCase())) {
+        showToast('Suplemento já está na lista'); return;
+      }
+      _suplCustom.push(nome);
+      _suplData[nome] = { dose: '', obs: '' };
+      input.value = '';
+      _renderSuplementos();
+    }
+
+    function removerSuplCustom(nome) {
+      _coletarSupl();
+      _suplCustom = _suplCustom.filter(s => s !== nome);
+      delete _suplData[nome];
+      _renderSuplementos();
+    }
+
+    async function salvarSaude() {
+      _coletarSupl();
+      const pid = getActivePacienteId();
+      if (!pid) return;
+      const p = await dbGet('pacientes', pid);
+      if (!p) return;
+      p.suplementacao          = _suplData;
+      p.suplementacaoCustom    = _suplCustom;
+      p.curativosPomadas       = document.getElementById('curativos-obs')?.value.trim() || '';
+      p.orientacoesNutricionais = document.getElementById('nutricao-obs')?.value.trim() || '';
+      await dbPut('pacientes', p);
+      showToast('✓ Saúde & Cuidados salvo');
     }
 
     async function salvarHistoricoClinico() {
