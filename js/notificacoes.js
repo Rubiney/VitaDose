@@ -108,6 +108,13 @@ async function solicitarPermissao() {
   return res === 'granted';
 }
 
+/* ── Reexibe banner ao voltar ao app (usuário estava em outro app/aba) ── */
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden && _alertaQueue.length > 0 && !_alertaAtivo) {
+    _processarProximoAlerta();
+  }
+});
+
 /* ── Agenda via setTimeout (som + visual sempre; notificação sistema se tiver permissão) ── */
 function agendarLocais(meds) {
   _timers.forEach(t => clearTimeout(t));
@@ -123,9 +130,7 @@ function agendarLocais(meds) {
       const ms = alvo.getTime() - agora;
       if (ms > 0 && ms < 14 * 60 * 60 * 1000) {
         _timers.push(setTimeout(() => {
-          if (!document.hidden) {
-            exibirAlertaVisual(med, h); // som iniciado dentro de _processarProximoAlerta
-          }
+          // Notificação do sistema — dispara sempre, mesmo em background
           if (Notification.permission === 'granted') {
             new Notification('💊 Hora do remédio — VitaDose', {
               body  : `${med.nome} ${med.dose}${med.unidade || ''} — ${h}`,
@@ -134,6 +139,10 @@ function agendarLocais(meds) {
               tag   : `vd-${med.id}-${h}`,
               silent: false,
             });
+          }
+          // Banner + som in-app — apenas se o app estiver visível
+          if (!document.hidden) {
+            exibirAlertaVisual(med, h);
           }
         }, ms));
       }

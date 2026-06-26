@@ -111,6 +111,9 @@
   <!-- Alertas e Notificações -->
   <div class="card">
     <div class="card-title">Alertas e Notificações</div>
+
+    <div id="notif-status"></div>
+
     <p class="text-sm text-2" style="margin-bottom:14px">
       Toque no botão abaixo para ativar o som e ver como o alerta aparece na tela.
       Faça isso pelo menos uma vez ao configurar o app.
@@ -417,7 +420,52 @@
       document.body.appendChild(el);
     }
 
-    document.addEventListener('DOMContentLoaded', initPerfil);
+    function verificarPermissaoNotificacao() {
+      const wrap = document.getElementById('notif-status');
+      if (!wrap) return;
+      if (!('Notification' in window)) {
+        wrap.innerHTML = `<div style="background:#fff5f5;border:1.5px solid #fc8181;border-radius:10px;
+          padding:12px 14px;margin-bottom:14px;font-size:.85rem;color:#742a2a;line-height:1.5">
+          ⚠️ Seu navegador não suporta notificações. Use o Chrome para receber alertas mesmo com o app em segundo plano.
+        </div>`;
+        return;
+      }
+      if (Notification.permission === 'denied') {
+        wrap.innerHTML = `<div style="background:#fff5f5;border:1.5px solid #fc8181;border-radius:10px;
+          padding:12px 14px;margin-bottom:14px;font-size:.85rem;color:#742a2a;line-height:1.5">
+          🚫 <strong>Notificações bloqueadas.</strong> Os alertas de dose não aparecerão quando você estiver em outro app ou com a tela apagada.<br><br>
+          Para ativar: <strong>Configurações do celular → Apps → Chrome → Notificações → Ativar</strong>
+        </div>`;
+        return;
+      }
+      if (Notification.permission === 'default') {
+        wrap.innerHTML = `<div style="background:#fffbeb;border:1.5px solid #f6ad55;border-radius:10px;
+          padding:12px 14px;margin-bottom:14px;font-size:.85rem;color:#744210;line-height:1.5">
+          🔔 Notificações ainda não ativadas. Toque abaixo para permitir alertas mesmo com o app em segundo plano.
+        </div>
+        <button class="btn btn-outline btn-full" style="margin-bottom:14px" onclick="ativarNotificacoes()">
+          Ativar notificações agora
+        </button>`;
+        return;
+      }
+      // granted
+      wrap.innerHTML = `<div style="background:#f0fff4;border:1.5px solid #68d391;border-radius:10px;
+        padding:12px 14px;margin-bottom:14px;font-size:.85rem;color:#276749;line-height:1.5">
+        ✅ Notificações ativas — você receberá alertas mesmo assistindo a filmes ou com o app em segundo plano.
+      </div>`;
+    }
+
+    async function ativarNotificacoes() {
+      const res = await Notification.requestPermission();
+      verificarPermissaoNotificacao();
+      if (res === 'granted') showToast('✓ Notificações ativadas');
+      else showToast('⚠ Permissão não concedida');
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      initPerfil();
+      verificarPermissaoNotificacao();
+    });
   </script>
 </body>
 </html>
