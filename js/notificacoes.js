@@ -1,10 +1,15 @@
 /* VitaDose — Notificações locais + periodicSync */
 /* Áudio: tocarAlertaSonoro() vive em utils.js */
 
-let _timers       = [];
-let _alertaQueue  = [];
-let _alertaAtivo  = false;
-let _snoozePending = {};  // { `${medId}-${horario}`: med }
+let _timers        = [];
+let _alertaQueue   = [];
+let _alertaAtivo   = false;
+let _snoozePending = {};
+let _alertaSomLoop = null; // repete o som a cada 30s enquanto o banner estiver na tela
+
+function _pararSomLoop() {
+  if (_alertaSomLoop) { clearInterval(_alertaSomLoop); _alertaSomLoop = null; }
+}
 
 /* ── Banner visual in-app (fila para múltiplas doses simultâneas) ── */
 function exibirAlertaVisual(med, horario) {
@@ -48,9 +53,15 @@ function _processarProximoAlerta() {
     </div>`;
 
   document.body.appendChild(el);
+
+  // Inicia loop de som: toca imediatamente e repete a cada 30s até interação
+  _pararSomLoop();
+  tocarAlertaSonoro();
+  _alertaSomLoop = setInterval(tocarAlertaSonoro, 30000);
 }
 
 window.fecharAlertaDose = function() {
+  _pararSomLoop();
   const el = document.getElementById('vd-dose-alert');
   if (el) {
     el.classList.add('vd-alert-saindo');
@@ -59,6 +70,7 @@ window.fecharAlertaDose = function() {
 };
 
 window.confirmarDoAlert = function(medId, horario, medNome) {
+  _pararSomLoop();
   const el = document.getElementById('vd-dose-alert');
   if (el) el.remove();
   _alertaAtivo = false;
@@ -72,8 +84,7 @@ window.snoozeAlerta = function(medId, horario) {
   if (!med) return;
   setTimeout(() => {
     if (!document.hidden) {
-      tocarAlertaSonoro();
-      exibirAlertaVisual(med, horario);
+      exibirAlertaVisual(med, horario); // som iniciado dentro de _processarProximoAlerta
     }
     if (Notification.permission === 'granted') {
       new Notification('⏰ Lembrete — VitaDose', {
@@ -113,8 +124,7 @@ function agendarLocais(meds) {
       if (ms > 0 && ms < 14 * 60 * 60 * 1000) {
         _timers.push(setTimeout(() => {
           if (!document.hidden) {
-            tocarAlertaSonoro();
-            exibirAlertaVisual(med, h);
+            exibirAlertaVisual(med, h); // som iniciado dentro de _processarProximoAlerta
           }
           if (Notification.permission === 'granted') {
             new Notification('💊 Hora do remédio — VitaDose', {
