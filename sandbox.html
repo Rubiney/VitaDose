@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#d97706">
+  <title>VitaDose — Sandbox Clínico</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="css/vitadose.css">
+  <style>
+    .sb-header {
+      background:linear-gradient(135deg,#92400e,#d97706);
+      padding:28px 20px 20px; color:#fff; text-align:center;
+    }
+    .sb-badge {
+      display:inline-block; background:rgba(255,255,255,.2);
+      border:1px solid rgba(255,255,255,.4); border-radius:20px;
+      padding:3px 12px; font-size:.7rem; font-weight:700;
+      letter-spacing:.1em; text-transform:uppercase; margin-bottom:10px;
+    }
+    .sb-title { font-size:1.5rem; font-weight:800; margin-bottom:4px; }
+    .sb-sub   { font-size:.82rem; opacity:.85; }
+    .caso-card {
+      border:1.5px solid var(--border); border-radius:14px;
+      padding:16px; margin-bottom:12px; cursor:pointer;
+      transition:border-color .15s, box-shadow .15s;
+    }
+    .caso-card:active { border-color:#d97706; box-shadow:0 0 0 3px rgba(217,119,6,.15); }
+    .caso-num  { font-size:.65rem; font-weight:800; text-transform:uppercase; letter-spacing:.1em; color:#d97706; margin-bottom:4px; }
+    .caso-nome { font-size:1rem; font-weight:700; color:var(--navy); margin-bottom:4px; }
+    .caso-diag { font-size:.8rem; color:var(--text-2); line-height:1.4; margin-bottom:8px; }
+    .caso-meds { font-size:.75rem; color:var(--text-1); font-style:italic; }
+    .sb-paciente-card {
+      display:flex; align-items:center; gap:12px;
+      border:1.5px solid #fde68a; border-radius:12px;
+      padding:12px 14px; margin-bottom:10px; background:#fffbeb;
+    }
+    .sb-pac-avatar {
+      width:40px; height:40px; border-radius:50%;
+      background:#d97706; color:#fff; font-weight:800;
+      font-size:.9rem; display:flex; align-items:center; justify-content:center;
+      flex-shrink:0;
+    }
+    .sb-pac-info { flex:1; min-width:0; }
+    .sb-pac-nome { font-size:.92rem; font-weight:700; color:var(--navy); }
+    .sb-pac-detalhe { font-size:.75rem; color:var(--text-2); }
+    .sb-novo-form .form-lbl { color:var(--text-2); font-size:.75rem; font-weight:700; text-transform:uppercase; letter-spacing:.06em; display:block; margin-bottom:5px; }
+    .sb-novo-form .form-input, .sb-novo-form .form-select, .sb-novo-form textarea {
+      width:100%; box-sizing:border-box; border:1.5px solid var(--border);
+      border-radius:10px; padding:10px 12px; font-size:.9rem;
+      font-family:inherit; color:var(--text-1); background:var(--bg);
+      outline:none; transition:border-color .15s; margin-bottom:12px;
+    }
+    .sb-novo-form .form-input:focus,
+    .sb-novo-form .form-select:focus,
+    .sb-novo-form textarea:focus { border-color:#d97706; }
+  </style>
+</head>
+<body>
+
+  <div class="sb-header">
+    <div class="sb-badge">🧪 Modo Simulação</div>
+    <p class="sb-title">Sandbox Clínico</p>
+    <p class="sb-sub">Pacientes fictícios · Sem afetar dados reais</p>
+  </div>
+
+  <div style="padding:0 0 120px">
+
+    <!-- Aviso -->
+    <div style="margin:14px 16px 0;background:#fff7ed;border:1.5px solid #fed7aa;border-radius:12px;padding:12px 14px;font-size:.82rem;color:#92400e;line-height:1.5">
+      ⚠️ <strong>Área de simulação.</strong> Todos os pacientes criados aqui são fictícios e isolados dos pacientes reais. Use para testes, treinamentos e demonstrações.
+    </div>
+
+    <!-- Casos Clínicos Pré-definidos -->
+    <p class="sec-header" style="margin-top:18px">Casos Clínicos Pré-definidos</p>
+    <div style="padding:0 16px" id="casos-wrap">
+      <!-- Renderizado por JS -->
+    </div>
+
+    <!-- Pacientes de Simulação existentes -->
+    <p class="sec-header" style="margin-top:6px">Meus Pacientes de Simulação</p>
+    <div style="padding:0 16px" id="sb-pacientes-wrap">
+      <p class="text-sm text-2" style="text-align:center;padding:12px 0">Carregando...</p>
+    </div>
+
+    <!-- Novo Paciente Sandbox -->
+    <p class="sec-header" style="margin-top:6px">Novo Paciente de Simulação</p>
+    <div class="card sb-novo-form">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div>
+          <label class="form-lbl">Nome *</label>
+          <input id="sb-nome" class="form-input" type="text" placeholder="Ex: Paciente 001">
+        </div>
+        <div>
+          <label class="form-lbl">Perfil</label>
+          <select id="sb-perfil" class="form-select">
+            <option value="adulto">Adulto</option>
+            <option value="idoso">Idoso (60+)</option>
+            <option value="pediatrico">Pediátrico</option>
+            <option value="renal">Insuf. Renal</option>
+            <option value="hepatico">Insuf. Hepática</option>
+            <option value="gestante">Gestante</option>
+          </select>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+        <div>
+          <label class="form-lbl">Idade</label>
+          <input id="sb-idade" class="form-input" type="number" placeholder="Ex: 68" min="0" max="120">
+        </div>
+        <div>
+          <label class="form-lbl">Peso (kg)</label>
+          <input id="sb-peso" class="form-input" type="number" placeholder="Ex: 72">
+        </div>
+        <div>
+          <label class="form-lbl">Sexo</label>
+          <select id="sb-sexo" class="form-select">
+            <option value="F">Feminino</option>
+            <option value="M">Masculino</option>
+          </select>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div>
+          <label class="form-lbl">Creatinina (mg/dL)</label>
+          <input id="sb-creatinina" class="form-input" type="number" step="0.1" placeholder="Ex: 1.8">
+        </div>
+        <div>
+          <label class="form-lbl">TFG (mL/min)</label>
+          <input id="sb-tfg" class="form-input" type="number" placeholder="Ex: 42">
+        </div>
+      </div>
+      <label class="form-lbl">Diagnósticos</label>
+      <textarea id="sb-diag" rows="2"
+        placeholder="Ex: HAS, DM2, IRC estágio 3, Fibrilação Atrial..."></textarea>
+      <label class="form-lbl">Alergias</label>
+      <input id="sb-alergias" class="form-input" type="text"
+        placeholder="Ex: Penicilina, AAS...">
+      <label class="form-lbl">Observações clínicas</label>
+      <textarea id="sb-obs" rows="2"
+        placeholder="Ex: Paciente em diálise 3x/semana, INR alvo 2-3..."></textarea>
+
+      <button class="btn btn-full" style="background:#d97706;color:#fff;border:none"
+        onclick="criarPacienteSandbox()">
+        🧪 Criar e Entrar no Sandbox
+      </button>
+    </div>
+
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <!-- Bottom nav -->
+  <nav class="bottom-nav">
+    <a class="nav-btn" href="index.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+      </svg>
+      Início
+    </a>
+    <a class="nav-btn" href="cadastro.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/>
+      </svg>
+      Medicamentos
+    </a>
+    <a class="nav-btn" href="historico.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+      </svg>
+      Histórico
+    </a>
+    <a class="nav-btn active" href="sandbox.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2v-4M9 21H5a2 2 0 0 1-2-2v-4m0 0h18"/>
+      </svg>
+      Sandbox
+    </a>
+    <a class="nav-btn" href="perfil.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+      </svg>
+      Perfil
+    </a>
+  </nav>
+
+  <script src="js/db.js"></script>
+  <script src="js/utils.js"></script>
+  <script>
+    const CASOS = [
+      {
+        caso: 'Caso 01', nome: 'Maria da Silva (fictícia)',
+        perfil: 'idoso', sexo: 'F', idade: 72, peso: 68,
+        creatinina: 1.8, tfg: 42,
+        diagnosticos: 'HAS, Diabetes Mellitus tipo 2, Insuficiência Renal Crônica estágio 3',
+        alergias: 'Penicilina',
+        obs: 'Polifarmácia. Controle glicêmico irregular. Atenção à dose da Metformina (IRC).',
+        meds: 'Losartana 50mg · Metformina 850mg · Sinvastatina 20mg · AAS 100mg'
+      },
+      {
+        caso: 'Caso 02', nome: 'João Oliveira (fictício)',
+        perfil: 'idoso', sexo: 'M', idade: 74, peso: 84,
+        creatinina: 1.4, tfg: 58,
+        diagnosticos: 'Insuficiência Cardíaca FC III, Fibrilação Atrial, DM2, HAS',
+        alergias: '',
+        obs: 'Anticoagulação com varfarina. INR alvo 2-3. Risco de interação Digoxina + Varfarina.',
+        meds: 'Digoxina 0,25mg · Varfarina 5mg · Carvedilol 6,25mg · Furosemida 40mg · Metformina 500mg'
+      },
+      {
+        caso: 'Caso 03', nome: 'Ana Beatriz Santos (fictícia)',
+        perfil: 'gestante', sexo: 'F', idade: 28, peso: 72,
+        creatinina: null, tfg: null,
+        diagnosticos: 'Hipertensão gestacional, 26 semanas de gestação',
+        alergias: 'Sulfa',
+        obs: 'Gestação de alto risco. Evitar IECA, AAS em altas doses e AINE. Suplementação obrigatória.',
+        meds: 'Metildopa 500mg · Ácido Fólico 5mg · Sulfato Ferroso 300mg'
+      },
+      {
+        caso: 'Caso 04', nome: 'Raimundo Costa (fictício)',
+        perfil: 'renal', sexo: 'M', idade: 68, peso: 78,
+        creatinina: 3.2, tfg: 22,
+        diagnosticos: 'IRC estágio 4, HAS, Gota, Anemia renal',
+        alergias: 'AAS (intolerância gástrica)',
+        obs: 'IRC avançada. Ajuste de dose obrigatório. Alopurinol contraindicado com TFG < 30 — verificar.',
+        meds: 'Amlodipina 10mg · Alopurinol 100mg · Eritropoetina 4000UI · Carbonato de Cálcio 500mg'
+      },
+    ];
+
+    function renderCasos() {
+      const wrap = document.getElementById('casos-wrap');
+      wrap.innerHTML = CASOS.map((c, i) => `
+        <div class="caso-card" onclick="carregarCaso(${i})">
+          <p class="caso-num">${c.caso}</p>
+          <p class="caso-nome">${c.nome}</p>
+          <p class="caso-diag">${c.diagnosticos}</p>
+          <p class="caso-meds">💊 ${c.meds}</p>
+          ${c.tfg ? `<p style="font-size:.72rem;color:#d97706;font-weight:700;margin-top:6px">TFG: ${c.tfg} mL/min · Creat.: ${c.creatinina} mg/dL</p>` : ''}
+        </div>`).join('');
+    }
+
+    async function carregarCaso(idx) {
+      const c = CASOS[idx];
+      const dados = {
+        nome: c.nome, perfil: c.perfil,
+        sandbox: true, sandboxMeta: {
+          sexo: c.sexo, idade: c.idade, peso: c.peso,
+          creatinina: c.creatinina, tfg: c.tfg,
+          diagnosticos: c.diagnosticos, obs: c.obs
+        },
+        alergias: c.alergias,
+        condicoesClinicas: c.diagnosticos,
+        criadoEm: Date.now()
+      };
+      const pid = await dbAdd('pacientes', dados);
+      _entrarSandbox(pid);
+    }
+
+    async function criarPacienteSandbox() {
+      const nome = document.getElementById('sb-nome').value.trim();
+      if (!nome) { showToast('⚠ Informe o nome do paciente'); return; }
+      const dados = {
+        nome,
+        perfil: document.getElementById('sb-perfil').value,
+        sandbox: true,
+        sandboxMeta: {
+          sexo      : document.getElementById('sb-sexo').value,
+          idade     : parseInt(document.getElementById('sb-idade').value) || null,
+          peso      : parseFloat(document.getElementById('sb-peso').value) || null,
+          creatinina: parseFloat(document.getElementById('sb-creatinina').value) || null,
+          tfg       : parseFloat(document.getElementById('sb-tfg').value) || null,
+          diagnosticos: document.getElementById('sb-diag').value.trim(),
+          obs       : document.getElementById('sb-obs').value.trim(),
+        },
+        alergias: document.getElementById('sb-alergias').value.trim(),
+        condicoesClinicas: document.getElementById('sb-diag').value.trim(),
+        criadoEm: Date.now(),
+      };
+      const pid = await dbAdd('pacientes', dados);
+      _entrarSandbox(pid);
+    }
+
+    function _entrarSandbox(pid) {
+      const prevPid = getActivePacienteId();
+      if (prevPid) localStorage.setItem('vd_prev_active', prevPid);
+      localStorage.setItem('vd_sandbox', '1');
+      setActivePacienteId(pid);
+      window.location.href = 'index.html';
+    }
+
+    async function renderSbPacientes() {
+      const todos = await dbGetAll('pacientes');
+      const sbs   = todos.filter(p => p.sandbox);
+      const wrap  = document.getElementById('sb-pacientes-wrap');
+      if (!sbs.length) {
+        wrap.innerHTML = `<p class="text-sm text-2" style="text-align:center;padding:8px 0">
+          Nenhum paciente de simulação ainda.</p>`;
+        return;
+      }
+      wrap.innerHTML = sbs.map(p => {
+        const meta = p.sandboxMeta || {};
+        const detalhe = [
+          meta.idade ? `${meta.idade} anos` : '',
+          meta.sexo === 'M' ? 'Masc.' : meta.sexo === 'F' ? 'Fem.' : '',
+          meta.tfg ? `TFG ${meta.tfg}` : '',
+        ].filter(Boolean).join(' · ');
+        return `<div class="sb-paciente-card">
+          <div class="sb-pac-avatar">${iniciaisNome(p.nome)}</div>
+          <div class="sb-pac-info">
+            <p class="sb-pac-nome">${p.nome}</p>
+            <p class="sb-pac-detalhe">${detalhe || 'Simulação'}</p>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <button class="btn btn-sm" style="background:#d97706;color:#fff;border:none;white-space:nowrap"
+              onclick="_entrarSandbox(${p.id})">Entrar</button>
+            <button class="btn btn-sm btn-outline" style="color:#ef4444;border-color:#ef4444"
+              onclick="excluirSbPaciente(${p.id})">Excluir</button>
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    async function excluirSbPaciente(pid) {
+      if (!confirm('Excluir este paciente de simulação e todos os seus dados?')) return;
+      const meds = await dbGetByIndex('medicamentos', 'pacienteId', pid);
+      for (const m of meds) await dbDelete('medicamentos', m.id);
+      await dbDelete('pacientes', pid);
+      showToast('Paciente excluído');
+      renderSbPacientes();
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      renderCasos();
+      renderSbPacientes();
+    });
+  </script>
+</body>
+</html>

@@ -50,8 +50,30 @@ async function init() {
   dosesHoje = allDoses.filter(d => d.data === hoje());
 
   renderBannerAlergia(paciente);
+  renderSandboxBanner();
   await render();
   iniciarNotificacoes(medicamentos);
+}
+
+/* ── Banner Sandbox ── */
+function renderSandboxBanner() {
+  const wrap = document.getElementById('sandbox-banner');
+  if (!wrap || !localStorage.getItem('vd_sandbox')) return;
+  wrap.style.display = 'block';
+  wrap.innerHTML = `
+    <div style="background:#d97706;color:#fff;padding:10px 16px;display:flex;align-items:center;justify-content:space-between;font-weight:700;font-size:.85rem">
+      <span>🧪 MODO SIMULAÇÃO — dados fictícios</span>
+      <button onclick="sairSandbox()" style="background:rgba(0,0,0,.25);border:none;color:#fff;padding:5px 12px;border-radius:6px;font-size:.78rem;cursor:pointer;font-weight:700">Sair</button>
+    </div>`;
+}
+
+function sairSandbox() {
+  const prevPid = localStorage.getItem('vd_prev_active');
+  localStorage.removeItem('vd_sandbox');
+  localStorage.removeItem('vd_prev_active');
+  if (prevPid) setActivePacienteId(prevPid);
+  else localStorage.removeItem('vd_active');
+  window.location.href = 'index.html';
 }
 
 /* ── Render tudo ── */
