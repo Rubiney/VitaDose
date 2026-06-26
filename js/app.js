@@ -352,25 +352,53 @@ function getUnidadeEstoque(med) {
 
 /* ── Alertas clínicos ── */
 function renderAlertas() {
+  const wrap = document.getElementById('alertas-wrap');
   const alertas = gerarAlertas(medicamentos);
-  const wrap    = document.getElementById('alertas-wrap');
+  const dups    = (typeof verificarDuplicidade === 'function')
+    ? verificarDuplicidade(medicamentos) : [];
 
-  if (!alertas.length) { wrap.innerHTML = ''; return; }
+  if (!alertas.length && !dups.length) { wrap.innerHTML = ''; return; }
 
-  const icon = { interacao: '🔴', alimentacao: '⚠️' };
+  const nivelCor = {
+    grave:    { borda:'#ef4444', bg:'#fff5f5', icone:'🔴' },
+    moderado: { borda:'#f97316', bg:'#fff7ed', icone:'🟠' },
+    leve:     { borda:'#eab308', bg:'#fefce8', icone:'🟡' },
+  };
+  const tipoCor = {
+    interacao:   { borda:'#ef4444', bg:'#fff5f5', icone:'🔴' },
+    alimentacao: { borda:'#3b82f6', bg:'#eff6ff', icone:'⚠️' },
+  };
 
-  wrap.innerHTML = `
-    <p class="sec-header">Alertas Clínicos</p>
-    <div class="alertas-sec">
-      ${alertas.map(a => `
-        <div class="al-card ${a.tipo}">
-          <span class="al-icon">${icon[a.tipo]}</span>
-          <div>
-            <p class="al-title">${a.titulo}</p>
-            <p class="al-desc">${a.desc}</p>
-          </div>
-        </div>`).join('')}
+  const renderAlerta = (a) => {
+    const c = nivelCor[a.nivel] || tipoCor[a.tipo] || nivelCor.leve;
+    return `<div class="al-card" style="border-left-color:${c.borda};background:${c.bg}">
+      <span class="al-icon">${c.icone}</span>
+      <div>
+        <p class="al-title">${a.titulo}</p>
+        <p class="al-desc">${a.desc || a.aviso || ''}</p>
+      </div>
     </div>`;
+  };
+
+  const renderDup = (d) => {
+    const c = nivelCor[d.nivel] || nivelCor.moderado;
+    return `<div class="al-card" style="border-left-color:${c.borda};background:${c.bg}">
+      <span class="al-icon">🔵</span>
+      <div>
+        <p class="al-title">Duplicidade: ${d.classe}</p>
+        <p class="al-desc" style="margin-bottom:4px">
+          <strong>Medicamentos:</strong> ${d.meds.join(' · ')}
+        </p>
+        <p class="al-desc">${d.aviso}</p>
+      </div>
+    </div>`;
+  };
+
+  let html = '<p class="sec-header">Alertas Clínicos</p><div class="alertas-sec">';
+  dups.forEach(d => { html += renderDup(d); });
+  alertas.forEach(a => { html += renderAlerta(a); });
+  html += '</div>';
+  wrap.innerHTML = html;
 }
 
 /* ── Status de uma dose ── */

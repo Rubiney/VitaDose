@@ -161,6 +161,7 @@
   <script src="js/ajusterenal.js"></script>
   <script src="js/beers.js"></script>
   <script src="js/interacoes.js"></script>
+  <script src="js/duplicidade.js"></script>
   <script src="js/reacoes.js"></script>
   <script>
   document.addEventListener('DOMContentLoaded', gerarRelatorio);
@@ -199,6 +200,10 @@
       ? gerarAlertas(meds) : [];
     const interacoes = alertas.filter(a => a.tipo === 'interacao');
     const alimentares = alertas.filter(a => a.tipo === 'alimentacao');
+
+    /* ── Duplicidade terapêutica ── */
+    const dups = (typeof verificarDuplicidade === 'function' && meds.length >= 2)
+      ? verificarDuplicidade(meds) : [];
 
     /* ── Beers ── */
     const beersAlertas = [];
@@ -319,6 +324,25 @@
             </table>`
         }
       </div>
+
+      <!-- Duplicidade Terapêutica -->
+      ${dups.length ? `
+        <div class="sec">
+          <p class="sec-title">🔵 Duplicidade Terapêutica</p>
+          <p style="font-size:.75rem;color:#666;margin-bottom:10px">Dois ou mais medicamentos da mesma classe farmacológica identificados na prescrição.</p>
+          ${dups.map(d => {
+            const nivelCores = {
+              grave:    { bg:'#fff5f5', borda:'#f87171', cor:'#c53030' },
+              moderado: { bg:'#fffaf0', borda:'#f6ad55', cor:'#c05621' },
+            };
+            const c = nivelCores[d.nivel] || nivelCores.moderado;
+            return `<div class="alerta-item" style="background:${c.bg};border-left-color:${c.borda}">
+              <p class="alerta-titulo" style="color:${c.cor}">🔵 ${d.classe}</p>
+              <p class="alerta-desc"><strong>Medicamentos:</strong> ${d.meds.join(' · ')}</p>
+              <p class="alerta-desc" style="margin-top:4px">${d.aviso}</p>
+            </div>`;
+          }).join('')}
+        </div>` : ''}
 
       <!-- Alertas Critérios de Beers -->
       ${beersAlertas.length ? `
