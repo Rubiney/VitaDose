@@ -72,6 +72,69 @@
       onclick="salvarDoencasSazonais()">✓ Salvar doenças sazonais</button>
   </div>
 
+  <!-- Documentos de Saúde -->
+  <div class="card">
+    <div class="card-title">Documentos de Saúde</div>
+
+    <label class="hc-label" for="doc-sus">Cartão SUS (CNS)</label>
+    <input id="doc-sus" type="text" class="supl-field-input"
+      style="width:100%;box-sizing:border-box;margin-bottom:14px"
+      placeholder="700 0000 0000 0000" maxlength="18" inputmode="numeric">
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+      <div>
+        <label class="hc-label" for="doc-plano">Plano de Saúde</label>
+        <input id="doc-plano" type="text" class="supl-field-input"
+          style="width:100%;box-sizing:border-box" placeholder="Ex: Unimed">
+      </div>
+      <div>
+        <label class="hc-label" for="doc-plano-num">Nº Carteirinha</label>
+        <input id="doc-plano-num" type="text" class="supl-field-input"
+          style="width:100%;box-sizing:border-box" placeholder="000000000">
+      </div>
+    </div>
+
+    <label class="hc-label" for="doc-cpf">CPF</label>
+    <input id="doc-cpf" type="text" class="supl-field-input"
+      style="width:100%;box-sizing:border-box;margin-bottom:14px"
+      placeholder="000.000.000-00" maxlength="14" inputmode="numeric">
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+      <div>
+        <label class="hc-label" for="doc-medico">Médico Responsável</label>
+        <input id="doc-medico" type="text" class="supl-field-input"
+          style="width:100%;box-sizing:border-box" placeholder="Dr. Nome">
+      </div>
+      <div>
+        <label class="hc-label" for="doc-medico-tel">Telefone</label>
+        <input id="doc-medico-tel" type="tel" class="supl-field-input"
+          style="width:100%;box-sizing:border-box" placeholder="(00) 00000-0000">
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px">
+      <div>
+        <label class="hc-label" for="doc-farmacia">Farmácia de Referência</label>
+        <input id="doc-farmacia" type="text" class="supl-field-input"
+          style="width:100%;box-sizing:border-box" placeholder="Farmácia Popular">
+      </div>
+      <div>
+        <label class="hc-label" for="doc-farmacia-tel">Telefone</label>
+        <input id="doc-farmacia-tel" type="tel" class="supl-field-input"
+          style="width:100%;box-sizing:border-box" placeholder="(00) 0000-0000">
+      </div>
+    </div>
+
+    <p class="hc-label">📷 Fotos de Documentos</p>
+    <p class="text-sm text-2" style="margin-bottom:12px;font-size:.78rem">
+      Fotografe cartões, laudos e receitas. Disponíveis offline. Até 5 fotos.
+    </p>
+    <div id="doc-fotos-wrap" class="doc-fotos-grid"></div>
+
+    <button class="btn btn-primary btn-full" style="margin-top:16px"
+      onclick="salvarDocumentos()">✓ Salvar documentos</button>
+  </div>
+
   <!-- Backup -->
   <div class="card">
     <div class="card-title">Cópia de Segurança</div>
@@ -242,6 +305,18 @@
       // Preenche campos do histórico clínico
       document.getElementById('hc-condicoes').value = p.condicoesClinicas || '';
       document.getElementById('hc-alergias').value  = p.alergias || '';
+      // Inicializa documentos de saúde
+      const doc = p.documentos || {};
+      document.getElementById('doc-sus').value           = doc.sus            || '';
+      document.getElementById('doc-plano').value         = doc.planoSaude     || '';
+      document.getElementById('doc-plano-num').value     = doc.planoNumero    || '';
+      document.getElementById('doc-cpf').value           = doc.cpf            || '';
+      document.getElementById('doc-medico').value        = doc.medicoNome     || '';
+      document.getElementById('doc-medico-tel').value    = doc.medicoTelefone || '';
+      document.getElementById('doc-farmacia').value      = doc.farmaciaNome   || '';
+      document.getElementById('doc-farmacia-tel').value  = doc.farmaciaTelefone || '';
+      _docFotos = (doc.fotos || []).slice();
+      _renderDocFotos();
       // Inicializa doenças sazonais
       _dsData   = Object.assign({}, p.doencasSazonais   || {});
       _dsCustom = (p.doencasSazonaisCustom || []).slice();
@@ -428,6 +503,89 @@
       p.doencasSazonaisCustom = _dsCustom;
       await dbPut('pacientes', p);
       showToast('✓ Doenças sazonais salvas');
+    }
+
+    /* ── Documentos de Saúde ── */
+    let _docFotos = []; // [{ titulo:'', img:'data:...' }] — max 5
+
+    function _renderDocFotos() {
+      const wrap = document.getElementById('doc-fotos-wrap');
+      if (!wrap) return;
+      let html = '';
+      _docFotos.forEach((f, i) => {
+        const tit = (f.titulo || '').replace(/"/g, '&quot;');
+        const img = f.img;
+        html += `<div class="doc-foto-slot filled">
+          <img src="${img}" alt="" onclick="abrirLightbox(this.src)">
+          <button class="doc-foto-rm" onclick="removerDocFoto(${i})">×</button>
+          <input class="doc-foto-titulo" type="text" value="${tit}"
+            placeholder="Título do documento"
+            oninput="_docFotos[${i}].titulo=this.value">
+        </div>`;
+      });
+      if (_docFotos.length < 5) {
+        html += `<label class="doc-foto-slot empty">
+          <input type="file" accept="image/*" capture="environment"
+            style="display:none" onchange="adicionarDocFoto(this)">
+          <span>📷</span><span>Adicionar</span>
+        </label>`;
+      }
+      wrap.innerHTML = html;
+    }
+
+    function _processarDocFoto(file, cb) {
+      const reader = new FileReader();
+      reader.onload = e => {
+        const img = new Image();
+        img.onload = () => {
+          const MAX = 1200;
+          let w = img.width, h = img.height;
+          if (w > MAX || h > MAX) {
+            if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
+            else { w = Math.round(w * MAX / h); h = MAX; }
+          }
+          const cv = document.createElement('canvas');
+          cv.width = w; cv.height = h;
+          cv.getContext('2d').drawImage(img, 0, 0, w, h);
+          cb(cv.toDataURL('image/jpeg', 0.75));
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function adicionarDocFoto(input) {
+      if (!input.files[0]) return;
+      if (_docFotos.length >= 5) { showToast('Máximo de 5 fotos'); return; }
+      _processarDocFoto(input.files[0], b64 => {
+        _docFotos.push({ titulo: '', img: b64 });
+        _renderDocFotos();
+      });
+    }
+
+    function removerDocFoto(idx) {
+      _docFotos.splice(idx, 1);
+      _renderDocFotos();
+    }
+
+    async function salvarDocumentos() {
+      const pid = getActivePacienteId();
+      if (!pid) return;
+      const p = await dbGet('pacientes', pid);
+      if (!p) return;
+      p.documentos = {
+        sus            : document.getElementById('doc-sus').value.trim(),
+        planoSaude     : document.getElementById('doc-plano').value.trim(),
+        planoNumero    : document.getElementById('doc-plano-num').value.trim(),
+        cpf            : document.getElementById('doc-cpf').value.trim(),
+        medicoNome     : document.getElementById('doc-medico').value.trim(),
+        medicoTelefone : document.getElementById('doc-medico-tel').value.trim(),
+        farmaciaNome   : document.getElementById('doc-farmacia').value.trim(),
+        farmaciaTelefone: document.getElementById('doc-farmacia-tel').value.trim(),
+        fotos          : _docFotos,
+      };
+      await dbPut('pacientes', p);
+      showToast('✓ Documentos salvos');
     }
 
     /* ── Saúde & Cuidados ── */
