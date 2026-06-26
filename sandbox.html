@@ -20,17 +20,51 @@
     }
     .sb-title { font-size:1.5rem; font-weight:800; margin-bottom:4px; }
     .sb-sub   { font-size:.82rem; opacity:.85; }
+
+    /* Filtros de especialidade */
+    .sb-filtros { display:flex; gap:8px; flex-wrap:wrap; padding:14px 16px 0; }
+    .sb-filtro {
+      padding:5px 13px; border-radius:20px; font-size:.75rem; font-weight:700;
+      border:1.5px solid var(--border); color:var(--text-2); cursor:pointer;
+      transition:all .15s; background:var(--card);
+    }
+    .sb-filtro.ativo { background:#d97706; border-color:#d97706; color:#fff; }
+
+    /* Cards de casos */
     .caso-card {
       border:1.5px solid var(--border); border-radius:14px;
-      padding:16px; margin-bottom:12px; cursor:pointer;
+      padding:16px; margin-bottom:12px;
       transition:border-color .15s, box-shadow .15s;
     }
-    .caso-card:active { border-color:#d97706; box-shadow:0 0 0 3px rgba(217,119,6,.15); }
-    .caso-num  { font-size:.65rem; font-weight:800; text-transform:uppercase; letter-spacing:.1em; color:#d97706; margin-bottom:4px; }
-    .caso-nome { font-size:1rem; font-weight:700; color:var(--navy); margin-bottom:4px; }
-    .caso-diag { font-size:.8rem; color:var(--text-2); line-height:1.4; margin-bottom:8px; }
-    .caso-meds { font-size:.75rem; color:var(--text-1); font-style:italic; }
-    .sb-paciente-card {
+    .caso-card-header { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:8px; }
+    .caso-num  { font-size:.65rem; font-weight:800; text-transform:uppercase; letter-spacing:.1em; color:#d97706; }
+    .caso-nome { font-size:.96rem; font-weight:700; color:var(--navy); margin:3px 0 6px; }
+    .caso-diag { font-size:.8rem; color:var(--text-2); line-height:1.4; margin-bottom:6px; }
+    .caso-meds { font-size:.75rem; color:var(--text-1); font-style:italic; margin-bottom:8px; }
+    .caso-badges { display:flex; gap:6px; flex-wrap:wrap; }
+    .badge-esp {
+      display:inline-block; padding:2px 9px; border-radius:12px;
+      font-size:.67rem; font-weight:700;
+    }
+    .badge-dif {
+      display:inline-block; padding:2px 9px; border-radius:12px;
+      font-size:.67rem; font-weight:700;
+    }
+    .dif-basico     { background:#d1fae5; color:#065f46; }
+    .dif-medio      { background:#fef3c7; color:#92400e; }
+    .dif-avancado   { background:#fee2e2; color:#991b1b; }
+    .caso-btn-row { display:flex; gap:8px; margin-top:10px; }
+    .caso-btn-ver {
+      flex:1; padding:8px; border-radius:9px; border:1.5px solid #d97706;
+      color:#d97706; background:transparent; font-size:.82rem; font-weight:700; cursor:pointer;
+    }
+    .caso-btn-abrir {
+      flex:1; padding:8px; border-radius:9px; border:none;
+      background:#d97706; color:#fff; font-size:.82rem; font-weight:700; cursor:pointer;
+    }
+
+    /* Pacientes sandbox */
+    .sb-pac-card {
       display:flex; align-items:center; gap:12px;
       border:1.5px solid #fde68a; border-radius:12px;
       padding:12px 14px; margin-bottom:10px; background:#fffbeb;
@@ -38,22 +72,46 @@
     .sb-pac-avatar {
       width:40px; height:40px; border-radius:50%;
       background:#d97706; color:#fff; font-weight:800;
-      font-size:.9rem; display:flex; align-items:center; justify-content:center;
-      flex-shrink:0;
+      font-size:.9rem; display:flex; align-items:center; justify-content:center; flex-shrink:0;
     }
     .sb-pac-info { flex:1; min-width:0; }
-    .sb-pac-nome { font-size:.92rem; font-weight:700; color:var(--navy); }
-    .sb-pac-detalhe { font-size:.75rem; color:var(--text-2); }
-    .sb-novo-form .form-lbl { color:var(--text-2); font-size:.75rem; font-weight:700; text-transform:uppercase; letter-spacing:.06em; display:block; margin-bottom:5px; }
-    .sb-novo-form .form-input, .sb-novo-form .form-select, .sb-novo-form textarea {
+    .sb-pac-nome   { font-size:.92rem; font-weight:700; color:var(--navy); }
+    .sb-pac-detalhe{ font-size:.75rem; color:var(--text-2); }
+
+    /* Form novo paciente */
+    .sb-form .form-lbl {
+      color:var(--text-2); font-size:.75rem; font-weight:700;
+      text-transform:uppercase; letter-spacing:.06em; display:block; margin-bottom:5px;
+    }
+    .sb-form .form-input, .sb-form .form-select, .sb-form textarea {
       width:100%; box-sizing:border-box; border:1.5px solid var(--border);
       border-radius:10px; padding:10px 12px; font-size:.9rem;
       font-family:inherit; color:var(--text-1); background:var(--bg);
       outline:none; transition:border-color .15s; margin-bottom:12px;
     }
-    .sb-novo-form .form-input:focus,
-    .sb-novo-form .form-select:focus,
-    .sb-novo-form textarea:focus { border-color:#d97706; }
+    .sb-form .form-input:focus,
+    .sb-form .form-select:focus,
+    .sb-form textarea:focus { border-color:#d97706; }
+
+    /* Modal preview do caso */
+    .caso-overlay {
+      position:fixed; inset:0; z-index:9000;
+      background:rgba(0,0,0,.55); display:flex; align-items:flex-end;
+    }
+    .caso-sheet {
+      background:var(--card); border-radius:22px 22px 0 0;
+      width:100%; max-height:88vh; overflow-y:auto;
+      padding:22px 20px 36px; animation:slideUp .22s ease;
+    }
+    @keyframes slideUp { from{transform:translateY(100%)} to{transform:translateY(0)} }
+    .caso-sheet-title { font-size:1.1rem; font-weight:800; color:var(--navy); margin-bottom:4px; }
+    .caso-sheet-sub   { font-size:.8rem; color:var(--text-2); margin-bottom:14px; }
+    .caso-info-row { display:flex; justify-content:space-between; border-bottom:1px solid var(--border); padding:8px 0; font-size:.85rem; }
+    .caso-info-label { color:var(--text-2); font-weight:600; }
+    .caso-info-val   { color:var(--text-1); font-weight:700; text-align:right; max-width:60%; }
+    .caso-obj { background:#fff7ed; border-radius:10px; padding:12px 14px; margin:12px 0; }
+    .caso-obj-title { font-size:.72rem; font-weight:800; text-transform:uppercase; letter-spacing:.08em; color:#d97706; margin-bottom:6px; }
+    .caso-obj ul { margin:0; padding-left:16px; font-size:.82rem; color:#92400e; line-height:1.7; }
   </style>
 </head>
 <body>
@@ -61,31 +119,41 @@
   <div class="sb-header">
     <div class="sb-badge">🧪 Modo Simulação</div>
     <p class="sb-title">Sandbox Clínico</p>
-    <p class="sb-sub">Pacientes fictícios · Sem afetar dados reais</p>
+    <p class="sb-sub">10 casos clínicos · 100% offline · Dados fictícios</p>
   </div>
 
   <div style="padding:0 0 120px">
 
-    <!-- Aviso -->
-    <div style="margin:14px 16px 0;background:#fff7ed;border:1.5px solid #fed7aa;border-radius:12px;padding:12px 14px;font-size:.82rem;color:#92400e;line-height:1.5">
-      ⚠️ <strong>Área de simulação.</strong> Todos os pacientes criados aqui são fictícios e isolados dos pacientes reais. Use para testes, treinamentos e demonstrações.
+    <div style="margin:14px 16px 0;background:#fff7ed;border:1.5px solid #fed7aa;border-radius:12px;padding:10px 14px;font-size:.8rem;color:#92400e;line-height:1.5">
+      ⚠️ <strong>Área de simulação.</strong> Pacientes fictícios isolados dos dados reais. Ideal para treino, demonstração e validação farmacêutica.
     </div>
 
-    <!-- Casos Clínicos Pré-definidos -->
-    <p class="sec-header" style="margin-top:18px">Casos Clínicos Pré-definidos</p>
-    <div style="padding:0 16px" id="casos-wrap">
-      <!-- Renderizado por JS -->
+    <!-- Filtros -->
+    <div class="sb-filtros" id="sb-filtros">
+      <span class="sb-filtro ativo" data-esp="todos" onclick="filtrarEsp('todos',this)">Todos</span>
+      <span class="sb-filtro" data-esp="Geriatria" onclick="filtrarEsp('Geriatria',this)">👴 Geriatria</span>
+      <span class="sb-filtro" data-esp="Nefrologia" onclick="filtrarEsp('Nefrologia',this)">🫘 Nefrologia</span>
+      <span class="sb-filtro" data-esp="Cardiologia" onclick="filtrarEsp('Cardiologia',this)">❤️ Cardiologia</span>
+      <span class="sb-filtro" data-esp="Obstetrícia" onclick="filtrarEsp('Obstetrícia',this)">🤰 Obstetrícia</span>
+      <span class="sb-filtro" data-esp="Pediatria" onclick="filtrarEsp('Pediatria',this)">👶 Pediatria</span>
+      <span class="sb-filtro" data-esp="Infectologia" onclick="filtrarEsp('Infectologia',this)">🦠 Infectologia</span>
+      <span class="sb-filtro" data-esp="Pneumologia" onclick="filtrarEsp('Pneumologia',this)">🫁 Pneumologia</span>
+      <span class="sb-filtro" data-esp="Neurologia" onclick="filtrarEsp('Neurologia',this)">🧠 Neurologia</span>
     </div>
 
-    <!-- Pacientes de Simulação existentes -->
+    <!-- Casos Clínicos -->
+    <p class="sec-header" style="margin-top:14px">Biblioteca de Casos Clínicos</p>
+    <div style="padding:0 16px" id="casos-wrap"></div>
+
+    <!-- Pacientes sandbox salvos -->
     <p class="sec-header" style="margin-top:6px">Meus Pacientes de Simulação</p>
     <div style="padding:0 16px" id="sb-pacientes-wrap">
       <p class="text-sm text-2" style="text-align:center;padding:12px 0">Carregando...</p>
     </div>
 
-    <!-- Novo Paciente Sandbox -->
+    <!-- Novo paciente livre -->
     <p class="sec-header" style="margin-top:6px">Novo Paciente de Simulação</p>
-    <div class="card sb-novo-form">
+    <div class="card sb-form">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
         <div>
           <label class="form-lbl">Nome *</label>
@@ -106,11 +174,11 @@
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
         <div>
           <label class="form-lbl">Idade</label>
-          <input id="sb-idade" class="form-input" type="number" placeholder="Ex: 68" min="0" max="120">
+          <input id="sb-idade" class="form-input" type="number" placeholder="68" min="0" max="120">
         </div>
         <div>
           <label class="form-lbl">Peso (kg)</label>
-          <input id="sb-peso" class="form-input" type="number" placeholder="Ex: 72">
+          <input id="sb-peso" class="form-input" type="number" placeholder="72">
         </div>
         <div>
           <label class="form-lbl">Sexo</label>
@@ -123,216 +191,425 @@
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
         <div>
           <label class="form-lbl">Creatinina (mg/dL)</label>
-          <input id="sb-creatinina" class="form-input" type="number" step="0.1" placeholder="Ex: 1.8">
+          <input id="sb-creatinina" class="form-input" type="number" step="0.1" placeholder="1.8">
         </div>
         <div>
           <label class="form-lbl">TFG (mL/min)</label>
-          <input id="sb-tfg" class="form-input" type="number" placeholder="Ex: 42">
+          <input id="sb-tfg" class="form-input" type="number" placeholder="42">
         </div>
       </div>
       <label class="form-lbl">Diagnósticos</label>
-      <textarea id="sb-diag" rows="2"
-        placeholder="Ex: HAS, DM2, IRC estágio 3, Fibrilação Atrial..."></textarea>
+      <textarea id="sb-diag" rows="2" placeholder="HAS, DM2, IRC estágio 3..."></textarea>
       <label class="form-lbl">Alergias</label>
-      <input id="sb-alergias" class="form-input" type="text"
-        placeholder="Ex: Penicilina, AAS...">
+      <input id="sb-alergias" class="form-input" type="text" placeholder="Penicilina, AAS...">
       <label class="form-lbl">Observações clínicas</label>
-      <textarea id="sb-obs" rows="2"
-        placeholder="Ex: Paciente em diálise 3x/semana, INR alvo 2-3..."></textarea>
-
-      <button class="btn btn-full" style="background:#d97706;color:#fff;border:none"
-        onclick="criarPacienteSandbox()">
+      <textarea id="sb-obs" rows="2" placeholder="INR alvo 2-3, diálise 3x/semana..."></textarea>
+      <button class="btn btn-full" style="background:#d97706;color:#fff;border:none" onclick="criarPacienteSandbox()">
         🧪 Criar e Entrar no Sandbox
       </button>
     </div>
 
   </div>
 
-  <!-- Toast -->
+  <!-- Modal preview caso -->
+  <div id="caso-overlay" class="caso-overlay" style="display:none" onclick="fecharPreview(event)">
+    <div class="caso-sheet" id="caso-sheet"></div>
+  </div>
+
   <div class="toast" id="toast"></div>
 
-  <!-- Bottom nav -->
   <nav class="bottom-nav">
     <a class="nav-btn" href="index.html">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
-      </svg>
-      Início
+      </svg>Início
     </a>
     <a class="nav-btn" href="cadastro.html">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/>
-      </svg>
-      Medicamentos
+      </svg>Medicamentos
     </a>
     <a class="nav-btn" href="historico.html">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
-      </svg>
-      Histórico
+      </svg>Histórico
     </a>
     <a class="nav-btn active" href="sandbox.html">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2v-4M9 21H5a2 2 0 0 1-2-2v-4m0 0h18"/>
-      </svg>
-      Sandbox
+      </svg>Sandbox
     </a>
     <a class="nav-btn" href="perfil.html">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
-      </svg>
-      Perfil
+      </svg>Perfil
     </a>
   </nav>
 
   <script src="js/db.js"></script>
   <script src="js/utils.js"></script>
   <script>
-    const CASOS = [
-      {
-        caso: 'Caso 01', nome: 'Maria da Silva (fictícia)',
-        perfil: 'idoso', sexo: 'F', idade: 72, peso: 68,
-        creatinina: 1.8, tfg: 42,
-        diagnosticos: 'HAS, Diabetes Mellitus tipo 2, Insuficiência Renal Crônica estágio 3',
-        alergias: 'Penicilina',
-        obs: 'Polifarmácia. Controle glicêmico irregular. Atenção à dose da Metformina (IRC).',
-        meds: 'Losartana 50mg · Metformina 850mg · Sinvastatina 20mg · AAS 100mg'
-      },
-      {
-        caso: 'Caso 02', nome: 'João Oliveira (fictício)',
-        perfil: 'idoso', sexo: 'M', idade: 74, peso: 84,
-        creatinina: 1.4, tfg: 58,
-        diagnosticos: 'Insuficiência Cardíaca FC III, Fibrilação Atrial, DM2, HAS',
-        alergias: '',
-        obs: 'Anticoagulação com varfarina. INR alvo 2-3. Risco de interação Digoxina + Varfarina.',
-        meds: 'Digoxina 0,25mg · Varfarina 5mg · Carvedilol 6,25mg · Furosemida 40mg · Metformina 500mg'
-      },
-      {
-        caso: 'Caso 03', nome: 'Ana Beatriz Santos (fictícia)',
-        perfil: 'gestante', sexo: 'F', idade: 28, peso: 72,
-        creatinina: null, tfg: null,
-        diagnosticos: 'Hipertensão gestacional, 26 semanas de gestação',
-        alergias: 'Sulfa',
-        obs: 'Gestação de alto risco. Evitar IECA, AAS em altas doses e AINE. Suplementação obrigatória.',
-        meds: 'Metildopa 500mg · Ácido Fólico 5mg · Sulfato Ferroso 300mg'
-      },
-      {
-        caso: 'Caso 04', nome: 'Raimundo Costa (fictício)',
-        perfil: 'renal', sexo: 'M', idade: 68, peso: 78,
-        creatinina: 3.2, tfg: 22,
-        diagnosticos: 'IRC estágio 4, HAS, Gota, Anemia renal',
-        alergias: 'AAS (intolerância gástrica)',
-        obs: 'IRC avançada. Ajuste de dose obrigatório. Alopurinol contraindicado com TFG < 30 — verificar.',
-        meds: 'Amlodipina 10mg · Alopurinol 100mg · Eritropoetina 4000UI · Carbonato de Cálcio 500mg'
-      },
-    ];
+  /* ── Biblioteca de Casos Clínicos (Fase 2) ── */
+  const CASOS = [
+    {
+      num: '01', nome: 'Maria da Silva (fictícia)',
+      especialidade: 'Geriatria', dificuldade: 'medio',
+      perfil: 'idoso', sexo: 'F', idade: 72, peso: 68, altura: 158,
+      creatinina: 1.8, tfg: 42,
+      diagnosticos: 'HAS, Diabetes Mellitus tipo 2, Insuficiência Renal Crônica estágio 3',
+      alergias: 'Penicilina',
+      obs: 'Controle glicêmico irregular. Atenção à Metformina na IRC (TFG 30-45: reduzir dose; < 30: suspender).',
+      meds: 'Losartana 50mg · Metformina 850mg · Sinvastatina 20mg · AAS 100mg',
+      objetivos: [
+        'Identificar necessidade de ajuste de dose da Metformina na IRC estágio 3',
+        'Avaliar risco cardiovascular na polifarmácia do idoso',
+        'Verificar interação AAS + IECA/BRA em paciente renal',
+        'Aplicar critérios de Beers para medicamentos em idosos',
+      ]
+    },
+    {
+      num: '02', nome: 'João Oliveira (fictício)',
+      especialidade: 'Cardiologia', dificuldade: 'avancado',
+      perfil: 'idoso', sexo: 'M', idade: 74, peso: 84, altura: 172,
+      creatinina: 1.4, tfg: 58,
+      diagnosticos: 'Insuficiência Cardíaca FC III, Fibrilação Atrial, DM2, HAS',
+      alergias: '',
+      obs: 'INR alvo 2-3. Risco de intoxicação por digoxina (janela terapêutica estreita). Interação Digoxina + Varfarina.',
+      meds: 'Digoxina 0,25mg · Varfarina 5mg · Carvedilol 6,25mg · Furosemida 40mg · Metformina 500mg',
+      objetivos: [
+        'Reconhecer sinais de intoxicação digitálica e janela terapêutica estreita',
+        'Analisar interações da Varfarina com outros fármacos e alimentos',
+        'Avaliar betabloqueador (Carvedilol) na IC + DM2',
+        'Monitorar eletrólitos na vigência de diurético de alça (Furosemida)',
+      ]
+    },
+    {
+      num: '03', nome: 'Ana Beatriz Santos (fictícia)',
+      especialidade: 'Obstetrícia', dificuldade: 'medio',
+      perfil: 'gestante', sexo: 'F', idade: 28, peso: 72, altura: 163,
+      creatinina: null, tfg: null,
+      diagnosticos: 'Hipertensão gestacional, Gestação 26 semanas',
+      alergias: 'Sulfa',
+      obs: 'Gestação de alto risco. Contraindicados: IECA, BRA, AINE, AAS > 100mg, Atenolol.',
+      meds: 'Metildopa 500mg · Ácido Fólico 5mg · Sulfato Ferroso 300mg',
+      objetivos: [
+        'Identificar anti-hipertensivos seguros e contraindicados na gestação',
+        'Avaliar suplementação obrigatória (Fe, ác. fólico, vitamina D)',
+        'Reconhecer risco teratogênico e classificação FDA/ANVISA',
+        'Conduta farmacêutica em alergia a Sulfa durante a gestação',
+      ]
+    },
+    {
+      num: '04', nome: 'Raimundo Costa (fictício)',
+      especialidade: 'Nefrologia', dificuldade: 'avancado',
+      perfil: 'renal', sexo: 'M', idade: 68, peso: 78, altura: 168,
+      creatinina: 3.2, tfg: 22,
+      diagnosticos: 'IRC estágio 4, HAS, Gota, Anemia renal',
+      alergias: 'AAS (intolerância gástrica)',
+      obs: 'IRC avançada. Alopurinol: dose máxima recomendada 100mg/dia com TFG < 30. Eritropoetina: monitorar PA e Hb.',
+      meds: 'Amlodipina 10mg · Alopurinol 100mg · Eritropoetina 4000UI · Carbonato de Cálcio 500mg',
+      objetivos: [
+        'Calcular ajuste de dose de Alopurinol na IRC (TFG < 30 mL/min)',
+        'Avaliar uso de Carbonato de Cálcio como quelante de fósforo',
+        'Reconhecer anemia renal e monitoramento da Eritropoetina',
+        'Identificar medicamentos nefrotóxicos a evitar neste caso',
+      ]
+    },
+    {
+      num: '05', nome: 'Pedro Henrique Lima (fictício)',
+      especialidade: 'Pediatria', dificuldade: 'basico',
+      perfil: 'pediatrico', sexo: 'M', idade: 8, peso: 28, altura: 128,
+      creatinina: null, tfg: null,
+      diagnosticos: 'Asma moderada persistente',
+      alergias: 'Dipirona',
+      obs: 'Criança em uso de corticoide inalatório. Orientar técnica inalatória correta com espaçador. Monitorar crescimento.',
+      meds: 'Salbutamol 100mcg (2 jatos se/n) · Budesonida 200mcg 2x/dia · Montelucaste 5mg/noite',
+      objetivos: [
+        'Adequar posologia ao peso pediátrico (28 kg)',
+        'Orientar técnica de uso do dispositivo inalatório com espaçador',
+        'Avaliar risco de candidíase oral no uso de corticoide inalatório',
+        'Identificar gatilhos e plano de ação para crise asmática',
+      ]
+    },
+    {
+      num: '06', nome: 'Roberto Alves (fictício)',
+      especialidade: 'Infectologia', dificuldade: 'avancado',
+      perfil: 'adulto', sexo: 'M', idade: 42, peso: 65, altura: 170,
+      creatinina: 0.9, tfg: 95,
+      diagnosticos: 'HIV (TARV há 3 anos), Tuberculose pulmonar (diagnóstico recente)',
+      alergias: 'Efavirenz (efeitos neuropsiquiátricos)',
+      obs: 'Rifampicina é forte indutor do CYP3A4 — reduz drasticamente nível sérico de ARVs. Interação crítica de segurança.',
+      meds: 'Tenofovir 300mg · Lamivudina 300mg · Dolutegravir 50mg · Rifampicina 600mg · Isoniazida 300mg · Pirazinamida 2g',
+      objetivos: [
+        'Identificar interação crítica Rifampicina × Dolutegravir (ajuste de dose)',
+        'Reconhecer o mecanismo de indução enzimática do CYP3A4',
+        'Avaliar hepatotoxicidade acumulada no esquema TARV + esquema DOTS',
+        'Planejar monitoramento de PVHA em TB ativa',
+      ]
+    },
+    {
+      num: '07', nome: 'Odete Ferreira (fictícia)',
+      especialidade: 'Geriatria', dificuldade: 'avancado',
+      perfil: 'idoso', sexo: 'F', idade: 82, peso: 55, altura: 152,
+      creatinina: 1.1, tfg: 44,
+      diagnosticos: 'Doença de Alzheimer moderada, Depressão, HAS, Osteoporose',
+      alergias: '',
+      obs: 'Alto risco de quedas. Benzodiazepínico e antipsicótico devem ser evitados (Critérios de Beers). Polifarmácia de alto risco.',
+      meds: 'Donepezila 10mg · Memantina 10mg · Sertralina 50mg · Losartana 50mg · Carbonato de Cálcio 1g · Vitamina D 1000UI',
+      objetivos: [
+        'Aplicar Critérios de Beers em idosa com Alzheimer',
+        'Identificar risco de síndrome serotoninérgica e interações psicotrópicas',
+        'Avaliar TFG e necessidade de ajuste em paciente com IRC leve',
+        'Planejar adesão farmacoterapêutica no Alzheimer moderado',
+      ]
+    },
+    {
+      num: '08', nome: 'Carlos Eduardo Nunes (fictício)',
+      especialidade: 'Cardiologia', dificuldade: 'medio',
+      perfil: 'adulto', sexo: 'M', idade: 57, peso: 88, altura: 175,
+      creatinina: 1.0, tfg: 82,
+      diagnosticos: 'IAM com supra ST há 30 dias (pós-angioplastia), DM2, Dislipidemia',
+      alergias: '',
+      obs: 'Dupla antiagregação por 12 meses. Estatina de alta intensidade obrigatória. Betabloqueador e IECA reduzem mortalidade pós-IAM.',
+      meds: 'AAS 100mg · Clopidogrel 75mg · Atorvastatina 80mg · Metoprolol 50mg · Enalapril 10mg · Metformina 850mg',
+      objetivos: [
+        'Justificar a dupla antiagregação plaquetária (AAS + Clopidogrel) pós-SCA',
+        'Identificar a indicação de estatina de alta intensidade no pós-IAM',
+        'Avaliar interação Clopidogrel × Omeprazol (inibição CYP2C19)',
+        'Monitorar sinais de sangramento na dupla antiagregação',
+      ]
+    },
+    {
+      num: '09', nome: 'Mariana Costa (fictícia)',
+      especialidade: 'Neurologia', dificuldade: 'avancado',
+      perfil: 'adulto', sexo: 'F', idade: 34, peso: 62, altura: 165,
+      creatinina: 0.8, tfg: 100,
+      diagnosticos: 'Epilepsia focal com generalização, Desejo de engravidar',
+      alergias: 'Fenitoína (hipersensibilidade)',
+      obs: 'Valproato é teratogênico (espinha bífida, autismo). Lamotrigina é preferida na mulher em idade fértil. Requer planejamento reprodutivo.',
+      meds: 'Lamotrigina 200mg · Ácido Fólico 5mg',
+      objetivos: [
+        'Comparar risco teratogênico Valproato × Lamotrigina',
+        'Planejar transição segura de antiepiléptico no pré-concepcional',
+        'Avaliar interação anticoncepcional hormonal × Lamotrigina',
+        'Orientar dose de ácido fólico no planejamento reprodutivo com epilepsia',
+      ]
+    },
+    {
+      num: '10', nome: 'Antônio Bezerra (fictício)',
+      especialidade: 'Pneumologia', dificuldade: 'medio',
+      perfil: 'idoso', sexo: 'M', idade: 71, peso: 74, altura: 170,
+      creatinina: 1.2, tfg: 60,
+      diagnosticos: 'DPOC Gold III, Insuficiência Cardíaca com fração de ejeção reduzida (ICFER)',
+      alergias: '',
+      obs: 'Betabloqueador seletivo (Carvedilol ou Bisoprolol) é indicado na IC mesmo com DPOC — NÃO contraindicado. Teofilina tem janela terapêutica estreita.',
+      meds: 'Brometo de Tiotrópio 18mcg/dia · Formoterol 12mcg 2x/dia · Budesonida 400mcg 2x/dia · Carvedilol 6,25mg · Furosemida 40mg · Espironolactona 25mg',
+      objetivos: [
+        'Desmistificar contraindicação de betabloqueador seletivo no DPOC',
+        'Avaliar risco de hipocalemia: Furosemida + Formoterol + Budesonida',
+        'Identificar indicação de corticoide inalatório no DPOC Gold III',
+        'Monitorar edema e congestão na IC + DPOC (Furosemida + Espironolactona)',
+      ]
+    },
+  ];
 
-    function renderCasos() {
-      const wrap = document.getElementById('casos-wrap');
-      wrap.innerHTML = CASOS.map((c, i) => `
-        <div class="caso-card" onclick="carregarCaso(${i})">
-          <p class="caso-num">${c.caso}</p>
-          <p class="caso-nome">${c.nome}</p>
+  const ESP_CORES = {
+    'Geriatria':    '#7c3aed', 'Cardiologia': '#dc2626',
+    'Nefrologia':   '#0891b2', 'Obstetrícia':  '#db2777',
+    'Pediatria':    '#16a34a', 'Infectologia': '#b45309',
+    'Pneumologia':  '#0284c7', 'Neurologia':   '#6d28d9',
+  };
+
+  let _filtroAtual = 'todos';
+
+  function filtrarEsp(esp, el) {
+    _filtroAtual = esp;
+    document.querySelectorAll('.sb-filtro').forEach(b => b.classList.remove('ativo'));
+    el.classList.add('ativo');
+    renderCasos();
+  }
+
+  function renderCasos() {
+    const wrap = document.getElementById('casos-wrap');
+    const lista = _filtroAtual === 'todos'
+      ? CASOS
+      : CASOS.filter(c => c.especialidade === _filtroAtual);
+
+    if (!lista.length) {
+      wrap.innerHTML = '<p class="text-sm text-2" style="text-align:center;padding:16px">Nenhum caso nesta especialidade ainda.</p>';
+      return;
+    }
+
+    const difLabel = { basico:'Básico', medio:'Intermediário', avancado:'Avançado' };
+    const difClass = { basico:'dif-basico', medio:'dif-medio', avancado:'dif-avancado' };
+    const cor = (c) => ESP_CORES[c.especialidade] || '#64748b';
+
+    wrap.innerHTML = lista.map(c => {
+      const renal = c.tfg ? `<span style="font-size:.72rem;color:#d97706;font-weight:700;margin-left:auto">TFG ${c.tfg} · Creat. ${c.creatinina}</span>` : '';
+      return `
+        <div class="caso-card">
+          <div class="caso-card-header">
+            <div style="flex:1">
+              <p class="caso-num" style="color:${cor(c)}">Caso ${c.num}</p>
+              <p class="caso-nome">${c.nome}</p>
+            </div>
+            ${renal}
+          </div>
           <p class="caso-diag">${c.diagnosticos}</p>
           <p class="caso-meds">💊 ${c.meds}</p>
-          ${c.tfg ? `<p style="font-size:.72rem;color:#d97706;font-weight:700;margin-top:6px">TFG: ${c.tfg} mL/min · Creat.: ${c.creatinina} mg/dL</p>` : ''}
-        </div>`).join('');
-    }
-
-    async function carregarCaso(idx) {
-      const c = CASOS[idx];
-      const dados = {
-        nome: c.nome, perfil: c.perfil,
-        sandbox: true, sandboxMeta: {
-          sexo: c.sexo, idade: c.idade, peso: c.peso,
-          creatinina: c.creatinina, tfg: c.tfg,
-          diagnosticos: c.diagnosticos, obs: c.obs
-        },
-        alergias: c.alergias,
-        condicoesClinicas: c.diagnosticos,
-        criadoEm: Date.now()
-      };
-      const pid = await dbAdd('pacientes', dados);
-      _entrarSandbox(pid);
-    }
-
-    async function criarPacienteSandbox() {
-      const nome = document.getElementById('sb-nome').value.trim();
-      if (!nome) { showToast('⚠ Informe o nome do paciente'); return; }
-      const dados = {
-        nome,
-        perfil: document.getElementById('sb-perfil').value,
-        sandbox: true,
-        sandboxMeta: {
-          sexo      : document.getElementById('sb-sexo').value,
-          idade     : parseInt(document.getElementById('sb-idade').value) || null,
-          peso      : parseFloat(document.getElementById('sb-peso').value) || null,
-          creatinina: parseFloat(document.getElementById('sb-creatinina').value) || null,
-          tfg       : parseFloat(document.getElementById('sb-tfg').value) || null,
-          diagnosticos: document.getElementById('sb-diag').value.trim(),
-          obs       : document.getElementById('sb-obs').value.trim(),
-        },
-        alergias: document.getElementById('sb-alergias').value.trim(),
-        condicoesClinicas: document.getElementById('sb-diag').value.trim(),
-        criadoEm: Date.now(),
-      };
-      const pid = await dbAdd('pacientes', dados);
-      _entrarSandbox(pid);
-    }
-
-    function _entrarSandbox(pid) {
-      const prevPid = getActivePacienteId();
-      if (prevPid) localStorage.setItem('vd_prev_active', prevPid);
-      localStorage.setItem('vd_sandbox', '1');
-      setActivePacienteId(pid);
-      window.location.href = 'index.html';
-    }
-
-    async function renderSbPacientes() {
-      const todos = await dbGetAll('pacientes');
-      const sbs   = todos.filter(p => p.sandbox);
-      const wrap  = document.getElementById('sb-pacientes-wrap');
-      if (!sbs.length) {
-        wrap.innerHTML = `<p class="text-sm text-2" style="text-align:center;padding:8px 0">
-          Nenhum paciente de simulação ainda.</p>`;
-        return;
-      }
-      wrap.innerHTML = sbs.map(p => {
-        const meta = p.sandboxMeta || {};
-        const detalhe = [
-          meta.idade ? `${meta.idade} anos` : '',
-          meta.sexo === 'M' ? 'Masc.' : meta.sexo === 'F' ? 'Fem.' : '',
-          meta.tfg ? `TFG ${meta.tfg}` : '',
-        ].filter(Boolean).join(' · ');
-        return `<div class="sb-paciente-card">
-          <div class="sb-pac-avatar">${iniciaisNome(p.nome)}</div>
-          <div class="sb-pac-info">
-            <p class="sb-pac-nome">${p.nome}</p>
-            <p class="sb-pac-detalhe">${detalhe || 'Simulação'}</p>
+          <div class="caso-badges">
+            <span class="badge-esp" style="background:${cor(c)}1a;color:${cor(c)}">${c.especialidade}</span>
+            <span class="badge-dif ${difClass[c.dificuldade]}">${difLabel[c.dificuldade]}</span>
+            ${c.alergias ? `<span class="badge-esp" style="background:#fee2e2;color:#991b1b">⚠ ${c.alergias}</span>` : ''}
           </div>
-          <div style="display:flex;flex-direction:column;gap:6px">
-            <button class="btn btn-sm" style="background:#d97706;color:#fff;border:none;white-space:nowrap"
-              onclick="_entrarSandbox(${p.id})">Entrar</button>
-            <button class="btn btn-sm btn-outline" style="color:#ef4444;border-color:#ef4444"
-              onclick="excluirSbPaciente(${p.id})">Excluir</button>
+          <div class="caso-btn-row">
+            <button class="caso-btn-ver" onclick="verPreview('${c.num}')">📋 Ver objetivos</button>
+            <button class="caso-btn-abrir" onclick="carregarCaso('${c.num}')">▶ Abrir no Sandbox</button>
           </div>
         </div>`;
-      }).join('');
-    }
+    }).join('');
+  }
 
-    async function excluirSbPaciente(pid) {
-      if (!confirm('Excluir este paciente de simulação e todos os seus dados?')) return;
-      const meds = await dbGetByIndex('medicamentos', 'pacienteId', pid);
-      for (const m of meds) await dbDelete('medicamentos', m.id);
-      await dbDelete('pacientes', pid);
-      showToast('Paciente excluído');
-      renderSbPacientes();
-    }
+  function verPreview(num) {
+    const c = CASOS.find(x => x.num === num);
+    if (!c) return;
+    const cor = ESP_CORES[c.especialidade] || '#64748b';
+    const difLabel = { basico:'Básico', medio:'Intermediário', avancado:'Avançado' };
+    const rows = [
+      ['Paciente', `${c.nome.replace(' (fictício)','').replace(' (fictícia)','')} · ${c.sexo === 'F' ? 'Feminino' : 'Masculino'}`],
+      ['Idade / Peso', `${c.idade} anos · ${c.peso} kg`],
+      ['Diagnósticos', c.diagnosticos],
+      ['Alergias', c.alergias || 'Nenhuma referida'],
+      c.tfg ? ['Função Renal', `TFG ${c.tfg} mL/min · Creatinina ${c.creatinina} mg/dL`] : null,
+      ['Medicamentos', c.meds],
+      ['Observação', c.obs],
+    ].filter(Boolean);
 
-    document.addEventListener('DOMContentLoaded', () => {
-      renderCasos();
-      renderSbPacientes();
-    });
+    document.getElementById('caso-sheet').innerHTML = `
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+        <div>
+          <p style="font-size:.65rem;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:${cor};margin-bottom:2px">Caso ${c.num} · ${c.especialidade}</p>
+          <p class="caso-sheet-title">${c.nome}</p>
+        </div>
+        <span class="badge-dif ${c.dificuldade === 'basico' ? 'dif-basico' : c.dificuldade === 'avancado' ? 'dif-avancado' : 'dif-medio'}">${difLabel[c.dificuldade]}</span>
+      </div>
+      ${rows.map(([l,v]) => `<div class="caso-info-row"><span class="caso-info-label">${l}</span><span class="caso-info-val">${v}</span></div>`).join('')}
+      <div class="caso-obj">
+        <p class="caso-obj-title">🎯 Objetivos de Aprendizagem</p>
+        <ul>${c.objetivos.map(o => `<li>${o}</li>`).join('')}</ul>
+      </div>
+      <button class="btn btn-full" style="background:#d97706;color:#fff;border:none;margin-top:4px"
+        onclick="carregarCaso('${c.num}')">▶ Abrir no Sandbox</button>
+      <button class="btn btn-full btn-outline" style="margin-top:10px" onclick="fecharPreviewBtn()">Fechar</button>`;
+    document.getElementById('caso-overlay').style.display = 'flex';
+  }
+
+  function fecharPreview(e) {
+    if (e.target === document.getElementById('caso-overlay')) {
+      document.getElementById('caso-overlay').style.display = 'none';
+    }
+  }
+  function fecharPreviewBtn() {
+    document.getElementById('caso-overlay').style.display = 'none';
+  }
+
+  async function carregarCaso(num) {
+    document.getElementById('caso-overlay').style.display = 'none';
+    const c = CASOS.find(x => x.num === num);
+    if (!c) return;
+    const dados = {
+      nome: c.nome, perfil: c.perfil, sandbox: true,
+      sandboxMeta: {
+        sexo: c.sexo, idade: c.idade, peso: c.peso, altura: c.altura,
+        creatinina: c.creatinina, tfg: c.tfg,
+        diagnosticos: c.diagnosticos, obs: c.obs,
+        especialidade: c.especialidade, dificuldade: c.dificuldade,
+        casoNum: c.num,
+      },
+      alergias: c.alergias,
+      condicoesClinicas: c.diagnosticos,
+      criadoEm: Date.now(),
+    };
+    const pid = await dbAdd('pacientes', dados);
+    _entrarSandbox(pid);
+  }
+
+  async function criarPacienteSandbox() {
+    const nome = document.getElementById('sb-nome').value.trim();
+    if (!nome) { showToast('⚠ Informe o nome do paciente'); return; }
+    const dados = {
+      nome, perfil: document.getElementById('sb-perfil').value,
+      sandbox: true,
+      sandboxMeta: {
+        sexo       : document.getElementById('sb-sexo').value,
+        idade      : parseInt(document.getElementById('sb-idade').value) || null,
+        peso       : parseFloat(document.getElementById('sb-peso').value) || null,
+        creatinina : parseFloat(document.getElementById('sb-creatinina').value) || null,
+        tfg        : parseFloat(document.getElementById('sb-tfg').value) || null,
+        diagnosticos: document.getElementById('sb-diag').value.trim(),
+        obs        : document.getElementById('sb-obs').value.trim(),
+      },
+      alergias: document.getElementById('sb-alergias').value.trim(),
+      condicoesClinicas: document.getElementById('sb-diag').value.trim(),
+      criadoEm: Date.now(),
+    };
+    const pid = await dbAdd('pacientes', dados);
+    _entrarSandbox(pid);
+  }
+
+  function _entrarSandbox(pid) {
+    const prevPid = getActivePacienteId();
+    if (prevPid) localStorage.setItem('vd_prev_active', prevPid);
+    localStorage.setItem('vd_sandbox', '1');
+    setActivePacienteId(pid);
+    window.location.href = 'index.html';
+  }
+
+  async function renderSbPacientes() {
+    const todos = await dbGetAll('pacientes');
+    const sbs   = todos.filter(p => p.sandbox);
+    const wrap  = document.getElementById('sb-pacientes-wrap');
+    if (!sbs.length) {
+      wrap.innerHTML = `<p class="text-sm text-2" style="text-align:center;padding:8px 0">Nenhum paciente de simulação ainda.</p>`;
+      return;
+    }
+    wrap.innerHTML = sbs.map(p => {
+      const meta   = p.sandboxMeta || {};
+      const detalhe = [
+        meta.idade ? `${meta.idade} anos` : '',
+        meta.sexo === 'M' ? 'Masc.' : meta.sexo === 'F' ? 'Fem.' : '',
+        meta.tfg ? `TFG ${meta.tfg}` : '',
+        meta.casoNum ? `Caso ${meta.casoNum}` : '',
+      ].filter(Boolean).join(' · ');
+      return `<div class="sb-pac-card">
+        <div class="sb-pac-avatar">${iniciaisNome(p.nome)}</div>
+        <div class="sb-pac-info">
+          <p class="sb-pac-nome">${p.nome}</p>
+          <p class="sb-pac-detalhe">${detalhe || 'Simulação livre'}</p>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <button class="btn btn-sm" style="background:#d97706;color:#fff;border:none;white-space:nowrap"
+            onclick="_entrarSandbox(${p.id})">Entrar</button>
+          <button class="btn btn-sm btn-outline" style="color:#ef4444;border-color:#ef4444"
+            onclick="excluirSbPaciente(${p.id})">Excluir</button>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  async function excluirSbPaciente(pid) {
+    if (!confirm('Excluir este paciente de simulação e todos os seus dados?')) return;
+    const meds = await dbGetByIndex('medicamentos', 'pacienteId', pid);
+    for (const m of meds) await dbDelete('medicamentos', m.id);
+    await dbDelete('pacientes', pid);
+    showToast('Paciente excluído');
+    renderSbPacientes();
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    renderCasos();
+    renderSbPacientes();
+  });
   </script>
 </body>
 </html>
