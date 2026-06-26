@@ -54,7 +54,7 @@
 
 <div class="header">
   <h1>🔍 VitaDose — Auditoria Clínica</h1>
-  <p>Testa todas as funções de apoio à decisão clínica: Beers, Ajuste Renal, TFG, Interações, Duplicidade</p>
+  <p>Testa todas as funções de apoio à decisão clínica: Beers, Ajuste Renal, TFG, Interações, Duplicidade, Carga Anticolinérgica, Polimedicação</p>
 </div>
 
 <div class="summary" id="summary">
@@ -77,6 +77,7 @@
 <script src="js/beers.js"></script>
 <script src="js/interacoes.js"></script>
 <script src="js/duplicidade.js"></script>
+<script src="js/anticolin.js"></script>
 <script>
 let _pass = 0, _fail = 0, _warn = 0;
 
@@ -334,6 +335,129 @@ function executarAuditoria() {
     };
   }), ['TFG','Esperado','Resultado','Status','Estágio CKD']);
 
+  // ── Seção 7: Carga Anticolinérgica ────────────────────────────
+  const acbIndividualTests = [
+    // [medicamento, scoreEsperado, descricao]
+    ['amitriptilina',          3, 'TCA — score máximo'],
+    ['amitriptilina 25mg',     3, 'Normalização: amitriptilina 25mg'],
+    ['Amitriptilina cloridrato 25mg', 3, 'Normalização completa com sufixo químico'],
+    ['nortriptilina',          3, 'TCA'],
+    ['imipramina',             3, 'TCA'],
+    ['difenidramina',          3, 'Anti-H1 1ª gen — score 3'],
+    ['clorfeniramina',         3, 'Anti-H1 1ª gen — score 3'],
+    ['prometazina',            3, 'Anti-H1 / Fenotiazínico'],
+    ['hidroxizina',            3, 'Anti-H1 1ª gen'],
+    ['ciproeptadina',          3, 'Anti-H1 1ª gen'],
+    ['dimenidrinato',          3, 'Antiemético anticolinérgico'],
+    ['oxibutinina',            3, 'Anticolinérgico urinário'],
+    ['tolterodina',            3, 'Anticolinérgico urinário'],
+    ['solifenacina',           3, 'Anticolinérgico urinário'],
+    ['biperideno',             3, 'Antiparkinsônico anticolinérgico'],
+    ['ciclobenzaprina',        3, 'Relaxante muscular anticolinérgico'],
+    ['clorpromazina',          3, 'Antipsicótico típico potente'],
+    ['clozapina',              2, 'Antipsicótico atípico — score 2'],
+    ['olanzapina',             2, 'Antipsicótico atípico — score 2'],
+    ['quetiapina',             2, 'Antipsicótico atípico — score 2'],
+    ['carbamazepina',          2, 'Anticonvulsivante — score 2'],
+    ['paroxetina',             1, 'ISRS maior efeito anticolinérgico — score 1'],
+    ['tramadol',               1, 'Opioide — score 1'],
+    ['furosemida',             1, 'Diurético de alça — score 1'],
+    ['digoxina',               1, 'Glicosídeo cardíaco — score 1'],
+    ['haloperidol',            1, 'Antipsicótico típico — score 1'],
+    ['morfina',                1, 'Opioide — score 1'],
+    // Deve retornar 0 (sem efeito anticolinérgico)
+    ['losartana',              0, 'BRA — sem efeito anticolinérgico'],
+    ['metformina',             0, 'Biguanida — sem efeito anticolinérgico'],
+    ['enalapril',              0, 'IECA — sem efeito anticolinérgico'],
+    ['omeprazol',              0, 'IBP — sem efeito anticolinérgico'],
+    ['amlodipina',             0, 'BCC — sem efeito anticolinérgico'],
+    ['atorvastatina',          0, 'Estatina — sem efeito anticolinérgico'],
+    ['metoprolol',             0, 'Betabloqueador — sem efeito anticolinérgico'],
+  ];
+
+  out.innerHTML += renderSecao('🧠 7. Carga Anticolinérgica — Score Individual (ACB Scale)', acbIndividualTests.map(([med, esperado, desc]) => {
+    const res = buscarAnticolinergico(med);
+    const ok  = res === esperado;
+    ok ? _pass++ : _fail++;
+    return {
+      col1: med,
+      col2: esperado === 0 ? '0 (sem efeito)' : `Score ${esperado}/3`,
+      col3: `Score ${res}/3`,
+      col4: ok ? 'PASS' : 'FAIL', cls: ok ? 'pass' : 'fail',
+      col5: desc,
+    };
+  }), ['Medicamento','Esperado','Resultado','Status','Contexto ACB']);
+
+  // Carga total (calcularCargaAnticolin)
+  const acbTotalTests = [
+    // [[meds], totalEsperado, nivelEsperado, desc]
+    [[{nome:'Amitriptilina'}],                                                        3, 'moderado', '1 TCA → total=3 → moderado'],
+    [[{nome:'Amitriptilina'}, {nome:'Difenidramina'}],                               6, 'alto',     '2 score-3 → total=6 → alto'],
+    [[{nome:'Amitriptilina'}, {nome:'Prometazina'}, {nome:'Oxibutinina'}],           9, 'alto',     '3 score-3 → total=9 → alto'],
+    [[{nome:'Furosemida'}, {nome:'Digoxina'}],                                       2, 'baixo',    '2 score-1 → total=2 → baixo'],
+    [[{nome:'Quetiapina'}, {nome:'Tramadol'}],                                       3, 'moderado', 'score-2 + score-1 → total=3 → moderado'],
+    [[{nome:'Clozapina'}, {nome:'Carbamazepina'}, {nome:'Paroxetina'}],              5, 'moderado', '2+2+1 → total=5 → moderado'],
+    [[{nome:'Clozapina'}, {nome:'Carbamazepina'}, {nome:'Haloperidol'}, {nome:'Tramadol'}], 6, 'alto', '2+2+1+1 → total=6 → alto'],
+    [[{nome:'Losartana'}, {nome:'Metformina'}],                                      0, 'baixo',    'Sem anticolinérgicos → total=0'],
+    [[{nome:'Enalapril'}, {nome:'Furosemida'}, {nome:'Atorvastatina'}],             1, 'baixo',    'Só furosemida score-1 → total=1 → baixo'],
+  ];
+
+  out.innerHTML += renderSecao('🧠 7b. Carga Anticolinérgica — Escore Total', acbTotalTests.map(([meds, totalEsp, nivelEsp, desc]) => {
+    const res = calcularCargaAnticolin(meds);
+    const okTotal = res.total === totalEsp;
+    const okNivel = res.nivel === nivelEsp;
+    const ok = okTotal && okNivel;
+    ok ? _pass++ : _fail++;
+    return {
+      col1: meds.map(m => m.nome).join(' + '),
+      col2: `total=${totalEsp} · ${nivelEsp}`,
+      col3: `total=${res.total} · ${res.nivel}`,
+      col4: ok ? 'PASS' : 'FAIL', cls: ok ? 'pass' : 'fail',
+      col5: desc,
+    };
+  }), ['Medicamentos','Esperado','Calculado','Status','Cenário']);
+
+  // ── Seção 8: Polimedicação + Risco de Queda ──────────────────
+  const polifTests = [
+    // [[meds], nivelEsperado_ou_null, riscoQuedaEsperado, desc]
+    [['Losartana','Metformina','Omeprazol'],
+      null, false, '3 meds → sem polimedicação'],
+    [['Losartana','Metformina','Omeprazol','Atorvastatina'],
+      null, false, '4 meds → sem polimedicação'],
+    [['Losartana','Metformina','Omeprazol','Atorvastatina','AAS'],
+      'moderado', false, '5 meds, sem classes de risco → polimedicação sem risco de queda'],
+    [['Enalapril','Furosemida','Atorvastatina','Metformina','Zolpidem'],
+      'moderado', false, '5 meds, 1 classe risco (hipnótico) → polimedicação sem risco de queda (< 3 classes)'],
+    [['Enalapril','Furosemida','Diazepam','Tramadol','Sertralina'],
+      'moderado', true, '5 meds, 3 classes risco (BZD + opioide + antidepressivo) → risco de queda'],
+    [['Enalapril','Furosemida','Diazepam','Tramadol','Sertralina','Haloperidol'],
+      'moderado', true, '6 meds, 4 classes risco → risco de queda'],
+    [['L1','L2','L3','L4','L5','L6','L7','L8','L9','Amitriptilina'],
+      'grave', false, '10 meds genéricos, 1 classe risco → polifarmácia grave sem risco queda'],
+    [['Enalapril','Furosemida','Diazepam','Tramadol','Sertralina','Haloperidol','Carbamazepina','AAS','Metformina','Omeprazol'],
+      'grave', true, '10 meds, 5 classes risco → polifarmácia grave + risco de queda'],
+  ];
+
+  out.innerHTML += renderSecao('💊 8. Polimedicação + Risco de Queda', polifTests.map(([nomes, nivelEsp, quedaEsp, desc]) => {
+    const meds = nomes.map(n => ({nome: n}));
+    const res  = calcularPolifarmacia(meds);
+    const okNivel = (nivelEsp === null) ? (res === null) : (res && res.nivel === nivelEsp);
+    const okQueda = (nivelEsp === null) ? true : (res && res.riscoQueda === quedaEsp);
+    const ok = okNivel && okQueda;
+    ok ? _pass++ : _fail++;
+    const resStr = res === null ? 'null (< 5 meds)'
+      : `${res.nivel} · queda:${res.riscoQueda} · ${res.total} meds`;
+    const espStr = nivelEsp === null ? 'null (< 5 meds)'
+      : `${nivelEsp} · queda:${quedaEsp}`;
+    return {
+      col1: `${nomes.length} meds: ${nomes.slice(0,3).join(', ')}${nomes.length > 3 ? '…' : ''}`,
+      col2: espStr,
+      col3: resStr,
+      col4: ok ? 'PASS' : 'FAIL', cls: ok ? 'pass' : 'fail',
+      col5: desc,
+    };
+  }), ['Medicamentos','Esperado','Resultado','Status','Cenário']);
+
   // ── Atualiza summary ──────────────────────────────────────────
   const total = _pass + _fail + _warn;
   document.getElementById('s-total').textContent = total;
@@ -360,6 +484,24 @@ function renderSecao(titulo, linhas, colunas) {
         <tbody>${rows}</tbody>
       </table>
     </div>`;
+}
+
+/* ── Cópia inline de calcularPolifarmacia (de app.js) para auditoria ── */
+function calcularPolifarmacia(meds) {
+  const n = meds.length;
+  if (n < 5) return null;
+  const classeRisco = [
+    { nome:'Benzodiazepínicos/Hipnóticos', termos:['diazepam','clonazepam','alprazolam','bromazepam','lorazepam','midazolam','nitrazepam','zolpidem','zopiclona','zaleplon'] },
+    { nome:'Opioides',                     termos:['morfina','tramadol','codeina','oxicodona','fentanila','hidrocodona','buprenorfina','metadona','tapentadol'] },
+    { nome:'Antipsicóticos',               termos:['haloperidol','quetiapina','risperidona','olanzapina','clozapina','aripiprazol','clorpromazina','ziprasidona'] },
+    { nome:'Antidepressivos',              termos:['amitriptilina','nortriptilina','fluoxetina','sertralina','paroxetina','escitalopram','citalopram','venlafaxina','duloxetina','bupropiona','imipramina'] },
+    { nome:'Anti-hipertensivos',           termos:['enalapril','captopril','lisinopril','ramipril','losartana','valsartana','atenolol','metoprolol','carvedilol','bisoprolol','amlodipina','nifedipina','furosemida','hidroclorotiazida','indapamida'] },
+    { nome:'Anticonvulsivantes',           termos:['carbamazepina','fenitoina','fenobarbital','valproato','lamotrigina','gabapentina','pregabalina','topiramato'] },
+    { nome:'Anticolinérgicos',             termos:['oxibutinina','tolterodina','solifenacina','difenidramina','clorfeniramina','prometazina','ciclobenzaprina','biperideno'] },
+  ];
+  const nNorm = meds.map(m => m.nome.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,''));
+  const classesPresentes = classeRisco.filter(c => c.termos.some(t => nNorm.some(n => n.includes(t))));
+  return { total: n, nivel: n >= 10 ? 'grave' : 'moderado', riscoQueda: classesPresentes.length >= 3, classesQueda: classesPresentes.map(c => c.nome) };
 }
 
 // Executa automaticamente ao carregar
