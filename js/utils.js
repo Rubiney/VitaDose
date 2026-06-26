@@ -466,6 +466,20 @@ function diasRestantes(med) {
   }
 })();
 
+/* ── Auto-atualização via Service Worker ── */
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.addEventListener('message', e => {
+    if (e.data?.type !== 'SW_UPDATED') return;
+    // Se o usuário estiver preenchendo um formulário, não interrompe
+    const temDados = [...document.querySelectorAll('input, textarea')]
+      .some(el => el.value && el.value !== el.defaultValue);
+    if (temDados) return;
+    const toast = document.getElementById('toast');
+    if (toast) { toast.textContent = '✓ App atualizado'; toast.classList.add('show'); }
+    setTimeout(() => window.location.reload(), 1500);
+  });
+}
+
 /* ── Lightbox de fotos ── */
 function abrirLightbox(src) {
   let lb = document.getElementById('vd-lightbox');

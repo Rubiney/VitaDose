@@ -1,5 +1,5 @@
 /* VitaDose — Service Worker (offline cache + notificações) */
-const CACHE = 'vitadose-v24';
+const CACHE = 'vitadose-v25';
 
 const ASSETS = [
   '/',
@@ -37,9 +37,19 @@ self.addEventListener('install', (e) => {
 /* ── Activate: limpa caches antigos ── */
 self.addEventListener('activate', (e) => {
   e.waitUntil(
-    caches.keys()
-      .then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k))))
-      .then(() => self.clients.claim())
+    caches.keys().then(keys => {
+      const velhos   = keys.filter(k => k !== CACHE);
+      const isUpdate = velhos.length > 0;
+      return Promise.all(velhos.map(k => caches.delete(k)))
+        .then(() => self.clients.claim())
+        .then(() => {
+          if (!isUpdate) return;
+          // Avisa todas as abas abertas que o app foi atualizado
+          return self.clients.matchAll({ type: 'window' }).then(cs =>
+            cs.forEach(c => c.postMessage({ type: 'SW_UPDATED' }))
+          );
+        });
+    })
   );
 });
 
