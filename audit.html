@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VitaDose — Auditoria Clínica</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f1f5f9; color: #1e293b; font-size: 14px; }
+    .header { background: #0f3460; color: #fff; padding: 20px 24px; }
+    .header h1 { font-size: 1.3rem; font-weight: 800; }
+    .header p  { font-size: .8rem; opacity: .8; margin-top: 4px; }
+    .summary {
+      display: flex; gap: 12px; padding: 16px 24px; background: #fff;
+      border-bottom: 1px solid #e2e8f0; flex-wrap: wrap;
+    }
+    .sum-box {
+      padding: 10px 18px; border-radius: 10px; font-weight: 800;
+      font-size: 1rem; min-width: 110px; text-align: center;
+    }
+    .sum-total  { background: #e2e8f0; color: #334155; }
+    .sum-pass   { background: #dcfce7; color: #166534; }
+    .sum-fail   { background: #fee2e2; color: #991b1b; }
+    .sum-warn   { background: #fef9c3; color: #854d0e; }
+    .sum-label  { font-size: .65rem; font-weight: 700; text-transform: uppercase; display: block; margin-bottom: 2px; }
+
+    .section { margin: 20px 24px 0; }
+    .sec-title {
+      font-size: .75rem; font-weight: 800; text-transform: uppercase;
+      letter-spacing: .1em; color: #0f3460; margin-bottom: 10px;
+      padding-bottom: 6px; border-bottom: 2px solid #0f3460;
+    }
+    table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 10px; overflow: hidden; margin-bottom: 8px; box-shadow: 0 1px 4px rgba(0,0,0,.06); }
+    th { background: #f8fafc; font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: #64748b; padding: 8px 12px; text-align: left; border-bottom: 1px solid #e2e8f0; }
+    td { padding: 8px 12px; border-bottom: 1px solid #f1f5f9; font-size: .83rem; vertical-align: top; }
+    tr:last-child td { border-bottom: none; }
+    .pass  { color: #166534; font-weight: 700; }
+    .fail  { color: #991b1b; font-weight: 700; }
+    .warn  { color: #854d0e; font-weight: 600; }
+    .badge { display: inline-block; padding: 1px 8px; border-radius: 10px; font-size: .7rem; font-weight: 700; }
+    .b-pass { background: #dcfce7; color: #166534; }
+    .b-fail { background: #fee2e2; color: #991b1b; }
+    .b-warn { background: #fef9c3; color: #854d0e; }
+    .result-val { font-family: monospace; font-size: .78rem; color: #475569; }
+    .footer { padding: 24px; font-size: .75rem; color: #94a3b8; text-align: center; }
+    .btn-run {
+      background: #0f3460; color: #fff; border: none; padding: 10px 24px;
+      border-radius: 8px; font-weight: 700; cursor: pointer; margin: 16px 24px 0;
+      font-size: .88rem;
+    }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <h1>🔍 VitaDose — Auditoria Clínica</h1>
+  <p>Testa todas as funções de apoio à decisão clínica: Beers, Ajuste Renal, TFG, Interações, Duplicidade</p>
+</div>
+
+<div class="summary" id="summary">
+  <div class="sum-box sum-total"><span class="sum-label">Total</span><span id="s-total">—</span></div>
+  <div class="sum-box sum-pass"><span class="sum-label">✓ Passou</span><span id="s-pass">—</span></div>
+  <div class="sum-box sum-fail"><span class="sum-label">✗ Falhou</span><span id="s-fail">—</span></div>
+  <div class="sum-box sum-warn"><span class="sum-label">⚠ Atenção</span><span id="s-warn">—</span></div>
+</div>
+
+<button class="btn-run" onclick="executarAuditoria()">▶ Executar Auditoria Completa</button>
+
+<div id="resultados" style="padding-bottom:40px"></div>
+
+<div class="footer">
+  VitaDose Audit · Referências: AGS Beers 2023 · KDIGO 2022 · Micromedex · UpToDate<br>
+  Esta auditoria não substitui revisão farmacêutica clínica. Use para validação técnica das tabelas.
+</div>
+
+<script src="js/ajusterenal.js"></script>
+<script src="js/beers.js"></script>
+<script src="js/interacoes.js"></script>
+<script src="js/duplicidade.js"></script>
+<script>
+let _pass = 0, _fail = 0, _warn = 0;
+
+function executarAuditoria() {
+  _pass = 0; _fail = 0; _warn = 0;
+  const out = document.getElementById('resultados');
+  out.innerHTML = '';
+
+  // ── Seção 1: Critérios de Beers ──────────────────────────────
+  const beersTests = [
+    // [medicamento, nivelEsperado_ou_null, descricao]
+    ['amitriptilina',           'alto',     'Antidepressivo tricíclico — alto risco'],
+    ['amitriptilina 25mg',      'alto',     'Normalização de dose: amitriptilina 25mg'],
+    ['nortriptilina',           'alto',     'Antidepressivo tricíclico'],
+    ['diazepam',                'alto',     'Benzodiazepínico longa ação'],
+    ['clonazepam 2mg',          'alto',     'Normalização: clonazepam 2mg'],
+    ['alprazolam',              'alto',     'Benzodiazepínico alta potência'],
+    ['bromazepam',              'alto',     'Benzodiazepínico'],
+    ['zolpidem',                'alto',     'Hipnótico Z'],
+    ['zopiclona',               'alto',     'Hipnótico Z'],
+    ['difenidramina',           'alto',     'Anti-histamínico 1ª geração'],
+    ['clorfeniramina',          'alto',     'Anti-histamínico 1ª geração'],
+    ['prometazina',             'alto',     'Anti-histamínico / Fenotiazínico'],
+    ['glibenclamida',           'alto',     'Sulfonilureia longa ação'],
+    ['clorpromazina',           'alto',     'Antipsicótico típico potente'],
+    ['ciclobenzaprina',         'alto',     'Relaxante muscular anticolinérgico'],
+    ['meperidina',              'alto',     'Opioide — metabólito neurotóxico'],
+    ['nifedipina',              'alto',     'BCC ação rápida'],
+    ['metildopa',               'alto',     'Anti-hipertensivo de ação central'],
+    ['fenobarbital',            'alto',     'Barbitúrico — risco elevado'],
+    ['oxibutinina',             'alto',     'Anticolinérgico urinário potente'],
+    ['haloperidol',             'moderado', 'Antipsicótico típico — risco moderado'],
+    ['quetiapina',              'moderado', 'Antipsicótico atípico — demência'],
+    ['tramadol',                'moderado', 'Opioide — hipoglicemia e convulsão'],
+    ['amiodarona',              'moderado', 'Antiarrítmico — toxicidade múltipla'],
+    ['digoxina',                'moderado', 'Glicosídeo cardíaco — janela estreita'],
+    ['metoclopramida',          'moderado', 'Procinético — parkinsonismo tardio'],
+    ['hidroxizina',             'moderado', 'Anti-histamínico — anticolinérgico'],
+    ['ranitidina',              'cautela',  'Antagonista H2 — cautela'],
+    ['glipizida',               'cautela',  'Sulfonilureia curta ação'],
+    // Deve retornar null (não está na lista de Beers)
+    ['losartana',               null,       'BRA — NÃO está nos Critérios de Beers'],
+    ['metformina',              null,       'Biguanida — NÃO está nos Critérios de Beers'],
+    ['enalapril',               null,       'IECA — NÃO está nos Critérios de Beers'],
+    ['omeprazol',               null,       'IBP — NÃO está nos Critérios de Beers'],
+    ['amlodipina',              null,       'BCC longa ação — NÃO está nos Critérios de Beers'],
+    ['sertralina',              null,       'ISRS — NÃO está nos Critérios de Beers'],
+  ];
+
+  out.innerHTML += renderSecao('🔴 1. Critérios de Beers (AGS 2023)', beersTests.map(([med, esperado, desc]) => {
+    const res = buscarBeers(med);
+    const nivelRes = res ? res.risco : null;
+    const ok = nivelRes === esperado;
+    const badge = ok ? 'PASS' : 'FAIL';
+    const cls  = ok ? 'pass' : 'fail';
+    ok ? _pass++ : _fail++;
+    return {
+      col1: med,
+      col2: esperado === null ? 'null (não Beers)' : `risco: ${esperado}`,
+      col3: nivelRes === null ? 'null' : `risco: ${nivelRes}`,
+      col4: badge, cls,
+      col5: desc,
+    };
+  }), ['Medicamento','Esperado','Resultado','Status','Descrição clínica']);
+
+  // ── Seção 2: Ajuste Renal ─────────────────────────────────────
+  const renalTests = [
+    ['metformina',       25,  'contraindicado', 'TFG < 30 — contraindicada'],
+    ['metformina',       40,  'reduzir',         'TFG 30-45 — reduzir dose'],
+    ['metformina',       55,  'cautela',          'TFG 45-60 — cautela'],
+    ['metformina',       70,  null,              'TFG > 60 — sem restrição'],
+    ['alopurinol',        5,  'contraindicado', 'TFG < 10 — contraindicado'],
+    ['alopurinol',       15,  'reduzir',         'TFG 10-20 — dose máxima 50mg'],
+    ['alopurinol',       25,  'reduzir',         'TFG 20-30 — dose máxima 100mg'],
+    ['alopurinol',       50,  'reduzir',         'TFG 30-60 — dose máxima 200mg'],
+    ['alopurinol',       80,  null,              'TFG > 60 — sem ajuste'],
+    ['espironolactona',  25,  'contraindicado', 'TFG < 30 — contraindicada (hipercalemia)'],
+    ['espironolactona',  35,  'reduzir',         'TFG 30-45 — reduzir'],
+    ['espironolactona',  50,  'cautela',          'TFG 45-60 — cautela'],
+    ['losartana',        25,  'cautela',          'TFG < 30 — cautela'],
+    ['losartana',        70,  null,              'TFG > 60 — sem restrição'],
+    ['enalapril',        25,  'reduzir',         'TFG < 30 — iniciar com 2,5mg'],
+    ['digoxina',         25,  'contraindicado', 'TFG < 30 — evitar ou dose mínima'],
+    ['digoxina',         50,  'reduzir',         'TFG 30-60 — reduzir dose'],
+    ['nitrofurantoina',  25,  'contraindicado', 'TFG < 30 — ineficaz + tóxica'],
+    ['gabapentina',      25,  'reduzir',         'TFG 15-30 — 200-700mg/dia'],
+    ['ciprofloxacino',   25,  'reduzir',         'TFG < 30 — reduzir 50%'],
+    ['ibuprofeno',       25,  'contraindicado', 'TFG < 30 — AINE contraindicado'],
+    ['ibuprofeno',       50,  'cautela',          'TFG 30-60 — evitar crônico'],
+    ['ibuprofeno',       70,  null,              'TFG > 60 — sem restrição específica'],
+    ['amlodipina',       20,  null,              'Amlodipina — sem ajuste renal necessário'],
+    ['metformina 500mg', 25,  'contraindicado', 'Normalização: metformina 500mg'],
+    ['Losartana 50mg',   25,  'cautela',          'Normalização: Losartana 50mg'],
+  ];
+
+  out.innerHTML += renderSecao('🫘 2. Ajuste Renal por TFG', renalTests.map(([med, tfg, esperado, desc]) => {
+    const res = buscarAjusteRenal(med, tfg);
+    const nivelRes = res ? res.nivel : null;
+    const ok = nivelRes === esperado;
+    ok ? _pass++ : _fail++;
+    return {
+      col1: `${med} / TFG=${tfg}`,
+      col2: esperado === null ? 'null (sem alerta)' : esperado,
+      col3: nivelRes === null ? 'null' : nivelRes,
+      col4: ok ? 'PASS' : 'FAIL', cls: ok ? 'pass' : 'fail',
+      col5: desc,
+    };
+  }), ['Medicamento / TFG','Esperado','Resultado','Status','Contexto clínico']);
+
+  // ── Seção 3: Cálculo TFG (Cockcroft-Gault) ───────────────────
+  const tfgTests = [
+    // [idade, peso, sexo, creatinina, esperado_min, esperado_max, descricao]
+    [60, 70, 'M', 1.0, 75, 82, 'Adulto M 60a — TFG ~78 (G2)'],
+    [72, 68, 'F', 1.8, 28, 33, 'Idosa F 72a/IRC — TFG ~30 (G3b)'],
+    [80, 55, 'F', 1.1, 33, 38, 'Idosa F 80a — TFG ~35 (G3b)'],
+    [25, 70, 'M', 0.9, 120, 130, 'Jovem M 25a — TFG ~124 (G1)'],
+    [45, 80, 'M', 1.2, 78, 88, 'Adulto M 45a — TFG ~83 (G2)'],
+    [68, 78, 'M', 3.2, 19, 24, 'Caso 04 IRC avançada — TFG ~22 (G4)'],
+    [28, 72, 'F', 0.7, 115, 128, 'Gestante F 28a — TFG ~120 (G1)'],
+  ];
+
+  out.innerHTML += renderSecao('🔢 3. Cálculo TFG (Cockcroft-Gault)', tfgTests.map(([idade, peso, sexo, cr, min, max, desc]) => {
+    const res = calcularTFG(idade, peso, sexo, cr);
+    const ok  = res >= min && res <= max;
+    const aviso = !ok && Math.abs(res - (min+max)/2) < 10;
+    if (ok) _pass++; else if (aviso) _warn++; else _fail++;
+    const cls = ok ? 'pass' : aviso ? 'warn' : 'fail';
+    const badge = ok ? 'PASS' : aviso ? 'WARN' : 'FAIL';
+    return {
+      col1: `${idade}a · ${peso}kg · ${sexo} · Cr=${cr}`,
+      col2: `${min}–${max} mL/min`,
+      col3: `${res} mL/min`,
+      col4: badge, cls,
+      col5: desc,
+    };
+  }), ['Parâmetros','Esperado','Calculado','Status','Cenário']);
+
+  // ── Seção 4: Interações Drug-Drug ─────────────────────────────
+  const interacaoTests = [
+    // [[med1, med2...], tituloContém, nivelEsperado, desc]
+    [['Varfarina','AAS'],            'Varfarina + AAS',             'grave',    'Sangramento grave'],
+    [['Varfarina','Amiodarona'],     'Varfarina + Amiodarona',      'grave',    'Potencialização intensa'],
+    [['Varfarina','Ciprofloxacino'], 'Varfarina + Fluoroquinolona', 'grave',    'INR elevado'],
+    [['Varfarina','Ibuprofeno'],     'Varfarina + AINE',            'grave',    'Sangramento com risco de vida'],
+    [['Varfarina','Fluconazol'],     'Varfarina + Antifúngico',     'grave',    'INR elevado por azol'],
+    [['Clopidogrel','Omeprazol'],    'Clopidogrel + Omeprazol',     'grave',    'Falha antiagregante'],
+    [['Digoxina','Amiodarona'],      'Digoxina + Amiodarona',       'grave',    'Intoxicação digitálica'],
+    [['Digoxina','Verapamil'],       'Digoxina + Verapamil',        'grave',    'Bradicardia + bloqueio AV'],
+    [['Sildenafila','Isossorbida'],  'Inibidor da PDE-5',           'grave',    'Hipotensão grave — contraindicado'],
+    [['Tramadol','Sertralina'],      'Tramadol + ISRS',             'grave',    'Síndrome serotoninérgica'],
+    [['Morfina','Diazepam'],         'Opioide + Benzodiazep',       'grave',    'Depressão respiratória fatal'],
+    [['Enalapril','Espironolactona'],'IECA/BRA + Diurético Poupador','grave',   'Hipercalemia grave'],
+    [['Enalapril','Losartana'],      'IECA + BRA',                  'grave',    'Duplo bloqueio SRAA'],
+    [['Metotrexato','Ibuprofeno'],   'Metotrexato + AINE',          'grave',    'Toxicidade MTX grave'],
+    [['Alopurinol','Azatioprina'],   'Alopurinol + Azatioprina',    'grave',    'Toxicidade hematológica'],
+    [['Atenolol','Verapamil'],       'Betabloqueador + Verapamil',  'moderado', 'Bradicardia e bloqueio AV'],
+    [['Clopidogrel','Pantoprazol'],  'Pantoprazol + Clopidogrel',   'leve',     'Interação menor que Omeprazol'],
+    [['Digoxina','Furosemida'],      'Digoxina + Diurético',        'leve',     'Hipocalemia aumenta toxicidade'],
+    [['Sertralina','Ibuprofeno'],    'ISRS + AINE',                 'moderado', 'Sangramento GI'],
+    // Deve retornar interação alimentar mas NÃO drug-drug
+    [['Metformina'],                 null,                           null,       'Metformina isolada → sem drug-drug (apenas alimentar)'],
+  ];
+
+  out.innerHTML += renderSecao('⚠️ 4. Interações Medicamentosas (Drug-Drug)', interacaoTests.map(([meds, titulo, nivel, desc]) => {
+    const objs = meds.map(n => ({nome: n}));
+    const res  = gerarAlertas(objs);
+    let encontrado = null;
+    if (titulo !== null) {
+      encontrado = res.find(a => a.titulo && a.titulo.toLowerCase().includes(titulo.toLowerCase()) && a.tipo === 'interacao');
+    }
+    let ok, cls, badge;
+    if (titulo === null) {
+      const temDrugDrug = res.some(a => a.tipo === 'interacao');
+      ok = !temDrugDrug;
+      cls = ok ? 'pass' : 'fail';
+      badge = ok ? 'PASS' : 'FAIL';
+    } else {
+      ok = !!encontrado && (nivel ? encontrado.nivel === nivel : true);
+      cls = ok ? 'pass' : 'fail';
+      badge = ok ? 'PASS' : 'FAIL';
+    }
+    ok ? _pass++ : _fail++;
+    return {
+      col1: meds.join(' + '),
+      col2: titulo === null ? '— (sem drug-drug)' : `${nivel || '—'}: "${titulo}"`,
+      col3: encontrado ? `${encontrado.nivel}: "${encontrado.titulo.substring(0,35)}..."` : (titulo ? 'não encontrado' : `${res.filter(a=>a.tipo==='interacao').length} drug-drug`),
+      col4: badge, cls,
+      col5: desc,
+    };
+  }), ['Medicamentos','Esperado','Encontrado','Status','Contexto']);
+
+  // ── Seção 5: Duplicidade Terapêutica ─────────────────────────
+  const dupTests = [
+    // [[med1, med2], classeContém, nivelEsperado, desc]
+    [['Enalapril','Losartana'],           'IECA + BRA',              'grave',    'Duplo bloqueio SRAA — contraindicado'],
+    [['Varfarina','Rivaroxabana'],        'Anticoagulantes',         'grave',    'Dois anticoagulantes — fatal'],
+    [['Diazepam','Clonazepam'],          'Benzodiazep',             'moderado', 'Dois BZD — sedação excessiva'],
+    [['Sinvastatina','Atorvastatina'],    'Estatinas',               'moderado', 'Duas estatinas — rabdomiólise'],
+    [['Ibuprofeno','Naproxeno'],         'AINEs',                   'moderado', 'Dois AINEs — sangramento GI grave'],
+    [['Omeprazol','Pantoprazol'],        'Bomba de Prótons',        'moderado', 'Dois IBP — sem benefício'],
+    [['Fluoxetina','Sertralina'],        'ISRS',                    'moderado', 'Dois ISRS — síndrome serotoninérgica'],
+    [['Atenolol','Carvedilol'],          'Betabloqueadores',        'moderado', 'Dois betabloqueadores — bradicardia'],
+    [['Glibenclamida','Glipizida'],      'Sulfonilureias',          'moderado', 'Duas sulfonilureias — hipoglicemia'],
+    [['Furosemida','Bumetanida'],        'Diurético',               'moderado', 'Dois diuréticos de alça'],
+    [['Dapagliflozina','Empagliflozina'],'iSGLT2',                  'moderado', 'Dois iSGLT2'],
+    // Deve retornar null (classes diferentes)
+    [['Metformina','Losartana'],          null,                      null,       'Classes diferentes — sem duplicidade'],
+    [['Enalapril','Furosemida'],          null,                      null,       'IECA + Diurético — sem duplicidade de classe'],
+    [['Sinvastatina'],                    null,                      null,       'Uma estatina só — sem duplicidade'],
+  ];
+
+  out.innerHTML += renderSecao('🔵 5. Duplicidade Terapêutica', dupTests.map(([meds, classe, nivel, desc]) => {
+    const objs = meds.map(n => ({nome: n}));
+    const res  = verificarDuplicidade(objs);
+    let encontrado = null;
+    if (classe !== null) {
+      encontrado = res.find(d => d.classe && d.classe.toLowerCase().includes(classe.toLowerCase()));
+    }
+    let ok;
+    if (classe === null) {
+      ok = res.length === 0;
+    } else {
+      ok = !!encontrado && (nivel ? encontrado.nivel === nivel : true);
+    }
+    ok ? _pass++ : _fail++;
+    return {
+      col1: meds.join(' + '),
+      col2: classe === null ? '— (sem duplicidade)' : `${nivel}: "${classe}"`,
+      col3: encontrado ? `${encontrado.nivel}: "${encontrado.classe}"` : (res.length ? `${res[0].nivel}: "${res[0].classe}"` : 'nenhuma'),
+      col4: ok ? 'PASS' : 'FAIL', cls: ok ? 'pass' : 'fail',
+      col5: desc,
+    };
+  }), ['Medicamentos','Esperado','Encontrado','Status','Contexto']);
+
+  // ── Seção 6: Estágio Renal ────────────────────────────────────
+  const estagioTests = [
+    [95, 'G1', '#16a34a', 'Normal'],
+    [75, 'G2', '#65a30d', 'Levemente reduzida'],
+    [50, 'G3a','#ca8a04', 'Leve a moderada'],
+    [35, 'G3b','#d97706', 'Moderada a grave'],
+    [20, 'G4', '#ea580c', 'Grave'],
+    [10, 'G5', '#dc2626', 'Muito grave / DRT'],
+  ];
+
+  out.innerHTML += renderSecao('📊 6. Classificação de Estágio Renal (KDIGO)', estagioTests.map(([tfg, estadio, cor, desc]) => {
+    const res = estagioRenal(tfg);
+    const ok  = res && res.estadio === estadio;
+    ok ? _pass++ : _fail++;
+    return {
+      col1: `TFG = ${tfg} mL/min`,
+      col2: `${estadio} — ${desc}`,
+      col3: res ? `${res.estadio} — ${res.descricao}` : 'null',
+      col4: ok ? 'PASS' : 'FAIL', cls: ok ? 'pass' : 'fail',
+      col5: `Estágio ${estadio}`,
+    };
+  }), ['TFG','Esperado','Resultado','Status','Estágio CKD']);
+
+  // ── Atualiza summary ──────────────────────────────────────────
+  const total = _pass + _fail + _warn;
+  document.getElementById('s-total').textContent = total;
+  document.getElementById('s-pass').textContent  = _pass;
+  document.getElementById('s-fail').textContent  = _fail;
+  document.getElementById('s-warn').textContent  = _warn;
+}
+
+function renderSecao(titulo, linhas, colunas) {
+  const rows = linhas.map(l => `
+    <tr>
+      <td>${l.col1}</td>
+      <td>${l.col2}</td>
+      <td class="result-val">${l.col3}</td>
+      <td><span class="badge b-${l.cls}">${l.col4}</span></td>
+      <td style="color:#64748b;font-size:.78rem">${l.col5}</td>
+    </tr>`).join('');
+
+  return `
+    <div class="section">
+      <p class="sec-title">${titulo}</p>
+      <table>
+        <thead><tr>${colunas.map(c => `<th>${c}</th>`).join('')}</tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
+}
+
+// Executa automaticamente ao carregar
+window.addEventListener('DOMContentLoaded', executarAuditoria);
+</script>
+</body>
+</html>
