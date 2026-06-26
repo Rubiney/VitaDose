@@ -63,6 +63,17 @@
     </div>
 
     <button class="btn btn-primary btn-full" onclick="salvarPaciente()">Salvar Paciente</button>
+
+    <!-- Restaurar backup (útil em reinstalação) -->
+    <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border);text-align:center">
+      <p style="font-size:.78rem;color:var(--text-2);margin-bottom:10px">
+        Já usou o VitaDose antes? Restaure seu backup e pule o cadastro.
+      </p>
+      <label class="btn btn-outline btn-full" style="cursor:pointer;display:block;text-align:center">
+        ☁ Restaurar backup salvo
+        <input type="file" accept=".json" style="display:none" onchange="handleRestauracao(this)">
+      </label>
+    </div>
   </div>
 
   <!-- Medicamentos -->

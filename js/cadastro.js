@@ -492,6 +492,18 @@ function irParaHome() {
   window.location.href = 'index.html';
 }
 
+/* ── Restaurar backup direto da tela de cadastro ── */
+async function handleRestauracao(input) {
+  if (!input.files[0]) return;
+  try {
+    await importarBackup(input.files[0]);
+    showToast('✓ Backup restaurado — redirecionando...');
+    setTimeout(() => window.location.href = 'index.html', 1500);
+  } catch(e) {
+    showToast('⚠ Arquivo inválido ou corrompido');
+  }
+}
+
 /* ── Backup ── */
 async function fazerBackup() {
   await exportarBackup();
