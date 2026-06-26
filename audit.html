@@ -78,10 +78,11 @@
 <script src="js/interacoes.js"></script>
 <script src="js/duplicidade.js"></script>
 <script src="js/anticolin.js"></script>
+<script src="js/laboratorio.js"></script>
 <script>
 let _pass = 0, _fail = 0, _warn = 0;
 
-function executarAuditoria() {
+async function executarAuditoria() {
   _pass = 0; _fail = 0; _warn = 0;
   const out = document.getElementById('resultados');
   out.innerHTML = '';
@@ -457,6 +458,198 @@ function executarAuditoria() {
       col5: desc,
     };
   }), ['Medicamentos','Esperado','Resultado','Status','Cenário']);
+
+  // ── Seção 9a: statusLab — Valores de Referência ──────────────
+  const statusTests = [
+    // [tipo, valor, esperado, desc]
+    ['creatinina',   0.9,   'normal', 'Dentro do VR (0,6–1,2)'],
+    ['creatinina',   1.8,   'alto',   'Insuficiência renal — acima do VR'],
+    ['creatinina',   0.3,   'baixo',  'Desnutrição / baixa massa muscular'],
+    ['creatinina',   1.2,   'normal', 'Exatamente no limite superior — normal'],
+    ['hba1c',        5.2,   'normal', 'Sem DM'],
+    ['hba1c',        8.5,   'alto',   'DM descontrolado (> 5,6%)'],
+    ['hba1c',        3.8,   'baixo',  'Abaixo do VR (< 4,0%)'],
+    ['glicemia',     85,    'normal', 'Normal'],
+    ['glicemia',     145,   'alto',   'DM (≥ 126 mg/dL)'],
+    ['glicemia',     65,    'baixo',  'Hipoglicemia (< 70 mg/dL)'],
+    ['glicemia',     99,    'normal', 'Exatamente no limite — normal'],
+    ['inr',          1.0,   'normal', 'Sem anticoagulação — normal'],
+    ['inr',          3.8,   'alto',   'Superanticoagulado (> 1,2 fora do alvo terapêutico)'],
+    ['inr',          0.6,   'baixo',  'Abaixo do VR (< 0,8)'],
+    ['potassio',     4.2,   'normal', 'Normal'],
+    ['potassio',     5.8,   'alto',   'Hipercalemia grave — risco de arritmia'],
+    ['potassio',     3.2,   'baixo',  'Hipocalemia — monitorar em uso de diuréticos'],
+    ['sodio',        140,   'normal', 'Normal'],
+    ['sodio',        152,   'alto',   'Hipernatremia'],
+    ['sodio',        128,   'baixo',  'Hiponatremia grave (< 136)'],
+    ['ldl',          115,   'normal', 'Abaixo do limite geral (< 130)'],
+    ['ldl',          185,   'alto',   'Dislipidemia (> 130)'],
+    ['ldl',          0,     'normal', 'LDL = 0 com min=0 — nunca baixo'],
+    ['hdl',          55,    'normal', 'HDL normal (> 40)'],
+    ['hdl',          32,    'baixo',  'HDL baixo — risco cardiovascular (< 40)'],
+    ['hdl',          999,   'normal', 'HDL muito alto — max=9999, nunca "alto"'],
+    ['triglicerios', 130,   'normal', 'Normal (< 150)'],
+    ['triglicerios', 280,   'alto',   'Hipertrigliceridemia (> 150)'],
+    ['triglicerios', 0,     'normal', 'Zero — min=0, nunca "baixo"'],
+    ['alt',          30,    'normal', 'Dentro do VR (< 40 U/L)'],
+    ['alt',          95,    'alto',   'Hepatotoxicidade possível (> 40 U/L)'],
+    ['alt',          0,     'normal', 'ALT zero — min=0, nunca "baixo"'],
+    ['tsh',          2.5,   'normal', 'Normal (0,4–4,0)'],
+    ['tsh',          8.0,   'alto',   'Hipotireoidismo (> 4,0)'],
+    ['tsh',          0.1,   'baixo',  'Hipertireoidismo (< 0,4)'],
+    ['hemoglobina',  14.0,  'normal', 'Normal'],
+    ['hemoglobina',  9.5,   'baixo',  'Anemia (< 12 g/dL)'],
+    ['hemoglobina',  18.5,  'alto',   'Policitemia (> 17,5)'],
+    ['ck',           150,   'normal', 'Normal (< 200 U/L)'],
+    ['ck',           450,   'alto',   'Miopatia provável — monitorar estatina'],
+    ['ck',           0,     'normal', 'CK zero — min=0, nunca "baixo"'],
+    ['pcr',          0.3,   'normal', 'Normal (< 0,5 mg/dL)'],
+    ['pcr',          1.8,   'alto',   'Inflamação ativa (> 0,5)'],
+    ['colesterol',   185,   'normal', 'Colesterol desejável (< 200)'],
+    ['colesterol',   245,   'alto',   'Alto (> 200)'],
+    ['ast',          35,    'normal', 'Dentro do VR'],
+    ['ast',          120,   'alto',   'Hepatotoxicidade (> 40)'],
+    ['xxxinvalido',  1.0,   null,     'Tipo desconhecido → null'],
+  ];
+
+  out.innerHTML += renderSecao('🔬 9a. Laboratório — Valores de Referência (statusLab)', statusTests.map(([tipo, valor, esp, desc]) => {
+    const res = statusLab(tipo, valor);
+    const ok  = res === esp;
+    ok ? _pass++ : _fail++;
+    return {
+      col1: `${tipo} = ${valor}`,
+      col2: esp === null ? 'null' : esp,
+      col3: res === null ? 'null' : res,
+      col4: ok ? 'PASS' : 'FAIL', cls: ok ? 'pass' : 'fail',
+      col5: desc,
+    };
+  }), ['Tipo · Valor','Esperado','Resultado','Status','Contexto clínico']);
+
+  // ── Seção 9b: gerarSVG ────────────────────────────────────────
+  const exCr  = EXAMES.find(e => e.id === 'creatinina');
+  const exHdl = EXAMES.find(e => e.id === 'hdl');
+  const mkReg = (valor, data) => ({ valor, data });
+
+  const svgTests = [
+    // [lista, exame, verificacao(html)=>bool, desc]
+    [[], exCr, h => !h.includes('<svg'), 'Lista vazia → sem SVG'],
+    [[mkReg(1.0,'2026-01-01')], exCr, h => !h.includes('<svg') && h.includes('<p'), '1 registro → texto (sem gráfico)'],
+    [[mkReg(1.0,'2026-01-01'), mkReg(1.5,'2026-02-01')], exCr,
+      h => h.includes('<svg') && h.includes('<polyline') && h.includes('<circle'),
+      '2 registros → SVG com polyline e circles'],
+    [[mkReg(1.0,'2026-01-01'), mkReg(1.3,'2026-02-01'), mkReg(1.8,'2026-03-01'),
+      mkReg(2.1,'2026-04-01'), mkReg(1.9,'2026-05-01')], exCr,
+      h => (h.match(/<circle/g)||[]).length === 5,
+      '5 registros → 5 circles no SVG'],
+    [[mkReg(1.0,'2026-01-01'), mkReg(1.5,'2026-02-01')], exCr,
+      h => { const m = h.match(/fill="(#[0-9a-f]+)"/gi)||[]; return m.some(c => c.includes('#ef4444')); },
+      'Valores acima do VR → circle vermelho (#ef4444)'],
+    [[mkReg(50,'2026-01-01'), mkReg(60,'2026-02-01')], exHdl,
+      h => h.includes('<svg') && !h.includes('#ef4444'),
+      'HDL normal (min=40, max=9999) → sem circles vermelhos'],
+    [[mkReg(32,'2026-01-01'), mkReg(35,'2026-02-01')], exHdl,
+      h => h.includes('#ef4444'),
+      'HDL baixo (< 40) → circles vermelhos'],
+  ];
+
+  out.innerHTML += renderSecao('📈 9b. Laboratório — Geração de Gráfico SVG', svgTests.map(([lista, exame, verificar, desc]) => {
+    const html = gerarSVG(lista, exame);
+    const ok   = verificar(html);
+    ok ? _pass++ : _fail++;
+    const preview = html.length > 60 ? html.substring(0, 60) + '…' : html;
+    return {
+      col1: `${lista.length} registro(s) · ${exame.id}`,
+      col2: desc.split('→')[1]?.trim() || '—',
+      col3: `<span style="font-family:monospace;font-size:.72rem">${preview.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</span>`,
+      col4: ok ? 'PASS' : 'FAIL', cls: ok ? 'pass' : 'fail',
+      col5: desc,
+    };
+  }), ['Entrada','Esperado','Saída (preview)','Status','Cenário']);
+
+  // ── Seção 9c: Mock IndexedDB — Fluxo de Persistência ─────────
+  // Mock síncrono em memória (sem IDBFactory real)
+  function criarMock() {
+    const store = {};
+    let nextId  = 1;
+    return {
+      add(s, item)           { if (!store[s]) store[s]=[]; const r={...item, id:nextId++}; store[s].push(r); return r.id; },
+      getByIndex(s, idx, v)  { return (store[s]||[]).filter(r => r[idx] === v); },
+      deleteById(s, id)      { if (store[s]) store[s]=store[s].filter(r=>r.id!==id); },
+      count(s)               { return (store[s]||[]).length; },
+    };
+  }
+
+  const mockTests = (() => {
+    const results = [];
+    const db = criarMock();
+
+    /* T1: store vazio → getByIndex retorna [] */
+    const t1 = db.getByIndex('laboratorio','pacienteId',1001);
+    results.push({ ok: t1.length === 0, col1:'getByIndex em store vazio', col2:'[]', col3: JSON.stringify(t1), desc:'Store vazio → array vazio' });
+
+    /* T2: add 1 registro para pid=1001 */
+    db.add('laboratorio', { pacienteId:1001, tipo:'creatinina', valor:1.8, data:'2026-01-15' });
+    const t2 = db.getByIndex('laboratorio','pacienteId',1001);
+    results.push({ ok: t2.length === 1, col1:'add 1 + getByIndex(1001)', col2:'1 registro', col3:`${t2.length} registro(s)`, desc:'add → getByIndex retorna 1' });
+
+    /* T3: add mais 4 para pid=1001 */
+    db.add('laboratorio', { pacienteId:1001, tipo:'creatinina', valor:1.5, data:'2026-03-01' });
+    db.add('laboratorio', { pacienteId:1001, tipo:'hba1c',      valor:7.8, data:'2026-02-01' });
+    db.add('laboratorio', { pacienteId:1001, tipo:'potassio',   valor:3.2, data:'2026-04-05' });
+    db.add('laboratorio', { pacienteId:1001, tipo:'tsh',        valor:6.5, data:'2026-05-10' });
+    const t3 = db.getByIndex('laboratorio','pacienteId',1001);
+    results.push({ ok: t3.length === 5, col1:'add 4 mais → total pid=1001', col2:'5 registros', col3:`${t3.length} registro(s)`, desc:'5 registros para mesmo paciente' });
+
+    /* T4: 2 registros para pid=1002 — isolamento entre pacientes */
+    db.add('laboratorio', { pacienteId:1002, tipo:'creatinina', valor:0.9, data:'2026-01-20' });
+    db.add('laboratorio', { pacienteId:1002, tipo:'hba1c',      valor:5.1, data:'2026-02-15' });
+    const t4a = db.getByIndex('laboratorio','pacienteId',1002);
+    const t4b = db.getByIndex('laboratorio','pacienteId',1001);
+    results.push({ ok: t4a.length === 2 && t4b.length === 5, col1:'pid=1002 isolado de pid=1001', col2:'2 e 5 separados', col3:`pid1002=${t4a.length} · pid1001=${t4b.length}`, desc:'Isolamento correto entre pacientes' });
+
+    /* T5: filtro por tipo dentro do paciente */
+    const t5 = t4b.filter(r => r.tipo === 'creatinina');
+    results.push({ ok: t5.length === 2, col1:'filtro por tipo=creatinina (pid=1001)', col2:'2 registros', col3:`${t5.length} registro(s)`, desc:'Apenas creatininas de pid=1001' });
+
+    /* T6: sort por data — mais recente por último */
+    const t6 = [...t5].sort((a,b) => a.data.localeCompare(b.data));
+    const ultimo = t6[t6.length - 1];
+    results.push({ ok: ultimo.data === '2026-03-01', col1:'sort por data → último mais recente', col2:'2026-03-01', col3:ultimo.data, desc:'Ordenação cronológica crescente' });
+
+    /* T7: statusLab integrado com dados do mock */
+    const t7a = statusLab('creatinina', 1.8);
+    const t7b = statusLab('creatinina', 1.5);
+    results.push({ ok: t7a === 'alto' && t7b === 'alto', col1:'statusLab nos valores do mock (1,8 e 1,5)', col2:'alto · alto', col3:`${t7a} · ${t7b}`, desc:'Creatininas acima do VR detectadas' });
+
+    /* T8: delete → contagem diminui */
+    const antes   = db.count('laboratorio');
+    const idDel   = db.getByIndex('laboratorio','pacienteId',1001)[0].id;
+    db.deleteById('laboratorio', idDel);
+    const depois  = db.count('laboratorio');
+    results.push({ ok: depois === antes - 1, col1:`delete id=${idDel} → contagem`, col2:`${antes - 1}`, col3:`${depois}`, desc:'Delete correto — 1 registro removido' });
+
+    /* T9: registro deletado não aparece no getByIndex */
+    const t9 = db.getByIndex('laboratorio','pacienteId',1001);
+    results.push({ ok: t9.length === 4, col1:'getByIndex após delete', col2:'4 registros (pid=1001)', col3:`${t9.length} registro(s)`, desc:'Registro deletado não retorna no índice' });
+
+    /* T10: gerarSVG com dados do mock ordenados */
+    const t10lista = [...t5].sort((a,b) => a.data.localeCompare(b.data));
+    const t10svg = gerarSVG(t10lista, EXAMES.find(e => e.id === 'creatinina'));
+    results.push({ ok: t10svg.includes('<svg') && t10svg.includes('#ef4444'), col1:'gerarSVG com dados do mock', col2:'SVG com circles vermelhos', col3: t10svg.includes('<svg') ? 'SVG gerado · vermelho='+(t10svg.includes('#ef4444')) : 'sem SVG', desc:'1.8 e 1.5 acima do VR → vermelhos no gráfico' });
+
+    return results;
+  })();
+
+  out.innerHTML += renderSecao('🗄️ 9c. Laboratório — Mock IndexedDB (Persistência)', mockTests.map(t => {
+    t.ok ? _pass++ : _fail++;
+    return {
+      col1: t.col1,
+      col2: t.col2,
+      col3: t.col3,
+      col4: t.ok ? 'PASS' : 'FAIL', cls: t.ok ? 'pass' : 'fail',
+      col5: t.desc,
+    };
+  }), ['Operação','Esperado','Resultado','Status','Cenário']);
 
   // ── Atualiza summary ──────────────────────────────────────────
   const total = _pass + _fail + _warn;
