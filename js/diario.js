@@ -2,7 +2,7 @@
 
 let _dia     = new Date().toISOString().slice(0, 10);
 let _regId   = null;
-let _periodo = 30;
+let _periodo = 7;
 let _altura  = null;
 
 const MESES = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
