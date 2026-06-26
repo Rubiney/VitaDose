@@ -28,6 +28,29 @@
     </a>
   </div>
 
+  <!-- Histórico Clínico -->
+  <div class="card">
+    <div class="card-title">Histórico Clínico</div>
+
+    <label class="hc-label" for="hc-condicoes">Doenças, cirurgias e condições diagnosticadas</label>
+    <textarea id="hc-condicoes" class="hc-textarea"
+      placeholder="Ex: Hipertensão arterial (2018), Diabetes tipo 2, Cirurgia de coluna (2021)..."
+      rows="3"></textarea>
+
+    <label class="hc-label" for="hc-alergias" style="margin-top:16px;color:#c53030">
+      🚨 Alergias a medicamentos e alimentos
+    </label>
+    <textarea id="hc-alergias" class="hc-textarea alergia"
+      placeholder="Ex: Penicilina (urticária), AAS (broncoespasmo), amendoim..."
+      rows="3"></textarea>
+    <p class="text-sm" style="margin-top:6px;font-size:.75rem;color:var(--text-2)">
+      ⚠️ Alergias a medicamentos aparecerão como alerta vermelho na tela inicial.
+    </p>
+
+    <button class="btn btn-primary btn-full" style="margin-top:14px"
+      onclick="salvarHistoricoClinico()">✓ Salvar histórico clínico</button>
+  </div>
+
   <!-- Backup -->
   <div class="card">
     <div class="card-title">Cópia de Segurança</div>
@@ -151,6 +174,9 @@
         ${p.cuidador ? `<div><b>Cuidador:</b> ${p.cuidador}</div>` : ''}
         <div><b>Cadastrado em:</b> ${p.criadoEm ? new Date(p.criadoEm).toLocaleDateString('pt-BR') : '—'}</div>
       `;
+      // Preenche campos do histórico clínico
+      document.getElementById('hc-condicoes').value = p.condicoesClinicas || '';
+      document.getElementById('hc-alergias').value  = p.alergias || '';
     }
 
     async function trocarPaciente() {
@@ -209,6 +235,17 @@
       document.getElementById('btn-tema-light').style.borderColor = t === 'light' ? 'var(--gold)' : '';
       document.getElementById('btn-tema-dark').style.borderColor  = t === 'dark'  ? 'var(--gold)' : '';
     })();
+
+    async function salvarHistoricoClinico() {
+      const pid = getActivePacienteId();
+      if (!pid) return;
+      const p = await dbGet('pacientes', pid);
+      if (!p) return;
+      p.condicoesClinicas = document.getElementById('hc-condicoes').value.trim();
+      p.alergias          = document.getElementById('hc-alergias').value.trim();
+      await dbPut('pacientes', p);
+      showToast('✓ Histórico clínico salvo');
+    }
 
     function testarAlerta() {
       tocarAlertaSonoro();

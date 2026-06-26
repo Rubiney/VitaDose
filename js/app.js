@@ -49,6 +49,7 @@ async function init() {
   const allDoses = await dbGetAll('doses');
   dosesHoje = allDoses.filter(d => d.data === hoje());
 
+  renderBannerAlergia(paciente);
   await render();
   iniciarNotificacoes(medicamentos);
 }
@@ -368,6 +369,24 @@ async function marcarPerdida(medId, horario) {
 function aceitarLGPD() {
   setConsent();
   document.getElementById('lgpd').classList.add('hidden');
+}
+
+/* ── Banner de alergias ── */
+function renderBannerAlergia(pac) {
+  const wrap = document.getElementById('banner-alergia');
+  if (!wrap) return;
+  const txt = pac && pac.alergias ? pac.alergias.trim() : '';
+  if (!txt) { wrap.style.display = 'none'; return; }
+  wrap.style.display = 'block';
+  wrap.innerHTML = `
+    <div class="banner-alergia">
+      <span class="banner-alergia-icon">🚨</span>
+      <div class="banner-alergia-body">
+        <p class="banner-alergia-title">Alergias registradas</p>
+        <p class="banner-alergia-texto">${txt}</p>
+      </div>
+      <a href="perfil.html" title="Editar" style="color:#c53030;font-size:1rem;text-decoration:none;flex-shrink:0;padding:2px 4px">✏️</a>
+    </div>`;
 }
 
 /* ── Reações adversas ── */
