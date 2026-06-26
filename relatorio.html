@@ -162,6 +162,7 @@
   <script src="js/beers.js"></script>
   <script src="js/interacoes.js"></script>
   <script src="js/duplicidade.js"></script>
+  <script src="js/anticolin.js"></script>
   <script src="js/reacoes.js"></script>
   <script>
   document.addEventListener('DOMContentLoaded', gerarRelatorio);
@@ -204,6 +205,27 @@
     /* ── Duplicidade terapêutica ── */
     const dups = (typeof verificarDuplicidade === 'function' && meds.length >= 2)
       ? verificarDuplicidade(meds) : [];
+
+    /* ── Carga Anticolinérgica ── */
+    const acb = (typeof calcularCargaAnticolin === 'function' && meds.length)
+      ? calcularCargaAnticolin(meds) : null;
+
+    /* ── Polimedicação ── */
+    const polifTotal = meds.length;
+    const polifNivel = polifTotal >= 10 ? 'grave' : polifTotal >= 5 ? 'moderado' : null;
+
+    /* ── Histórico Laboratorial ── */
+    let labRecords = [];
+    try { labRecords = await dbGetByIndex('laboratorio', 'pacienteId', pid); } catch(e) {}
+    const labPorTipo = {};
+    for (const r of labRecords) {
+      if (!labPorTipo[r.tipo]) labPorTipo[r.tipo] = [];
+      labPorTipo[r.tipo].push(r);
+    }
+    // Ordena cada tipo por data e mantém o mais recente
+    for (const tipo of Object.keys(labPorTipo)) {
+      labPorTipo[tipo].sort((a,b) => b.data.localeCompare(a.data));
+    }
 
     /* ── Beers ── */
     const beersAlertas = [];
@@ -446,6 +468,92 @@
         <div class="sec">
           <p class="sec-title">🩹 Curativos, Pomadas e Uso Tópico</p>
           <p style="font-size:.88rem;line-height:1.6;white-space:pre-wrap">${pac.curativosPomadas}</p>
+        </div>` : ''}
+
+      <!-- Carga Anticolinérgica -->
+      ${acb && acb.total > 0 ? `
+        <div class="sec">
+          <p class="sec-title">🧠 Carga Anticolinérgica (ACB Scale)</p>
+          <p style="font-size:.75rem;color:#666;margin-bottom:10px">
+            Escore Total: <strong style="font-size:1.1rem;color:${acb.nivel==='alto'?'#dc2626':acb.nivel==='moderado'?'#c2410c':'#92400e'}">${acb.total}</strong> ponto${acb.total>1?'s':''} —
+            Risco ${acb.nivel.toUpperCase()}
+            ${acb.nivel==='alto'?'(≥ 6 pts)':acb.nivel==='moderado'?'(3–5 pts)':'(1–2 pts)'}
+          </p>
+          <table class="med-table">
+            <thead><tr><th>Medicamento</th><th>Score ACB</th><th>Classe Farmacológica</th></tr></thead>
+            <tbody>
+              ${acb.itens.map(i => `<tr>
+                <td>${i.nome}</td>
+                <td style="font-weight:800;color:${i.score===3?'#dc2626':i.score===2?'#c2410c':'#92400e'}">${i.score}/3</td>
+                <td>${i.classe}</td>
+              </tr>`).join('')}
+            </tbody>
+          </table>
+          <p style="font-size:.72rem;color:#888;margin-top:8px">
+            ACB ≥ 3: risco aumentado de declínio cognitivo, delirium e quedas em idosos (Boustani et al., 2012).
+            Ref: Anticholinergic Cognitive Burden Scale · AGS Beers Criteria® 2023.
+          </p>
+        </div>` : ''}
+
+      <!-- Polimedicação -->
+      ${polifNivel ? `
+        <div class="sec">
+          <p class="sec-title">${polifNivel==='grave'?'🔴':'🟠'} ${polifNivel==='grave'?'Polifarmácia Grave':'Polimedicação'} — ${polifTotal} Medicamentos</p>
+          <div class="alerta-item" style="background:${polifNivel==='grave'?'#fff5f5':'#fffaf0'};border-left-color:${polifNivel==='grave'?'#f87171':'#f6ad55'}">
+            <p class="alerta-desc">
+              ${polifNivel==='grave'
+                ? `Paciente em uso de <strong>${polifTotal} medicamentos</strong> simultaneamente. Polifarmácia grave (≥ 10) está associada a aumento de interações, reações adversas, baixa adesão, quedas e hospitalização. <strong>Recomenda-se revisão farmacoterapêutica completa pelo farmacêutico clínico.</strong>`
+                : `Paciente em uso de <strong>${polifTotal} medicamentos</strong> simultaneamente (polimedicação ≥ 5). Avaliar necessidade de cada item, possíveis duplicidades e interações. Considerar deprescricão de itens desnecessários.`}
+            </p>
+          </div>
+          <p style="font-size:.72rem;color:#888;margin-top:8px">
+            Ref: Masnoon N et al. What is polypharmacy? A systematic review of definitions. BMC Geriatr. 2017.
+          </p>
+        </div>` : ''}
+
+      <!-- Histórico Laboratorial -->
+      ${Object.keys(labPorTipo).length > 0 ? `
+        <div class="sec">
+          <p class="sec-title">🔬 Histórico Laboratorial</p>
+          <table class="med-table">
+            <thead><tr><th>Exame</th><th>Último Valor</th><th>Data</th><th>Histórico (últimos 3)</th></tr></thead>
+            <tbody>
+              ${Object.entries(labPorTipo).map(([tipo, lista]) => {
+                const REFS_LAB = {
+                  creatinina:{ label:'Creatinina', unidade:'mg/dL', min:0.6, max:1.2 },
+                  hba1c:     { label:'HbA1c',      unidade:'%',     min:4.0, max:5.6 },
+                  glicemia:  { label:'Glicemia Jejum', unidade:'mg/dL', min:70, max:99 },
+                  inr:       { label:'INR',         unidade:'',      min:0.8, max:1.2 },
+                  potassio:  { label:'Potássio',    unidade:'mEq/L', min:3.5, max:5.0 },
+                  sodio:     { label:'Sódio',       unidade:'mEq/L', min:136, max:145 },
+                  colesterol:{ label:'Colest. Total', unidade:'mg/dL', min:0, max:200 },
+                  ldl:       { label:'LDL',         unidade:'mg/dL', min:0, max:130 },
+                  hdl:       { label:'HDL',         unidade:'mg/dL', min:40, max:9999 },
+                  triglicerios:{ label:'Triglicerídeos', unidade:'mg/dL', min:0, max:150 },
+                  alt:       { label:'ALT (TGP)',   unidade:'U/L',   min:0, max:40 },
+                  ast:       { label:'AST (TGO)',   unidade:'U/L',   min:0, max:40 },
+                  tsh:       { label:'TSH',         unidade:'mUI/L', min:0.4, max:4.0 },
+                  hemoglobina:{ label:'Hemoglobina', unidade:'g/dL', min:12, max:17.5 },
+                  ck:        { label:'CK',          unidade:'U/L',   min:0, max:200 },
+                  pcr:       { label:'PCR',         unidade:'mg/dL', min:0, max:0.5 },
+                };
+                const ref    = REFS_LAB[tipo] || { label:tipo, unidade:'', min:0, max:9999 };
+                const ultimo = lista[0];
+                const alto   = ultimo.valor > ref.max && ref.max < 9999;
+                const baixo  = ultimo.valor < ref.min && ref.min > 0;
+                const cor    = alto ? '#dc2626' : baixo ? '#2563eb' : '#166534';
+                const status = alto ? '▲ Alto' : baixo ? '▼ Baixo' : '✓ Normal';
+                const hist   = lista.slice(1,4).map(r => `${r.valor} (${r.data.slice(5)})`).join(' · ') || '—';
+                const fmtData = d => { const [a,m,di]=d.split('-'); return `${di}/${m}/${a}`; };
+                return `<tr>
+                  <td>${ref.label}</td>
+                  <td style="font-weight:700;color:${cor}">${ultimo.valor} ${ref.unidade} <span style="font-size:.7rem">${status}</span></td>
+                  <td>${fmtData(ultimo.data)}</td>
+                  <td style="font-size:.75rem;color:#666">${hist}</td>
+                </tr>`;
+              }).join('')}
+            </tbody>
+          </table>
         </div>` : ''}
 
       <!-- Rodapé -->

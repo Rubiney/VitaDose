@@ -1,6 +1,6 @@
 /* VitaDose — IndexedDB wrapper */
 const DB_NAME    = 'vitadose';
-const DB_VERSION = 3;
+const DB_VERSION = 4;
 let _db = null;
 
 function openDB() {
@@ -27,6 +27,11 @@ function openDB() {
       if (!d.objectStoreNames.contains('diario')) {
         const di = d.createObjectStore('diario', { keyPath: 'id', autoIncrement: true });
         di.createIndex('data', 'data', { unique: false });
+      }
+      if (!d.objectStoreNames.contains('laboratorio')) {
+        const lb = d.createObjectStore('laboratorio', { keyPath: 'id', autoIncrement: true });
+        lb.createIndex('pacienteId', 'pacienteId', { unique: false });
+        lb.createIndex('tipo',       'tipo',       { unique: false });
       }
     };
 
@@ -109,10 +114,10 @@ async function dbDelete(store, id) {
 
 /* Export / import backup */
 async function exportarBackup() {
-  const [pacientes, medicamentos, doses] = await Promise.all([
-    dbGetAll('pacientes'), dbGetAll('medicamentos'), dbGetAll('doses'),
+  const [pacientes, medicamentos, doses, laboratorio] = await Promise.all([
+    dbGetAll('pacientes'), dbGetAll('medicamentos'), dbGetAll('doses'), dbGetAll('laboratorio'),
   ]);
-  const payload = { vitadose: true, v: 1, exportadoEm: new Date().toISOString(), pacientes, medicamentos, doses };
+  const payload = { vitadose: true, v: 2, exportadoEm: new Date().toISOString(), pacientes, medicamentos, doses, laboratorio };
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
   const url  = URL.createObjectURL(blob);
   const a    = document.createElement('a');
@@ -157,13 +162,15 @@ async function importarBackup(file) {
   const data = JSON.parse(text);
   if (!data.vitadose) throw new Error('Arquivo de backup inválido.');
   const d  = await openDB();
-  const tx = d.transaction(['pacientes','medicamentos','doses'], 'readwrite');
+  const tx = d.transaction(['pacientes','medicamentos','doses','laboratorio'], 'readwrite');
   tx.objectStore('pacientes').clear();
   tx.objectStore('medicamentos').clear();
   tx.objectStore('doses').clear();
-  (data.pacientes    || []).forEach(p => tx.objectStore('pacientes').add(p));
-  (data.medicamentos || []).forEach(m => tx.objectStore('medicamentos').add(m));
-  (data.doses        || []).forEach(d => tx.objectStore('doses').add(d));
+  tx.objectStore('laboratorio').clear();
+  (data.pacientes    || []).forEach(p  => tx.objectStore('pacientes').add(p));
+  (data.medicamentos || []).forEach(m  => tx.objectStore('medicamentos').add(m));
+  (data.doses        || []).forEach(dv => tx.objectStore('doses').add(dv));
+  (data.laboratorio  || []).forEach(l  => tx.objectStore('laboratorio').add(l));
   return new Promise((resolve, reject) => {
     tx.oncomplete = resolve;
     tx.onerror    = () => reject(tx.error);

@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>VitaDose — Histórico Laboratorial</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <style>
+    .lab-chip-wrap { display:flex; gap:8px; overflow-x:auto; padding:8px 16px; scrollbar-width:none; }
+    .lab-chip-wrap::-webkit-scrollbar { display:none; }
+    .lab-chip {
+      white-space:nowrap; padding:6px 14px; border-radius:20px; font-size:.78rem;
+      font-weight:700; cursor:pointer; border:2px solid #dde3f0;
+      background:#fff; color:#475569; transition:.15s;
+    }
+    .lab-chip.ativo { background:#0f3460; color:#fff; border-color:#0f3460; }
+    .chart-box { background:#fff; border-radius:12px; padding:14px 14px 8px; margin:0 16px 12px; box-shadow:0 1px 4px rgba(0,0,0,.06); }
+    .chart-last { font-size:.9rem; font-weight:700; margin-bottom:6px; }
+    .chart-ref  { font-size:.72rem; color:#94a3b8; margin-top:4px; }
+    .lab-status-ok   { color:#16a34a; }
+    .lab-status-alto  { color:#dc2626; }
+    .lab-status-baixo { color:#2563eb; }
+    .lab-input-row  { display:flex; gap:8px; align-items:flex-end; }
+    .lab-input-row input { flex:1; }
+    .lab-input-row input[type=date] { max-width:150px; }
+    .lab-list { background:#fff; border-radius:12px; margin:0 16px 24px; box-shadow:0 1px 4px rgba(0,0,0,.06); overflow:hidden; }
+    .lab-row  { display:flex; align-items:center; gap:10px; padding:10px 14px; border-bottom:1px solid #f1f5f9; }
+    .lab-row:last-child { border-bottom:none; }
+    .lab-val  { font-weight:800; font-size:1rem; min-width:70px; }
+    .lab-date { font-size:.75rem; color:#94a3b8; flex:1; }
+    .lab-del  { background:none; border:none; color:#ef4444; font-size:1rem; cursor:pointer; padding:4px; }
+    .empty-lab { text-align:center; padding:32px 16px; color:#94a3b8; font-size:.85rem; }
+    .ref-badge { display:inline-block; padding:2px 8px; border-radius:8px; font-size:.68rem; font-weight:700; margin-left:6px; }
+    .ref-ok    { background:#dcfce7; color:#15803d; }
+    .ref-alto  { background:#fee2e2; color:#dc2626; }
+    .ref-baixo { background:#dbeafe; color:#1d4ed8; }
+    .tfg-auto  { background:#fef9c3; border:1px solid #fde68a; border-radius:8px; padding:8px 12px; font-size:.8rem; margin:8px 16px; display:none; }
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <button class="back-btn" onclick="history.back()">‹</button>
+  <span class="topbar-title" id="lab-titulo">Histórico Laboratorial</span>
+</div>
+
+<div id="paciente-info" style="padding:10px 16px 4px;font-size:.8rem;color:#64748b"></div>
+
+<!-- Chips de tipo de exame -->
+<div class="lab-chip-wrap" id="chips-wrap"></div>
+
+<!-- Gráfico de tendência -->
+<div class="chart-box" id="chart-box" style="display:none">
+  <p class="chart-last" id="chart-last"></p>
+  <div id="chart-svg" style="margin:4px 0"></div>
+  <p class="chart-ref" id="chart-ref"></p>
+</div>
+
+<!-- Alerta TFG auto-recalculado -->
+<div class="tfg-auto" id="tfg-auto"></div>
+
+<!-- Formulário de entrada -->
+<div class="card" style="margin:0 16px 12px">
+  <div class="card-title" id="form-titulo">Registrar Valor</div>
+  <div class="lab-input-row" style="margin-bottom:10px">
+    <div style="flex:1">
+      <label class="input-label">Valor</label>
+      <input type="number" id="inp-valor" class="input-field" step="any" placeholder="0.0">
+    </div>
+    <div>
+      <label class="input-label">Data</label>
+      <input type="date" id="inp-data" class="input-field">
+    </div>
+  </div>
+  <input type="text" id="inp-obs" class="input-field" placeholder="Observação (opcional)" style="margin-bottom:10px">
+  <button class="btn btn-full" onclick="salvarRegistro()">💾 Salvar</button>
+</div>
+
+<!-- Lista de registros -->
+<p class="sec-header" id="lista-header" style="display:none">Histórico</p>
+<div class="lab-list" id="lab-list"></div>
+
+<script src="js/db.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/ajusterenal.js"></script>
+<script>
+
+const EXAMES = [
+  { id:'creatinina',   label:'Creatinina',    unidade:'mg/dL', ref:{ min:0.6, max:1.2 },  casas:2, nota:'Valores de referência gerais (homens: 0,7–1,2 · mulheres: 0,5–1,0)' },
+  { id:'hba1c',        label:'HbA1c',         unidade:'%',     ref:{ min:4.0, max:5.6 },   casas:1, nota:'Alvo em DM: < 7,0% (ADA/SBD 2023)' },
+  { id:'glicemia',     label:'Glicemia Jejum', unidade:'mg/dL', ref:{ min:70,  max:99 },   casas:0, nota:'Normal < 100 · pré-DM 100–125 · DM ≥ 126' },
+  { id:'inr',          label:'INR',            unidade:'',      ref:{ min:0.8, max:1.2 },  casas:2, nota:'Anticoagulação com varfarina: alvo 2,0–3,0 (FA) · 2,5–3,5 (válvula mecânica)' },
+  { id:'potassio',     label:'Potássio',       unidade:'mEq/L', ref:{ min:3.5, max:5.0 }, casas:1, nota:'Hipo < 3,5 · Hiper > 5,5 — monitorar em IECA/BRA/Espiro' },
+  { id:'sodio',        label:'Sódio',          unidade:'mEq/L', ref:{ min:136, max:145 }, casas:0, nota:'Hipo < 136 · Hiper > 145 mEq/L' },
+  { id:'colesterol',   label:'Colest. Total',  unidade:'mg/dL', ref:{ min:0,   max:200 }, casas:0, nota:'Desejável < 200 · Limítrofe 200–239 · Alto ≥ 240' },
+  { id:'ldl',          label:'LDL',            unidade:'mg/dL', ref:{ min:0,   max:130 }, casas:0, nota:'Alto risco CV: < 70 · Muito alto: < 50 mg/dL (SBC 2023)' },
+  { id:'hdl',          label:'HDL',            unidade:'mg/dL', ref:{ min:40,  max:9999 }, casas:0, nota:'Baixo < 40 (H) / < 50 (M) mg/dL — risco CV aumentado' },
+  { id:'triglicerios', label:'Triglicerídeos', unidade:'mg/dL', ref:{ min:0,   max:150 }, casas:0, nota:'Normal < 150 · Limítrofe 150–199 · Alto 200–499 · Muito alto ≥ 500' },
+  { id:'alt',          label:'ALT (TGP)',      unidade:'U/L',   ref:{ min:0,   max:40 },  casas:0, nota:'Hepatotoxicidade: > 3× LSN com sintomas ou > 5× LSN sem sintomas' },
+  { id:'ast',          label:'AST (TGO)',      unidade:'U/L',   ref:{ min:0,   max:40 },  casas:0, nota:'Elevar AST > ALT sugere hepatopatia alcoólica (razão AST/ALT > 2)' },
+  { id:'tsh',          label:'TSH',            unidade:'mUI/L', ref:{ min:0.4, max:4.0 }, casas:2, nota:'Hipotireoidismo: TSH > 4,0 · Hipertireoidismo: TSH < 0,4 mUI/L' },
+  { id:'hemoglobina',  label:'Hemoglobina',    unidade:'g/dL',  ref:{ min:12,  max:17.5 }, casas:1, nota:'Anemia: H < 13 g/dL · M < 12 g/dL (OMS)' },
+  { id:'ck',           label:'CK',             unidade:'U/L',   ref:{ min:0,   max:200 }, casas:0, nota:'Monitorar em uso de estatinas. Miopatia: > 10× LSN. Rabdomiólise: > 40× LSN' },
+  { id:'pcr',          label:'PCR',            unidade:'mg/dL', ref:{ min:0,   max:0.5 }, casas:2, nota:'PCR-us < 1,0: baixo risco CV · PCR > 1,0: inflamação ativa' },
+];
+
+let tipoAtivo = 'creatinina';
+let paciente  = null;
+let registros = []; // todos do paciente
+let _pid      = null;
+
+async function init() {
+  _pid = getActivePacienteId();
+  if (!_pid) { window.location.href = 'index.html'; return; }
+
+  const pacs = await dbGetAll('pacientes');
+  paciente   = pacs.find(p => p.id === _pid);
+  if (paciente) {
+    document.getElementById('paciente-info').textContent =
+      `👤 ${paciente.nome || 'Paciente'}`;
+  }
+
+  registros = await dbGetByIndex('laboratorio', 'pacienteId', _pid);
+  document.getElementById('inp-data').value = new Date().toISOString().slice(0,10);
+  renderChips();
+  selecionarTipo(tipoAtivo);
+}
+
+function renderChips() {
+  const wrap = document.getElementById('chips-wrap');
+  wrap.innerHTML = EXAMES.map(e => {
+    const temDados = registros.some(r => r.tipo === e.id);
+    return `<button class="lab-chip ${e.id === tipoAtivo ? 'ativo' : ''}"
+      onclick="selecionarTipo('${e.id}')">${e.label}${temDados ? ' ·' : ''}</button>`;
+  }).join('');
+}
+
+function selecionarTipo(id) {
+  tipoAtivo = id;
+  const exame = EXAMES.find(e => e.id === id);
+  document.getElementById('form-titulo').textContent = `Registrar: ${exame.label}`;
+  document.getElementById('inp-valor').placeholder = `ex: ${exame.ref.min || '0'}`;
+  renderChips();
+  renderChart();
+  renderLista();
+}
+
+function renderChart() {
+  const exame  = EXAMES.find(e => e.id === tipoAtivo);
+  const lista  = registros.filter(r => r.tipo === tipoAtivo).sort((a,b) => a.data.localeCompare(b.data));
+  const box    = document.getElementById('chart-box');
+
+  if (!lista.length) { box.style.display = 'none'; return; }
+  box.style.display = 'block';
+
+  const ultimo = lista[lista.length - 1];
+  const ref    = exame.ref;
+  const statusCls = ultimo.valor > ref.max ? 'lab-status-alto' : ultimo.valor < ref.min ? 'lab-status-baixo' : 'lab-status-ok';
+  const statusTxt = ultimo.valor > ref.max ? '▲ ACIMA do VR' : ultimo.valor < ref.min ? '▼ ABAIXO do VR' : '✓ Dentro do VR';
+  document.getElementById('chart-last').innerHTML =
+    `Último: <span class="${statusCls}">${ultimo.valor.toFixed(exame.casas)} ${exame.unidade}</span>
+     <span class="ref-badge ${statusCls === 'lab-status-ok' ? 'ref-ok' : statusCls === 'lab-status-alto' ? 'ref-alto' : 'ref-baixo'}">${statusTxt}</span>
+     <span style="color:#94a3b8;font-size:.75rem;font-weight:400;margin-left:6px">${formatarData(ultimo.data)}</span>`;
+  document.getElementById('chart-ref').textContent = exame.nota;
+  document.getElementById('chart-svg').innerHTML = gerarSVG(lista, exame);
+}
+
+function gerarSVG(lista, exame) {
+  if (lista.length < 2) return `<p style="text-align:center;color:#94a3b8;font-size:.75rem">Registre ao menos 2 valores para ver o gráfico de tendência.</p>`;
+
+  const ultimos = lista.slice(-10);
+  const vals = ultimos.map(r => r.valor);
+  const ref  = exame.ref;
+  const min  = Math.min(...vals, ref.min) * 0.92;
+  const max  = Math.max(...vals, ref.max === 9999 ? Math.max(...vals) : ref.max) * 1.08;
+  const W = 260, H = 80, pX = 16, pY = 10;
+
+  const toX = i => pX + (i / (ultimos.length - 1)) * W;
+  const toY = v => pY + H - ((v - min) / (max - min || 1)) * H;
+
+  const refY1 = toY(ref.max === 9999 ? max : ref.max);
+  const refY2 = toY(ref.min);
+  const pts   = ultimos.map((r,i) => `${toX(i).toFixed(1)},${toY(r.valor).toFixed(1)}`).join(' ');
+
+  const dots  = ultimos.map((r,i) => {
+    const x   = toX(i).toFixed(1);
+    const y   = toY(r.valor).toFixed(1);
+    const cor = r.valor > ref.max || r.valor < ref.min ? '#ef4444' : '#0f3460';
+    const val = r.valor.toFixed(exame.casas);
+    return `<circle cx="${x}" cy="${y}" r="4" fill="${cor}"/>
+      <text x="${x}" y="${(parseFloat(y)-7).toFixed(1)}" text-anchor="middle"
+        fill="${cor}" font-size="9" font-weight="700">${val}</text>`;
+  }).join('');
+
+  const dataTicks = ultimos.map((r,i) =>
+    `<text x="${toX(i).toFixed(1)}" y="${(pY + H + 16).toFixed(1)}"
+      text-anchor="middle" fill="#94a3b8" font-size="8">${r.data.slice(5)}</text>`
+  ).join('');
+
+  return `<svg viewBox="0 0 ${W+2*pX} ${H+2*pY+20}" style="width:100%;max-height:130px;display:block">
+    <rect x="${pX}" y="${Math.min(refY1,refY2).toFixed(1)}"
+      width="${W}" height="${(Math.abs(refY2-refY1)).toFixed(1)}"
+      fill="#dcfce7" opacity=".5" rx="2"/>
+    <polyline points="${pts}" fill="none" stroke="#0f3460" stroke-width="2" stroke-linejoin="round"/>
+    ${dots}
+    ${dataTicks}
+  </svg>`;
+}
+
+async function salvarRegistro() {
+  const val = parseFloat(document.getElementById('inp-valor').value);
+  const dt  = document.getElementById('inp-data').value;
+  const obs = document.getElementById('inp-obs').value.trim();
+  if (!val || !dt) { showToast('Preencha valor e data'); return; }
+
+  const reg = { pacienteId: _pid, tipo: tipoAtivo, valor: val, data: dt, obs };
+  await dbAdd('laboratorio', reg);
+  registros = await dbGetByIndex('laboratorio', 'pacienteId', _pid);
+
+  // Auto-recalcula TFG se novo valor de creatinina
+  if (tipoAtivo === 'creatinina' && paciente) {
+    const tfgDiv = document.getElementById('tfg-auto');
+    if (paciente.idadePac && paciente.pesoPac && paciente.sexoPac && typeof calcularTFG === 'function') {
+      const novoTFG = calcularTFG(paciente.idadePac, paciente.pesoPac, paciente.sexoPac, val);
+      const est     = estagioRenal(novoTFG);
+      // Salva no paciente
+      paciente.tfg        = novoTFG;
+      paciente.creatinina = val;
+      await dbPut('pacientes', paciente);
+      tfgDiv.style.display = 'block';
+      tfgDiv.innerHTML = `🫘 <strong>TFG recalculada:</strong> ${novoTFG} mL/min — <strong style="color:${est.cor}">${est.estadio} (${est.descricao})</strong><br>
+        <span style="font-size:.72rem;color:#78350f">Cockcroft-Gault · Perfil do paciente atualizado automaticamente</span>`;
+    }
+  }
+
+  document.getElementById('inp-valor').value = '';
+  document.getElementById('inp-obs').value   = '';
+  showToast('✓ Registro salvo');
+  renderChips();
+  renderChart();
+  renderLista();
+}
+
+async function excluirRegistro(id) {
+  await dbDelete('laboratorio', id);
+  registros = await dbGetByIndex('laboratorio', 'pacienteId', _pid);
+  renderChips();
+  renderChart();
+  renderLista();
+}
+
+function renderLista() {
+  const exame = EXAMES.find(e => e.id === tipoAtivo);
+  const lista = registros.filter(r => r.tipo === tipoAtivo)
+    .sort((a,b) => b.data.localeCompare(a.data));
+
+  const header = document.getElementById('lista-header');
+  const div    = document.getElementById('lab-list');
+
+  if (!lista.length) {
+    header.style.display = 'none';
+    div.innerHTML = `<div class="empty-lab">Nenhum registro de ${exame.label} ainda.<br>Adicione o primeiro valor acima.</div>`;
+    return;
+  }
+
+  header.style.display = 'block';
+  div.innerHTML = lista.map(r => {
+    const alto  = r.valor > exame.ref.max;
+    const baixo = r.valor < exame.ref.min && exame.ref.min > 0;
+    const badge = alto  ? `<span class="ref-badge ref-alto">▲ Alto</span>` :
+                  baixo ? `<span class="ref-badge ref-baixo">▼ Baixo</span>` :
+                          `<span class="ref-badge ref-ok">Normal</span>`;
+    return `<div class="lab-row">
+      <span class="lab-val" style="color:${alto?'#dc2626':baixo?'#2563eb':'#0f3460'}">${r.valor.toFixed(exame.casas)} ${exame.unidade}</span>
+      ${badge}
+      <span class="lab-date">${formatarData(r.data)}${r.obs ? ' · ' + r.obs : ''}</span>
+      <button class="lab-del" onclick="excluirRegistro(${r.id})" title="Excluir">✕</button>
+    </div>`;
+  }).join('');
+}
+
+function formatarData(iso) {
+  const [a,m,d] = iso.split('-');
+  return `${d}/${m}/${a}`;
+}
+
+init();
+</script>
+</body>
+</html>

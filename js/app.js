@@ -245,6 +245,21 @@ function buildMedCard(med) {
     }
   }
 
+  // Badge Carga Anticolinérgica (aparece para qualquer medicamento com score ≥ 1)
+  let acbHtml = '';
+  if (typeof buscarAnticolinergico === 'function') {
+    const acbScore = buscarAnticolinergico(med.nome);
+    if (acbScore > 0) {
+      const acbCores = { 3:{ bg:'#fee2e2', txt:'#991b1b' }, 2:{ bg:'#ffedd5', txt:'#9a3412' }, 1:{ bg:'#f1f5f9', txt:'#475569' } };
+      const c = acbCores[acbScore] || acbCores[1];
+      const nomeEsc = med.nome.replace(/'/g, "\\'");
+      acbHtml = `<button class="med-receita-btn"
+        style="background:${c.bg};color:${c.txt};border-color:${c.txt}40"
+        onclick="event.stopPropagation();abrirAnticolin('${nomeEsc}',${acbScore})">
+        🧠 ACB:${acbScore}</button>`;
+    }
+  }
+
   const horariosHtml = horarios.map(h => {
     const st = getDoseStatus(med.id, h);
     const cls = st === 'tomado' ? 'h-pill tomado' : 'h-pill';
@@ -305,6 +320,7 @@ function buildMedCard(med) {
             ${reacoesHtml}
             ${beersHtml}
             ${renalHtml}
+            ${acbHtml}
             ${(() => {
               const d = diasParaFim(med.dataFim);
               if (d === null) return '';
@@ -350,14 +366,38 @@ function getUnidadeEstoque(med) {
   return map[med.forma] || 'unidades';
 }
 
+/* ── Polimedicação + Risco de Queda ── */
+function calcularPolifarmacia(meds) {
+  const n = meds.length;
+  if (n < 5) return null;
+
+  const classeRisco = [
+    { nome:'Benzodiazepínicos/Hipnóticos', termos:['diazepam','clonazepam','alprazolam','bromazepam','lorazepam','midazolam','nitrazepam','zolpidem','zopiclona','zaleplon'] },
+    { nome:'Opioides',                     termos:['morfina','tramadol','codeina','oxicodona','fentanila','hidrocodona','buprenorfina','metadona','tapentadol'] },
+    { nome:'Antipsicóticos',               termos:['haloperidol','quetiapina','risperidona','olanzapina','clozapina','aripiprazol','clorpromazina','ziprasidona'] },
+    { nome:'Antidepressivos',              termos:['amitriptilina','nortriptilina','fluoxetina','sertralina','paroxetina','escitalopram','citalopram','venlafaxina','duloxetina','bupropiona','imipramina'] },
+    { nome:'Anti-hipertensivos',           termos:['enalapril','captopril','lisinopril','ramipril','losartana','valsartana','atenolol','metoprolol','carvedilol','bisoprolol','amlodipina','nifedipina','furosemida','hidroclorotiazida','indapamida'] },
+    { nome:'Anticonvulsivantes',           termos:['carbamazepina','fenitoina','fenobarbital','valproato','lamotrigina','gabapentina','pregabalina','topiramato'] },
+    { nome:'Anticolinérgicos',             termos:['oxibutinina','tolterodina','solifenacina','difenidramina','clorfeniramina','prometazina','ciclobenzaprina','biperideno'] },
+  ];
+
+  const nNorm = meds.map(m => m.nome.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,''));
+  const classesPresentes = classeRisco.filter(c =>
+    c.termos.some(t => nNorm.some(n => n.includes(t)))
+  );
+
+  return { total: n, nivel: n >= 10 ? 'grave' : 'moderado', riscoQueda: classesPresentes.length >= 3, classesQueda: classesPresentes.map(c => c.nome) };
+}
+
 /* ── Alertas clínicos ── */
 function renderAlertas() {
   const wrap = document.getElementById('alertas-wrap');
   const alertas = gerarAlertas(medicamentos);
-  const dups    = (typeof verificarDuplicidade === 'function')
-    ? verificarDuplicidade(medicamentos) : [];
+  const dups    = (typeof verificarDuplicidade === 'function') ? verificarDuplicidade(medicamentos) : [];
+  const polif   = calcularPolifarmacia(medicamentos);
+  const acb     = (typeof calcularCargaAnticolin === 'function') ? calcularCargaAnticolin(medicamentos) : null;
 
-  if (!alertas.length && !dups.length) { wrap.innerHTML = ''; return; }
+  if (!alertas.length && !dups.length && !polif && (!acb || acb.total === 0)) { wrap.innerHTML = ''; return; }
 
   const nivelCor = {
     grave:    { borda:'#ef4444', bg:'#fff5f5', icone:'🔴' },
@@ -395,6 +435,46 @@ function renderAlertas() {
   };
 
   let html = '<p class="sec-header">Alertas Clínicos</p><div class="alertas-sec">';
+
+  // Polimedicação + Risco de Queda
+  if (polif) {
+    const pCor = polif.nivel === 'grave'
+      ? { bg:'#fff5f5', borda:'#ef4444', txt:'#991b1b' }
+      : { bg:'#fff7ed', borda:'#f97316', txt:'#9a3412' };
+    html += `<div class="al-card" style="border-left-color:${pCor.borda};background:${pCor.bg}">
+      <span class="al-icon">${polif.nivel === 'grave' ? '🔴' : '🟠'}</span>
+      <div>
+        <p class="al-title">${polif.nivel === 'grave' ? 'Polifarmácia Grave' : 'Polimedicação'} — ${polif.total} medicamentos</p>
+        <p class="al-desc">${polif.nivel === 'grave'
+          ? 'Paciente com ≥ 10 medicamentos em uso simultâneo. Risco elevado de interações, baixa adesão, quedas e hospitalização. Realizar revisão completa da farmacoterapia.'
+          : 'Paciente com ≥ 5 medicamentos em uso simultâneo (polimedicação). Avaliar necessidade de cada item, duplicidades e potenciais interações.'}</p>
+        ${polif.riscoQueda ? `<p class="al-desc" style="margin-top:4px;color:#9a3412;font-weight:600">
+          ⚠️ Risco de Queda: ${polif.classesQueda.join(' · ')}
+        </p>` : ''}
+      </div>
+    </div>`;
+  }
+
+  // Carga Anticolinérgica total
+  if (acb && acb.total > 0) {
+    const aCores = {
+      alto:     { bg:'#fff5f5', borda:'#ef4444', icone:'🔴', txt:'Risco cognitivo alto — revisar urgentemente' },
+      moderado: { bg:'#fff7ed', borda:'#f97316', icone:'🟠', txt:'Carga moderada — considerar substituição dos itens com score ≥ 2' },
+      baixo:    { bg:'#fefce8', borda:'#eab308', icone:'🟡', txt:'Carga baixa — monitorar, especialmente em idosos' },
+    };
+    const c = aCores[acb.nivel];
+    html += `<div class="al-card" style="border-left-color:${c.borda};background:${c.bg}">
+      <span class="al-icon">${c.icone}</span>
+      <div>
+        <p class="al-title">Carga Anticolinérgica (ACB) — Escore Total: ${acb.total}</p>
+        <p class="al-desc">${c.txt}</p>
+        <p class="al-desc" style="margin-top:4px;font-size:.77rem">
+          ${acb.itens.map(i => `🧠 ${i.nome} (${i.score}pt · ${i.classe})`).join('<br>')}
+        </p>
+      </div>
+    </div>`;
+  }
+
   dups.forEach(d => { html += renderDup(d); });
   alertas.forEach(a => { html += renderAlerta(a); });
   html += '</div>';
@@ -622,6 +702,50 @@ function abrirAjusteRenal(nomeMed, texto, nivel) {
       </p>
       <button class="btn btn-primary btn-full"
         onclick="document.getElementById('vd-renal-popup').remove()">Fechar</button>
+    </div>`;
+  el.addEventListener('click', e => { if (e.target === el) el.remove(); });
+  document.body.appendChild(el);
+}
+
+/* ── Carga Anticolinérgica — modal de detalhe ── */
+function abrirAnticolin(nomeMed, score) {
+  document.getElementById('vd-acb-popup')?.remove();
+  const nivel = score >= 3 ? 'alto' : score >= 2 ? 'moderado' : 'leve';
+  const cores = {
+    alto:     { bg:'#fff5f5', borda:'#f87171', titulo:'#991b1b', label:'RISCO ALTO (Score ' + score + '/3)' },
+    moderado: { bg:'#fff7ed', borda:'#fb923c', titulo:'#9a3412', label:'RISCO MODERADO (Score ' + score + '/2)' },
+    leve:     { bg:'#fefce8', borda:'#fbbf24', titulo:'#854d0e', label:'RISCO LEVE (Score 1)' },
+  };
+  const c = cores[nivel];
+
+  const el  = document.createElement('div');
+  el.id     = 'vd-acb-popup';
+  el.style.cssText = 'position:fixed;inset:0;z-index:600;background:rgba(0,0,0,.5);display:flex;align-items:flex-end';
+  el.innerHTML = `
+    <div style="background:var(--card);border-radius:22px 22px 0 0;width:100%;padding:22px 20px 36px;max-height:80vh;overflow-y:auto">
+      <p style="font-size:.65rem;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:${c.titulo};margin-bottom:6px">
+        🧠 CARGA ANTICOLINÉRGICA — ${c.label}
+      </p>
+      <p style="font-size:1.05rem;font-weight:800;color:var(--navy);margin-bottom:14px">${nomeMed}</p>
+      <div style="background:${c.bg};border:1.5px solid ${c.borda};border-radius:12px;padding:14px 16px;margin-bottom:14px">
+        <p style="font-size:.88rem;color:${c.titulo};font-weight:600;line-height:1.5;margin:0">
+          ${score === 3 ? 'Efeito anticolinérgico definido e potente. Pode causar confusão mental, boca seca, retenção urinária, constipação, taquicardia e visão turva. Em idosos, aumenta risco de delirium e declínio cognitivo.' :
+            score === 2 ? 'Efeito anticolinérgico moderado. Contribui significativamente para a carga total. Avaliar necessidade de uso e possibilidade de substituição por alternativa com menor efeito anticolinérgico.' :
+            'Efeito anticolinérgico possível ou leve. Contribui para a carga total, especialmente em pacientes com múltiplos medicamentos desta categoria.'}
+        </p>
+      </div>
+      <p style="font-size:.8rem;color:var(--text-2);line-height:1.5;margin-bottom:14px">
+        <strong>Escala ACB (Anticholinergic Cognitive Burden Scale):</strong><br>
+        Score 1 = possível atividade anticolinérgica<br>
+        Score 2 = atividade anticolinérgica moderada<br>
+        Score 3 = atividade anticolinérgica definida<br>
+        <strong>Total ≥ 3 pontos = risco aumentado de disfunção cognitiva em idosos</strong>
+      </p>
+      <p style="font-size:.72rem;color:var(--text-2);margin-bottom:14px;line-height:1.4">
+        Referência: Boustani MA et al. Anticholinergic Cognitive Burden Scale (2012). AGS Beers Criteria® 2023.
+      </p>
+      <button class="btn btn-primary btn-full"
+        onclick="document.getElementById('vd-acb-popup').remove()">Fechar</button>
     </div>`;
   el.addEventListener('click', e => { if (e.target === el) el.remove(); });
   document.body.appendChild(el);
