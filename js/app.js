@@ -180,6 +180,8 @@ function buildMedCard(med) {
     ? `<button class="med-receita-btn" onclick="event.stopPropagation();abrirLightbox(_fotosMap['r-${med.id}'])">📄 Receita</button>`
     : '';
 
+  const marcasHtml = `<button class="med-receita-btn" onclick="event.stopPropagation();mostrarMarcas('${med.nome.replace(/'/g, "\\'")}')">📦 Marcas</button>`;
+
   const horariosHtml = horarios.map(h => {
     const st = getDoseStatus(med.id, h);
     const cls = st === 'tomado' ? 'h-pill tomado' : 'h-pill';
@@ -236,6 +238,7 @@ function buildMedCard(med) {
           <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
             ${badgeHtml}
             ${receitaHtml}
+            ${marcasHtml}
             ${(() => {
               const d = diasParaFim(med.dataFim);
               if (d === null) return '';
@@ -363,6 +366,43 @@ async function marcarPerdida(medId, horario) {
 function aceitarLGPD() {
   setConsent();
   document.getElementById('lgpd').classList.add('hidden');
+}
+
+/* ── Nomes comerciais ── */
+function mostrarMarcas(medNome) {
+  const antigo = document.getElementById('vd-marcas-popup');
+  if (antigo) antigo.remove();
+
+  const marcas = buscarMarcas(medNome);
+
+  const conteudo = marcas
+    ? marcas.map((m, i) => `
+        <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)">
+          <span style="width:22px;height:22px;border-radius:50%;background:var(--navy);color:#fff;font-size:.7rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">${i+1}</span>
+          <span style="font-size:.95rem;font-weight:600;color:var(--text-1)">${m}</span>
+        </div>`).join('')
+    : `<p style="color:var(--text-2);font-size:.85rem;text-align:center;padding:12px 0">
+        Não encontrado na base local.<br>Consulte a bula ou o farmacêutico.
+      </p>`;
+
+  const el = document.createElement('div');
+  el.id = 'vd-marcas-popup';
+  el.innerHTML = `
+    <div style="position:fixed;inset:0;z-index:400;background:rgba(15,52,96,.45);backdrop-filter:blur(3px);
+      display:flex;align-items:center;justify-content:center;padding:20px"
+      onclick="document.getElementById('vd-marcas-popup').remove()">
+      <div onclick="event.stopPropagation()" style="background:var(--white);border-radius:18px;
+        padding:24px 20px 20px;max-width:340px;width:100%;box-shadow:0 24px 60px rgba(0,0,0,.22)">
+        <p style="font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.12em;
+          color:var(--text-2);margin-bottom:4px">📦 Nomes Comerciais</p>
+        <p style="font-size:1.05rem;font-weight:700;color:var(--navy);margin-bottom:2px">${medNome}</p>
+        <p style="font-size:.75rem;color:var(--text-2);margin-bottom:14px">3 marcas disponíveis no Brasil</p>
+        ${conteudo}
+        <button class="btn btn-outline btn-full" style="margin-top:16px"
+          onclick="document.getElementById('vd-marcas-popup').remove()">Fechar</button>
+      </div>
+    </div>`;
+  document.body.appendChild(el);
 }
 
 /* ── Start ── */
