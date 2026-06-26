@@ -180,7 +180,8 @@ function buildMedCard(med) {
     ? `<button class="med-receita-btn" onclick="event.stopPropagation();abrirLightbox(_fotosMap['r-${med.id}'])">📄 Receita</button>`
     : '';
 
-  const marcasHtml = `<button class="med-receita-btn" onclick="event.stopPropagation();mostrarMarcas('${med.nome.replace(/'/g, "\\'")}')">📦 Marcas</button>`;
+  const marcasHtml   = `<button class="med-receita-btn" onclick="event.stopPropagation();mostrarMarcas('${med.nome.replace(/'/g, "\\'")}')">📦 Marcas</button>`;
+  const reacoesHtml  = `<button class="med-receita-btn" onclick="event.stopPropagation();abrirReacoes(${med.id},'${med.nome.replace(/'/g, "\\'")}')">⚠️ Reações</button>`;
 
   const horariosHtml = horarios.map(h => {
     const st = getDoseStatus(med.id, h);
@@ -239,6 +240,7 @@ function buildMedCard(med) {
             ${badgeHtml}
             ${receitaHtml}
             ${marcasHtml}
+            ${reacoesHtml}
             ${(() => {
               const d = diasParaFim(med.dataFim);
               if (d === null) return '';
@@ -366,6 +368,71 @@ async function marcarPerdida(medId, horario) {
 function aceitarLGPD() {
   setConsent();
   document.getElementById('lgpd').classList.add('hidden');
+}
+
+/* ── Reações adversas ── */
+function abrirReacoes(medId, medNome) {
+  const antigo = document.getElementById('vd-reacoes-popup');
+  if (antigo) antigo.remove();
+
+  const med    = medicamentos.find(m => m.id === medId);
+  const lista  = buscarReacoes(medNome);
+  const obsAtual = (med && med.reacoesObs) || '';
+
+  const listaHtml = lista
+    ? lista.map(r => `
+        <div style="display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">
+          <span style="color:#e53e3e;font-size:1rem;flex-shrink:0;margin-top:1px">•</span>
+          <span style="font-size:.9rem;color:var(--text-1)">${r}</span>
+        </div>`).join('')
+    : `<p style="color:var(--text-2);font-size:.85rem;padding:8px 0">
+        Não disponível na base local. Consulte a bula ou o farmacêutico.
+      </p>`;
+
+  const el = document.createElement('div');
+  el.id = 'vd-reacoes-popup';
+  el.innerHTML = `
+    <div style="position:fixed;inset:0;z-index:400;background:rgba(15,52,96,.45);
+      backdrop-filter:blur(3px);display:flex;align-items:flex-end;justify-content:center"
+      onclick="document.getElementById('vd-reacoes-popup').remove()">
+      <div onclick="event.stopPropagation()" style="background:var(--white);border-radius:20px 20px 0 0;
+        padding:24px 20px 36px;max-width:430px;width:100%;max-height:85vh;overflow-y:auto;
+        box-shadow:0 -8px 40px rgba(0,0,0,.18)">
+        <p style="font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.12em;
+          color:var(--text-2);margin-bottom:4px">⚠️ Reações Adversas</p>
+        <p style="font-size:1.05rem;font-weight:700;color:var(--navy);margin-bottom:16px">${medNome}</p>
+
+        ${lista ? `<p style="font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text-2);margin-bottom:4px">Mais comuns</p>` : ''}
+        ${listaHtml}
+
+        <div style="border-top:1px solid var(--border);margin:18px 0 14px"></div>
+        <p style="font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text-2);margin-bottom:8px">📝 Minhas observações</p>
+        <p style="font-size:.78rem;color:var(--text-2);margin-bottom:10px">Anote reações que você sentiu ou observações do médico/farmacêutico.</p>
+        <textarea id="vd-reacoes-obs-input"
+          placeholder="Ex: Sinto tontura ao levantar nos primeiros dias..."
+          style="width:100%;box-sizing:border-box;border:1.5px solid var(--border);border-radius:10px;
+            padding:10px 12px;font-size:.9rem;font-family:inherit;color:var(--text-1);
+            background:var(--bg);resize:vertical;min-height:90px;outline:none"
+          onfocus="this.style.borderColor='var(--gold)'"
+          onblur="this.style.borderColor='var(--border)'">${obsAtual}</textarea>
+
+        <button class="btn btn-primary btn-full" style="margin-top:12px"
+          onclick="salvarReacoesObs(${medId})">✓ Salvar observação</button>
+        <button class="btn btn-outline btn-full" style="margin-top:8px"
+          onclick="document.getElementById('vd-reacoes-popup').remove()">Fechar</button>
+      </div>
+    </div>`;
+  document.body.appendChild(el);
+}
+
+async function salvarReacoesObs(medId) {
+  const obs = document.getElementById('vd-reacoes-obs-input')?.value.trim() || '';
+  const med = medicamentos.find(m => m.id === medId);
+  if (!med) return;
+  med.reacoesObs = obs;
+  await dbPut('medicamentos', med);
+  document.getElementById('vd-reacoes-popup')?.remove();
+  showToast('✓ Observação salva');
 }
 
 /* ── Nomes comerciais ── */
