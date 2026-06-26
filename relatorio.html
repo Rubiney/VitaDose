@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Relatório Farmacêutico — VitaDose</title>
+  <style>
+    /* ── Base ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      font-size: 13px;
+      line-height: 1.55;
+      color: #1a1a2e;
+      background: #f5f5f5;
+    }
+
+    /* ── Barra de ação (no-print) ── */
+    .toolbar {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      background: #0f3460;
+      padding: 10px 20px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .toolbar-title { color: #fff; font-size: .9rem; font-weight: 700; }
+    .toolbar-btns  { display: flex; gap: 10px; }
+    .btn-print {
+      background: #c9a84c; color: #0f3460; border: none;
+      padding: 8px 18px; border-radius: 8px; font-weight: 700;
+      font-size: .85rem; cursor: pointer;
+    }
+    .btn-fechar {
+      background: transparent; color: #fff; border: 1.5px solid rgba(255,255,255,.4);
+      padding: 7px 14px; border-radius: 8px; font-size: .82rem; cursor: pointer;
+    }
+
+    /* ── Documento ── */
+    .documento {
+      max-width: 780px;
+      margin: 60px auto 40px;
+      background: #fff;
+      box-shadow: 0 2px 12px rgba(0,0,0,.12);
+      padding: 40px 44px 50px;
+    }
+
+    /* ── Cabeçalho ── */
+    .doc-header {
+      display: flex; align-items: flex-start; justify-content: space-between;
+      padding-bottom: 18px;
+      border-bottom: 3px solid #0f3460;
+      margin-bottom: 24px;
+    }
+    .doc-logo { font-size: 1.5rem; font-weight: 900; color: #0f3460; letter-spacing: -.02em; }
+    .doc-logo span { color: #c9a84c; }
+    .doc-meta { text-align: right; font-size: .78rem; color: #666; }
+    .doc-meta strong { display: block; font-size: .95rem; color: #0f3460; margin-bottom: 2px; }
+
+    /* ── Seções ── */
+    .sec {
+      margin-bottom: 24px;
+      break-inside: avoid;
+    }
+    .sec-title {
+      font-size: .72rem; font-weight: 800; text-transform: uppercase;
+      letter-spacing: .1em; color: #0f3460;
+      border-bottom: 1.5px solid #e2e8f0;
+      padding-bottom: 5px; margin-bottom: 12px;
+    }
+
+    /* ── Grid dados paciente ── */
+    .pac-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      gap: 10px 16px;
+    }
+    .pac-field label { font-size: .7rem; font-weight: 700; color: #888; text-transform: uppercase; display: block; }
+    .pac-field span  { font-size: .88rem; color: #1a1a2e; font-weight: 600; }
+
+    /* ── Box alergia ── */
+    .alergia-box {
+      background: #fff5f5; border: 2px solid #fc8181; border-radius: 8px;
+      padding: 10px 14px; margin-top: 12px;
+    }
+    .alergia-box-title { font-size: .72rem; font-weight: 800; color: #c53030; text-transform: uppercase; margin-bottom: 4px; }
+    .alergia-box p     { font-size: .88rem; color: #742a2a; }
+
+    /* ── Tabela de medicamentos ── */
+    .med-table { width: 100%; border-collapse: collapse; font-size: .82rem; }
+    .med-table th {
+      background: #0f3460; color: #fff;
+      padding: 7px 10px; text-align: left; font-weight: 700; font-size: .72rem;
+      text-transform: uppercase; letter-spacing: .06em;
+    }
+    .med-table td { padding: 7px 10px; border-bottom: 1px solid #e2e8f0; vertical-align: top; }
+    .med-table tr:last-child td { border-bottom: none; }
+    .med-table tr:nth-child(even) td { background: #f8fafc; }
+    .badge-perfil {
+      display: inline-block; font-size: .65rem; font-weight: 700;
+      padding: 1px 7px; border-radius: 10px; margin-left: 4px;
+      vertical-align: middle;
+    }
+
+    /* ── Alertas ── */
+    .alerta-item {
+      border-radius: 8px; padding: 10px 13px; margin-bottom: 8px;
+      border-left: 4px solid;
+    }
+    .alerta-vermelho  { background: #fff5f5; border-color: #fc8181; }
+    .alerta-laranja   { background: #fffaf0; border-color: #f6ad55; }
+    .alerta-amarelo   { background: #fffff0; border-color: #ecc94b; }
+    .alerta-azul      { background: #ebf8ff; border-color: #63b3ed; }
+    .alerta-verde     { background: #f0fff4; border-color: #68d391; }
+    .alerta-titulo    { font-size: .78rem; font-weight: 700; margin-bottom: 3px; }
+    .alerta-desc      { font-size: .8rem; color: #444; line-height: 1.45; }
+    .alerta-alt       { font-size: .76rem; color: #276749; margin-top: 4px; }
+
+    /* ── TFG box ── */
+    .tfg-box {
+      display: inline-flex; align-items: center; gap: 12px;
+      border-radius: 8px; padding: 10px 16px; margin-top: 10px;
+      border: 1.5px solid;
+    }
+    .tfg-valor { font-size: 1.4rem; font-weight: 900; }
+    .tfg-desc  { font-size: .78rem; }
+
+    /* ── Rodapé ── */
+    .doc-footer {
+      margin-top: 32px; padding-top: 14px;
+      border-top: 1.5px solid #e2e8f0;
+      font-size: .7rem; color: #999; text-align: center; line-height: 1.6;
+    }
+
+    /* ── Print ── */
+    @media print {
+      body { background: #fff; font-size: 12px; }
+      .toolbar { display: none !important; }
+      .documento { margin: 0; box-shadow: none; padding: 24px 28px 32px; max-width: 100%; }
+      .sec { break-inside: avoid; page-break-inside: avoid; }
+      .med-table th { background: #0f3460 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .alerta-item, .alergia-box, .tfg-box { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Toolbar (não imprime) -->
+  <div class="toolbar no-print">
+    <span class="toolbar-title">📄 Relatório Farmacêutico — VitaDose</span>
+    <div class="toolbar-btns">
+      <button class="btn-print" onclick="window.print()">🖨️ Imprimir / Salvar PDF</button>
+      <button class="btn-fechar" onclick="window.close()">✕ Fechar</button>
+    </div>
+  </div>
+
+  <!-- Documento -->
+  <div class="documento" id="relatorio">
+    <p style="text-align:center;color:#888;padding:40px 0">⏳ Gerando relatório...</p>
+  </div>
+
+  <script src="js/db.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/ajusterenal.js"></script>
+  <script src="js/beers.js"></script>
+  <script src="js/interacoes.js"></script>
+  <script src="js/reacoes.js"></script>
+  <script>
+  document.addEventListener('DOMContentLoaded', gerarRelatorio);
+
+  async function gerarRelatorio() {
+    const pid = getActivePacienteId();
+    if (!pid) {
+      document.getElementById('relatorio').innerHTML =
+        '<p style="text-align:center;color:#c53030;padding:40px">⚠️ Nenhum paciente ativo. Acesse o VitaDose e selecione um paciente.</p>';
+      return;
+    }
+
+    const pac  = await dbGet('pacientes', pid);
+    if (!pac) {
+      document.getElementById('relatorio').innerHTML =
+        '<p style="text-align:center;color:#c53030;padding:40px">⚠️ Paciente não encontrado.</p>';
+      return;
+    }
+
+    const todos = await dbGetByIndex('medicamentos', 'pacienteId', pid);
+    const hj    = hoje();
+    const meds  = todos.filter(m => m.ativo !== false && (!m.dataFim || m.dataFim >= hj));
+
+    const agora    = new Date();
+    const dataEmissao = agora.toLocaleDateString('pt-BR', { day:'2-digit', month:'long', year:'numeric' });
+    const horaEmissao = agora.toLocaleTimeString('pt-BR', { hour:'2-digit', minute:'2-digit' });
+
+    /* ── Dados do paciente ── */
+    const perfilLabel = { adulto:'Adulto', idoso:'Idoso (60+)', pediatrico:'Pediátrico', renal:'Insuf. Renal', hepatico:'Insuf. Hepática', gestante:'Gestante' };
+    const tfg    = pac.tfg ? pac.tfg : null;
+    const estTFG = tfg ? estagioRenal(tfg) : null;
+    const isIdoso = pacienteIdoso(pac);
+
+    /* ── Interações / alertas alimentares ── */
+    const alertas = (typeof gerarAlertas === 'function' && meds.length)
+      ? gerarAlertas(meds) : [];
+    const interacoes = alertas.filter(a => a.tipo === 'interacao');
+    const alimentares = alertas.filter(a => a.tipo === 'alimentacao');
+
+    /* ── Beers ── */
+    const beersAlertas = [];
+    if (isIdoso && typeof buscarBeers === 'function') {
+      for (const m of meds) {
+        const b = buscarBeers(m.nome);
+        if (b) beersAlertas.push({ med: m.nome, ...b });
+      }
+    }
+
+    /* ── Ajuste renal ── */
+    const renalAlertas = [];
+    if (tfg && typeof buscarAjusteRenal === 'function') {
+      for (const m of meds) {
+        const r = buscarAjusteRenal(m.nome, tfg);
+        if (r) renalAlertas.push({ med: m.nome, ...r });
+      }
+    }
+
+    /* ── Reações adversas com observações pessoais ── */
+    const reacoesNotaveis = meds.filter(m => m.reacoesObs && m.reacoesObs.trim());
+
+    /* ── HTML ── */
+    const riscoBeersCorMap = {
+      alto:     { bg:'#fff5f5', borda:'#fc8181', cor:'#c53030' },
+      moderado: { bg:'#fffaf0', borda:'#f6ad55', cor:'#c05621' },
+      cautela:  { bg:'#fffff0', borda:'#ecc94b', cor:'#975a16' },
+    };
+    const riscoRenalCorMap = {
+      contraindicado: { bg:'#fff5f5', borda:'#fc8181', cor:'#c53030', icone:'🔴' },
+      reduzir:        { bg:'#fffaf0', borda:'#f6ad55', cor:'#c05621', icone:'🟠' },
+      cautela:        { bg:'#fffff0', borda:'#ecc94b', cor:'#975a16', icone:'🟡' },
+    };
+
+    const html = `
+      <!-- Cabeçalho -->
+      <div class="doc-header">
+        <div>
+          <div class="doc-logo">Vita<span>Dose</span></div>
+          <div style="font-size:.78rem;color:#666;margin-top:3px">Relatório Farmacoterapêutico</div>
+        </div>
+        <div class="doc-meta">
+          <strong>Documento de apoio clínico</strong>
+          Emitido em ${dataEmissao} às ${horaEmissao}<br>
+          Uso exclusivo do profissional de saúde
+        </div>
+      </div>
+
+      <!-- Dados do Paciente -->
+      <div class="sec">
+        <p class="sec-title">👤 Dados do Paciente</p>
+        <div class="pac-grid">
+          <div class="pac-field"><label>Nome</label><span>${pac.nome || '—'}</span></div>
+          <div class="pac-field"><label>Perfil</label><span>${perfilLabel[pac.perfil] || pac.perfil || '—'}</span></div>
+          <div class="pac-field"><label>Cuidador</label><span>${pac.cuidador || '—'}</span></div>
+          ${pac.idadePac ? `<div class="pac-field"><label>Idade</label><span>${pac.idadePac} anos</span></div>` : ''}
+          ${pac.pesoPac  ? `<div class="pac-field"><label>Peso</label><span>${pac.pesoPac} kg</span></div>` : ''}
+          ${pac.sexoPac  ? `<div class="pac-field"><label>Sexo</label><span>${pac.sexoPac === 'F' ? 'Feminino' : 'Masculino'}</span></div>` : ''}
+          ${pac.creatinina ? `<div class="pac-field"><label>Creatinina</label><span>${pac.creatinina} mg/dL</span></div>` : ''}
+        </div>
+
+        ${tfg && estTFG ? `
+          <div class="tfg-box" style="background:${estTFG.cor}12;border-color:${estTFG.cor}">
+            <span class="tfg-valor" style="color:${estTFG.cor}">${tfg} mL/min</span>
+            <span class="tfg-desc" style="color:${estTFG.cor}">
+              <strong>TFG — Estágio ${estTFG.estadio}</strong><br>${estTFG.descricao}<br>
+              <span style="font-size:.68rem;opacity:.8">Cockcroft-Gault</span>
+            </span>
+          </div>` : ''}
+
+        ${pac.condicoesClinicas ? `
+          <div style="margin-top:14px">
+            <div style="font-size:.7rem;font-weight:700;color:#888;text-transform:uppercase;margin-bottom:4px">Doenças e condições diagnosticadas</div>
+            <p style="font-size:.88rem;color:#1a1a2e;line-height:1.55">${pac.condicoesClinicas}</p>
+          </div>` : ''}
+
+        ${pac.alergias ? `
+          <div class="alergia-box">
+            <p class="alergia-box-title">🚨 Alergias a Medicamentos e Alimentos</p>
+            <p>${pac.alergias}</p>
+          </div>` : ''}
+      </div>
+
+      <!-- Medicamentos -->
+      <div class="sec">
+        <p class="sec-title">💊 Medicamentos em Uso (${meds.length})</p>
+        ${meds.length === 0
+          ? '<p style="color:#888;font-size:.85rem">Nenhum medicamento cadastrado.</p>'
+          : `<table class="med-table">
+              <thead>
+                <tr>
+                  <th style="width:32%">Medicamento</th>
+                  <th style="width:14%">Dose</th>
+                  <th style="width:16%">Forma</th>
+                  <th style="width:22%">Horários</th>
+                  <th style="width:16%">Estoque</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${meds.map(m => {
+                  const horarios = (m.horarios || []).join(' · ') || '—';
+                  const estoque  = m.estoque != null ? `${m.estoque} ${m.unidadeEstoque || 'un.'}` : '—';
+                  const beersOk  = isIdoso && typeof buscarBeers === 'function' && buscarBeers(m.nome);
+                  const renalOk  = tfg && typeof buscarAjusteRenal === 'function' && buscarAjusteRenal(m.nome, tfg);
+                  return `<tr>
+                    <td>
+                      <strong>${m.nome}</strong>
+                      ${beersOk ? `<span class="badge-perfil" style="background:#fee2e2;color:#991b1b">Beers</span>` : ''}
+                      ${renalOk ? `<span class="badge-perfil" style="background:#ffedd5;color:#9a3412">Renal</span>` : ''}
+                    </td>
+                    <td>${m.dose || '—'}</td>
+                    <td>${m.forma || '—'}</td>
+                    <td>${horarios}</td>
+                    <td>${estoque}</td>
+                  </tr>`;
+                }).join('')}
+              </tbody>
+            </table>`
+        }
+      </div>
+
+      <!-- Alertas Critérios de Beers -->
+      ${beersAlertas.length ? `
+        <div class="sec">
+          <p class="sec-title">🔴 Critérios de Beers — Medicamentos Potencialmente Inapropriados</p>
+          <p style="font-size:.75rem;color:#666;margin-bottom:10px">Fonte: American Geriatrics Society Beers Criteria® 2023. Paciente idoso — risco aumentado de efeitos adversos.</p>
+          ${beersAlertas.map(b => {
+            const c = riscoBeersCorMap[b.risco] || riscoBeersCorMap.cautela;
+            const label = {alto:'Alto Risco',moderado:'Risco Moderado',cautela:'Cautela'}[b.risco];
+            return `<div class="alerta-item" style="background:${c.bg};border-left-color:${c.borda}">
+              <p class="alerta-titulo" style="color:${c.cor}">${b.med} — ${label} · ${b.categoria}</p>
+              <p class="alerta-desc">${b.motivo}</p>
+              ${b.alternativa ? `<p class="alerta-alt">✅ Alternativa: ${b.alternativa}</p>` : ''}
+            </div>`;
+          }).join('')}
+        </div>` : ''}
+
+      <!-- Alertas Ajuste Renal -->
+      ${renalAlertas.length ? `
+        <div class="sec">
+          <p class="sec-title">🫘 Ajuste Renal — Recomendações por TFG (${tfg} mL/min)</p>
+          ${renalAlertas.map(r => {
+            const c = riscoRenalCorMap[r.nivel] || riscoRenalCorMap.cautela;
+            return `<div class="alerta-item" style="background:${c.bg};border-left-color:${c.borda}">
+              <p class="alerta-titulo" style="color:${c.cor}">${c.icone} ${r.med}</p>
+              <p class="alerta-desc">${r.texto}</p>
+            </div>`;
+          }).join('')}
+        </div>` : ''}
+
+      <!-- Interações Medicamentosas -->
+      ${interacoes.length ? `
+        <div class="sec">
+          <p class="sec-title">⚠️ Interações Medicamentosas e Alertas Clínicos</p>
+          ${interacoes.map(a => `
+            <div class="alerta-item alerta-laranja">
+              <p class="alerta-titulo" style="color:#9a3412">${a.titulo}</p>
+              <p class="alerta-desc">${a.desc}</p>
+            </div>`).join('')}
+        </div>` : ''}
+
+      <!-- Alertas Alimentares -->
+      ${alimentares.length ? `
+        <div class="sec">
+          <p class="sec-title">🥗 Orientações Alimentares e de Horário</p>
+          ${alimentares.map(a => `
+            <div class="alerta-item alerta-azul">
+              <p class="alerta-titulo" style="color:#1a365d">${a.titulo}</p>
+              <p class="alerta-desc">${a.desc}</p>
+            </div>`).join('')}
+        </div>` : ''}
+
+      <!-- Observações Pessoais de Reações Adversas -->
+      ${reacoesNotaveis.length ? `
+        <div class="sec">
+          <p class="sec-title">📝 Observações Clínicas Pessoais</p>
+          ${reacoesNotaveis.map(m => `
+            <div class="alerta-item alerta-amarelo">
+              <p class="alerta-titulo" style="color:#744210">${m.nome}</p>
+              <p class="alerta-desc">${m.reacoesObs}</p>
+            </div>`).join('')}
+        </div>` : ''}
+
+      <!-- Doenças Sazonais -->
+      ${pac.doencasSazonais && Object.keys(pac.doencasSazonais).length ? `
+        <div class="sec">
+          <p class="sec-title">🍂 Doenças Sazonais e Medicamentos Habituais</p>
+          ${Object.entries(pac.doencasSazonais).map(([d, med]) => `
+            <div style="display:flex;gap:12px;border-bottom:1px solid #e2e8f0;padding:7px 0">
+              <span style="font-weight:700;font-size:.85rem;min-width:160px">${d}</span>
+              <span style="font-size:.83rem;color:#444">${med || '—'}</span>
+            </div>`).join('')}
+        </div>` : ''}
+
+      <!-- Suplementação -->
+      ${pac.suplementacao && Object.keys(pac.suplementacao).length ? `
+        <div class="sec">
+          <p class="sec-title">💊 Suplementação</p>
+          <table class="med-table">
+            <thead><tr><th>Suplemento</th><th>Dose / Marca</th><th>Horário / Observação</th></tr></thead>
+            <tbody>
+              ${Object.entries(pac.suplementacao).map(([nome, dados]) => `
+                <tr>
+                  <td><strong>${nome}</strong></td>
+                  <td>${dados.dose || '—'}</td>
+                  <td>${dados.obs || '—'}</td>
+                </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>` : ''}
+
+      <!-- Orientações Nutricionais -->
+      ${pac.orientacoesNutricionais ? `
+        <div class="sec">
+          <p class="sec-title">🥗 Orientações Nutricionais</p>
+          <p style="font-size:.88rem;line-height:1.6;white-space:pre-wrap">${pac.orientacoesNutricionais}</p>
+        </div>` : ''}
+
+      <!-- Curativos e Pomadas -->
+      ${pac.curativosPomadas ? `
+        <div class="sec">
+          <p class="sec-title">🩹 Curativos, Pomadas e Uso Tópico</p>
+          <p style="font-size:.88rem;line-height:1.6;white-space:pre-wrap">${pac.curativosPomadas}</p>
+        </div>` : ''}
+
+      <!-- Rodapé -->
+      <div class="doc-footer">
+        <strong>VitaDose</strong> — Gerenciador de Medicamentos e Apoio Farmacoterapêutico<br>
+        Relatório gerado em ${dataEmissao} às ${horaEmissao} · ID do paciente: ${pid}<br>
+        Este documento é de uso exclusivo do profissional de saúde. Não substitui prescrição médica ou avaliação clínica.<br>
+        Referências: AGS Beers Criteria® 2023 · KDIGO 2022 · UpToDate · SBN
+      </div>`;
+
+    document.getElementById('relatorio').innerHTML = html;
+  }
+  </script>
+</body>
+</html>
