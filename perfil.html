@@ -175,6 +175,16 @@
       onclick="salvarDocumentos()">✓ Salvar documentos</button>
   </div>
 
+  <!-- Condições Clínicas -->
+  <div class="card">
+    <div class="card-title">🩺 Condições Clínicas</div>
+    <p style="font-size:.78rem;color:var(--text-2);margin-bottom:12px;line-height:1.5">
+      Selecione as condições do paciente para ativar alertas de contraindicações nos medicamentos.
+    </p>
+    <div id="condicoes-chips" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px"></div>
+    <button class="btn btn-primary btn-full" onclick="salvarCondicoes()">✓ Salvar condições clínicas</button>
+  </div>
+
   <!-- Relatório Farmacêutico -->
   <div class="card">
     <div class="card-title">📄 Relatório Farmacêutico</div>
@@ -285,6 +295,9 @@
     <a href="laboratorio.html" class="btn btn-full" style="display:block;text-align:center;background:#0f766e;color:#fff;border:none;text-decoration:none;margin-bottom:10px">
       🧪 Histórico Laboratorial
     </a>
+    <a href="orientacao.html" target="_blank" class="btn btn-full" style="display:block;text-align:center;background:#7c3aed;color:#fff;border:none;text-decoration:none;margin-bottom:10px">
+      📋 Orientações ao Paciente
+    </a>
     <a href="sandbox.html" class="btn btn-full" style="display:block;text-align:center;background:#d97706;color:#fff;border:none;text-decoration:none;margin-bottom:10px">
       🧪 Sandbox Clínico
     </a>
@@ -347,6 +360,55 @@
   <script>
     const PERFIS = { adulto:'Adulto', idoso:'Idoso (60+)', pediatrico:'Pediátrico', renal:'Insuf. Renal', hepatico:'Insuf. Hepática', gestante:'Gestante' };
 
+    /* ── Condições Clínicas ── */
+    const _COND_OPCOES = [
+      { id:'asma',        icon:'🫁', label:'Asma / DPOC' },
+      { id:'ic',          icon:'❤️', label:'Insuf. Cardíaca' },
+      { id:'hepatica',    icon:'🟡', label:'Insuf. Hepática' },
+      { id:'epilepsia',   icon:'⚡', label:'Epilepsia' },
+      { id:'glaucoma',    icon:'👁️', label:'Glaucoma Ângulo Fechado' },
+      { id:'hpb',         icon:'🔵', label:'Hiperplasia Prostática' },
+      { id:'gota',        icon:'🦶', label:'Gota / Hiperuricemia' },
+      { id:'gastrite',    icon:'🟤', label:'Gastrite / Úlcera' },
+      { id:'gestacao',    icon:'🤰', label:'Gestação' },
+      { id:'osteoporose', icon:'🦴', label:'Osteoporose' },
+      { id:'miastenia',   icon:'💪', label:'Miastenia Gravis' },
+      { id:'parkinson',   icon:'🧠', label:'Parkinson' },
+      { id:'dm',          icon:'🩸', label:'Diabetes Mellitus' },
+      { id:'has',         icon:'💉', label:'Hipertensão Arterial' },
+    ];
+    let _condicoesSelecionadas = [];
+
+    function renderCondicoesChips() {
+      const wrap = document.getElementById('condicoes-chips');
+      if (!wrap) return;
+      wrap.innerHTML = _COND_OPCOES.map(c => {
+        const ativo = _condicoesSelecionadas.includes(c.id);
+        return `<button
+          onclick="toggleCondicao('${c.id}')"
+          style="display:inline-flex;align-items:center;gap:4px;white-space:nowrap;padding:6px 12px;border-radius:20px;font-size:.78rem;font-weight:700;cursor:pointer;border:2px solid ${ativo?'#0f3460':'#dde3f0'};background:${ativo?'#0f3460':'#fff'};color:${ativo?'#fff':'#475569'};transition:.15s">
+          ${c.icon} ${c.label}
+        </button>`;
+      }).join('');
+    }
+
+    function toggleCondicao(id) {
+      const idx = _condicoesSelecionadas.indexOf(id);
+      if (idx >= 0) _condicoesSelecionadas.splice(idx, 1);
+      else _condicoesSelecionadas.push(id);
+      renderCondicoesChips();
+    }
+
+    async function salvarCondicoes() {
+      const pid = getActivePacienteId();
+      if (!pid) return;
+      const p = await dbGet('pacientes', pid);
+      if (!p) return;
+      p.condicoes = _condicoesSelecionadas;
+      await dbPut('pacientes', p);
+      showToast('✓ Condições clínicas salvas');
+    }
+
     async function initPerfil() {
       const pid = getActivePacienteId();
       if (!pid) return;
@@ -364,6 +426,9 @@
       // Preenche campos do histórico clínico
       document.getElementById('hc-condicoes').value = p.condicoesClinicas || '';
       document.getElementById('hc-alergias').value  = p.alergias || '';
+      // Condições clínicas estruturadas
+      _condicoesSelecionadas = p.condicoes || [];
+      renderCondicoesChips();
       // Preenche campos de função renal
       if (p.idadePac)   document.getElementById('fr-idade').value      = p.idadePac;
       if (p.pesoPac)    document.getElementById('fr-peso').value       = p.pesoPac;

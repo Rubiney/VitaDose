@@ -163,6 +163,8 @@
   <script src="js/interacoes.js"></script>
   <script src="js/duplicidade.js"></script>
   <script src="js/anticolin.js"></script>
+  <script src="js/adesao.js"></script>
+  <script src="js/contraindicacoes.js"></script>
   <script src="js/reacoes.js"></script>
   <script>
   document.addEventListener('DOMContentLoaded', gerarRelatorio);
@@ -213,6 +215,21 @@
     /* ── Polimedicação ── */
     const polifTotal = meds.length;
     const polifNivel = polifTotal >= 10 ? 'grave' : polifTotal >= 5 ? 'moderado' : null;
+
+    /* ── Adesão Terapêutica ── */
+    let adesaoData = [];
+    if (typeof calcularAdesao === 'function') {
+      let todasDoses = [];
+      try { todasDoses = await dbGetAll('doses'); } catch(e) {}
+      adesaoData = meds
+        .filter(m => m.horarios && m.horarios.length)
+        .map(m => ({ nome: m.nome, ad: calcularAdesao(m, todasDoses) }))
+        .filter(x => x.ad);
+    }
+
+    /* ── Contraindicações por Patologia ── */
+    const cisRelatorio = (typeof verificarContraindicacoes === 'function' && pac.condicoes && pac.condicoes.length)
+      ? verificarContraindicacoes(meds, pac.condicoes) : [];
 
     /* ── Histórico Laboratorial ── */
     let labRecords = [];
@@ -508,6 +525,52 @@
           </div>
           <p style="font-size:.72rem;color:#888;margin-top:8px">
             Ref: Masnoon N et al. What is polypharmacy? A systematic review of definitions. BMC Geriatr. 2017.
+          </p>
+        </div>` : ''}
+
+      <!-- Contraindicações por Patologia -->
+      ${cisRelatorio.length > 0 ? `
+        <div class="sec">
+          <p class="sec-title">⛔ Contraindicações por Patologia</p>
+          <p style="font-size:.75rem;color:#666;margin-bottom:10px">
+            Condições do paciente: <strong>${(pac.condicoes || []).map(c => (CONDICOES_LABELS||{})[c] || c).join(' · ')}</strong>
+          </p>
+          ${cisRelatorio.map(ci => {
+            const isGrave = ci.risco === 'grave';
+            return `<div class="alerta-item" style="background:${isGrave?'#fff5f5':'#fff7ed'};border-left-color:${isGrave?'#f87171':'#fb923c'}">
+              <p style="font-weight:700;color:${isGrave?'#991b1b':'#9a3412'};margin-bottom:4px">
+                ${isGrave?'🔴 CONTRAINDICAÇÃO GRAVE':'🟠 CAUTELA MODERADA'} — ${ci.med} + ${(CONDICOES_LABELS||{})[ci.condicoes[0]]||ci.condicoes[0]}
+              </p>
+              <p style="font-size:.82rem;color:${isGrave?'#991b1b':'#9a3412'};line-height:1.5;margin-bottom:6px">${ci.motivo}</p>
+              <p style="font-size:.8rem;color:#047857;font-weight:600">Alternativa: ${ci.alternativa}</p>
+            </div>`;
+          }).join('')}
+        </div>` : ''}
+
+      <!-- Adesão Terapêutica -->
+      ${adesaoData.length > 0 ? `
+        <div class="sec">
+          <p class="sec-title">📊 Adesão Terapêutica (últimos 30 dias)</p>
+          <table class="med-table">
+            <thead><tr><th>Medicamento</th><th>Doses Tomadas</th><th>Adesão</th><th>Nível</th></tr></thead>
+            <tbody>
+              ${adesaoData.map(({ nome, ad }) => {
+                const cor = ad.nivel === 'alta' ? '#16a34a' : ad.nivel === 'media' ? '#d97706' : '#dc2626';
+                const bg  = ad.nivel === 'alta' ? '#dcfce7' : ad.nivel === 'media' ? '#fef9c3' : '#fee2e2';
+                const txt = ad.nivel === 'alta' ? 'Alta ≥ 80%' : ad.nivel === 'media' ? 'Média 50–79%' : 'Baixa < 50%';
+                return `<tr>
+                  <td>${nome}</td>
+                  <td style="text-align:center">${ad.tomadas} / ${ad.total}</td>
+                  <td style="text-align:center;font-weight:700;color:${cor}">${ad.pct}%</td>
+                  <td style="text-align:center">
+                    <span style="background:${bg};color:${cor};border-radius:5px;padding:2px 8px;font-size:.75rem;font-weight:700">${txt}</span>
+                  </td>
+                </tr>`;
+              }).join('')}
+            </tbody>
+          </table>
+          <p style="font-size:.72rem;color:#888;margin-top:8px">
+            Baseado em confirmações de dose registradas no app. Adesão ≥ 80% é considerada adequada (WHO).
           </p>
         </div>` : ''}
 

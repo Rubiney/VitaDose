@@ -3,6 +3,8 @@
 let paciente    = null;
 let medicamentos = [];
 let dosesHoje   = [];
+let _todasDoses = [];
+let _adesaoMap  = {};
 let confirmPending = null;
 let _fotosMap   = {};
 
@@ -45,8 +47,9 @@ async function init() {
   const hj = hoje();
   medicamentos = todos.filter(m => m.ativo !== false && (!m.dataFim || m.dataFim >= hj));
 
-  // Doses de hoje
+  // Doses — todas para cálculo de adesão, filtradas para hoje
   const allDoses = await dbGetAll('doses');
+  _todasDoses = allDoses;
   dosesHoje = allDoses.filter(d => d.data === hoje());
 
   renderBannerAlergia(paciente);
@@ -81,6 +84,14 @@ async function render() {
   renderSummary();
   renderProgress();
   renderNextDose();
+  // Pré-computa adesão para todos os medicamentos antes de renderizar os cards
+  _adesaoMap = {};
+  if (typeof calcularAdesao === 'function') {
+    for (const med of medicamentos) {
+      const ad = calcularAdesao(med, _todasDoses);
+      if (ad) _adesaoMap[med.id] = ad;
+    }
+  }
   renderMedList();
   renderAlertas();
 }
@@ -260,6 +271,35 @@ function buildMedCard(med) {
     }
   }
 
+  // Badge Adesão Terapêutica
+  let adesaoHtml = '';
+  const _ad = _adesaoMap[med.id];
+  if (_ad) {
+    const _adCor = { alta:'#16a34a', media:'#d97706', baixa:'#dc2626' };
+    const _adBg  = { alta:'#dcfce7', media:'#fef9c3', baixa:'#fee2e2' };
+    const cor = _adCor[_ad.nivel], bg = _adBg[_ad.nivel];
+    adesaoHtml = `<button class="med-receita-btn"
+      style="background:${bg};color:${cor};border-color:${cor}40"
+      onclick="event.stopPropagation();abrirAdesao(${med.id})">
+      📊 ${_ad.pct}%</button>`;
+  }
+
+  // Badge Contraindicação por Patologia
+  let ciHtml = '';
+  if (typeof buscarContraindicacoes === 'function' && paciente?.condicoes?.length) {
+    const _cis = buscarContraindicacoes(med.nome, paciente.condicoes);
+    if (_cis.length) {
+      const _ciGrave = _cis.some(c => c.risco === 'grave');
+      const _ciBg  = _ciGrave ? '#fee2e2' : '#fff7ed';
+      const _ciTxt = _ciGrave ? '#991b1b' : '#9a3412';
+      const nomeEsc = med.nome.replace(/'/g, "\\'");
+      ciHtml = `<button class="med-receita-btn"
+        style="background:${_ciBg};color:${_ciTxt};border-color:${_ciTxt}40;font-weight:800"
+        onclick="event.stopPropagation();abrirCI('${nomeEsc}')">
+        ⛔ CI</button>`;
+    }
+  }
+
   const horariosHtml = horarios.map(h => {
     const st = getDoseStatus(med.id, h);
     const cls = st === 'tomado' ? 'h-pill tomado' : 'h-pill';
@@ -321,6 +361,8 @@ function buildMedCard(med) {
             ${beersHtml}
             ${renalHtml}
             ${acbHtml}
+            ${adesaoHtml}
+            ${ciHtml}
             ${(() => {
               const d = diasParaFim(med.dataFim);
               if (d === null) return '';
@@ -396,8 +438,10 @@ function renderAlertas() {
   const dups    = (typeof verificarDuplicidade === 'function') ? verificarDuplicidade(medicamentos) : [];
   const polif   = calcularPolifarmacia(medicamentos);
   const acb     = (typeof calcularCargaAnticolin === 'function') ? calcularCargaAnticolin(medicamentos) : null;
+  const cis     = (typeof verificarContraindicacoes === 'function' && paciente?.condicoes?.length)
+    ? verificarContraindicacoes(medicamentos, paciente.condicoes) : [];
 
-  if (!alertas.length && !dups.length && !polif && (!acb || acb.total === 0)) { wrap.innerHTML = ''; return; }
+  if (!alertas.length && !dups.length && !polif && (!acb || acb.total === 0) && !cis.length) { wrap.innerHTML = ''; return; }
 
   const nivelCor = {
     grave:    { borda:'#ef4444', bg:'#fff5f5', icone:'🔴' },
@@ -435,6 +479,21 @@ function renderAlertas() {
   };
 
   let html = '<p class="sec-header">Alertas Clínicos</p><div class="alertas-sec">';
+
+  // Contraindicações por Patologia (aparecem primeiro — podem ser graves)
+  cis.forEach(ci => {
+    const isGrave = ci.risco === 'grave';
+    const bg = isGrave ? '#fff5f5' : '#fff7ed';
+    const borda = isGrave ? '#ef4444' : '#f97316';
+    html += `<div class="al-card" style="border-left-color:${borda};background:${bg}">
+      <span class="al-icon">${isGrave ? '⛔' : '🟠'}</span>
+      <div>
+        <p class="al-title">${isGrave ? 'Contraindicação' : 'Cautela'}: ${ci.med} + ${(CONDICOES_LABELS||{})[ci.condicoes[0]] || ci.condicoes[0]}</p>
+        <p class="al-desc">${ci.motivo}</p>
+        <p class="al-desc" style="margin-top:4px;color:#047857;font-weight:600;font-size:.77rem">Alternativa: ${ci.alternativa}</p>
+      </div>
+    </div>`;
+  });
 
   // Polimedicação + Risco de Queda
   if (polif) {
@@ -785,6 +844,99 @@ function mostrarMarcas(medNome) {
           onclick="document.getElementById('vd-marcas-popup').remove()">Fechar</button>
       </div>
     </div>`;
+  document.body.appendChild(el);
+}
+
+/* ── Adesão Terapêutica — modal de detalhe ── */
+function abrirAdesao(medId) {
+  document.getElementById('vd-adesao-popup')?.remove();
+  const med = medicamentos.find(m => m.id === medId);
+  const ad  = _adesaoMap[medId];
+  if (!med || !ad) return;
+
+  const corNivel = { alta:'#16a34a', media:'#d97706', baixa:'#dc2626' };
+  const bgNivel  = { alta:'#dcfce7', media:'#fef9c3', baixa:'#fee2e2' };
+  const nomNivel = { alta:'ALTA ≥ 80%', media:'MÉDIA 50–79%', baixa:'BAIXA < 50%' };
+  const cor = corNivel[ad.nivel], bg = bgNivel[ad.nivel];
+
+  const el = document.createElement('div');
+  el.id    = 'vd-adesao-popup';
+  el.style.cssText = 'position:fixed;inset:0;z-index:600;background:rgba(0,0,0,.5);display:flex;align-items:flex-end';
+  el.innerHTML = `
+    <div style="background:var(--card);border-radius:22px 22px 0 0;width:100%;padding:22px 20px 36px;max-height:80vh;overflow-y:auto">
+      <p style="font-size:.65rem;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:${cor};margin-bottom:4px">
+        📊 ADESÃO TERAPÊUTICA — ÚLTIMOS 30 DIAS
+      </p>
+      <p style="font-size:1.05rem;font-weight:800;color:var(--navy);margin-bottom:16px">${med.nome}</p>
+      <div style="text-align:center;margin-bottom:14px">
+        <div style="font-size:3rem;font-weight:900;color:${cor};line-height:1">${ad.pct}%</div>
+        <div style="font-size:.8rem;color:var(--text-2);margin-top:4px">${ad.tomadas} de ${ad.total} doses registradas</div>
+      </div>
+      <div style="background:#e5e7eb;border-radius:99px;height:12px;margin-bottom:12px;overflow:hidden">
+        <div style="background:${cor};width:${ad.pct}%;height:100%;border-radius:99px"></div>
+      </div>
+      <div style="background:${bg};border-radius:10px;padding:12px 14px;margin-bottom:14px">
+        <p style="font-weight:800;color:${cor};font-size:.82rem;margin-bottom:4px">Nível de Adesão: ${nomNivel[ad.nivel]}</p>
+        <p style="font-size:.8rem;color:var(--text-1);margin:0;line-height:1.5">
+          ${ad.nivel === 'alta'
+            ? 'Excelente! O paciente está tomando o medicamento de forma consistente. Manter o monitoramento.'
+            : ad.nivel === 'media'
+            ? 'Adesão parcial. Investigar barreiras: efeitos adversos, esquecimento, custo ou complexidade do esquema posológico.'
+            : 'Baixa adesão — risco de falha terapêutica. Revisão urgente do esquema e estratégias de suporte motivacional.'}
+        </p>
+      </div>
+      <p style="font-size:.7rem;color:var(--text-2);margin-bottom:14px;line-height:1.4">
+        ℹ️ Baseado nos registros de confirmação de dose no app. Doses não confirmadas são contadas como não tomadas.
+      </p>
+      <button class="btn btn-primary btn-full"
+        onclick="document.getElementById('vd-adesao-popup').remove()">Fechar</button>
+    </div>`;
+  el.addEventListener('click', e => { if (e.target === el) el.remove(); });
+  document.body.appendChild(el);
+}
+
+/* ── Contraindicações por Patologia — modal de detalhe ── */
+function abrirCI(nomeMed) {
+  document.getElementById('vd-ci-popup')?.remove();
+  if (typeof buscarContraindicacoes !== 'function' || !paciente?.condicoes?.length) return;
+
+  const cis = buscarContraindicacoes(nomeMed, paciente.condicoes);
+  if (!cis.length) return;
+
+  const ciHtml = cis.map(ci => {
+    const isGrave = ci.risco === 'grave';
+    const bg    = isGrave ? '#fff5f5' : '#fff7ed';
+    const borda = isGrave ? '#f87171' : '#fb923c';
+    const cor   = isGrave ? '#991b1b' : '#9a3412';
+    const cond  = (CONDICOES_LABELS || {})[ci.condicoes[0]] || ci.condicoes[0];
+    return `<div style="background:${bg};border:1.5px solid ${borda};border-radius:12px;padding:14px 16px;margin-bottom:10px">
+      <p style="font-size:.68rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:${cor};margin-bottom:4px">
+        ${isGrave ? '⛔ CONTRAINDICADO' : '⚠️ CAUTELA'} — ${cond}
+      </p>
+      <p style="font-size:.86rem;color:${cor};font-weight:600;line-height:1.5;margin-bottom:8px">${ci.motivo}</p>
+      <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:8px;padding:8px 10px">
+        <p style="font-size:.78rem;color:#166534;font-weight:600;margin:0">✅ ${ci.alternativa}</p>
+      </div>
+    </div>`;
+  }).join('');
+
+  const el = document.createElement('div');
+  el.id    = 'vd-ci-popup';
+  el.style.cssText = 'position:fixed;inset:0;z-index:600;background:rgba(0,0,0,.5);display:flex;align-items:flex-end';
+  el.innerHTML = `
+    <div style="background:var(--card);border-radius:22px 22px 0 0;width:100%;padding:22px 20px 36px;max-height:85vh;overflow-y:auto">
+      <p style="font-size:.65rem;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:#991b1b;margin-bottom:4px">
+        ⛔ CONTRAINDICAÇÃO DETECTADA
+      </p>
+      <p style="font-size:1.05rem;font-weight:800;color:var(--navy);margin-bottom:16px">${nomeMed}</p>
+      ${ciHtml}
+      <p style="font-size:.72rem;color:var(--text-2);margin-bottom:14px;line-height:1.4">
+        ⚕️ Informação de apoio clínico. A conduta final deve ser avaliada pelo profissional de saúde responsável.
+      </p>
+      <button class="btn btn-primary btn-full"
+        onclick="document.getElementById('vd-ci-popup').remove()">Fechar</button>
+    </div>`;
+  el.addEventListener('click', e => { if (e.target === el) el.remove(); });
   document.body.appendChild(el);
 }
 

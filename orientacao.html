@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VitaDose — Orientações ao Paciente</title>
+  <style>
+    * { box-sizing:border-box; margin:0; padding:0; }
+    body { font-family:'Helvetica Neue',Arial,sans-serif; background:#f8fafc; color:#1e293b; font-size:15px; }
+
+    /* ── Toolbar (não imprime) ── */
+    .toolbar {
+      position:fixed; top:0; left:0; right:0; z-index:100;
+      background:#7c3aed; padding:12px 16px;
+      display:flex; align-items:center; justify-content:space-between;
+    }
+    .toolbar-title { color:#fff; font-size:.9rem; font-weight:700; }
+    .toolbar-btns  { display:flex; gap:10px; }
+    .btn-print {
+      background:#fff; color:#7c3aed; border:none;
+      padding:8px 18px; border-radius:8px; font-weight:700;
+      font-size:.85rem; cursor:pointer;
+    }
+    .btn-back {
+      background:rgba(255,255,255,.2); color:#fff; border:none;
+      padding:8px 14px; border-radius:8px; font-weight:700;
+      font-size:.85rem; cursor:pointer;
+    }
+
+    /* ── Documento ── */
+    .documento {
+      max-width:680px; margin:0 auto;
+      padding:80px 20px 40px;
+    }
+
+    /* ── Cabeçalho ── */
+    .doc-header {
+      border-bottom:3px solid #7c3aed; padding-bottom:16px; margin-bottom:24px;
+    }
+    .doc-brand   { font-size:.75rem; font-weight:800; color:#7c3aed; text-transform:uppercase; letter-spacing:.1em; margin-bottom:4px; }
+    .doc-titulo  { font-size:1.5rem; font-weight:900; color:#1e293b; margin-bottom:8px; }
+    .doc-paciente{ font-size:1rem; color:#475569; font-weight:600; }
+    .doc-data    { font-size:.82rem; color:#94a3b8; margin-top:4px; }
+
+    /* ── Aviso inicial ── */
+    .aviso-box {
+      background:#ede9fe; border-left:4px solid #7c3aed;
+      border-radius:8px; padding:12px 16px; margin-bottom:24px;
+      font-size:.82rem; color:#4c1d95; line-height:1.5;
+    }
+
+    /* ── Card de medicamento ── */
+    .med-card {
+      background:#fff; border-radius:14px;
+      box-shadow:0 1px 4px rgba(0,0,0,.07);
+      padding:18px 20px; margin-bottom:16px;
+      border-left:4px solid #7c3aed;
+    }
+    .med-nome   { font-size:1.15rem; font-weight:800; color:#1e293b; margin-bottom:2px; }
+    .med-dose   { font-size:.92rem; color:#475569; margin-bottom:10px; }
+    .med-row    { display:flex; align-items:flex-start; gap:10px; margin-bottom:8px; }
+    .med-icon   { font-size:1rem; width:22px; flex-shrink:0; }
+    .med-txt    { font-size:.86rem; color:#334155; line-height:1.5; }
+    .med-txt strong { color:#1e293b; }
+    .horarios-list { display:flex; flex-wrap:wrap; gap:6px; margin-top:4px; }
+    .horario-pill  {
+      background:#ede9fe; color:#5b21b6; border-radius:20px;
+      padding:4px 12px; font-size:.82rem; font-weight:700;
+    }
+    .instr-box {
+      background:#fef9c3; border-radius:8px; padding:10px 12px;
+      margin-top:10px; font-size:.82rem; color:#713f12; line-height:1.5;
+    }
+    .termina-badge {
+      display:inline-block; background:#fee2e2; color:#991b1b;
+      border-radius:6px; padding:2px 8px; font-size:.72rem;
+      font-weight:700; margin-left:8px;
+    }
+
+    /* ── Orientações Gerais ── */
+    .sec-titulo { font-size:1rem; font-weight:800; color:#7c3aed; margin:28px 0 12px; border-bottom:2px solid #ede9fe; padding-bottom:6px; }
+    .gerais-list { list-style:none; }
+    .gerais-list li {
+      display:flex; gap:10px; align-items:flex-start;
+      padding:8px 0; border-bottom:1px solid #f1f5f9;
+      font-size:.86rem; color:#334155; line-height:1.5;
+    }
+    .gerais-list li:last-child { border-bottom:none; }
+    .gerais-icon { font-size:1rem; width:22px; flex-shrink:0; }
+
+    /* ── Emergência ── */
+    .emergencia-box {
+      background:#fff5f5; border:1.5px solid #fca5a5;
+      border-radius:12px; padding:14px 16px; margin-top:20px;
+    }
+    .emerg-titulo { font-size:.85rem; font-weight:800; color:#991b1b; margin-bottom:8px; }
+    .emerg-item   { font-size:.86rem; color:#7f1d1d; margin-bottom:4px; }
+
+    /* ── Assinatura ── */
+    .assinatura-box {
+      margin-top:32px; padding-top:20px; border-top:1.5px solid #e2e8f0;
+      display:flex; justify-content:space-between; gap:24px;
+    }
+    .ass-campo { flex:1; text-align:center; }
+    .ass-linha { border-bottom:1px solid #94a3b8; margin-bottom:4px; height:32px; }
+    .ass-label { font-size:.72rem; color:#94a3b8; }
+
+    /* ── Rodapé ── */
+    .doc-footer {
+      margin-top:24px; font-size:.7rem; color:#94a3b8;
+      text-align:center; line-height:1.6;
+    }
+
+    /* ── Print ── */
+    @media print {
+      body { background:#fff; }
+      .toolbar { display:none !important; }
+      .documento { padding:24px 20px; max-width:100%; }
+      .med-card { break-inside:avoid; page-break-inside:avoid; }
+      .instr-box, .emergencia-box, .aviso-box { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Toolbar -->
+<div class="toolbar">
+  <span class="toolbar-title">📋 Orientações ao Paciente</span>
+  <div class="toolbar-btns">
+    <button class="btn-back" onclick="history.back()">‹ Voltar</button>
+    <button class="btn-print" onclick="window.print()">🖨️ Imprimir / PDF</button>
+  </div>
+</div>
+
+<div class="documento" id="doc">
+  <p style="color:#94a3b8;text-align:center;padding:40px">Carregando orientações...</p>
+</div>
+
+<script src="js/db.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/interacoes.js"></script>
+<script>
+
+/* Instruções específicas por medicamento (linguagem simples) */
+const _INSTRUCOES = {
+  'levotiroxina':    { icon:'⏰', txt:'Tome em jejum, 30 minutos antes do café da manhã, somente com água.' },
+  'purantuss':       { icon:'⏰', txt:'Tome com o estômago vazio.' },
+  'metformina':      { icon:'🍽️', txt:'Tome durante ou logo após as refeições para evitar enjoo no estômago.' },
+  'ibuprofeno':      { icon:'🍽️', txt:'Tome sempre com alimentos ou leite para proteger o estômago.' },
+  'naproxeno':       { icon:'🍽️', txt:'Tome com alimentos para proteger o estômago.' },
+  'diclofenaco':     { icon:'🍽️', txt:'Tome com alimentos para proteger o estômago.' },
+  'aspirina':        { icon:'🍽️', txt:'Tome com água e, se possível, com alimentos.' },
+  'aas':             { icon:'🍽️', txt:'Tome com alimentos se sentir desconforto gástrico.' },
+  'captopril':       { icon:'⏰', txt:'Tome com o estômago vazio, 1 hora antes das refeições.' },
+  'omeprazol':       { icon:'⏰', txt:'Tome 30 minutos antes da primeira refeição do dia.' },
+  'pantoprazol':     { icon:'⏰', txt:'Tome 30 minutos antes da primeira refeição do dia.' },
+  'esomeprazol':     { icon:'⏰', txt:'Tome 30 minutos antes da primeira refeição do dia.' },
+  'lansoprazol':     { icon:'⏰', txt:'Tome 30 minutos antes da primeira refeição do dia.' },
+  'varfarina':       { icon:'🥦', txt:'Mantenha o consumo de verduras de folha escura (brócolis, espinafre, couve) sempre constante — variações alteram o efeito do medicamento.' },
+  'sinvastatina':    { icon:'🌙', txt:'Prefira tomar à noite. Evite suco de toranja (grapefruit) durante o tratamento.' },
+  'atorvastatina':   { icon:'🍊', txt:'Evite suco de toranja (grapefruit) durante o tratamento.' },
+  'rosuvastatina':   { icon:'💊', txt:'Pode ser tomada em qualquer horário do dia, com ou sem alimentos.' },
+  'digoxina':        { icon:'⚠️', txt:'Tome no mesmo horário todos os dias. Se esquecer, NÃO duplique a dose seguinte.' },
+  'sulfa':           { icon:'💧', txt:'Beba bastante água durante o tratamento (ao menos 2 litros por dia).' },
+  'ciprofloxacino':  { icon:'🥛', txt:'Não tome próximo a laticínios (leite, queijo) ou antiácidos — reduzem a absorção.' },
+  'levofloxacino':   { icon:'🥛', txt:'Não tome com laticínios ou antiácidos próximo ao horário de uso.' },
+  'tetraciclin':     { icon:'🥛', txt:'Não tome com leite, antiácidos ou suplementos de ferro — reduzem a absorção.' },
+  'doxiciclina':     { icon:'🍽️', txt:'Tome com bastante água e, se preferir, com alimentos para evitar irritação esofágica.' },
+  'prednisona':      { icon:'🍽️', txt:'Tome pela manhã com alimentos para reduzir efeitos adversos no estômago.' },
+  'prednisolona':    { icon:'🍽️', txt:'Tome pela manhã com alimentos.' },
+  'ferro':           { icon:'⏰', txt:'Tome em jejum com suco de laranja (vitamina C aumenta a absorção). Evite chá, café e laticínios no mesmo horário.' },
+  'bisoprolol':      { icon:'⛔', txt:'NUNCA interrompa abruptamente — reduza a dose gradualmente com orientação médica.' },
+  'propranolol':     { icon:'⛔', txt:'NUNCA interrompa abruptamente — pode causar angina. Reduza a dose com orientação médica.' },
+  'metoprolol':      { icon:'⛔', txt:'Não pare de tomar sem orientação médica — redução deve ser gradual.' },
+  'carbamazepina':   { icon:'⏰', txt:'Tome sempre nos mesmos horários. Evite suco de toranja.' },
+  'fenitoina':       { icon:'🍽️', txt:'Tome com alimentos para reduzir irritação gástrica e manter absorção estável.' },
+  'alopurinol':      { icon:'🍽️', txt:'Tome com bastante água e após as refeições. Beba ao menos 2 litros de água por dia.' },
+  'colchicina':      { icon:'⚠️', txt:'Use apenas como prescrito. Não exceda a dose indicada — toxicidade dose-dependente.' },
+  'metotrexato':     { icon:'⚠️', txt:'Tome somente no(s) dia(s) indicado(s) por semana. Evite álcool. Sempre suplementar ácido fólico conforme orientação.' },
+  'calcio':          { icon:'🍽️', txt:'Tome com as refeições para melhor absorção. Não tome junto com ferro no mesmo horário.' },
+  'vitamina d':      { icon:'🍽️', txt:'Tome com as principais refeições (a gordura das refeições melhora a absorção).' },
+};
+
+function instrucaoSimples(nomeMed) {
+  const n = nomeMed.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+  for (const [termo, instr] of Object.entries(_INSTRUCOES)) {
+    const t = termo.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+    if (n.includes(t)) return instr;
+  }
+  return null;
+}
+
+function diasFim(dataFim) {
+  if (!dataFim) return null;
+  const d = Math.round((new Date(dataFim + 'T12:00:00') - new Date(new Date().toISOString().slice(0,10) + 'T12:00:00')) / 86400000);
+  return d;
+}
+
+function fmtData(iso) {
+  const [a, m, d] = iso.split('-');
+  return `${d}/${m}/${a}`;
+}
+
+async function init() {
+  const pid = getActivePacienteId();
+  if (!pid) { document.getElementById('doc').innerHTML = '<p style="text-align:center;padding:40px;color:#ef4444">Nenhum paciente ativo. <a href="index.html">Voltar ao início</a></p>'; return; }
+
+  const pacs = await dbGetAll('pacientes');
+  const pac  = pacs.find(p => p.id === pid);
+  if (!pac) { window.location.href = 'index.html'; return; }
+
+  const todos = await dbGetAll('medicamentos');
+  const hoje  = new Date().toISOString().slice(0, 10);
+  const meds  = todos.filter(m => m.pacienteId === pid && m.ativo !== false && (!m.dataFim || m.dataFim >= hoje));
+
+  // Alertas alimentares dos medicamentos ativos
+  const alertasAlim = gerarAlertas(meds).filter(a => a.tipo === 'alimentacao');
+  const alertasMap  = {};
+  for (const a of alertasAlim) {
+    for (const med of meds) {
+      const n = med.nome.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+      if ((a.palavras || []).some(p => n.includes(p))) {
+        if (!alertasMap[med.id]) alertasMap[med.id] = [];
+        alertasMap[med.id].push(a);
+      }
+    }
+  }
+
+  const dataEmissao = new Date().toLocaleDateString('pt-BR', { day:'2-digit', month:'long', year:'numeric' });
+
+  /* ── Monta o documento ── */
+  let html = `
+    <div class="doc-header">
+      <p class="doc-brand">VitaDose · Farmácia Clínica</p>
+      <h1 class="doc-titulo">Orientações de Uso dos Medicamentos</h1>
+      <p class="doc-paciente">👤 ${pac.nome || 'Paciente'}</p>
+      <p class="doc-data">Data de emissão: ${dataEmissao}</p>
+    </div>
+
+    <div class="aviso-box">
+      ℹ️ <strong>Importante:</strong> Estas orientações foram elaboradas pelo farmacêutico com base nos seus medicamentos atuais.
+      Não modifique doses nem interrompa o tratamento sem orientação médica. Em caso de dúvida, consulte seu farmacêutico ou médico.
+    </div>`;
+
+  if (!meds.length) {
+    html += `<p style="color:#94a3b8;text-align:center;padding:32px">Nenhum medicamento ativo cadastrado.</p>`;
+  } else {
+    for (const med of meds) {
+      const horarios = med.horarios || [];
+      const instr    = instrucaoSimples(med.nome);
+      const alertas  = alertasMap[med.id] || [];
+      const df       = diasFim(med.dataFim);
+
+      html += `<div class="med-card">
+        <p class="med-nome">
+          💊 ${med.nome}
+          ${df !== null && df <= 7 ? `<span class="termina-badge">Termina em ${df === 0 ? 'hoje' : df + 'd'}</span>` : ''}
+        </p>
+        <p class="med-dose">${med.dose || ''} ${med.unidade || ''}${med.indicacao ? ' · ' + med.indicacao : ''}</p>`;
+
+      // Horários
+      if (horarios.length) {
+        html += `<div class="med-row">
+          <span class="med-icon">🕐</span>
+          <div class="med-txt">
+            <strong>Horário${horarios.length > 1 ? 's' : ''}:</strong>
+            <div class="horarios-list">
+              ${horarios.map(h => `<span class="horario-pill">${h}</span>`).join('')}
+            </div>
+          </div>
+        </div>`;
+      }
+
+      // Duração
+      if (med.dataFim) {
+        html += `<div class="med-row">
+          <span class="med-icon">📅</span>
+          <div class="med-txt"><strong>Usar até:</strong> ${fmtData(med.dataFim)}</div>
+        </div>`;
+      }
+
+      // Estoque
+      if (med.qtdAtual != null) {
+        const unid = med.forma === 'comprimido' ? 'comprimidos' : med.forma === 'capsula' ? 'cápsulas' : 'unidades';
+        html += `<div class="med-row">
+          <span class="med-icon">📦</span>
+          <div class="med-txt"><strong>Estoque atual:</strong> ${med.qtdAtual} ${unid}</div>
+        </div>`;
+      }
+
+      // Instrução específica do medicamento
+      if (instr) {
+        html += `<div class="instr-box">${instr.icon} ${instr.txt}</div>`;
+      } else if (alertas.length) {
+        // Usa o alerta de alimentação se não houver instrução específica
+        html += `<div class="instr-box">⚠️ ${alertas[0].desc}</div>`;
+      }
+
+      html += `</div>`;
+    }
+  }
+
+  /* ── Orientações Gerais ── */
+  html += `
+    <p class="sec-titulo">📌 Orientações Gerais</p>
+    <ul class="gerais-list">
+      <li><span class="gerais-icon">🚫</span><span>Não interrompa os medicamentos por conta própria, mesmo que se sinta melhor — o tratamento deve ser concluído conforme prescrito.</span></li>
+      <li><span class="gerais-icon">⏰</span><span>Procure tomar os medicamentos sempre nos mesmos horários todos os dias para manter níveis estáveis no organismo.</span></li>
+      <li><span class="gerais-icon">💊</span><span>Se esquecer uma dose: tome assim que lembrar, a não ser que já esteja próximo do horário da próxima. Nunca duplique a dose.</span></li>
+      <li><span class="gerais-icon">🌡️</span><span>Guarde os medicamentos em local fresco, seco e protegido da luz. Nunca no banheiro ou perto do fogão.</span></li>
+      <li><span class="gerais-icon">👶</span><span>Mantenha todos os medicamentos fora do alcance de crianças e animais.</span></li>
+      <li><span class="gerais-icon">🩺</span><span>Informe todos os medicamentos que usa a qualquer profissional de saúde que te atender (médico, dentista, enfermeiro).</span></li>
+      <li><span class="gerais-icon">🧴</span><span>Não tome remédios vencidos. Verifique a validade regularmente e descarte embalagens vazias em pontos de coleta de medicamentos.</span></li>
+    </ul>
+
+    <div class="emergencia-box">
+      <p class="emerg-titulo">🆘 Em caso de urgência ou reação adversa grave:</p>
+      <p class="emerg-item">• SAMU: <strong>192</strong></p>
+      <p class="emerg-item">• Bombeiros / Emergência: <strong>193</strong></p>
+      <p class="emerg-item">• Centro de Informações Toxicológicas: <strong>0800 722 6001</strong></p>
+      <p class="emerg-item" style="margin-top:8px;font-size:.8rem">Se suspeitar de reação grave ao medicamento (dificuldade de respirar, urticária intensa, inchaço no rosto/língua), vá ao pronto-socorro imediatamente.</p>
+    </div>
+
+    <div class="assinatura-box">
+      <div class="ass-campo">
+        <div class="ass-linha"></div>
+        <p class="ass-label">Farmacêutico Responsável / CRF</p>
+      </div>
+      <div class="ass-campo">
+        <div class="ass-linha"></div>
+        <p class="ass-label">Assinatura do Paciente / Responsável</p>
+      </div>
+    </div>
+
+    <div class="doc-footer">
+      Orientações geradas pelo <strong>VitaDose</strong> em ${dataEmissao}<br>
+      Este documento é um apoio ao cuidado farmacêutico e não substitui prescrição médica.
+    </div>`;
+
+  document.getElementById('doc').innerHTML = html;
+  document.title = `Orientações — ${pac.nome || 'Paciente'}`;
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
