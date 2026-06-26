@@ -51,6 +51,27 @@
       onclick="salvarHistoricoClinico()">✓ Salvar histórico clínico</button>
   </div>
 
+  <!-- Doenças Sazonais -->
+  <div class="card">
+    <div class="card-title">Doenças Sazonais</div>
+    <p class="text-sm text-2" style="margin-bottom:14px">
+      Toque na doença para selecioná-la e anote os medicamentos que você costuma usar em cada episódio.
+    </p>
+
+    <div id="doencas-wrap"></div>
+
+    <!-- Campo para adicionar doença não listada -->
+    <div class="ds-nova-row">
+      <input id="ds-nova-input" class="ds-nova-input" type="text"
+        placeholder="Outra doença (ex: Enxaqueca)..."
+        onkeydown="if(event.key==='Enter'){event.preventDefault();adicionarDoencaCustom()}">
+      <button class="btn btn-outline" onclick="adicionarDoencaCustom()">+ Adicionar</button>
+    </div>
+
+    <button class="btn btn-primary btn-full" style="margin-top:14px"
+      onclick="salvarDoencasSazonais()">✓ Salvar doenças sazonais</button>
+  </div>
+
   <!-- Backup -->
   <div class="card">
     <div class="card-title">Cópia de Segurança</div>
@@ -177,6 +198,10 @@
       // Preenche campos do histórico clínico
       document.getElementById('hc-condicoes').value = p.condicoesClinicas || '';
       document.getElementById('hc-alergias').value  = p.alergias || '';
+      // Inicializa doenças sazonais
+      _dsData   = Object.assign({}, p.doencasSazonais   || {});
+      _dsCustom = (p.doencasSazonaisCustom || []).slice();
+      _renderDoencas();
     }
 
     async function trocarPaciente() {
@@ -235,6 +260,123 @@
       document.getElementById('btn-tema-light').style.borderColor = t === 'light' ? 'var(--gold)' : '';
       document.getElementById('btn-tema-dark').style.borderColor  = t === 'dark'  ? 'var(--gold)' : '';
     })();
+
+    /* ── Doenças Sazonais ── */
+    const _DOENCAS = {
+      '🍂 Outono / Inverno': [
+        'Gripe (Influenza)', 'Resfriado comum', 'Covid-19',
+        'Vírus Sincicial Respiratório (VSR)', 'Pneumonia',
+        'Bronquiolite', 'Crise de asma', 'Rinite alérgica'
+      ],
+      '🌸 Primavera / Verão': [
+        'Dengue', 'Zika', 'Chikungunya', 'Conjuntivite',
+        'Micose', 'Bicho geográfico', 'Intoxicação alimentar', 'Catapora'
+      ]
+    };
+
+    let _dsData   = {}; // { 'Gripe': 'Paracetamol...' } — chave presente = selecionada
+    let _dsCustom = []; // doenças adicionadas pelo usuário
+
+    function _safe(s) { return s.replace(/\\/g, '\\\\').replace(/'/g, "\\'"); }
+
+    function _renderDoencas() {
+      const wrap = document.getElementById('doencas-wrap');
+      if (!wrap) return;
+      let html = '';
+
+      // Seções pré-definidas
+      for (const [estacao, lista] of Object.entries(_DOENCAS)) {
+        html += `<p class="ds-estacao">${estacao}</p><div class="ds-chips">`;
+        for (const d of lista) {
+          const at = d in _dsData;
+          html += `<button type="button" class="ds-chip${at ? ' ativa' : ''}"
+            onclick="toggleDoenca('${_safe(d)}')">${d}</button>`;
+        }
+        html += `</div>`;
+        for (const d of lista) {
+          if (!(d in _dsData)) continue;
+          html += `<div class="ds-med-row">
+            <label class="ds-med-label">💊 ${d} — medicamentos usados nesta doença</label>
+            <textarea class="ds-med-textarea" data-doenca="${d.replace(/"/g, '&quot;')}"
+              placeholder="Ex: Paracetamol 500mg, Vitamina C 1g, repouso..."
+              rows="2">${_dsData[d] || ''}</textarea>
+          </div>`;
+        }
+      }
+
+      // Doenças personalizadas
+      if (_dsCustom.length) {
+        html += `<p class="ds-estacao">✏️ Adicionadas por você</p><div class="ds-chips">`;
+        for (const d of _dsCustom) {
+          const at = d in _dsData;
+          html += `<button type="button" class="ds-chip${at ? ' ativa' : ''}"
+            onclick="toggleDoenca('${_safe(d)}')">${d}
+            <span class="ds-rm" onclick="event.stopPropagation();removerDoencaCustom('${_safe(d)}')">×</span>
+          </button>`;
+        }
+        html += `</div>`;
+        for (const d of _dsCustom) {
+          if (!(d in _dsData)) continue;
+          html += `<div class="ds-med-row">
+            <label class="ds-med-label">💊 ${d} — medicamentos usados nesta doença</label>
+            <textarea class="ds-med-textarea" data-doenca="${d.replace(/"/g, '&quot;')}"
+              placeholder="Ex: medicamentos que usei..."
+              rows="2">${_dsData[d] || ''}</textarea>
+          </div>`;
+        }
+      }
+
+      wrap.innerHTML = html;
+    }
+
+    function toggleDoenca(nome) {
+      // Salva textareas abertas antes de re-renderizar
+      _coletarTextareas();
+      if (nome in _dsData) delete _dsData[nome];
+      else _dsData[nome] = '';
+      _renderDoencas();
+    }
+
+    function adicionarDoencaCustom() {
+      const input = document.getElementById('ds-nova-input');
+      const nome  = input ? input.value.trim() : '';
+      if (!nome) return;
+      // Verifica duplicata (pré-definidas + custom)
+      const todas = Object.values(_DOENCAS).flat().concat(_dsCustom);
+      if (todas.some(d => d.toLowerCase() === nome.toLowerCase())) {
+        showToast('Doença já está na lista'); return;
+      }
+      _dsCustom.push(nome);
+      _dsData[nome] = '';
+      input.value = '';
+      _renderDoencas();
+    }
+
+    function removerDoencaCustom(nome) {
+      _coletarTextareas();
+      _dsCustom = _dsCustom.filter(d => d !== nome);
+      delete _dsData[nome];
+      _renderDoencas();
+    }
+
+    function _coletarTextareas() {
+      document.querySelectorAll('.ds-med-textarea').forEach(ta => {
+        const d = ta.dataset.doenca;
+        if (d && d in _dsData) _dsData[d] = ta.value;
+      });
+    }
+
+    async function salvarDoencasSazonais() {
+      _coletarTextareas();
+      const pid = getActivePacienteId();
+      if (!pid) return;
+      const p = await dbGet('pacientes', pid);
+      if (!p) return;
+      p.doencasSazonais       = _dsData;
+      p.doencasSazonaisCustom = _dsCustom;
+      await dbPut('pacientes', p);
+      showToast('✓ Doenças sazonais salvas');
+    }
 
     async function salvarHistoricoClinico() {
       const pid = getActivePacienteId();
