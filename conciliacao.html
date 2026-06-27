@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Conciliação Medicamentosa — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <style>
+    body { background:#f8fafc;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif }
+    .topbar { display:flex;align-items:center;gap:10px;padding:14px 16px;background:#fff;border-bottom:1px solid #e2e8f0;position:sticky;top:0;z-index:100 }
+    .back-btn { background:none;border:none;font-size:1.3rem;cursor:pointer;padding:4px 8px;color:#475569;border-radius:8px }
+    .topbar-title { font-size:1rem;font-weight:700;color:#1e293b;flex:1 }
+    .btn-sm { font-size:.78rem;font-weight:700;border:none;border-radius:8px;padding:7px 14px;cursor:pointer }
+    .card { background:#fff;border-radius:14px;margin:0 16px 10px;box-shadow:0 1px 4px rgba(0,0,0,.06);overflow:hidden }
+    .sec-title { font-size:.7rem;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.1em;padding:0 16px;margin:14px 0 6px }
+
+    /* Steps */
+    .steps { display:flex;gap:0;padding:0 16px;margin:12px 0 4px }
+    .step { flex:1;text-align:center;font-size:.7rem;font-weight:700;color:#94a3b8;padding:6px 4px;border-bottom:2px solid #e2e8f0;transition:all .2s }
+    .step.ativo { color:#6366f1;border-color:#6366f1 }
+    .step.done  { color:#16a34a;border-color:#16a34a }
+
+    /* Lista de referência */
+    .ref-item { display:flex;align-items:center;gap:8px;padding:9px 14px;border-bottom:1px solid #f1f5f9 }
+    .ref-item:last-child { border-bottom:none }
+    .ref-nome { flex:1;font-size:.85rem;font-weight:600;color:#1e293b }
+    .ref-dose { font-size:.75rem;color:#64748b;flex-shrink:0 }
+    .ref-del  { background:none;border:none;color:#f87171;font-size:1rem;cursor:pointer;padding:2px 6px }
+
+    /* Formulário de adição */
+    .add-form { display:flex;gap:8px;padding:12px 14px;background:#f8fafc;border-top:1px solid #e2e8f0 }
+    .add-input { flex:1;border:1.5px solid #e2e8f0;border-radius:8px;padding:7px 10px;font-size:.82rem;color:#1e293b;background:#fff }
+    .add-input:focus { outline:none;border-color:#6366f1 }
+    .add-btn { background:#6366f1;color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:.82rem;font-weight:700;cursor:pointer;white-space:nowrap }
+
+    /* Resultado da conciliação */
+    .conc-item { padding:11px 14px;border-bottom:1px solid #f1f5f9 }
+    .conc-item:last-child { border-bottom:none }
+    .conc-tipo { font-size:.65rem;font-weight:800;border-radius:5px;padding:2px 8px;display:inline-block;margin-bottom:4px }
+    .tipo-mantido   { background:#dcfce7;color:#16a34a }
+    .tipo-adicionado{ background:#e0f2fe;color:#0369a1 }
+    .tipo-omitido   { background:#fee2e2;color:#dc2626 }
+    .tipo-alterado  { background:#fef3c7;color:#d97706 }
+    .conc-nome { font-size:.87rem;font-weight:700;color:#1e293b;margin-bottom:2px }
+    .conc-detail{ font-size:.75rem;color:#64748b;margin-bottom:6px }
+
+    /* Decisão */
+    .decisao-sel { display:flex;gap:6px;flex-wrap:wrap }
+    .d-btn { font-size:.7rem;font-weight:700;border-radius:6px;padding:4px 10px;cursor:pointer;border:1.5px solid transparent;transition:all .15s }
+    .d-intencional  { border-color:#16a34a;color:#16a34a;background:#fff }
+    .d-intencional.sel { background:#dcfce7 }
+    .d-nao-intencional{ border-color:#dc2626;color:#dc2626;background:#fff }
+    .d-nao-intencional.sel{ background:#fee2e2 }
+    .d-pendente     { border-color:#d97706;color:#d97706;background:#fff }
+    .d-pendente.sel { background:#fef3c7 }
+
+    /* Resumo */
+    .resumo { display:grid;grid-template-columns:repeat(4,1fr);gap:6px;padding:0 16px;margin-bottom:6px }
+    .resumo-item { background:#fff;border-radius:10px;padding:10px 6px;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,.06) }
+    .resumo-num { font-size:1.3rem;font-weight:900 }
+    .resumo-lbl { font-size:.62rem;color:#64748b;font-weight:600;line-height:1.3;margin-top:2px }
+
+    .panel { padding-bottom:80px }
+    .empty { text-align:center;color:#94a3b8;padding:30px 16px;font-size:.85rem }
+
+    @media print {
+      .topbar,.steps,.add-form,.decisao-sel,.btn-imprimir { display:none!important }
+      body,div,section { background:#fff!important }
+      .card { box-shadow:none;border:1px solid #e2e8f0 }
+    }
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <span class="topbar-title">🔄 Conciliação Medicamentosa</span>
+  <button class="btn-sm" style="background:#0f172a;color:#fff" onclick="window.print()">🖨️</button>
+</div>
+
+<!-- Steps -->
+<div class="steps">
+  <div class="step ativo" id="step1">1. Lista Referência</div>
+  <div class="step"       id="step2">2. Comparação</div>
+  <div class="step"       id="step3">3. Decisão</div>
+</div>
+
+<div id="app" class="panel"></div>
+
+<script src="js/db.js"></script>
+<script src="js/utils.js"></script>
+<script>
+
+let _pid       = null;
+let _pac       = null;
+let _atual     = [];    // meds do VitaDose (lista atual)
+let _referencia= [];    // lista de referência (entrada manual ou do histórico)
+let _resultado = [];    // resultado da conciliação
+let _decisoes  = {};    // { idx: 'intencional'|'nao-intencional'|'pendente' }
+
+const norm = s => (s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').trim();
+
+/* ─── Init ─────────────────────────────────────────────── */
+async function init() {
+  _pid = typeof getActivePacienteId === 'function' ? getActivePacienteId() : null;
+  if (!_pid) { window.location.href = 'index.html'; return; }
+  _pac  = await dbGet('pacientes', _pid);
+
+  const todos = await dbGetByIndex('medicamentos','pacienteId',_pid);
+  const hj    = new Date().toISOString().slice(0,10);
+  _atual = todos
+    .filter(m => m.ativo !== false && (!m.dataFim || m.dataFim >= hj))
+    .map(m => ({ nome: m.nome || m.generico || '—', dose: m.dose || '', generico: m.generico || '' }));
+
+  renderStep1();
+}
+
+/* ─── STEP 1: Lista de Referência ─────────────────────── */
+function renderStep1() {
+  setStep(1);
+  const app = document.getElementById('app');
+  app.innerHTML = `
+    <div style="padding:10px 16px 4px">
+      <p style="font-size:.8rem;color:#64748b;line-height:1.5">
+        Insira a <strong>lista de referência</strong> — medicamentos que o paciente deveria estar usando
+        (prescrição anterior, receita, bula de alta hospitalar).
+      </p>
+    </div>
+
+    <p class="sec-title">Lista de Referência (${_referencia.length} itens)</p>
+    <div class="card">
+      <div id="ref-lista">
+        ${renderRefLista()}
+      </div>
+      <div class="add-form">
+        <input id="ref-nome"  class="add-input" placeholder="Nome do medicamento" style="flex:2">
+        <input id="ref-dose"  class="add-input" placeholder="Dose" style="flex:1">
+        <button class="add-btn" onclick="adicionarRef()">+ Add</button>
+      </div>
+    </div>
+
+    <p class="sec-title">Lista Atual — VitaDose (${_atual.length} medicamentos)</p>
+    <div class="card">
+      ${_atual.length
+        ? _atual.map(m => `
+          <div class="ref-item">
+            <span class="ref-nome">💊 ${m.nome}</span>
+            <span class="ref-dose">${m.dose}</span>
+          </div>`).join('')
+        : '<p class="empty">Nenhum medicamento ativo cadastrado.</p>'}
+    </div>
+
+    <div style="padding:0 16px 16px">
+      <button class="btn btn-full" style="background:#6366f1;color:#fff;border:none;border-radius:12px;padding:14px;font-size:.9rem;font-weight:700;width:100%;cursor:pointer"
+        onclick="conciliar()" ${(_referencia.length === 0 && _atual.length === 0) ? 'disabled' : ''}>
+        Comparar Listas →
+      </button>
+    </div>
+  `;
+
+  // Enter no campo de nome adiciona
+  document.getElementById('ref-nome')?.addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); document.getElementById('ref-dose').focus(); }
+  });
+  document.getElementById('ref-dose')?.addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); adicionarRef(); }
+  });
+}
+
+function renderRefLista() {
+  if (!_referencia.length) return '<p class="empty">Adicione medicamentos abaixo.</p>';
+  return _referencia.map((r,i) => `
+    <div class="ref-item">
+      <span class="ref-nome">📋 ${r.nome}</span>
+      <span class="ref-dose">${r.dose}</span>
+      <button class="ref-del" onclick="removerRef(${i})">✕</button>
+    </div>`).join('');
+}
+
+function adicionarRef() {
+  const nome = document.getElementById('ref-nome').value.trim();
+  if (!nome) return;
+  const dose = document.getElementById('ref-dose').value.trim();
+  _referencia.push({ nome, dose });
+  document.getElementById('ref-nome').value = '';
+  document.getElementById('ref-dose').value = '';
+  document.getElementById('ref-lista').innerHTML = renderRefLista();
+  document.getElementById('ref-nome').focus();
+}
+
+function removerRef(i) {
+  _referencia.splice(i,1);
+  document.getElementById('ref-lista').innerHTML = renderRefLista();
+}
+
+/* ─── STEP 2: Comparação ──────────────────────────────── */
+function conciliar() {
+  _resultado = [];
+  _decisoes  = {};
+
+  const usadosAtual = new Set();
+  const usadosRef   = new Set();
+
+  // Para cada item da referência, procura correspondência no atual
+  for (let ri = 0; ri < _referencia.length; ri++) {
+    const ref  = _referencia[ri];
+    const rNorm = norm(ref.nome);
+    const match = _atual.findIndex((a, ai) =>
+      !usadosAtual.has(ai) && (
+        norm(a.nome).includes(rNorm) || rNorm.includes(norm(a.nome)) ||
+        (a.generico && norm(a.generico).includes(rNorm)) ||
+        (rNorm.length > 4 && norm(a.nome).slice(0,6) === rNorm.slice(0,6))
+      )
+    );
+
+    if (match === -1) {
+      _resultado.push({ tipo:'omitido', ref, atual: null });
+    } else {
+      usadosAtual.add(match);
+      usadosRef.add(ri);
+      const at = _atual[match];
+      const doseIgual = !ref.dose || !at.dose || norm(ref.dose) === norm(at.dose);
+      _resultado.push({
+        tipo: doseIgual ? 'mantido' : 'alterado',
+        ref, atual: at,
+      });
+    }
+  }
+
+  // Meds no atual que não aparecem na referência → adicionados
+  for (let ai = 0; ai < _atual.length; ai++) {
+    if (!usadosAtual.has(ai)) {
+      _resultado.push({ tipo:'adicionado', ref: null, atual: _atual[ai] });
+    }
+  }
+
+  renderStep2();
+}
+
+function renderStep2() {
+  setStep(2);
+  const TIPOS = {
+    mantido:    { label:'Mantido',    cls:'tipo-mantido'    },
+    adicionado: { label:'Adicionado', cls:'tipo-adicionado' },
+    omitido:    { label:'Omitido',    cls:'tipo-omitido'    },
+    alterado:   { label:'Dose alterada', cls:'tipo-alterado' },
+  };
+
+  const nMantido    = _resultado.filter(r => r.tipo==='mantido').length;
+  const nAdicionado = _resultado.filter(r => r.tipo==='adicionado').length;
+  const nOmitido    = _resultado.filter(r => r.tipo==='omitido').length;
+  const nAlterado   = _resultado.filter(r => r.tipo==='alterado').length;
+
+  const app = document.getElementById('app');
+  app.innerHTML = `
+    <div class="resumo">
+      <div class="resumo-item"><div class="resumo-num" style="color:#16a34a">${nMantido}</div><div class="resumo-lbl">Mantidos</div></div>
+      <div class="resumo-item"><div class="resumo-num" style="color:#0369a1">${nAdicionado}</div><div class="resumo-lbl">Adicionados</div></div>
+      <div class="resumo-item"><div class="resumo-num" style="color:#dc2626">${nOmitido}</div><div class="resumo-lbl">Omitidos</div></div>
+      <div class="resumo-item"><div class="resumo-num" style="color:#d97706">${nAlterado}</div><div class="resumo-lbl">Dose alt.</div></div>
+    </div>
+
+    <p class="sec-title">Resultado da Comparação</p>
+    <div class="card">
+      ${_resultado.map((r,i) => {
+        const tc = TIPOS[r.tipo];
+        const nome   = r.ref?.nome || r.atual?.nome || '—';
+        let detail = '';
+        if (r.tipo === 'omitido')    detail = `Na referência: <strong>${r.ref.dose || 'dose não inf.'}</strong> · Não encontrado na lista atual`;
+        if (r.tipo === 'adicionado') detail = `Adicionado: <strong>${r.atual.dose || 'dose não inf.'}</strong> · Não estava na lista de referência`;
+        if (r.tipo === 'mantido')    detail = `Ref: ${r.ref.dose||'—'} · Atual: ${r.atual.dose||'—'}`;
+        if (r.tipo === 'alterado')   detail = `Ref: <strong>${r.ref.dose||'—'}</strong> → Atual: <strong>${r.atual.dose||'—'}</strong>`;
+        return `
+        <div class="conc-item">
+          <span class="conc-tipo ${tc.cls}">${tc.label}</span>
+          <p class="conc-nome">${nome}</p>
+          <p class="conc-detail">${detail}</p>
+        </div>`;
+      }).join('')}
+    </div>
+
+    <div style="padding:0 16px 16px;display:flex;gap:8px">
+      <button class="btn-sm" style="background:#e2e8f0;color:#475569;flex:1;border-radius:12px;padding:13px" onclick="renderStep1()">← Editar Lista</button>
+      <button class="btn-sm" style="background:#6366f1;color:#fff;flex:2;border-radius:12px;padding:13px;font-size:.9rem;font-weight:700" onclick="renderStep3()">Registrar Decisões →</button>
+    </div>
+  `;
+}
+
+/* ─── STEP 3: Decisão Clínica ─────────────────────────── */
+function renderStep3() {
+  setStep(3);
+
+  // Só exibe discrepâncias (omitido, adicionado, alterado)
+  const discrepancias = _resultado
+    .map((r,i) => ({...r, idx:i}))
+    .filter(r => r.tipo !== 'mantido');
+
+  const app = document.getElementById('app');
+
+  if (!discrepancias.length) {
+    app.innerHTML = `
+      <div style="padding:24px 16px;text-align:center">
+        <p style="font-size:2rem;margin-bottom:8px">✅</p>
+        <p style="font-weight:700;color:#16a34a;font-size:1rem">Sem discrepâncias!</p>
+        <p style="font-size:.82rem;color:#64748b;margin-top:4px">Todas as listas estão conciliadas.</p>
+      </div>
+      <div style="padding:0 16px">
+        <button class="btn-sm" style="background:#0f172a;color:#fff;width:100%;border-radius:12px;padding:13px;font-size:.9rem" onclick="window.print()">
+          🖨️ Imprimir Conciliação
+        </button>
+      </div>`;
+    return;
+  }
+
+  const TIPOS = {
+    adicionado: { label:'Adicionado', cls:'tipo-adicionado' },
+    omitido:    { label:'Omitido',    cls:'tipo-omitido'    },
+    alterado:   { label:'Dose alterada', cls:'tipo-alterado' },
+  };
+
+  app.innerHTML = `
+    <div style="padding:8px 16px 4px">
+      <p style="font-size:.8rem;color:#64748b">Classifique cada discrepância como intencional (decisão clínica) ou não intencional (erro).</p>
+    </div>
+
+    <p class="sec-title">Discrepâncias (${discrepancias.length})</p>
+    <div class="card">
+      ${discrepancias.map(r => {
+        const tc = TIPOS[r.tipo];
+        const nome = r.ref?.nome || r.atual?.nome || '—';
+        const dec = _decisoes[r.idx] || '';
+        return `
+        <div class="conc-item">
+          <span class="conc-tipo ${tc.cls}">${tc.label}</span>
+          <p class="conc-nome">${nome}</p>
+          <div class="decisao-sel">
+            <button class="d-btn d-intencional ${dec==='intencional'?'sel':''}"
+              onclick="setDecisao(${r.idx},'intencional',this)">✅ Intencional</button>
+            <button class="d-btn d-nao-intencional ${dec==='nao-intencional'?'sel':''}"
+              onclick="setDecisao(${r.idx},'nao-intencional',this)">❌ Não intencional</button>
+            <button class="d-btn d-pendente ${dec==='pendente'?'sel':''}"
+              onclick="setDecisao(${r.idx},'pendente',this)">⏳ Pendente</button>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>
+
+    <div style="padding:0 16px 16px;display:flex;gap:8px">
+      <button class="btn-sm" style="background:#e2e8f0;color:#475569;flex:1;border-radius:12px;padding:13px" onclick="renderStep2()">← Voltar</button>
+      <button class="btn-sm btn-imprimir" style="background:#0f172a;color:#fff;flex:2;border-radius:12px;padding:13px;font-size:.88rem;font-weight:700" onclick="imprimirFinal()">
+        🖨️ Imprimir Conciliação
+      </button>
+    </div>
+  `;
+}
+
+function setDecisao(idx, decisao, btn) {
+  _decisoes[idx] = decisao;
+  // Atualiza visual dos botões do grupo
+  const grupo = btn.closest('.decisao-sel');
+  grupo.querySelectorAll('.d-btn').forEach(b => {
+    const tipo = [...b.classList].find(c => c.startsWith('d-') && c !== 'd-btn');
+    b.classList.toggle('sel', tipo && b === btn);
+  });
+}
+
+function imprimirFinal() {
+  window.print();
+}
+
+/* ─── Utilitários ─────────────────────────────────────── */
+function setStep(n) {
+  [1,2,3].forEach(i => {
+    const el = document.getElementById('step'+i);
+    el.classList.remove('ativo','done');
+    if (i < n) el.classList.add('done');
+    else if (i === n) el.classList.add('ativo');
+  });
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>

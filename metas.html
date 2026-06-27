@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Metas Terapêuticas — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <style>
+    body { background:#f8fafc;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif }
+    .topbar { display:flex;align-items:center;gap:10px;padding:14px 16px;background:#fff;border-bottom:1px solid #e2e8f0;position:sticky;top:0;z-index:100 }
+    .back-btn { background:none;border:none;font-size:1.3rem;cursor:pointer;padding:4px 8px;color:#475569;border-radius:8px }
+    .topbar-title { font-size:1rem;font-weight:700;color:#1e293b;flex:1 }
+    .section-title { font-size:.7rem;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.1em;padding:0 16px;margin:16px 0 8px }
+    .card { background:#fff;border-radius:14px;margin:0 16px 8px;box-shadow:0 1px 4px rgba(0,0,0,.06);overflow:hidden }
+
+    /* Card de meta */
+    .meta-row { display:flex;align-items:center;gap:12px;padding:12px 14px;border-bottom:1px solid #f1f5f9 }
+    .meta-row:last-child { border-bottom:none }
+    .meta-icon { font-size:1.3rem;flex-shrink:0;width:32px;text-align:center }
+    .meta-info { flex:1;min-width:0 }
+    .meta-param { font-size:.83rem;font-weight:700;color:#1e293b }
+    .meta-alvo  { font-size:.73rem;color:#64748b;margin-top:1px }
+    .meta-valor { text-align:right;flex-shrink:0 }
+    .meta-num { font-size:.95rem;font-weight:800 }
+    .meta-status { font-size:.68rem;font-weight:700;border-radius:5px;padding:2px 8px;display:inline-block;margin-top:2px }
+    .meta-data { font-size:.65rem;color:#94a3b8;margin-top:2px }
+
+    /* Status cores */
+    .em-meta    { color:#16a34a } .badge-meta    { background:#dcfce7;color:#16a34a }
+    .fora-meta  { color:#dc2626 } .badge-fora    { background:#fee2e2;color:#dc2626 }
+    .cautela    { color:#d97706 } .badge-cautela { background:#fef3c7;color:#d97706 }
+    .sem-dado   { color:#94a3b8 } .badge-sem     { background:#f1f5f9;color:#64748b }
+
+    /* Resumo no topo */
+    .resumo { display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:0 16px 4px }
+    .resumo-item { background:#fff;border-radius:12px;padding:12px 8px;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,.06) }
+    .resumo-num { font-size:1.5rem;font-weight:900 }
+    .resumo-lbl { font-size:.68rem;color:#64748b;font-weight:600 }
+
+    .cond-chip { display:inline-block;background:#e0f2fe;color:#0369a1;font-size:.7rem;font-weight:700;border-radius:10px;padding:3px 10px;margin:2px 3px 2px 0 }
+    .empty { text-align:center;color:#94a3b8;padding:40px 20px;font-size:.85rem;line-height:1.7 }
+    .fonte { font-size:.65rem;color:#94a3b8;padding:4px 16px 16px;line-height:1.6 }
+
+    @media print {
+      .topbar { display:none }
+      body { background:#fff }
+    }
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <span class="topbar-title">🎯 Metas Terapêuticas</span>
+</div>
+
+<div id="app" style="padding-bottom:80px">
+  <p class="empty">Carregando...</p>
+</div>
+
+<script src="js/db.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/laboratorio.js"></script>
+<script>
+
+/* ─── Definição de metas por condição ─────────────────────
+   Cada condição pode ter várias metas (parâmetros clínicos).
+   fonte: referência bibliográfica (SBC, ADA, ESH, etc.)
+─────────────────────────────────────────────────────────── */
+const _METAS = [
+  /* ── Diabetes mellitus ── */
+  { condicoes:['dm','dm2','diabetes'],
+    param:'HbA1c', exame:'hba1c', unidade:'%', icon:'🩸',
+    alvo:'< 7,0%',
+    ok: v => v < 7.0,
+    atencao: v => v >= 7.0 && v < 8.0,
+    fonte:'ADA Standards of Care 2024' },
+  { condicoes:['dm','dm2','diabetes'],
+    param:'Glicemia Jejum', exame:'glicemia', unidade:'mg/dL', icon:'🩸',
+    alvo:'70–130 mg/dL',
+    ok: v => v >= 70 && v <= 130,
+    atencao: v => v > 130 && v <= 180,
+    fonte:'ADA 2024' },
+
+  /* ── Hipertensão arterial ── */
+  { condicoes:['has','hipertensao'],
+    param:'PA Sistólica (diário)', exame:'__pa_sis', unidade:'mmHg', icon:'🫀',
+    alvo:'< 130 mmHg',
+    ok: v => v < 130,
+    atencao: v => v >= 130 && v < 140,
+    fonte:'SBC 2020 / ESH 2023' },
+  { condicoes:['has','hipertensao'],
+    param:'PA Diastólica (diário)', exame:'__pa_dia', unidade:'mmHg', icon:'🫀',
+    alvo:'< 80 mmHg',
+    ok: v => v < 80,
+    atencao: v => v >= 80 && v < 90,
+    fonte:'SBC 2020 / ESH 2023' },
+
+  /* ── Dislipidemia ── */
+  { condicoes:['dislipidemia','colesterol'],
+    param:'LDL-Colesterol', exame:'ldl', unidade:'mg/dL', icon:'💛',
+    alvo:'< 130 mg/dL (baixo risco)',
+    ok: v => v < 130,
+    atencao: v => v >= 130 && v < 160,
+    fonte:'SBC Dislipidemia 2020' },
+  { condicoes:['dislipidemia','dcv','colesterol'],
+    param:'LDL-C (DCV/alto risco)', exame:'ldl', unidade:'mg/dL', icon:'💛',
+    alvo:'< 70 mg/dL',
+    ok: v => v < 70,
+    atencao: v => v >= 70 && v < 100,
+    fonte:'SBC 2020 / ESC 2019' },
+  { condicoes:['dislipidemia','colesterol'],
+    param:'HDL-Colesterol', exame:'hdl', unidade:'mg/dL', icon:'💚',
+    alvo:'> 40 mg/dL (H) / > 50 mg/dL (M)',
+    ok: v => v > 40,
+    atencao: v => v > 35 && v <= 40,
+    fonte:'SBC Dislipidemia 2020' },
+  { condicoes:['dislipidemia','colesterol'],
+    param:'Triglicerídeos', exame:'triglicerios', unidade:'mg/dL', icon:'🧈',
+    alvo:'< 150 mg/dL',
+    ok: v => v < 150,
+    atencao: v => v >= 150 && v < 200,
+    fonte:'SBC Dislipidemia 2020' },
+
+  /* ── Hipotireoidismo ── */
+  { condicoes:['hipotireoidismo','tireoidite'],
+    param:'TSH', exame:'tsh', unidade:'mUI/L', icon:'🦋',
+    alvo:'0,5–4,5 mUI/L',
+    ok: v => v >= 0.5 && v <= 4.5,
+    atencao: v => (v > 4.5 && v <= 10) || (v < 0.5 && v >= 0.1),
+    fonte:'ATA 2014 / SBE' },
+
+  /* ── Insuficiência renal ── */
+  { condicoes:['drc','insuficiencia_renal','renal'],
+    param:'TFG estimada', exame:'__tfg', unidade:'mL/min', icon:'🫘',
+    alvo:'≥ 60 mL/min (G1–G2)',
+    ok: v => v >= 60,
+    atencao: v => v >= 30 && v < 60,
+    fonte:'KDIGO 2022' },
+  { condicoes:['drc','insuficiencia_renal','renal'],
+    param:'Creatinina Sérica', exame:'creatinina', unidade:'mg/dL', icon:'🫘',
+    alvo:'< 1,2 mg/dL (M) / < 1,4 mg/dL (H)',
+    ok: v => v < 1.2,
+    atencao: v => v >= 1.2 && v < 2.0,
+    fonte:'KDIGO 2022' },
+  { condicoes:['drc','insuficiencia_renal','renal'],
+    param:'Potássio', exame:'potassio', unidade:'mEq/L', icon:'⚡',
+    alvo:'3,5–5,0 mEq/L',
+    ok: v => v >= 3.5 && v <= 5.0,
+    atencao: v => (v > 5.0 && v <= 5.5) || (v >= 3.0 && v < 3.5),
+    fonte:'KDIGO 2022' },
+
+  /* ── Insuficiência cardíaca ── */
+  { condicoes:['insuficiencia_cardiaca','ic'],
+    param:'Sódio', exame:'sodio', unidade:'mEq/L', icon:'🧂',
+    alvo:'136–145 mEq/L',
+    ok: v => v >= 136 && v <= 145,
+    atencao: v => (v > 145 && v <= 150) || (v >= 130 && v < 136),
+    fonte:'ACC/AHA HF Guidelines 2022' },
+  { condicoes:['insuficiencia_cardiaca','ic'],
+    param:'Potássio', exame:'potassio', unidade:'mEq/L', icon:'⚡',
+    alvo:'4,0–5,0 mEq/L (com digoxina/diurético)',
+    ok: v => v >= 4.0 && v <= 5.0,
+    atencao: v => (v > 5.0 && v <= 5.5) || (v >= 3.5 && v < 4.0),
+    fonte:'ACC/AHA 2022' },
+
+  /* ── Anticoagulação (warfarina) ── */
+  { condicoes:['anticoagulacao','fibrilacao','tromboembolia'],
+    param:'INR (warfarina)', exame:'inr', unidade:'', icon:'🩺',
+    alvo:'2,0–3,0 (FA/TEV) / 2,5–3,5 (valva mecânica)',
+    ok: v => v >= 2.0 && v <= 3.0,
+    atencao: v => (v > 3.0 && v <= 3.5) || (v >= 1.5 && v < 2.0),
+    fonte:'ACCP 2022' },
+
+  /* ── Hepatopatia ── */
+  { condicoes:['cirrose','hepatite','hepatopatia'],
+    param:'ALT (TGP)', exame:'alt', unidade:'U/L', icon:'🫀',
+    alvo:'< 40 U/L',
+    ok: v => v <= 40,
+    atencao: v => v > 40 && v <= 120,
+    fonte:'EASL 2022' },
+  { condicoes:['cirrose','hepatite','hepatopatia'],
+    param:'AST (TGO)', exame:'ast', unidade:'U/L', icon:'🫀',
+    alvo:'< 40 U/L',
+    ok: v => v <= 40,
+    atencao: v => v > 40 && v <= 120,
+    fonte:'EASL 2022' },
+
+  /* ── Miopatia / estatina ── */
+  { condicoes:['miopatia','rabdomiólise'],
+    param:'CK (Creatinoquinase)', exame:'ck', unidade:'U/L', icon:'💪',
+    alvo:'< 200 U/L',
+    ok: v => v <= 200,
+    atencao: v => v > 200 && v <= 600,
+    fonte:'SBC 2020' },
+
+  /* ── Inflamação / infecção ── */
+  { condicoes:['infeccao','pcr_elevada','inflamacao'],
+    param:'PCR', exame:'pcr', unidade:'mg/dL', icon:'🌡️',
+    alvo:'< 0,5 mg/dL',
+    ok: v => v < 0.5,
+    atencao: v => v >= 0.5 && v < 2.0,
+    fonte:'Referência laboratório' },
+
+  /* ── Anemia ── */
+  { condicoes:['anemia'],
+    param:'Hemoglobina', exame:'hemoglobina', unidade:'g/dL', icon:'🔴',
+    alvo:'≥ 12 g/dL (M) / ≥ 13 g/dL (H)',
+    ok: v => v >= 12,
+    atencao: v => v >= 10 && v < 12,
+    fonte:'WHO 2011' },
+];
+
+/* ─── Init ─────────────────────────────────────────────── */
+async function init() {
+  const pid = typeof getActivePacienteId === 'function' ? getActivePacienteId() : null;
+  if (!pid) { window.location.href = 'index.html'; return; }
+
+  const pac = await dbGet('pacientes', pid);
+  if (!pac) { window.location.href = 'index.html'; return; }
+
+  const condicoes = (pac.condicoes || []).map(c => c.toLowerCase());
+
+  /* Últimos exames */
+  let labRecs = [];
+  try { labRecs = await dbGetByIndex('laboratorio','pacienteId', pid); } catch(e) {}
+  const labMais = {};
+  for (const r of labRecs) {
+    if (!labMais[r.tipo] || r.data > labMais[r.tipo].data) labMais[r.tipo] = r;
+  }
+
+  /* PA e TFG do perfil/diário */
+  let ultPA = null;
+  try {
+    const diarios = await dbGetAll('diario');
+    const meus = diarios
+      .filter(d => (!d.pacienteId || d.pacienteId === pid) && d.paSis && d.paDia && d.data)
+      .sort((a,b) => b.data.localeCompare(a.data));
+    if (meus.length) ultPA = meus[0];
+  } catch(e) {}
+
+  function getValor(exame) {
+    if (exame === '__pa_sis') return ultPA ? { valor: ultPA.paSis, data: ultPA.data } : null;
+    if (exame === '__pa_dia') return ultPA ? { valor: ultPA.paDia, data: ultPA.data } : null;
+    if (exame === '__tfg')    return pac.tfg ? { valor: pac.tfg,   data: pac.tfgData || '—' } : null;
+    return labMais[exame] ? { valor: labMais[exame].valor, data: labMais[exame].data } : null;
+  }
+
+  /* Filtra metas relevantes (sem duplicar por exame/condição) */
+  const vistas = new Set();
+  const metas = _METAS.filter(m => {
+    const relevante = m.condicoes.some(c => condicoes.includes(c));
+    if (!relevante) return false;
+    const chave = m.exame + '|' + m.alvo;
+    if (vistas.has(chave)) return false;
+    vistas.add(chave);
+    return true;
+  });
+
+  /* Avalia cada meta */
+  const resultados = metas.map(m => {
+    const dado = getValor(m.exame);
+    let status = 'sem_dado', valor = null, data = null;
+    if (dado) {
+      valor = dado.valor;
+      data  = dado.data;
+      if (m.ok(valor))       status = 'meta';
+      else if (m.atencao(valor)) status = 'atencao';
+      else                   status = 'fora';
+    }
+    return { ...m, status, valor, data };
+  });
+
+  const nMeta    = resultados.filter(r => r.status === 'meta').length;
+  const nAtencao = resultados.filter(r => r.status === 'atencao').length;
+  const nFora    = resultados.filter(r => r.status === 'fora').length;
+  const nSem     = resultados.filter(r => r.status === 'sem_dado').length;
+
+  renderApp(pac, condicoes, resultados, nMeta, nAtencao, nFora, nSem);
+}
+
+/* ─── Renderização ─────────────────────────────────────── */
+function renderApp(pac, condicoes, resultados, nMeta, nAtencao, nFora, nSem) {
+  const app = document.getElementById('app');
+
+  if (!condicoes.length) {
+    app.innerHTML = `<p class="empty">Nenhuma condição clínica cadastrada no perfil.<br>
+      Adicione as doenças do paciente no perfil para ver as metas terapêuticas.</p>`;
+    return;
+  }
+
+  const LABELS_COND = {
+    dm:'Diabetes Mellitus',dm2:'Diabetes Tipo 2',diabetes:'Diabetes',
+    has:'Hipertensão Arterial',hipertensao:'Hipertensão',
+    dislipidemia:'Dislipidemia',colesterol:'Colesterol elevado',
+    dcv:'Doença Cardiovascular',ic:'Insuf. Cardíaca',insuficiencia_cardiaca:'Insuf. Cardíaca',
+    hipotireoidismo:'Hipotireoidismo',tireoidite:'Tireoidite',
+    drc:'Doença Renal Crônica',insuficiencia_renal:'Insuf. Renal',renal:'Renal',
+    anemia:'Anemia',
+    anticoagulacao:'Anticoagulação',fibrilacao:'FA',tromboembolia:'Tromboembolismo',
+    cirrose:'Cirrose',hepatite:'Hepatite',hepatopatia:'Hepatopatia',
+    miopatia:'Miopatia',rabdomiólise:'Rabdomiólise',
+    infeccao:'Infecção/Inflamação',pcr_elevada:'PCR elevada',inflamacao:'Inflamação',
+  };
+
+  const statusCfg = {
+    meta:     { dot:'em-meta',  badge:'badge-meta',    txt:'Em meta',   icon:'✅' },
+    atencao:  { dot:'cautela',  badge:'badge-cautela', txt:'Atenção',   icon:'⚠️' },
+    fora:     { dot:'fora-meta',badge:'badge-fora',    txt:'Fora da meta', icon:'❌' },
+    sem_dado: { dot:'sem-dado', badge:'badge-sem',     txt:'Sem dado',  icon:'➖' },
+  };
+
+  const fmtData = d => {
+    if (!d || d === '—') return '';
+    const [y,m,di] = d.split('-');
+    return `${di}/${m}/${y}`;
+  };
+
+  const fontes = [...new Set(resultados.map(r => r.fonte))];
+
+  app.innerHTML = `
+    <div style="padding:12px 16px 4px">
+      <p style="font-size:.8rem;color:#475569">Paciente: <strong>${pac.nome || '—'}</strong></p>
+      <div style="margin-top:6px">
+        ${condicoes.map(c => `<span class="cond-chip">${LABELS_COND[c]||c}</span>`).join('')}
+      </div>
+    </div>
+
+    <div class="resumo">
+      <div class="resumo-item">
+        <div class="resumo-num em-meta">${nMeta}</div>
+        <div class="resumo-lbl">Em meta</div>
+      </div>
+      <div class="resumo-item">
+        <div class="resumo-num ${nFora > 0 ? 'fora-meta' : 'sem-dado'}">${nFora + nAtencao}</div>
+        <div class="resumo-lbl">Ajustar</div>
+      </div>
+      <div class="resumo-item">
+        <div class="resumo-num sem-dado">${nSem}</div>
+        <div class="resumo-lbl">Sem dado</div>
+      </div>
+    </div>
+
+    <p class="section-title">Parâmetros Monitorados</p>
+    <div class="card">
+      ${resultados.map(r => {
+        const cfg = statusCfg[r.status];
+        const valorTxt = r.valor != null ? `${r.valor} ${r.unidade}` : '—';
+        return `
+        <div class="meta-row">
+          <div class="meta-icon">${r.icon}</div>
+          <div class="meta-info">
+            <div class="meta-param">${r.param}</div>
+            <div class="meta-alvo">Meta: ${r.alvo}</div>
+          </div>
+          <div class="meta-valor">
+            <div class="meta-num ${cfg.dot}">${valorTxt}</div>
+            <div><span class="meta-status ${cfg.badge}">${cfg.icon} ${cfg.txt}</span></div>
+            ${r.data ? `<div class="meta-data">${fmtData(r.data)}</div>` : ''}
+          </div>
+        </div>`;
+      }).join('')}
+    </div>
+
+    ${resultados.some(r => r.status === 'sem_dado') ? `
+    <p class="section-title">Parâmetros sem Medição Recente</p>
+    <div class="card" style="padding:10px 14px">
+      <p style="font-size:.8rem;color:#64748b;line-height:1.6">
+        ${resultados.filter(r => r.status === 'sem_dado').map(r => `<strong>${r.param}</strong> (${r.alvo})`).join(' · ')}
+      </p>
+      <p style="font-size:.73rem;color:#94a3b8;margin-top:6px">Registre exames em 🔬 Histórico Laboratorial ou PA/glicemia no 📋 Diário.</p>
+    </div>` : ''}
+
+    <p class="fonte">Fontes: ${fontes.join(' · ')}</p>
+  `;
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>

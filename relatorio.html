@@ -129,14 +129,55 @@
       font-size: .7rem; color: #999; text-align: center; line-height: 1.6;
     }
 
+    /* ── Botão compartilhar ── */
+    .btn-share {
+      background: #25d366; color: #fff; border: none;
+      padding: 8px 16px; border-radius: 8px; font-weight: 700;
+      font-size: .85rem; cursor: pointer;
+    }
+    .btn-copy {
+      background: transparent; color: #fff; border: 1.5px solid rgba(255,255,255,.4);
+      padding: 7px 14px; border-radius: 8px; font-size: .82rem; cursor: pointer;
+    }
+
     /* ── Print ── */
     @media print {
-      body { background: #fff; font-size: 12px; }
+      @page {
+        size: A4 portrait;
+        margin: 18mm 16mm 22mm;
+      }
+      @page :first { margin-top: 12mm; }
+
+      *, *::before, *::after {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        color-adjust: exact !important;
+      }
+      body { background: #fff !important; font-size: 11px; }
       .toolbar { display: none !important; }
-      .documento { margin: 0; box-shadow: none; padding: 24px 28px 32px; max-width: 100%; }
-      .sec { break-inside: avoid; page-break-inside: avoid; }
-      .med-table th { background: #0f3460 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-      .alerta-item, .alergia-box, .tfg-box { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .documento {
+        margin: 0 !important; box-shadow: none !important;
+        padding: 0 !important; max-width: 100% !important;
+      }
+      /* Mantém título de seção junto com o primeiro item */
+      .sec { break-inside: avoid; page-break-inside: avoid; orphans: 3; widows: 3; }
+      .sec-title { break-after: avoid; page-break-after: avoid; }
+      /* Repete cabeçalho de tabela em cada página */
+      thead { display: table-header-group; }
+      tfoot { display: table-footer-group; }
+      /* Cabeçalho do documento não quebra */
+      .doc-header { break-inside: avoid; page-break-inside: avoid; }
+      /* Numeração de página no rodapé */
+      .doc-footer {
+        position: running(footer);
+        break-before: avoid;
+      }
+      .doc-footer::after {
+        content: " · Página " counter(page);
+      }
+      /* Garante que cores inline sejam impressas */
+      .med-table th { background: #0f3460 !important; color: #fff !important; }
+      .med-table tr:nth-child(even) td { background: #f8fafc !important; }
     }
   </style>
 </head>
@@ -146,7 +187,9 @@
   <div class="toolbar no-print">
     <span class="toolbar-title">📄 Relatório Farmacêutico — VitaDose</span>
     <div class="toolbar-btns">
-      <button class="btn-print" onclick="window.print()">🖨️ Imprimir / Salvar PDF</button>
+      <button class="btn-share"  onclick="compartilharRelatorio()" id="btn-share" style="display:none">📤 Compartilhar</button>
+      <button class="btn-copy"   onclick="copiarResumo()"         id="btn-copy">📋 Copiar</button>
+      <button class="btn-print"  onclick="window.print()">🖨️ Imprimir / PDF</button>
       <button class="btn-fechar" onclick="window.close()">✕ Fechar</button>
     </div>
   </div>
@@ -767,6 +810,46 @@
       </div>`;
 
     document.getElementById('relatorio').innerHTML = html;
+    // Exibe botão de compartilhamento apenas se Web Share API disponível
+    if (navigator.share) document.getElementById('btn-share').style.display = '';
+  }
+
+  async function compartilharRelatorio() {
+    const pac = await (async () => {
+      const pid = getActivePacienteId();
+      return pid ? dbGet('pacientes', pid) : null;
+    })();
+    try {
+      await navigator.share({
+        title: `Relatório Farmacêutico — ${pac?.nome || 'Paciente'} · VitaDose`,
+        text:  `Relatório Farmacoterapêutico gerado em ${new Date().toLocaleDateString('pt-BR')} pelo VitaDose.`,
+        url:   window.location.href,
+      });
+    } catch(e) { if (e.name !== 'AbortError') alert('Compartilhamento não suportado neste dispositivo.'); }
+  }
+
+  async function copiarResumo() {
+    const pid = getActivePacienteId();
+    const pac = pid ? await dbGet('pacientes', pid) : null;
+    const meds = pid
+      ? (await dbGetByIndex('medicamentos','pacienteId',pid))
+          .filter(m => m.ativo !== false && (!m.dataFim || m.dataFim >= hoje()))
+      : [];
+    const linhas = [
+      `📄 Relatório VitaDose — ${new Date().toLocaleDateString('pt-BR')}`,
+      `👤 Paciente: ${pac?.nome || '—'}`,
+      pac?.idadePac ? `🎂 Idade: ${pac.idadePac} anos` : '',
+      `💊 Medicamentos (${meds.length}):`,
+      ...meds.map(m => `  • ${m.nome}${m.dose ? ' ' + m.dose : ''}${m.horarios?.length ? ' — ' + m.horarios.join(', ') : ''}`),
+      pac?.alergias ? `🚨 Alergias: ${pac.alergias}` : '',
+    ].filter(Boolean).join('\n');
+
+    try {
+      await navigator.clipboard.writeText(linhas);
+      const btn = document.getElementById('btn-copy');
+      btn.textContent = '✅ Copiado!';
+      setTimeout(() => { btn.textContent = '📋 Copiar'; }, 2000);
+    } catch(e) { alert('Não foi possível copiar.'); }
   }
   </script>
 </body>
