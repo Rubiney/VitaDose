@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Consulta de Medicamento — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <style>
+    body { background:#f8fafc;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif }
+    .topbar { display:flex;align-items:center;gap:10px;padding:14px 16px;background:#fff;border-bottom:1px solid #e2e8f0;position:sticky;top:0;z-index:100 }
+    .back-btn { background:none;border:none;font-size:1.3rem;cursor:pointer;padding:4px 8px;color:#475569;border-radius:8px }
+    .topbar-title { font-size:1rem;font-weight:700;color:#1e293b;flex:1 }
+
+    .search-wrap { padding:14px 16px 6px }
+    .search-box  { display:flex;gap:8px;align-items:center }
+    .search-input { flex:1;border:2px solid #e2e8f0;border-radius:12px;padding:11px 14px;font-size:.9rem;color:#1e293b;background:#fff;transition:border-color .15s }
+    .search-input:focus { outline:none;border-color:#6366f1 }
+    .search-btn { background:#6366f1;color:#fff;border:none;border-radius:12px;padding:11px 18px;font-size:.88rem;font-weight:700;cursor:pointer }
+    .tfg-row { display:flex;gap:8px;margin-top:8px;align-items:center }
+    .tfg-input { flex:1;border:1.5px solid #e2e8f0;border-radius:10px;padding:9px 12px;font-size:.82rem;color:#1e293b;background:#fff }
+    .tfg-input:focus { outline:none;border-color:#6366f1 }
+    .tfg-label { font-size:.75rem;font-weight:600;color:#64748b;white-space:nowrap }
+    .plus-btn { background:#f1f5f9;border:1.5px solid #e2e8f0;color:#475569;border-radius:10px;padding:8px 14px;font-size:.8rem;font-weight:700;cursor:pointer }
+    .plus-btn.ativo { background:#ede9fe;border-color:#a5b4fc;color:#6366f1 }
+
+    /* Tags de busca recente */
+    .recents { display:flex;gap:6px;flex-wrap:wrap;padding:6px 16px 0 }
+    .recent-tag { background:#f1f5f9;border:none;border-radius:20px;padding:5px 12px;font-size:.73rem;font-weight:600;color:#475569;cursor:pointer }
+    .recent-tag:hover { background:#e0e7ff;color:#6366f1 }
+
+    /* Resultado */
+    .res-wrap { padding:0 16px 80px }
+    .med-header { background:#fff;border-radius:14px;padding:16px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.06) }
+    .med-nome   { font-size:1.1rem;font-weight:900;color:#1e293b;margin-bottom:2px }
+    .med-marcas { font-size:.75rem;color:#6366f1;font-weight:600;margin-bottom:6px }
+    .med-beers-badge { display:inline-flex;align-items:center;gap:4px;font-size:.7rem;font-weight:700;border-radius:6px;padding:3px 9px }
+
+    .sec-title  { font-size:.68rem;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.1em;margin:12px 0 6px }
+    .card { background:#fff;border-radius:12px;margin-bottom:8px;box-shadow:0 1px 3px rgba(0,0,0,.06);overflow:hidden }
+
+    .alert-item { padding:11px 14px;border-bottom:1px solid #f1f5f9 }
+    .alert-item:last-child { border-bottom:none }
+    .alert-level { font-size:.65rem;font-weight:800;border-radius:4px;padding:2px 7px;display:inline-block;margin-bottom:3px }
+    .level-grave    { background:#fee2e2;color:#991b1b }
+    .level-moderado { background:#ffedd5;color:#9a3412 }
+    .level-leve     { background:#fef9c3;color:#854d0e }
+    .alert-title    { font-size:.83rem;font-weight:700;color:#1e293b;margin-bottom:2px }
+    .alert-desc     { font-size:.75rem;color:#475569;line-height:1.5 }
+    .alert-alt      { font-size:.73rem;color:#16a34a;font-weight:600;margin-top:3px }
+
+    .info-row { display:flex;align-items:center;gap:10px;padding:11px 14px;border-bottom:1px solid #f1f5f9 }
+    .info-row:last-child { border-bottom:none }
+    .info-icon { font-size:1.2rem;width:28px;text-align:center;flex-shrink:0 }
+    .info-body { flex:1 }
+    .info-title { font-size:.83rem;font-weight:700;color:#1e293b }
+    .info-sub   { font-size:.73rem;color:#64748b;margin-top:1px }
+    .info-badge { font-size:.68rem;font-weight:700;border-radius:5px;padding:2px 8px }
+
+    .empty-hint { text-align:center;padding:40px 20px;color:#94a3b8;font-size:.85rem;line-height:1.7 }
+    .interacao-sep { padding:10px 14px 4px;font-size:.72rem;font-weight:700;color:#64748b;background:#f8fafc }
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <span class="topbar-title">🔍 Consulta de Medicamento</span>
+</div>
+
+<div class="search-wrap">
+  <div class="search-box">
+    <input class="search-input" id="inp-med1" placeholder="Digite o medicamento..." autocomplete="off"
+      onkeydown="if(event.key==='Enter')buscar()">
+    <button class="search-btn" onclick="buscar()">Buscar</button>
+  </div>
+  <div class="tfg-row">
+    <span class="tfg-label">TFG (mL/min):</span>
+    <input class="tfg-input" id="inp-tfg" type="number" placeholder="opcional — para ajuste renal" min="1" max="200">
+    <button class="plus-btn" id="btn-add2" onclick="toggleSegundo()">+ 2º med</button>
+  </div>
+  <div id="seg-wrap" style="display:none;margin-top:8px">
+    <input class="search-input" id="inp-med2" placeholder="2º medicamento (verificar interação)..." autocomplete="off"
+      onkeydown="if(event.key==='Enter')buscar()" style="width:100%;box-sizing:border-box">
+  </div>
+</div>
+
+<div class="recents" id="recents"></div>
+
+<div id="resultado" class="res-wrap">
+  <p class="empty-hint">Digite o nome do medicamento (genérico ou comercial) e clique em Buscar.<br>
+  Acrescente um 2º medicamento para verificar interação entre os dois.</p>
+</div>
+
+<script src="js/db.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/interacoes.js"></script>
+<script src="js/beers.js"></script>
+<script src="js/ajusterenal.js"></script>
+<script src="js/anticolin.js"></script>
+<script src="js/alimento.js"></script>
+<script src="js/stopp_start.js"></script>
+<script src="js/marcas.js"></script>
+<script src="js/duplicidade.js"></script>
+<script>
+
+const norm = s => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').trim();
+
+let _recentes = JSON.parse(localStorage.getItem('vd_busca_rec') || '[]');
+
+function init() {
+  // Auto-fill TFG do paciente ativo
+  const pid = typeof getActivePacienteId === 'function' ? getActivePacienteId() : null;
+  if (pid) {
+    dbGet('pacientes', pid).then(pac => {
+      if (pac?.tfg) document.getElementById('inp-tfg').value = Math.round(pac.tfg);
+    }).catch(()=>{});
+  }
+  renderRecents();
+}
+
+function renderRecents() {
+  const wrap = document.getElementById('recents');
+  if (!_recentes.length) { wrap.innerHTML = ''; return; }
+  wrap.innerHTML = _recentes.slice(0,8).map(r =>
+    `<button class="recent-tag" onclick="buscarDireto('${r}')">${r}</button>`
+  ).join('');
+}
+
+function salvarRecente(nome) {
+  _recentes = [nome, ..._recentes.filter(r => r !== nome)].slice(0,10);
+  localStorage.setItem('vd_busca_rec', JSON.stringify(_recentes));
+  renderRecents();
+}
+
+function buscarDireto(nome) {
+  document.getElementById('inp-med1').value = nome;
+  buscar();
+}
+
+function toggleSegundo() {
+  const wrap = document.getElementById('seg-wrap');
+  const btn  = document.getElementById('btn-add2');
+  const vis  = wrap.style.display === 'none';
+  wrap.style.display = vis ? '' : 'none';
+  btn.classList.toggle('ativo', vis);
+  if (!vis) document.getElementById('inp-med2').value = '';
+}
+
+function buscar() {
+  const nome1 = document.getElementById('inp-med1').value.trim();
+  const nome2 = document.getElementById('inp-med2').value.trim();
+  const tfg   = parseFloat(document.getElementById('inp-tfg').value) || null;
+
+  if (!nome1) { showToast('Digite o nome do medicamento'); return; }
+  salvarRecente(nome1);
+
+  const wrap = document.getElementById('resultado');
+  const meds = [{ nome: nome1, generico: norm(nome1) }];
+  if (nome2) meds.push({ nome: nome2, generico: norm(nome2) });
+
+  /* ── 1. Nomes Comerciais ── */
+  const marcas1 = (typeof buscarMarcas === 'function') ? buscarMarcas(nome1) : [];
+  const marcas2 = nome2 && (typeof buscarMarcas === 'function') ? buscarMarcas(nome2) : [];
+
+  /* ── 2. Alertas Clínicos (interações + alimentação) ── */
+  const alertas = (typeof gerarAlertas === 'function') ? gerarAlertas(meds) : [];
+  const interacoes  = alertas.filter(a => a.tipo === 'interacao');
+  const alimentacao = alertas.filter(a => a.tipo === 'alimentacao');
+
+  /* ── 3. Critérios de Beers ── */
+  const beers1 = (typeof buscarBeers === 'function') ? buscarBeers(nome1) : null;
+  const beers2 = nome2 && (typeof buscarBeers === 'function') ? buscarBeers(nome2) : null;
+
+  /* ── 4. Ajuste Renal ── */
+  const renal1 = (typeof buscarAjusteRenal === 'function') ? buscarAjusteRenal(nome1, tfg || 60) : null;
+  const renal2 = nome2 && (typeof buscarAjusteRenal === 'function') ? buscarAjusteRenal(nome2, tfg || 60) : null;
+
+  /* ── 5. Carga Anticolinérgica ── */
+  const acb = (typeof calcularCargaAnticolin === 'function') ? calcularCargaAnticolin(meds) : null;
+
+  /* ── 6. Interações Alimento ── */
+  const alimentos = (typeof verificarAlimentoFarma === 'function') ? verificarAlimentoFarma(meds) : [];
+
+  /* ── 7. STOPP ── */
+  const stopps = (typeof verificarSTOPP === 'function') ? verificarSTOPP(meds, { perfil:'idoso', condicoes:[] }) : [];
+
+  /* ── 8. Duplicidade ── */
+  const dups = nome2 && (typeof verificarDuplicidade === 'function') ? verificarDuplicidade(meds) : [];
+
+  /* ── HTML ── */
+  const nivelCls = { grave:'level-grave', moderado:'level-moderado', leve:'level-leve' };
+  const nivelTxt = { grave:'Grave', moderado:'Moderado', leve:'Leve' };
+
+  const medCard = (nome, marcas, beers, renal) => `
+    <div class="med-header">
+      <p class="med-nome">💊 ${nome}</p>
+      ${marcas.length ? `<p class="med-marcas">Marcas: ${marcas.slice(0,4).join(' · ')}</p>` : ''}
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        ${beers ? `<span class="med-beers-badge" style="background:#fee2e2;color:#991b1b">👴 Beers — ${beers.risco}</span>` : ''}
+        ${renal && tfg ? `<span class="med-beers-badge" style="background:#ffedd5;color:#9a3412">🫘 Renal ajuste</span>` : ''}
+        ${!beers && !renal ? `<span class="med-beers-badge" style="background:#dcfce7;color:#166534">✓ Sem flags cadastrados</span>` : ''}
+      </div>
+    </div>`;
+
+  let html = medCard(nome1, marcas1, beers1, renal1);
+  if (nome2) html += medCard(nome2, marcas2, beers2, renal2);
+
+  /* Interações fármaco-fármaco */
+  if (nome2 && interacoes.length) {
+    html += `<p class="sec-title">⚠️ Interações entre os dois medicamentos</p><div class="card">
+      ${interacoes.map(a => `
+        <div class="alert-item">
+          <span class="alert-level ${nivelCls[a.nivel]||'level-leve'}">${nivelTxt[a.nivel]||a.nivel}</span>
+          <p class="alert-title">${a.titulo}</p>
+          <p class="alert-desc">${a.desc}</p>
+        </div>`).join('')}
+    </div>`;
+  } else if (nome2 && !interacoes.length) {
+    html += `<div class="card"><div class="alert-item"><p class="alert-title" style="color:#16a34a">✅ Nenhuma interação cadastrada entre ${nome1} e ${nome2}.</p></div></div>`;
+  }
+
+  if (dups.length) {
+    html += `<p class="sec-title">🔵 Duplicidade Terapêutica</p><div class="card">
+      ${dups.map(d => `<div class="alert-item"><p class="alert-title">${d.classe}</p><p class="alert-desc">${d.aviso}</p></div>`).join('')}
+    </div>`;
+  }
+
+  /* Beers */
+  const beersArr = [beers1 && { nome:nome1, ...beers1 }, beers2 && { nome:nome2, ...beers2 }].filter(Boolean);
+  if (beersArr.length) {
+    html += `<p class="sec-title">👴 Critérios de Beers (uso em idosos)</p><div class="card">
+      ${beersArr.map(b => `
+        <div class="alert-item">
+          <span class="alert-level ${nivelCls[b.risco]||'level-leve'}">${b.risco}</span>
+          <p class="alert-title">${b.nome} — ${b.categoria}</p>
+          <p class="alert-desc">${b.motivo}</p>
+          ${b.alternativa ? `<p class="alert-alt">✅ Alternativa: ${b.alternativa}</p>` : ''}
+        </div>`).join('')}
+    </div>`;
+  }
+
+  /* Ajuste Renal */
+  const renalArr = [renal1 && { nome:nome1, ...renal1 }, renal2 && { nome:nome2, ...renal2 }].filter(Boolean);
+  if (renalArr.length) {
+    const corMap = { contraindicado:'#dc2626', reduzir:'#f97316', cautela:'#d97706' };
+    html += `<p class="sec-title">🫘 Ajuste Renal${tfg ? ' (TFG ' + tfg + ' mL/min)' : ''}</p><div class="card">
+      ${renalArr.map(r => `
+        <div class="alert-item">
+          <p class="alert-title" style="color:${corMap[r.nivel]||'#475569'}">${r.nome}</p>
+          <p class="alert-desc">${r.texto}</p>
+        </div>`).join('')}
+    </div>`;
+    if (!tfg) {
+      html += `<div class="card"><div class="alert-item"><p class="alert-desc" style="color:#d97706">⚠️ Informe a TFG do paciente para recomendação precisa de ajuste renal.</p></div></div>`;
+    }
+  }
+
+  /* ACB */
+  if (acb && acb.total > 0) {
+    const acbCor = acb.nivel==='alto' ? '#dc2626' : acb.nivel==='moderado' ? '#f97316' : '#d97706';
+    html += `<p class="sec-title">🧠 Carga Anticolinérgica (ACB)</p><div class="card">
+      <div class="alert-item">
+        <p class="alert-title" style="color:${acbCor}">ACB ${acb.total} pts — Risco ${acb.nivel.toUpperCase()}</p>
+        ${acb.itens.map(i => `<p class="alert-desc">${i.nome}: ${i.score}/3 — ${i.classe}</p>`).join('')}
+        <p class="alert-desc" style="margin-top:4px">ACB ≥ 3: risco de declínio cognitivo, delirium e quedas em idosos.</p>
+      </div>
+    </div>`;
+  }
+
+  /* Interações Alimento */
+  if (alimentos.length) {
+    html += `<p class="sec-title">🍽️ Interações com Alimentos e Bebidas</p><div class="card">
+      ${alimentos.map(a => `
+        <div class="alert-item">
+          <span class="alert-level ${nivelCls[a.risco]||'level-leve'}">${nivelTxt[a.risco]||a.risco}</span>
+          <p class="alert-title">${a.titulo}</p>
+          <p class="alert-desc"><strong>${a.alimento}</strong> — ${a.desc}</p>
+          <p class="alert-alt">✅ ${a.conduta}</p>
+        </div>`).join('')}
+    </div>`;
+  }
+
+  /* Alertas de horário/alimentação */
+  if (alimentacao.length) {
+    html += `<p class="sec-title">⏰ Orientações de Horário</p><div class="card">
+      ${alimentacao.map(a => `
+        <div class="alert-item">
+          <p class="alert-title">${a.titulo}</p>
+          <p class="alert-desc">${a.desc}</p>
+        </div>`).join('')}
+    </div>`;
+  }
+
+  /* STOPP */
+  if (stopps.length) {
+    html += `<p class="sec-title">🛑 Critérios STOPP (uso em idosos ≥ 65)</p><div class="card">
+      ${stopps.map(s => `
+        <div class="alert-item">
+          <span class="alert-level ${nivelCls[s.risco]||'level-leve'}">${s.codigo} — ${nivelTxt[s.risco]||s.risco}</span>
+          <p class="alert-title">${s.titulo}</p>
+          <p class="alert-desc">${s.motivo}</p>
+          <p class="alert-alt">💡 ${s.alternativa}</p>
+        </div>`).join('')}
+    </div>`;
+  }
+
+  /* Nada encontrado */
+  const totalAlertas = interacoes.length + beersArr.length + renalArr.length +
+    (acb?.total||0) + alimentos.length + alimentacao.length + stopps.length + dups.length;
+  if (!totalAlertas) {
+    html += `<div class="card"><div class="alert-item"><p class="alert-title" style="color:#16a34a">✅ Nenhuma flag clínica cadastrada para este medicamento.</p><p class="alert-desc">Isso não exclui a existência de outros alertas não cobertos pelo VitaDose.</p></div></div>`;
+  }
+
+  wrap.innerHTML = html;
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>

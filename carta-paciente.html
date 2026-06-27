@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Carta ao Paciente — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <style>
+    body { background:#f8fafc;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif }
+    .topbar { display:flex;align-items:center;gap:10px;padding:14px 16px;background:#fff;border-bottom:1px solid #e2e8f0;position:sticky;top:0;z-index:100 }
+    .back-btn { background:none;border:none;font-size:1.3rem;cursor:pointer;padding:4px 8px;color:#475569;border-radius:8px }
+    .topbar-title { font-size:1rem;font-weight:700;color:#1e293b;flex:1 }
+    .btn-print { background:#6366f1;color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:.8rem;font-weight:700;cursor:pointer }
+    .btn-share { background:#25d366;color:#fff;border:none;border-radius:8px;padding:8px 12px;font-size:.8rem;font-weight:700;cursor:pointer;display:none }
+
+    /* Card do medicamento */
+    .med-card { background:#fff;border-radius:16px;margin:0 16px 12px;box-shadow:0 1px 5px rgba(0,0,0,.07);overflow:hidden }
+    .med-card-header { padding:14px 16px 10px;border-bottom:1px solid #f1f5f9 }
+    .med-nome-comercial { font-size:1.05rem;font-weight:900;color:#1e293b }
+    .med-nome-generico  { font-size:.75rem;color:#94a3b8;font-weight:500;margin-top:1px }
+    .med-para { font-size:.82rem;color:#475569;margin-top:6px;line-height:1.5 }
+
+    /* Horários */
+    .horarios-wrap { display:flex;gap:8px;padding:12px 16px;flex-wrap:wrap;border-bottom:1px solid #f1f5f9 }
+    .horario-pill  { display:flex;flex-direction:column;align-items:center;gap:3px;background:#f1f5f9;border-radius:12px;padding:9px 14px;min-width:60px }
+    .horario-icon  { font-size:1.3rem }
+    .horario-time  { font-size:.75rem;font-weight:800;color:#1e293b }
+    .horario-dose  { font-size:.68rem;color:#64748b }
+
+    /* Avisos */
+    .avisos-wrap { padding:10px 16px 12px }
+    .aviso { display:flex;align-items:flex-start;gap:8px;margin-bottom:6px }
+    .aviso:last-child { margin-bottom:0 }
+    .aviso-icon { font-size:1rem;flex-shrink:0;margin-top:1px }
+    .aviso-txt  { font-size:.8rem;color:#475569;line-height:1.45 }
+
+    /* Cabeçalho da carta */
+    .carta-header { background:linear-gradient(135deg,#0f3460,#6366f1);color:#fff;padding:20px 16px 16px;margin-bottom:0 }
+    .carta-logo   { font-size:1.1rem;font-weight:900;margin-bottom:4px }
+    .carta-titulo { font-size:1.3rem;font-weight:900;margin-bottom:4px }
+    .carta-sub    { font-size:.8rem;opacity:.8 }
+
+    /* Seção de alertas gerais */
+    .alert-geral { background:#fff3cd;border-left:4px solid #f59e0b;border-radius:0 10px 10px 0;padding:10px 14px;margin:0 16px 10px;font-size:.8rem;color:#92400e;line-height:1.5 }
+
+    /* Rodapé */
+    .rodape { text-align:center;font-size:.7rem;color:#94a3b8;padding:16px;line-height:1.7;margin-top:4px }
+
+    .sec-title { font-size:.7rem;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.1em;padding:0 16px;margin:14px 0 6px }
+    .empty { text-align:center;color:#94a3b8;padding:40px 20px;font-size:.85rem }
+
+    @media print {
+      .topbar { display:none }
+      body { background:#fff }
+      .med-card { box-shadow:none;border:1px solid #e2e8f0;break-inside:avoid }
+      .carta-header { -webkit-print-color-adjust:exact;print-color-adjust:exact }
+    }
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <span class="topbar-title">👤 Carta ao Paciente</span>
+  <button class="btn-share" id="btn-share" onclick="compartilhar()">📤</button>
+  <button class="btn-print" onclick="window.print()">🖨️ Imprimir</button>
+</div>
+
+<div id="app" style="padding-bottom:60px">
+  <p class="empty">Carregando...</p>
+</div>
+
+<script src="js/db.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/marcas.js"></script>
+<script src="js/alimento.js"></script>
+<script src="js/interacoes.js"></script>
+
+<script>
+
+/* ─── Banco de indicações em linguagem simples ─────────── */
+const _INDICACOES = {
+  // Cardiovascular
+  'losartana':      'Para controlar a pressão arterial',
+  'valsartana':     'Para controlar a pressão arterial',
+  'enalapril':      'Para controlar a pressão arterial e proteger o coração',
+  'lisinopril':     'Para controlar a pressão arterial',
+  'ramipril':       'Para controlar a pressão arterial e proteger o coração',
+  'captopril':      'Para controlar a pressão arterial',
+  'amlodipina':     'Para controlar a pressão arterial',
+  'anlodipino':     'Para controlar a pressão arterial',
+  'nifedipino':     'Para controlar a pressão arterial',
+  'metoprolol':     'Para controlar a pressão e a frequência do coração',
+  'atenolol':       'Para controlar a pressão e a frequência do coração',
+  'propranolol':    'Para controlar a pressão e a frequência do coração',
+  'carvedilol':     'Para tratar a insuficiência cardíaca e controlar a pressão',
+  'bisoprolol':     'Para tratar a insuficiência cardíaca e controlar a frequência cardíaca',
+  'furosemida':     'Para eliminar o excesso de líquido do corpo (diurético)',
+  'hidroclorotiazida':'Para controlar a pressão arterial e eliminar líquido',
+  'espironolactona':'Para eliminar líquido e proteger o coração',
+  'digoxina':       'Para controlar a frequência cardíaca e tratar insuficiência cardíaca',
+  'amiodarona':     'Para controlar o ritmo do coração',
+  'varfarina':      'Para afinar o sangue e prevenir coágulos',
+  'rivaroxabana':   'Para afinar o sangue e prevenir coágulos',
+  'apixabana':      'Para afinar o sangue e prevenir coágulos',
+  'dabigatrana':    'Para afinar o sangue e prevenir coágulos',
+  'aspirina':       'Para prevenir coágulos e inflamação',
+  'aas':            'Para prevenir coágulos e inflamação',
+  'clopidogrel':    'Para prevenir coágulos e proteger o coração',
+
+  // Colesterol
+  'sinvastatina':   'Para reduzir o colesterol ruim (LDL)',
+  'atorvastatina':  'Para reduzir o colesterol ruim (LDL)',
+  'rosuvastatina':  'Para reduzir o colesterol ruim (LDL)',
+
+  // Diabetes
+  'metformina':     'Para controlar o açúcar no sangue (diabetes)',
+  'glibenclamida':  'Para controlar o açúcar no sangue (diabetes)',
+  'gliclazida':     'Para controlar o açúcar no sangue (diabetes)',
+  'glimepirida':    'Para controlar o açúcar no sangue (diabetes)',
+  'sitagliptina':   'Para controlar o açúcar no sangue (diabetes)',
+  'empagliflozina': 'Para controlar o açúcar e proteger o coração e os rins',
+  'dapagliflozina': 'Para controlar o açúcar e proteger o coração e os rins',
+  'insulina':       'Para controlar o açúcar no sangue (insulina)',
+
+  // Tireoide
+  'levotiroxina':   'Para repor o hormônio da tireoide (hipotireoidismo)',
+
+  // Psiquiatria
+  'fluoxetina':     'Para tratar depressão e ansiedade',
+  'sertralina':     'Para tratar depressão e ansiedade',
+  'escitalopram':   'Para tratar depressão e ansiedade',
+  'venlafaxina':    'Para tratar depressão e ansiedade',
+  'amitriptilina':  'Para tratar depressão ou dor crônica',
+  'clonazepam':     'Para controlar a ansiedade ou convulsões',
+  'alprazolam':     'Para controlar a ansiedade',
+  'quetiapina':     'Para tratar distúrbios do humor ou sono',
+  'risperidona':    'Para tratar distúrbios do pensamento e humor',
+
+  // Neurologia
+  'donepezila':     'Para ajudar na memória e cognição (Alzheimer)',
+  'memantina':      'Para ajudar na memória e cognição (Alzheimer)',
+  'levodopa':       'Para tratar os tremores e rigidez do Parkinson',
+
+  // Dor / Inflamação
+  'paracetamol':    'Para dor e febre',
+  'ibuprofeno':     'Para dor, inflamação e febre',
+  'naproxeno':      'Para dor e inflamação',
+  'meloxicam':      'Para dor e inflamação nas articulações',
+  'dipirona':       'Para dor e febre',
+  'tramadol':       'Para dor moderada a intensa',
+  'morfina':        'Para dor intensa',
+
+  // Osteoporose
+  'alendronato':    'Para fortalecer os ossos e prevenir fraturas',
+  'risedronato':    'Para fortalecer os ossos e prevenir fraturas',
+  'ibandronato':    'Para fortalecer os ossos',
+  'colecalciferol': 'Para suplementar vitamina D e proteger os ossos',
+
+  // GI
+  'omeprazol':      'Para proteger o estômago e tratar azia',
+  'pantoprazol':    'Para proteger o estômago e tratar azia',
+  'ranitidina':     'Para reduzir a acidez do estômago',
+  'metoclopramida': 'Para náuseas e problemas no estômago',
+  'domperidona':    'Para náuseas e problemas no estômago',
+
+  // Respiratório
+  'salbutamol':     'Para aliviar a falta de ar e broncoespasmo (inalação)',
+  'formoterol':     'Para manter os brônquios abertos (inalação)',
+  'salmeterol':     'Para manter os brônquios abertos (inalação)',
+  'budesonida':     'Para reduzir a inflamação nos pulmões (inalação)',
+  'beclometasona':  'Para reduzir a inflamação nos pulmões (inalação)',
+  'montelucaste':   'Para controlar a asma e rinite alérgica',
+};
+
+/* ─── Avisos de uso em linguagem simples ──────────────── */
+const _AVISOS = {
+  'varfarina':    ['🍏 Mantenha a mesma quantidade de verduras verdes na dieta', '🚫 Evite álcool', '⚠️ Qualquer sangramento incomum: procure o médico'],
+  'warfarina':    ['🍏 Mantenha a mesma quantidade de verduras verdes na dieta', '🚫 Evite álcool', '⚠️ Qualquer sangramento incomum: procure o médico'],
+  'metformina':   ['🍽️ Tome sempre com refeição para evitar mal-estar no estômago'],
+  'levotiroxina': ['☀️ Tome em jejum, 30-60 min antes do café da manhã', '🥛 Evite cálcio, ferro ou antiácido junto com o comprimido'],
+  'alendronato':  ['💧 Tome em jejum com 1 copo cheio de água', '🧍 Fique em pé ou sentado por 30 min após tomar', '☕ Não tome com café, leite ou suco'],
+  'risedronato':  ['💧 Tome em jejum com 1 copo cheio de água', '🧍 Fique em pé ou sentado por 30 min após tomar'],
+  'ibandronato':  ['💧 Tome em jejum com 1 copo cheio de água', '🧍 Fique em pé ou sentado por 60 min após tomar'],
+  'furosemida':   ['🚽 Este remédio aumenta a urina — não tome antes de dormir'],
+  'hidroclorotiazida':['🚽 Este remédio aumenta a urina — tome pela manhã'],
+  'clopidogrel':  ['🚫 Não pare de tomar sem falar com o médico', '⚠️ Qualquer sangramento incomum: procure o médico'],
+  'clonazepam':   ['🚗 Não dirija ou opere máquinas', '🚫 Não tome com álcool', '⚠️ Não pare bruscamente sem orientação médica'],
+  'alprazolam':   ['🚗 Não dirija ou opere máquinas', '🚫 Não tome com álcool'],
+  'amiodarona':   ['☀️ Evite exposição excessiva ao sol (use protetor solar)', '🩺 Consultas e exames regulares são essenciais'],
+  'digoxina':     ['💊 Não altere a dose por conta própria', '🩺 Relate ao médico: tontura, visão amarelada, náusea'],
+  'lítio':        ['💧 Beba bastante água (pelo menos 2L/dia)', '🧂 Não reduza sal na dieta sem orientação', '🩺 Exames de sangue regulares são essenciais'],
+  'tramadol':     ['🚗 Não dirija ou opere máquinas', '🚫 Não tome com álcool'],
+  'morfina':      ['🚗 Não dirija ou opere máquinas', '🚫 Não tome com álcool', '💊 Não aumente a dose sem orientação médica'],
+};
+
+/* ─── Horário → ícone de período do dia ──────────────── */
+function iconeHorario(hhmm) {
+  const [h] = hhmm.split(':').map(Number);
+  if (h >= 5  && h < 12) return { icon:'🌅', label:'Manhã' };
+  if (h >= 12 && h < 18) return { icon:'☀️', label:'Tarde' };
+  if (h >= 18 && h < 22) return { icon:'🌆', label:'Noite' };
+  return { icon:'🌙', label:'Antes de dormir' };
+}
+
+/* ─── Init ─────────────────────────────────────────────── */
+async function init() {
+  const pid = typeof getActivePacienteId === 'function' ? getActivePacienteId() : null;
+  if (!pid) { window.location.href = 'index.html'; return; }
+  const pac = await dbGet('pacientes', pid);
+  if (!pac) { window.location.href = 'index.html'; return; }
+
+  const hj   = new Date().toISOString().slice(0,10);
+  const todos = await dbGetByIndex('medicamentos','pacienteId', pid);
+  const meds  = todos.filter(m => m.ativo !== false && (!m.dataFim || m.dataFim >= hj));
+
+  /* Interações alimento-medicamento (graves) */
+  const alimentoAlertas = (typeof verificarAlimentoFarma === 'function' && meds.length)
+    ? verificarAlimentoFarma(meds).filter(a => a.risco === 'grave')
+    : [];
+
+  renderCarta(pac, meds, alimentoAlertas);
+
+  if (navigator.share) document.getElementById('btn-share').style.display = '';
+}
+
+/* ─── Render ──────────────────────────────────────────── */
+function renderCarta(pac, meds, alimentoAlertas) {
+  const norm = s => (s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+  const dataEmissao = new Date().toLocaleDateString('pt-BR', { day:'2-digit', month:'long', year:'numeric' });
+
+  const getIndicacao = nome => {
+    const n = norm(nome);
+    for (const [k,v] of Object.entries(_INDICACOES)) {
+      if (n.includes(k)) return v;
+    }
+    return null;
+  };
+  const getAvisos = nome => {
+    const n = norm(nome);
+    for (const [k,v] of Object.entries(_AVISOS)) {
+      if (n.includes(k)) return v;
+    }
+    return [];
+  };
+
+  const app = document.getElementById('app');
+
+  if (!meds.length) {
+    app.innerHTML = `<p class="empty">Nenhum medicamento ativo para gerar a carta.</p>`;
+    return;
+  }
+
+  const cardsHTML = meds.map(m => {
+    const marcas    = (typeof buscarMarcas === 'function') ? buscarMarcas(m.nome) : [];
+    const indicacao = getIndicacao(m.nome) || m.indicacao || null;
+    const avisos    = getAvisos(m.nome);
+    const horarios  = m.horarios || [];
+
+    return `
+    <div class="med-card">
+      <div class="med-card-header">
+        <p class="med-nome-comercial">${marcas.length ? marcas[0] : m.nome}</p>
+        ${marcas.length ? `<p class="med-nome-generico">${m.nome}${m.dose ? ' ' + m.dose + (m.unidade||'') : ''}</p>` : (m.dose ? `<p class="med-nome-generico">${m.dose}${m.unidade||''}</p>` : '')}
+        ${indicacao ? `<p class="med-para">📌 <em>${indicacao}</em></p>` : ''}
+      </div>
+
+      ${horarios.length ? `
+      <div class="horarios-wrap">
+        ${horarios.map(h => {
+          const p = iconeHorario(h);
+          return `<div class="horario-pill">
+            <span class="horario-icon">${p.icon}</span>
+            <span class="horario-time">${h}</span>
+            <span class="horario-dose">${p.label}</span>
+          </div>`;
+        }).join('')}
+      </div>` : ''}
+
+      ${avisos.length || m.observacao ? `
+      <div class="avisos-wrap">
+        ${avisos.map(a => `<div class="aviso"><span class="aviso-icon">${a[0]}</span><span class="aviso-txt">${a.slice(2)}</span></div>`).join('')}
+        ${m.observacao ? `<div class="aviso"><span class="aviso-icon">📝</span><span class="aviso-txt">${m.observacao}</span></div>` : ''}
+      </div>` : ''}
+    </div>`;
+  }).join('');
+
+  app.innerHTML = `
+    <div class="carta-header">
+      <p class="carta-logo">💊 VitaDose</p>
+      <p class="carta-titulo">Guia de Medicamentos</p>
+      <p class="carta-sub">📋 ${pac.nome || 'Paciente'} · ${dataEmissao}</p>
+    </div>
+
+    ${pac.alergias ? `
+    <div class="alert-geral">
+      🚨 <strong>ATENÇÃO — ALERGIAS:</strong> ${pac.alergias}
+    </div>` : ''}
+
+    ${alimentoAlertas.length ? `
+    <div class="alert-geral">
+      🍽️ <strong>Cuidado com alimentos:</strong>
+      ${alimentoAlertas.map(a => `<br>• <strong>${a.alimento}</strong>: ${a.conduta}`).join('')}
+    </div>` : ''}
+
+    <p class="sec-title">Seus Medicamentos (${meds.length})</p>
+    ${cardsHTML}
+
+    <div class="rodape">
+      <strong>VitaDose</strong> — Guia de Medicamentos gerado em ${dataEmissao}<br>
+      Em caso de dúvidas, consulte seu farmacêutico ou médico.<br>
+      Este documento <strong>não substitui</strong> a prescrição médica.
+    </div>
+  `;
+}
+
+async function compartilhar() {
+  const pid = typeof getActivePacienteId === 'function' ? getActivePacienteId() : null;
+  const pac = pid ? await dbGet('pacientes', pid) : null;
+  try {
+    await navigator.share({
+      title: `Guia de Medicamentos — ${pac?.nome || 'Paciente'} · VitaDose`,
+      text:  'Meu guia de medicamentos gerado pelo VitaDose.',
+      url:   window.location.href,
+    });
+  } catch(e) {}
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>

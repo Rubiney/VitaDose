@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Rastreio de Exames — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <style>
+    body { background:#f8fafc;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif }
+    .topbar { display:flex;align-items:center;gap:10px;padding:14px 16px;background:#fff;border-bottom:1px solid #e2e8f0;position:sticky;top:0;z-index:100 }
+    .back-btn { background:none;border:none;font-size:1.3rem;cursor:pointer;padding:4px 8px;color:#475569;border-radius:8px }
+    .topbar-title { font-size:1rem;font-weight:700;color:#1e293b;flex:1 }
+    .sec-title { font-size:.7rem;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.1em;padding:0 16px;margin:14px 0 6px }
+    .card { background:#fff;border-radius:14px;margin:0 16px 10px;box-shadow:0 1px 4px rgba(0,0,0,.06);overflow:hidden }
+
+    /* Resumo */
+    .resumo { display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:0 16px;margin-bottom:4px }
+    .resumo-item { background:#fff;border-radius:12px;padding:11px 8px;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,.06) }
+    .resumo-num { font-size:1.4rem;font-weight:900 }
+    .resumo-lbl { font-size:.65rem;color:#64748b;font-weight:600;margin-top:2px }
+
+    /* Linha do rastreio */
+    .rastreio-item { padding:12px 14px;border-bottom:1px solid #f1f5f9 }
+    .rastreio-item:last-child { border-bottom:none }
+    .ri-top   { display:flex;align-items:flex-start;gap:10px }
+    .ri-icon  { font-size:1.1rem;flex-shrink:0;margin-top:1px }
+    .ri-body  { flex:1 }
+    .ri-exame { font-size:.87rem;font-weight:700;color:#1e293b }
+    .ri-motivo{ font-size:.73rem;color:#64748b;margin-top:1px }
+    .ri-right { text-align:right;flex-shrink:0 }
+    .ri-status{ font-size:.65rem;font-weight:800;border-radius:5px;padding:2px 8px;display:inline-block;margin-bottom:3px }
+    .ri-freq  { font-size:.65rem;color:#94a3b8 }
+    .ri-detail{ display:flex;gap:12px;margin-top:7px;padding-top:7px;border-top:1px dashed #f1f5f9 }
+    .ri-val   { font-size:.78rem;color:#475569 }
+    .ri-data  { font-size:.72rem;color:#94a3b8 }
+
+    /* Status */
+    .st-ok       { background:#dcfce7;color:#166534 }
+    .st-vencido  { background:#fee2e2;color:#991b1b }
+    .st-atenção  { background:#fef3c7;color:#92400e }
+    .st-sem-dado { background:#f1f5f9;color:#64748b }
+
+    .fonte { font-size:.65rem;color:#94a3b8;padding:4px 16px 16px;line-height:1.6 }
+    .empty  { text-align:center;color:#94a3b8;padding:40px 16px;font-size:.85rem;line-height:1.7 }
+    .link-lab { display:block;text-align:center;font-size:.78rem;color:#6366f1;font-weight:700;text-decoration:none;padding:10px 14px;border-top:1px solid #f1f5f9 }
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <span class="topbar-title">🧪 Rastreio de Exames</span>
+</div>
+
+<div id="app" style="padding-bottom:80px">
+  <p class="empty">Carregando...</p>
+</div>
+
+<script src="js/db.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/laboratorio.js"></script>
+<script>
+
+/* ─── Banco de regras de monitoramento ──────────────────
+   termos[]     — palavras no nome do medicamento (norm)
+   condicoes[]  — condições clínicas (ou [])
+   exames[]     — { id (store lab), label, freqMeses }
+   fonte        — referência
+─────────────────────────────────────────────────────────*/
+const _RASTREIO = [
+  /* Anticoagulação */
+  { termos:['varfarina','warfarina','acenocumarol'],
+    exames:[{ id:'inr', label:'INR', freqMeses:1 }],
+    motivo:'Anticoagulante oral: monitorar INR mensalmente (a cada 4 sem. quando estável)',
+    fonte:'ACCP 2022' },
+  { termos:['rivaroxabana','apixabana','dabigatrana','edoxabana'],
+    exames:[{ id:'creatinina', label:'Creatinina', freqMeses:6 }],
+    motivo:'Anticoagulantes diretos: avaliar função renal semestralmente',
+    fonte:'ESC 2021' },
+
+  /* Estatinas */
+  { termos:['sinvastatina','atorvastatina','rosuvastatina','lovastatina','pravastatina','fluvastatina','pitavastatina'],
+    exames:[
+      { id:'alt', label:'ALT (TGP)', freqMeses:12 },
+      { id:'ck',  label:'CK',        freqMeses:12 },
+    ],
+    motivo:'Estatinas: monitorar função hepática e CK anualmente (ou se mialgia)',
+    fonte:'SBC Dislipidemia 2020' },
+
+  /* Metformina */
+  { termos:['metformina'],
+    exames:[
+      { id:'creatinina',  label:'Creatinina / TFG', freqMeses:6 },
+      { id:'hemoglobina', label:'Hemoglobina (B12)', freqMeses:12 },
+    ],
+    motivo:'Metformina: função renal semestralmente; deficiência de B12 anualmente (uso crônico)',
+    fonte:'ADA 2024' },
+
+  /* Insulina / ADO */
+  { termos:['insulina','glibenclamida','glipizida','gliclazida','glimepirida','sitagliptina','empagliflozina','dapagliflozina','canagliflozina','liraglutida','semaglutida'],
+    exames:[
+      { id:'hba1c',    label:'HbA1c', freqMeses:3 },
+      { id:'glicemia', label:'Glicemia Jejum', freqMeses:3 },
+    ],
+    motivo:'Antidiabéticos: monitorar HbA1c e glicemia a cada 3 meses até meta, depois cada 6 meses',
+    fonte:'ADA Standards 2024' },
+
+  /* IECA / BRA */
+  { termos:['enalapril','captopril','lisinopril','ramipril','perindopril','fosinopril','losartana','valsartana','irbesartana','olmesartana','telmisartana','candesartana'],
+    exames:[
+      { id:'creatinina', label:'Creatinina', freqMeses:3 },
+      { id:'potassio',   label:'Potássio',   freqMeses:3 },
+    ],
+    motivo:'IECA/BRA: monitorar creatinina e K+ a cada 3 meses (início) e 6 meses (estável)',
+    fonte:'ESH 2023 / KDIGO 2022' },
+
+  /* Diuréticos */
+  { termos:['furosemida','bumetanida','torasemida'],
+    exames:[
+      { id:'potassio',   label:'Potássio', freqMeses:3 },
+      { id:'sodio',      label:'Sódio',    freqMeses:3 },
+      { id:'creatinina', label:'Creatinina',freqMeses:3 },
+    ],
+    motivo:'Diuréticos de alça: eletrólitos e função renal a cada 3 meses',
+    fonte:'ESC HF 2021' },
+  { termos:['hidroclorotiazida','clortalidona','indapamida'],
+    exames:[
+      { id:'potassio',   label:'Potássio', freqMeses:6 },
+      { id:'sodio',      label:'Sódio',    freqMeses:6 },
+      { id:'glicemia',   label:'Glicemia', freqMeses:6 },
+    ],
+    motivo:'Tiazídicos: K+, Na+ e glicemia semestralmente',
+    fonte:'JNC 8 / ESH 2023' },
+  { termos:['espironolactona','eplerenona'],
+    exames:[
+      { id:'potassio',   label:'Potássio',   freqMeses:1 },
+      { id:'creatinina', label:'Creatinina', freqMeses:1 },
+    ],
+    motivo:'Antagonista de aldosterona: K+ e creatinina mensalmente (risco de hipercalemia)',
+    fonte:'ESC HF 2021' },
+
+  /* Digoxina */
+  { termos:['digoxina'],
+    exames:[
+      { id:'potassio',   label:'Potássio (intoxicação c/ hipocalemia)', freqMeses:3 },
+      { id:'creatinina', label:'Creatinina (clearance de digoxina)',     freqMeses:3 },
+    ],
+    motivo:'Digoxina: K+ e creatinina trimestralmente — hipocalemia potencializa toxicidade',
+    fonte:'AHA 2022' },
+
+  /* Amiodarona */
+  { termos:['amiodarona'],
+    exames:[
+      { id:'tsh', label:'TSH (hipo/hipertireoidismo)',   freqMeses:6 },
+      { id:'alt', label:'ALT (hepatotoxicidade)',        freqMeses:6 },
+      { id:'creatinina', label:'Creatinina',             freqMeses:6 },
+    ],
+    motivo:'Amiodarona: TSH, função hepática e renal a cada 6 meses; RX tórax anual',
+    fonte:'AHA/ACC 2019' },
+
+  /* Levotiroxina */
+  { termos:['levotiroxina','tiroxina'],
+    exames:[{ id:'tsh', label:'TSH', freqMeses:6 }],
+    motivo:'Levotiroxina: TSH a cada 6 meses (ajuste de dose) e anualmente quando estável',
+    fonte:'ATA 2014' },
+
+  /* Lítio */
+  { termos:['carbonato de litio','litio','lithium'],
+    exames:[
+      { id:'creatinina', label:'Creatinina (nefrotoxicidade)', freqMeses:3 },
+      { id:'tsh',        label:'TSH (hipotireoidismo)',         freqMeses:6 },
+    ],
+    motivo:'Lítio: creatinina trimestral; TSH semestral; litememia mensal até estável',
+    fonte:'BAP 2019 / Goodman & Gilman' },
+
+  /* Corticosteroides */
+  { termos:['prednisona','prednisolona','dexametasona','hidrocortisona','betametasona','deflazacorte','budesonida'],
+    exames:[
+      { id:'glicemia',   label:'Glicemia (DM induzido)', freqMeses:3 },
+      { id:'potassio',   label:'Potássio',                freqMeses:3 },
+    ],
+    motivo:'Corticosteroides sistêmicos crônicos: glicemia e K+ trimestralmente',
+    fonte:'ACR 2022' },
+
+  /* MTX */
+  { termos:['metotrexato','methotrexate'],
+    exames:[
+      { id:'hemoglobina', label:'Hemograma (mielossupressão)', freqMeses:1 },
+      { id:'alt',         label:'ALT (hepatotoxicidade)',       freqMeses:1 },
+      { id:'creatinina',  label:'Creatinina',                   freqMeses:1 },
+    ],
+    motivo:'Metotrexato: hemograma, função hepática e renal mensalmente',
+    fonte:'ACR 2022' },
+
+  /* Antipsicóticos */
+  { termos:['quetiapina','olanzapina','risperidona','aripiprazol','ziprasidona','clozapina','haloperidol'],
+    exames:[
+      { id:'glicemia',    label:'Glicemia (SM)',       freqMeses:6 },
+      { id:'colesterol',  label:'Colesterol Total',    freqMeses:6 },
+      { id:'triglicerios',label:'Triglicerídeos',      freqMeses:6 },
+    ],
+    motivo:'Antipsicóticos atípicos: síndrome metabólica — glicemia e lipídeos semestralmente',
+    fonte:'APA 2020 / SBP' },
+
+  /* Imunossupressores */
+  { termos:['ciclosporina','tacrolimo','tacrolimus','sirolimo','micofenolato'],
+    exames:[
+      { id:'creatinina', label:'Creatinina (nefrotoxicidade)', freqMeses:1 },
+      { id:'potassio',   label:'Potássio',                      freqMeses:1 },
+    ],
+    motivo:'Imunossupressores: creatinina e K+ mensalmente',
+    fonte:'KDIGO Transplante 2022' },
+
+  /* Alopurinol */
+  { termos:['alopurinol','febuxostato'],
+    exames:[{ id:'creatinina', label:'Creatinina / TFG', freqMeses:6 }],
+    motivo:'Hipouricemiantes: função renal semestralmente (ajuste de dose pelo TFG)',
+    fonte:'EULAR 2020' },
+];
+
+const norm = s => (s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+
+/* ─── Init ─────────────────────────────────────────────── */
+async function init() {
+  const pid = typeof getActivePacienteId === 'function' ? getActivePacienteId() : null;
+  if (!pid) { window.location.href = 'index.html'; return; }
+  const pac = await dbGet('pacientes', pid);
+  if (!pac) { window.location.href = 'index.html'; return; }
+
+  const hj   = new Date().toISOString().slice(0,10);
+  const todos = await dbGetByIndex('medicamentos','pacienteId', pid);
+  const meds  = todos.filter(m => m.ativo !== false && (!m.dataFim || m.dataFim >= hj));
+
+  let labRecs = [];
+  try { labRecs = await dbGetByIndex('laboratorio','pacienteId', pid); } catch(e) {}
+  const ultimosLab = {};
+  for (const r of labRecs) {
+    if (!ultimosLab[r.tipo] || r.data > ultimosLab[r.tipo].data)
+      ultimosLab[r.tipo] = { valor: r.valor, data: r.data };
+  }
+
+  /* Mapeia regras relevantes */
+  const vistas = new Set();
+  const itens  = [];
+  for (const med of meds) {
+    const nNorm = norm(med.nome || '');
+    for (const regra of _RASTREIO) {
+      if (!regra.termos.some(t => nNorm.includes(norm(t)))) continue;
+      for (const exame of regra.exames) {
+        const chave = med.id + '|' + exame.id;
+        if (vistas.has(chave)) continue;
+        vistas.add(chave);
+
+        const ultimo = ultimosLab[exame.id] || null;
+        let status = 'sem_dado';
+        let diasAtraso = null;
+
+        if (ultimo) {
+          const dataUlt   = new Date(ultimo.data + 'T12:00:00');
+          const diasDesde = Math.floor((Date.now() - dataUlt) / 86400000);
+          const limiteDias = exame.freqMeses * 30;
+          diasAtraso = diasDesde - limiteDias;
+          status = diasAtraso > 30 ? 'vencido' : diasAtraso > 0 ? 'atencao' : 'ok';
+        }
+
+        itens.push({ med: med.nome, exame, regra, ultimo, status, diasAtraso });
+      }
+    }
+  }
+
+  renderApp(pac, meds, itens, ultimosLab);
+}
+
+/* ─── Render ──────────────────────────────────────────── */
+function renderApp(pac, meds, itens, ultimosLab) {
+  const app = document.getElementById('app');
+
+  if (!meds.length) {
+    app.innerHTML = `<p class="empty">Nenhum medicamento ativo cadastrado.<br>Adicione medicamentos para ver os exames sugeridos.</p>`;
+    return;
+  }
+
+  if (!itens.length) {
+    app.innerHTML = `<p class="empty">Nenhum protocolo de monitoramento cadastrado para os medicamentos atuais.<br><br><a href="laboratorio.html" style="color:#6366f1;font-weight:700">Acessar Histórico Laboratorial →</a></p>`;
+    return;
+  }
+
+  const nOk      = itens.filter(r => r.status==='ok').length;
+  const nAtencao = itens.filter(r => r.status==='atencao').length;
+  const nVencido = itens.filter(r => r.status==='vencido').length;
+  const nSemDado = itens.filter(r => r.status==='sem_dado').length;
+
+  const stCfg = {
+    ok:      { cls:'st-ok',      txt:'Em dia'     },
+    atencao: { cls:'st-atenção', txt:'Atenção'     },
+    vencido: { cls:'st-vencido', txt:'Vencido'     },
+    sem_dado:{ cls:'st-sem-dado',txt:'Sem resultado'},
+  };
+
+  /* Ordena: vencido → atenção → sem_dado → ok */
+  const ordem = { vencido:0, atencao:1, sem_dado:2, ok:3 };
+  itens.sort((a,b) => ordem[a.status] - ordem[b.status]);
+
+  const fmtData = d => { if(!d) return ''; const [y,m,di]=d.split('-'); return `${di}/${m}/${y}`; };
+
+  const fontes = [...new Set(_RASTREIO.map(r => r.fonte))];
+
+  app.innerHTML = `
+    <div style="padding:10px 16px 4px">
+      <p style="font-size:.8rem;color:#475569">Paciente: <strong>${pac.nome||'—'}</strong> · ${meds.length} med${meds.length!==1?'s':''} monitorados</p>
+    </div>
+
+    <div class="resumo">
+      <div class="resumo-item"><div class="resumo-num" style="color:#16a34a">${nOk}</div><div class="resumo-lbl">Em dia</div></div>
+      <div class="resumo-item"><div class="resumo-num" style="color:#dc2626">${nVencido+nAtencao}</div><div class="resumo-lbl">Solicitar</div></div>
+      <div class="resumo-item"><div class="resumo-num" style="color:#94a3b8">${nSemDado}</div><div class="resumo-lbl">Sem resultado</div></div>
+    </div>
+
+    <p class="sec-title">Exames por Medicamento (${itens.length})</p>
+    <div class="card">
+      ${itens.map(r => {
+        const cfg = stCfg[r.status];
+        const diasTxt = r.diasAtraso > 0
+          ? `${r.diasAtraso}d atrasado` : r.diasAtraso !== null
+          ? `${Math.abs(r.diasAtraso)}d restantes` : '';
+        return `
+        <div class="rastreio-item">
+          <div class="ri-top">
+            <span class="ri-icon">🔬</span>
+            <div class="ri-body">
+              <p class="ri-exame">${r.exame.label}</p>
+              <p class="ri-motivo">💊 ${r.med} · ${r.regra.motivo.slice(0,80)}…</p>
+            </div>
+            <div class="ri-right">
+              <span class="ri-status ${cfg.cls}">${cfg.txt}</span>
+              <p class="ri-freq">A cada ${r.exame.freqMeses} m${r.exame.freqMeses===1?'ês':'eses'}</p>
+              ${diasTxt ? `<p class="ri-freq" style="color:${r.status==='vencido'?'#dc2626':'#d97706'}">${diasTxt}</p>` : ''}
+            </div>
+          </div>
+          ${r.ultimo ? `
+          <div class="ri-detail">
+            <span class="ri-val">Último: <strong>${r.ultimo.valor}</strong></span>
+            <span class="ri-data">${fmtData(r.ultimo.data)}</span>
+          </div>` : ''}
+        </div>`;
+      }).join('')}
+      <a href="laboratorio.html" class="link-lab">🔬 Registrar novo exame →</a>
+    </div>
+
+    <p class="fonte">Fontes: ${fontes.join(' · ')}</p>
+  `;
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
