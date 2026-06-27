@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Risco de Queda — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <style>
+    body { background:#f8fafc;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif }
+    .topbar { display:flex;align-items:center;gap:10px;padding:14px 16px;background:#fff;border-bottom:1px solid #e2e8f0;position:sticky;top:0;z-index:100 }
+    .back-btn { background:none;border:none;font-size:1.3rem;cursor:pointer;padding:4px 8px;color:#475569;border-radius:8px }
+    .topbar-title { font-size:1rem;font-weight:700;color:#1e293b;flex:1 }
+
+    .sec-title { font-size:.68rem;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.1em;padding:0 16px;margin:14px 0 6px }
+
+    /* Score principal */
+    .score-wrap { background:#fff;border-radius:16px;margin:0 16px;box-shadow:0 1px 6px rgba(0,0,0,.07);padding:20px;text-align:center }
+    .score-num  { font-size:3rem;font-weight:900;line-height:1 }
+    .score-lbl  { font-size:.85rem;font-weight:700;margin-top:4px }
+    .score-sub  { font-size:.7rem;color:#94a3b8;margin-top:2px }
+    .score-badge{ display:inline-block;border-radius:10px;padding:6px 18px;font-size:.85rem;font-weight:800;margin-top:10px }
+
+    /* Perguntas */
+    .quest-card { background:#fff;border-radius:14px;margin:0 16px 10px;box-shadow:0 1px 4px rgba(0,0,0,.06);overflow:hidden }
+    .quest-row  { padding:12px 14px;border-bottom:1px solid #f1f5f9 }
+    .quest-row:last-child { border-bottom:none }
+    .quest-lbl  { font-size:.8rem;font-weight:700;color:#1e293b;margin-bottom:8px }
+    .quest-pts  { font-size:.65rem;color:#94a3b8;font-weight:600;margin-bottom:8px }
+    .opts-row   { display:flex;flex-wrap:wrap;gap:6px }
+    .opt-btn    { background:#f1f5f9;border:1.5px solid transparent;border-radius:10px;padding:7px 12px;font-size:.75rem;font-weight:700;color:#475569;cursor:pointer }
+    .opt-btn.sel { background:#fee2e2;border-color:#fca5a5;color:#dc2626 }
+    .opt-btn.sel0{ background:#dcfce7;border-color:#86efac;color:#16a34a }
+
+    /* Medicamentos detectados */
+    .med-risk-row { display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid #f1f5f9 }
+    .med-risk-row:last-child { border-bottom:none }
+    .med-risk-icon{ font-size:1.1rem;flex-shrink:0 }
+    .med-risk-nome{ font-size:.8rem;font-weight:700;color:#1e293b;flex:1 }
+    .med-risk-cls { font-size:.65rem;font-weight:700;background:#ffedd5;color:#ea580c;border-radius:5px;padding:2px 7px }
+
+    /* Recomendações */
+    .rec-row { display:flex;align-items:flex-start;gap:10px;padding:11px 14px;border-bottom:1px solid #f1f5f9 }
+    .rec-row:last-child { border-bottom:none }
+    .rec-icon { font-size:1.1rem;flex-shrink:0;margin-top:1px }
+    .rec-txt  { font-size:.78rem;color:#475569;line-height:1.5 }
+
+    .btn-salvar { width:calc(100% - 32px);display:block;margin:0 16px 16px;background:#6366f1;color:#fff;border:none;border-radius:12px;padding:13px;font-size:.9rem;font-weight:800;cursor:pointer }
+
+    /* Histórico */
+    .hist-row { display:flex;align-items:center;gap:10px;padding:11px 14px;border-bottom:1px solid #f1f5f9 }
+    .hist-row:last-child { border-bottom:none }
+    .hist-data { font-size:.72rem;font-weight:700;color:#6366f1;flex-shrink:0 }
+    .hist-score{ font-size:.85rem;font-weight:900;flex:1 }
+    .hist-lbl  { font-size:.7rem;font-weight:700;border-radius:5px;padding:2px 8px }
+    .hist-del  { background:none;border:none;color:#cbd5e1;cursor:pointer;font-size:.9rem }
+
+    @media print {
+      .topbar,.btn-salvar,.back-btn,.hist-del { display:none }
+    }
+  </style>
+</head>
+<body>
+<div class="topbar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <span class="topbar-title">🦯 Risco de Queda</span>
+</div>
+<div id="app" style="padding-bottom:60px">
+  <p style="text-align:center;color:#94a3b8;padding:40px;font-size:.85rem">Carregando...</p>
+</div>
+<div class="toast" id="toast"></div>
+<script src="js/db.js"></script>
+<script src="js/utils.js"></script>
+<script>
+/* ── Downton Fall Risk Index ── */
+const _Qs = [
+  {
+    id:'quedas', lbl:'Quedas anteriores',
+    opts:[
+      { lbl:'Não',pts:0 },
+      { lbl:'Sim',pts:1 },
+    ]
+  },
+  {
+    id:'visao', lbl:'Déficit visual',
+    opts:[
+      { lbl:'Não',pts:0 },
+      { lbl:'Sim',pts:1 },
+    ]
+  },
+  {
+    id:'audicao', lbl:'Déficit auditivo',
+    opts:[
+      { lbl:'Não',pts:0 },
+      { lbl:'Sim',pts:1 },
+    ]
+  },
+  {
+    id:'membros', lbl:'Déficit de membros / hemiplegia',
+    opts:[
+      { lbl:'Não',pts:0 },
+      { lbl:'Sim',pts:1 },
+    ]
+  },
+  {
+    id:'cogn', lbl:'Estado cognitivo',
+    opts:[
+      { lbl:'Orientado',pts:0 },
+      { lbl:'Confuso / desorientado',pts:1 },
+    ]
+  },
+  {
+    id:'deamb', lbl:'Deambulação',
+    opts:[
+      { lbl:'Normal',pts:0 },
+      { lbl:'Segura com auxílio',pts:1 },
+      { lbl:'Insegura (com ou sem auxílio)',pts:2 },
+      { lbl:'Incapaz de deambular',pts:2 },
+    ]
+  },
+];
+
+/* Medicamentos que aumentam risco de queda */
+const _RISCO_MEDS = [
+  { padrao:/benzo|diazep|clonaz|alpraz|loraze|midazol|triazol|oxazep|temaz/i, classe:'Benzodiazepínico' },
+  { padrao:/zolpidem|zopiclona|eszopiclona/i, classe:'Hipnótico Z' },
+  { padrao:/haloper|quetiap|olanzap|risperid|clozap|aripipr/i, classe:'Antipsicótico' },
+  { padrao:/amitript|imipram|nortript|doxepin|clomipram/i, classe:'Antidepressivo tricíclico' },
+  { padrao:/tramadol|morfina|codeina|oxicodona|metadona|fentanil|buprenorf/i, classe:'Opioide' },
+  { padrao:/furosem|hidroclorotia|espironolacto|indapam|torasem/i, classe:'Diurético' },
+  { padrao:/levodopa|pramipexol|rotigotina|rasagilina|selegilina/i, classe:'Antiparkinsoniano' },
+  { padrao:/amlodipin|nifedipin|verapamil|diltiaz/i, classe:'Bloqueador canal de cálcio' },
+  { padrao:/metoprolol|atenolol|propranolol|carvedilol|bisoprolol/i, classe:'Beta-bloqueador' },
+  { padrao:/enalapril|captopril|losartan|valsartan|telmisartan|candesartan/i, classe:'Anti-hipertensivo (IECA/BRA)' },
+  { padrao:/difenidramina|prometazina|hidroxizin/i, classe:'Anti-histamínico sedativo' },
+  { padrao:/carbamazep|gabapentin|pregabalin|fenitoina|fenobarbital|valproat/i, classe:'Anticonvulsivante' },
+  { padrao:/insulina|glibenclamida|glipizida|glimepirida/i, classe:'Hipoglicemiante (risco hipoglicemia)' },
+  { padrao:/digoxina/i, classe:'Digitálico' },
+];
+
+function nivelRisco(s) {
+  if (s < 3)  return { lbl:'Baixo risco',    cor:'#16a34a', bg:'#dcfce7' };
+  if (s < 6)  return { lbl:'Risco moderado', cor:'#d97706', bg:'#fef3c7' };
+  return              { lbl:'Alto risco',     cor:'#dc2626', bg:'#fee2e2' };
+}
+
+let _pid   = null;
+let _pac   = null;
+let _meds  = [];
+let _resps = {}; // id → pts
+let _hist  = [];
+
+async function init() {
+  _pid = getActivePacienteId();
+  if (!_pid) { window.location.href='index.html'; return; }
+  _pac  = await dbGet('pacientes', _pid);
+  const hoje = new Date().toISOString().slice(0,10);
+  const todos = await dbGetAll('medicamentos');
+  _meds = todos.filter(m => m.pacienteId===_pid && m.ativo!==false && (!m.dataFim||m.dataFim>=hoje));
+  _hist = (await dbGetConfig('risco_queda_'+_pid)) || [];
+  _hist.sort((a,b) => b.data.localeCompare(a.data));
+  render();
+}
+
+function calcScore() {
+  let s = 0;
+  _Qs.forEach(q => { if (_resps[q.id] != null) s += _resps[q.id]; });
+  /* medicamentos: cada classe de risco = +1, máx 2 */
+  const medsPts = Math.min(medRiscoDetectados().length, 2);
+  s += medsPts;
+  return s;
+}
+
+function medRiscoDetectados() {
+  const achados = [];
+  _meds.forEach(m => {
+    const n = (m.nome||'').toLowerCase();
+    for (const r of _RISCO_MEDS) {
+      if (r.padrao.test(n)) {
+        achados.push({ nome:m.nome, classe:r.classe });
+        break;
+      }
+    }
+  });
+  return achados;
+}
+
+function setResp(id, pts) {
+  _resps[id] = pts;
+  render();
+}
+
+function render() {
+  const score   = calcScore();
+  const nivel   = nivelRisco(score);
+  const medRisk = medRiscoDetectados();
+
+  const questHTML = _Qs.map(q => {
+    const sel = _resps[q.id];
+    return `<div class="quest-row">
+      <p class="quest-lbl">${q.lbl}</p>
+      <div class="opts-row">
+        ${q.opts.map(o => {
+          const isSel = sel === o.pts;
+          const cls   = isSel ? (o.pts===0 ? 'opt-btn sel0' : 'opt-btn sel') : 'opt-btn';
+          return `<button class="${cls}" onclick="setResp('${q.id}',${o.pts})">
+            ${o.pts===0?'✓ ':''}${o.lbl}${o.pts>0?' (+'+o.pts+')':''}
+          </button>`;
+        }).join('')}
+      </div>
+    </div>`;
+  }).join('');
+
+  const medRiskHTML = medRisk.length
+    ? medRisk.map(m => `<div class="med-risk-row">
+        <span class="med-risk-icon">⚠️</span>
+        <span class="med-risk-nome">${m.nome}</span>
+        <span class="med-risk-cls">${m.classe}</span>
+      </div>`).join('')
+    : `<p style="padding:12px 14px;font-size:.78rem;color:#94a3b8">Nenhum medicamento de risco detectado na lista atual.</p>`;
+
+  const recs = gerarRec(score, medRisk);
+
+  const histHTML = _hist.length
+    ? _hist.slice(0,5).map(h => {
+        const [y,m,d] = h.data.split('-');
+        const nv = nivelRisco(h.score);
+        return `<div class="hist-row">
+          <span class="hist-data">${d}/${m}/${y}</span>
+          <span class="hist-score">${h.score} pts</span>
+          <span class="hist-lbl" style="background:${nv.bg};color:${nv.cor}">${nv.lbl}</span>
+          <button class="hist-del" onclick="excluirHist('${h.id}')">×</button>
+        </div>`;
+      }).join('')
+    : `<p style="padding:14px;font-size:.78rem;color:#94a3b8;text-align:center">Nenhuma avaliação anterior registrada.</p>`;
+
+  document.getElementById('app').innerHTML = `
+    <p class="sec-title" style="margin-top:10px">Índice de Downton — ${_pac?.nome||'Paciente'}</p>
+
+    <div class="score-wrap">
+      <div class="score-num" style="color:${nivel.cor}">${score}</div>
+      <p class="score-lbl" style="color:${nivel.cor}">pontos</p>
+      <p class="score-sub">(&lt;3 = baixo · 3-5 = moderado · ≥6 = alto)</p>
+      <span class="score-badge" style="background:${nivel.bg};color:${nivel.cor}">${nivel.lbl}</span>
+    </div>
+
+    <p class="sec-title">Perguntas Clínicas</p>
+    <div class="quest-card">${questHTML}</div>
+
+    <p class="sec-title">Medicamentos com Risco de Queda (${medRisk.length})</p>
+    <div class="quest-card">${medRiskHTML}</div>
+    ${medRisk.length ? `<p style="font-size:.67rem;color:#94a3b8;padding:2px 16px 10px">Medicamentos detectados automaticamente na lista ativa. Cada 2 classes de risco adicionam 1 ponto extra (máx +2).</p>` : ''}
+
+    <p class="sec-title">Recomendações</p>
+    <div class="quest-card">
+      ${recs.map(r=>`<div class="rec-row"><span class="rec-icon">${r.icon}</span><p class="rec-txt">${r.txt}</p></div>`).join('')}
+    </div>
+
+    <button class="btn-salvar" onclick="salvar()">✓ Salvar Avaliação (${score} pts — ${nivel.lbl})</button>
+
+    <p class="sec-title">Histórico de Avaliações</p>
+    <div class="quest-card" style="margin:0 16px 60px">${histHTML}</div>
+  `;
+}
+
+function gerarRec(score, medRisk) {
+  const recs = [];
+  const nv = nivelRisco(score);
+  if (score >= 6)
+    recs.push({ icon:'🚨', txt:'Alto risco de queda. Considerar avaliação fisioterapêutica imediata e revisão do ambiente doméstico. Protocolo de prevenção de quedas obrigatório.' });
+  else if (score >= 3)
+    recs.push({ icon:'⚠️', txt:'Risco moderado de queda. Orientar paciente e cuidador sobre medidas preventivas. Reavaliar em 30 dias.' });
+  else
+    recs.push({ icon:'✅', txt:'Baixo risco de queda. Manter monitoramento semestral e reavaliação quando houver mudança clínica ou de medicamentos.' });
+
+  if (medRisk.length >= 3)
+    recs.push({ icon:'💊', txt:`${medRisk.length} medicamentos com potencial de queda identificados. Revisar com o prescritor a possibilidade de substituição ou redução de dose, especialmente benzodiazepínicos e hipnóticos.` });
+  else if (medRisk.some(m => /benzo|diazep|zolpidem/i.test(m.nome)))
+    recs.push({ icon:'💊', txt:'Benzodiazepínico ou hipnótico Z em uso. Avaliar desprescrição gradual — risco de queda e fratura significativo.' });
+
+  if (_resps['cogn'] === 1)
+    recs.push({ icon:'🧠', txt:'Estado cognitivo comprometido. Supervisão ativa para deambulação e atividades de risco.' });
+  if (_resps['deamb'] >= 1)
+    recs.push({ icon:'🦯', txt:'Avaliação por fisioterapeuta para adequação de dispositivo auxiliar de marcha e fortalecimento muscular.' });
+  if (_resps['visao'] === 1)
+    recs.push({ icon:'👁️', txt:'Déficit visual identificado. Encaminhar para oftalmologista; verificar iluminação do ambiente doméstico.' });
+  recs.push({ icon:'🏠', txt:'Medidas ambientais: retirar tapetes soltos, instalar corrimão em escadas/banheiro, usar calçados antiderrapantes, iluminar corredores noturnos.' });
+
+  return recs;
+}
+
+async function salvar() {
+  const score = calcScore();
+  const nivel = nivelRisco(score);
+  const avaliacao = {
+    id:    Date.now().toString(36),
+    data:  new Date().toISOString().slice(0,10),
+    score,
+    nivel: nivel.lbl,
+    resps: { ..._resps },
+    medRisco: medRiscoDetectados().map(m=>m.nome),
+    criadoEm: new Date().toISOString(),
+  };
+  _hist.unshift(avaliacao);
+  await dbSetConfig('risco_queda_'+_pid, _hist);
+  showToast('✓ Avaliação salva');
+  render();
+}
+
+async function excluirHist(id) {
+  _hist = _hist.filter(h => h.id !== id);
+  await dbSetConfig('risco_queda_'+_pid, _hist);
+  showToast('Avaliação removida');
+  render();
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>

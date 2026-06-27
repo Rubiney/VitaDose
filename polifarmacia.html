@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Análise de Polifarmácia — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <style>
+    body { background:#f8fafc;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif }
+    .topbar { display:flex;align-items:center;gap:10px;padding:14px 16px;background:#fff;border-bottom:1px solid #e2e8f0;position:sticky;top:0;z-index:100 }
+    .back-btn { background:none;border:none;font-size:1.3rem;cursor:pointer;padding:4px 8px;color:#475569;border-radius:8px }
+    .topbar-title { font-size:1rem;font-weight:700;color:#1e293b;flex:1 }
+
+    .sec-title { font-size:.68rem;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.1em;padding:0 16px;margin:14px 0 6px }
+
+    /* Score board */
+    .score-grid { display:grid;grid-template-columns:repeat(2,1fr);gap:10px;padding:0 16px }
+    .score-card { background:#fff;border-radius:14px;padding:14px;box-shadow:0 1px 4px rgba(0,0,0,.06);text-align:center }
+    .score-val  { font-size:2rem;font-weight:900;line-height:1 }
+    .score-lbl  { font-size:.62rem;font-weight:700;color:#94a3b8;text-transform:uppercase;margin-top:4px }
+    .score-sub  { font-size:.72rem;font-weight:700;margin-top:6px;padding:3px 8px;border-radius:6px;display:inline-block }
+
+    /* Medidor MRCI arco */
+    .gauge-wrap { display:flex;flex-direction:column;align-items:center;padding:10px 0 4px }
+
+    /* Seção com lista de achados */
+    .achs-card { background:#fff;border-radius:14px;margin:0 16px 10px;box-shadow:0 1px 4px rgba(0,0,0,.06);overflow:hidden }
+    .ach-row { display:flex;align-items:flex-start;gap:10px;padding:11px 14px;border-bottom:1px solid #f1f5f9 }
+    .ach-row:last-child { border-bottom:none }
+    .ach-icon { font-size:1.1rem;flex-shrink:0;margin-top:1px }
+    .ach-nome { font-size:.82rem;font-weight:700;color:#1e293b }
+    .ach-desc { font-size:.72rem;color:#64748b;line-height:1.4;margin-top:2px }
+    .ach-badge{ display:inline-block;border-radius:5px;padding:2px 7px;font-size:.62rem;font-weight:800;margin-top:3px }
+
+    /* Barra de fármaco */
+    .med-bar-row { padding:10px 14px;border-bottom:1px solid #f1f5f9 }
+    .med-bar-row:last-child { border-bottom:none }
+    .med-bar-top { display:flex;align-items:center;gap:6px;margin-bottom:4px }
+    .med-bar-nome { font-size:.78rem;font-weight:700;color:#1e293b;flex:1 }
+    .med-bar-pts  { font-size:.7rem;font-weight:800;color:#6366f1 }
+    .bar-outer { height:6px;background:#f1f5f9;border-radius:3px;overflow:hidden }
+    .bar-inner { height:100%;border-radius:3px;background:#6366f1;transition:width .4s }
+
+    /* Pilouras/dia */
+    .pill-count { font-size:1.4rem;font-weight:900 }
+    .pill-sub   { font-size:.65rem;color:#94a3b8;font-weight:700 }
+
+    .vazio { text-align:center;color:#94a3b8;padding:20px;font-size:.82rem }
+
+    @media print {
+      .topbar,.back-btn { display:none }
+    }
+  </style>
+</head>
+<body>
+<div class="topbar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <span class="topbar-title">💊 Análise de Polifarmácia</span>
+</div>
+<div id="app" style="padding-bottom:60px">
+  <p style="text-align:center;color:#94a3b8;padding:40px;font-size:.85rem">Carregando...</p>
+</div>
+<div class="toast" id="toast"></div>
+<script src="js/db.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/beers.js"></script>
+<script src="js/anticolin.js"></script>
+<script src="js/stopp_start.js"></script>
+<script src="js/duplicidade.js"></script>
+<script src="js/interacoes.js"></script>
+
+<script>
+/* ── MRCI — Medication Regimen Complexity Index (simplificado) ── */
+const _FORMA_PTS = {
+  comprimido:1, capsula:1, capsula_dura:1, dragea:1,
+  xarope:2, solucao:2, suspensao:2, elixir:2,
+  inalacao:3, aerossol:3, nebulizacao:3, spray_nasal:1.5,
+  colirio:2, otologico:2, gotas:2,
+  injecao:2, subcutanea:2, intravenosa:2, ampola:2,
+  supositorio:2, enema:2,
+  adesivo:0.5, patch:0.5,
+  creme:0.5, pomada:0.5, gel:0.5, loção:0.5,
+  pastilha:1, sublingual:1,
+};
+const _FREQ_PTS = { 1:1, 2:2, 3:3, 4:4 };
+
+function mrciMed(med) {
+  const forma = med.forma ? (med.forma.toLowerCase().replace(/\s/g,'_')) : 'comprimido';
+  const fPts  = _FORMA_PTS[forma] ?? 1;
+  const nHor  = (med.horarios||[]).length;
+  const fFreq = nHor ? (_FREQ_PTS[Math.min(nHor,4)] || 4) : 0.5; // sem horário = PRN
+  let fDir = 0;
+  const obs = (med.observacoes||med.obs||'').toLowerCase();
+  if (/jejum|antes\s*(das\s*)?(refei|alim)/.test(obs)) fDir += 1;
+  if (/aliment|refei|comida/.test(obs)) fDir += 1;
+  if (/dormir|noite|ao\s*deitar/.test(obs)) fDir += 0.5;
+  return { nome: med.nome, pts: parseFloat((fPts + fFreq + fDir).toFixed(1)), fPts, fFreq, fDir };
+}
+
+function nTomadas(med) {
+  const nHor  = (med.horarios||[]).length;
+  const qPor  = parseFloat(med.dose) || 1;
+  return nHor * qPor;
+}
+
+/* ── Nível de polifarmácia ── */
+function nivelPoli(n) {
+  if (n < 5) return { lbl:'Sem polifarmácia', cor:'#16a34a', bg:'#dcfce7' };
+  if (n < 10) return { lbl:'Polifarmácia', cor:'#d97706', bg:'#fef3c7' };
+  return              { lbl:'Hiperpolifarmácia', cor:'#dc2626', bg:'#fee2e2' };
+}
+function nivelMRCI(v) {
+  if (v <= 10) return { lbl:'Baixa complexidade',    cor:'#16a34a', bg:'#dcfce7' };
+  if (v <= 20) return { lbl:'Complexidade moderada', cor:'#d97706', bg:'#fef3c7' };
+  return              { lbl:'Alta complexidade',      cor:'#dc2626', bg:'#fee2e2' };
+}
+function nivelACB(v) {
+  if (v === 0) return { lbl:'Sem carga', cor:'#16a34a', bg:'#dcfce7' };
+  if (v === 1) return { lbl:'Leve', cor:'#d97706', bg:'#fef3c7' };
+  if (v === 2) return { lbl:'Moderada', cor:'#ea580c', bg:'#ffedd5' };
+  return              { lbl:'Elevada', cor:'#dc2626', bg:'#fee2e2' };
+}
+
+/* ── Init ── */
+async function init() {
+  const pid = getActivePacienteId();
+  if (!pid) { window.location.href='index.html'; return; }
+
+  const pac  = await dbGet('pacientes', pid);
+  const hoje = new Date().toISOString().slice(0,10);
+  const todos = await dbGetAll('medicamentos');
+  const meds  = todos.filter(m => m.pacienteId===pid && m.ativo!==false && (!m.dataFim||m.dataFim>=hoje));
+
+  if (!meds.length) {
+    document.getElementById('app').innerHTML =
+      `<p class="vazio" style="padding:60px">Nenhum medicamento ativo cadastrado para ${pac?.nome||'o paciente'}.</p>`;
+    return;
+  }
+
+  /* Cálculos */
+  const mrciItems = meds.map(mrciMed);
+  const mrciTotal = mrciItems.reduce((s,i) => s+i.pts, 0);
+  const mrciMax   = mrciItems.length * 8; // máx teórico por med = 4+4+0+extras
+  const acbTotal  = calcularCargaAnticolin(meds);
+  const stomps    = verificarSTOPP(meds, pac||{});
+  const beersHits = meds.filter(m => {
+    const r = buscarBeers(m.nome);
+    return r && r.length;
+  });
+  const dupls  = verificarDuplicidade(meds);
+  const nivel  = nivelPoli(meds.length);
+  const nivelM = nivelMRCI(mrciTotal);
+  const nivelA = nivelACB(acbTotal);
+
+  let pilulas = 0;
+  meds.forEach(m => { pilulas += nTomadas(m); });
+
+  /* Candidatos a desprescrição */
+  const candidatos = [];
+  beersHits.forEach(m => candidatos.push({ nome:m.nome, razao:'Critério Beers (uso inadequado em idosos)', cor:'#dc2626' }));
+  stomps.forEach(s => { if (!candidatos.find(c=>c.nome===s.medicamento)) candidatos.push({ nome:s.medicamento, razao:'Critério STOPP: '+s.mensagem.slice(0,80), cor:'#ea580c' }); });
+  dupls.filter(d=>d.tipo==='duplicidade').forEach(d => {
+    const nomes = [d.med1?.nome,d.med2?.nome].filter(Boolean).join(' + ');
+    if (!candidatos.find(c=>c.nome===nomes)) candidatos.push({ nome:nomes, razao:'Duplicidade terapêutica ('+d.classe+')', cor:'#d97706' });
+  });
+  const acbMeds = meds.filter(m => { try { return calcularCargaAnticolin([m]) >= 2; } catch(e){ return false; } });
+  acbMeds.forEach(m => { if (!candidatos.find(c=>c.nome===m.nome)) candidatos.push({ nome:m.nome, razao:'Alta carga anticolinérgica (ACB ≥2)', cor:'#7c3aed' }); });
+
+  render(pac, meds, { mrciItems, mrciTotal, mrciMax, acbTotal, stomps, beersHits, dupls, nivel, nivelM, nivelA, pilulas, candidatos });
+}
+
+function render(pac, meds, d) {
+  const pMax = Math.max(...d.mrciItems.map(i=>i.pts), 1);
+
+  const candidatosHTML = d.candidatos.length
+    ? d.candidatos.map(c=>`<div class="ach-row">
+        <span class="ach-icon">🎯</span>
+        <div><p class="ach-nome">${c.nome}</p><p class="ach-desc">${c.razao}</p></div>
+      </div>`).join('')
+    : `<p class="vazio">Nenhum alvo identificado — regime adequado.</p>`;
+
+  const mrciBarras = [...d.mrciItems].sort((a,b)=>b.pts-a.pts).map(i=>`
+    <div class="med-bar-row">
+      <div class="med-bar-top"><span class="med-bar-nome">${i.nome}</span><span class="med-bar-pts">${i.pts} pts</span></div>
+      <div class="bar-outer"><div class="bar-inner" style="width:${Math.round(i.pts/pMax*100)}%"></div></div>
+    </div>`).join('');
+
+  document.getElementById('app').innerHTML = `
+    <p class="sec-title" style="margin-top:10px">Resumo — ${pac?.nome||'Paciente'}</p>
+
+    <div class="score-grid">
+      <div class="score-card">
+        <div class="score-val" style="color:${d.nivel.cor}">${meds.length}</div>
+        <div class="score-lbl">Medicamentos Ativos</div>
+        <div class="score-sub" style="background:${d.nivel.bg};color:${d.nivel.cor}">${d.nivel.lbl}</div>
+      </div>
+      <div class="score-card">
+        <div class="score-val" style="color:${d.nivelM.cor}">${d.mrciTotal.toFixed(1)}</div>
+        <div class="score-lbl">MRCI (Complexidade)</div>
+        <div class="score-sub" style="background:${d.nivelM.bg};color:${d.nivelM.cor}">${d.nivelM.lbl}</div>
+      </div>
+      <div class="score-card">
+        <div class="score-val" style="color:#0891b2">${d.pilulas.toFixed(0)}</div>
+        <div class="score-lbl">Tomadas / Dia</div>
+        <div class="score-sub" style="background:#cffafe;color:#0891b2">${d.pilulas>=10?'Muito elevado':d.pilulas>=6?'Elevado':'Razoável'}</div>
+      </div>
+      <div class="score-card">
+        <div class="score-val" style="color:${d.nivelA.cor}">${d.acbTotal}</div>
+        <div class="score-lbl">ACB (Anticolinérgico)</div>
+        <div class="score-sub" style="background:${d.nivelA.bg};color:${d.nivelA.cor}">${d.nivelA.lbl}</div>
+      </div>
+    </div>
+
+    <!-- Achados clínicos -->
+    <p class="sec-title">Achados Clínicos</p>
+    <div class="achs-card">
+      ${d.beersHits.length ? d.beersHits.map(m=>`<div class="ach-row">
+        <span class="ach-icon">⚠️</span>
+        <div><p class="ach-nome">${m.nome}</p>
+          <p class="ach-desc">${(buscarBeers(m.nome)||[]).map(b=>b.descricao||b.motivo||'Critério Beers').join('; ').slice(0,120)}</p>
+          <span class="ach-badge" style="background:#fee2e2;color:#dc2626">Critério Beers</span>
+        </div></div>`).join('') : ''}
+      ${d.stomps.length ? d.stomps.map(s=>`<div class="ach-row">
+        <span class="ach-icon">🛑</span>
+        <div><p class="ach-nome">${s.medicamento||'Medicamento'}</p>
+          <p class="ach-desc">${(s.mensagem||s.criterio||'').slice(0,120)}</p>
+          <span class="ach-badge" style="background:#ffedd5;color:#ea580c">STOPP</span>
+        </div></div>`).join('') : ''}
+      ${d.dupls.filter(x=>x.tipo==='duplicidade').map(x=>`<div class="ach-row">
+        <span class="ach-icon">🔁</span>
+        <div><p class="ach-nome">${[x.med1?.nome,x.med2?.nome].filter(Boolean).join(' + ')}</p>
+          <p class="ach-desc">Duplicidade: ${x.classe||''}</p>
+          <span class="ach-badge" style="background:#ede9fe;color:#7c3aed">Duplicidade</span>
+        </div></div>`).join('')}
+      ${!d.beersHits.length && !d.stomps.length && !d.dupls.length
+        ? '<p class="vazio">Nenhum achado crítico no regime atual.</p>'
+        : ''}
+    </div>
+
+    <!-- Candidatos a desprescrição -->
+    <p class="sec-title">Candidatos a Desprescrição (${d.candidatos.length})</p>
+    <div class="achs-card">${candidatosHTML}</div>
+
+    <!-- MRCI por medicamento -->
+    <p class="sec-title">Complexidade por Medicamento (MRCI)</p>
+    <div class="achs-card">${mrciBarras}</div>
+
+    <!-- Recomendações -->
+    ${gerarRec(d)}
+  `;
+}
+
+function gerarRec(d) {
+  const recs = [];
+  if (d.meds?.length >= 10 || d.nivel.lbl === 'Hiperpolifarmácia')
+    recs.push({ icon:'🎯', txt:'Hiperpolifarmácia identificada. Realizar revisão abrangente do regime com o prescritor, com foco em desprescrição.' });
+  if (d.mrciTotal > 20)
+    recs.push({ icon:'📋', txt:'Alta complexidade (MRCI >20). Considerar simplificação posológica: troca de 2×/dia por formulações de liberação prolongada 1×/dia.' });
+  if (d.acbTotal >= 3)
+    recs.push({ icon:'🧠', txt:'Carga anticolinérgica elevada (ACB ≥3). Risco aumentado de comprometimento cognitivo, quedas e retenção urinária em idosos.' });
+  if (d.beersHits.length)
+    recs.push({ icon:'⚠️', txt:`${d.beersHits.length} medicamento(s) nos Critérios Beers. Revisar necessidade com prescritor, especialmente em pacientes idosos.` });
+  if (!recs.length) recs.push({ icon:'✅', txt:'Regime dentro dos parâmetros aceitáveis. Manter monitoramento periódico.' });
+
+  return `<p class="sec-title">Recomendações</p>
+    <div class="achs-card">
+      ${recs.map(r=>`<div class="ach-row"><span class="ach-icon">${r.icon}</span><p class="ach-desc" style="font-size:.8rem">${r.txt}</p></div>`).join('')}
+    </div>`;
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>

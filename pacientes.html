@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Meus Pacientes — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <style>
+    body { background:#f8fafc;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif }
+    .topbar { display:flex;align-items:center;gap:10px;padding:14px 16px;background:#fff;border-bottom:1px solid #e2e8f0;position:sticky;top:0;z-index:100 }
+    .back-btn { background:none;border:none;font-size:1.3rem;cursor:pointer;padding:4px 8px;color:#475569;border-radius:8px }
+    .topbar-title { font-size:1rem;font-weight:700;color:#1e293b;flex:1 }
+    .btn-novo { background:#6366f1;color:#fff;border:none;border-radius:9px;padding:7px 14px;font-size:.75rem;font-weight:700;cursor:pointer }
+
+    .busca-wrap { padding:12px 16px 4px }
+    .busca-input { width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:12px;padding:10px 14px;font-size:.85rem;color:#1e293b }
+    .busca-input:focus { outline:none;border-color:#6366f1 }
+
+    /* Cards */
+    .pac-list { padding:0 16px 80px;display:flex;flex-direction:column;gap:10px;margin-top:10px }
+    .pac-card { background:#fff;border-radius:16px;box-shadow:0 1px 6px rgba(0,0,0,.06);overflow:hidden;cursor:pointer;border:2px solid transparent;transition:border-color .15s }
+    .pac-card.ativo { border-color:#6366f1 }
+
+    .pac-card-top { display:flex;align-items:center;gap:12px;padding:14px 16px 10px }
+    .pac-foto { width:50px;height:50px;border-radius:50%;object-fit:cover;border:2px solid #e2e8f0;flex-shrink:0 }
+    .pac-ini  { width:50px;height:50px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#a78bfa);display:flex;align-items:center;justify-content:center;font-size:1.2rem;font-weight:900;color:#fff;flex-shrink:0 }
+    .pac-nome { font-size:.95rem;font-weight:800;color:#1e293b }
+    .pac-meta { font-size:.7rem;color:#94a3b8;margin-top:2px;line-height:1.5 }
+    .ativo-badge { margin-left:auto;background:#ede9fe;color:#6366f1;font-size:.62rem;font-weight:800;border-radius:5px;padding:3px 7px;flex-shrink:0 }
+
+    /* Estatísticas rápidas */
+    .pac-stats { display:grid;grid-template-columns:repeat(4,1fr);gap:0;border-top:1px solid #f1f5f9 }
+    .stat-cell { text-align:center;padding:8px 4px;border-right:1px solid #f1f5f9 }
+    .stat-cell:last-child { border-right:none }
+    .stat-val  { font-size:.85rem;font-weight:800 }
+    .stat-lbl  { font-size:.6rem;font-weight:700;color:#94a3b8;text-transform:uppercase }
+
+    /* Ações */
+    .pac-actions { display:flex;gap:0;border-top:1px solid #f1f5f9 }
+    .pac-btn { flex:1;background:none;border:none;border-right:1px solid #f1f5f9;padding:10px;font-size:.7rem;font-weight:700;color:#6366f1;cursor:pointer }
+    .pac-btn:last-child { border-right:none }
+    .pac-btn.danger { color:#ef4444 }
+    .pac-btn:hover { background:#f8fafc }
+
+    .vazio { text-align:center;color:#94a3b8;padding:50px 20px;font-size:.85rem }
+
+    /* Modal confirmação exclusão */
+    .modal-bg  { position:fixed;inset:0;background:rgba(15,52,96,.45);backdrop-filter:blur(3px);z-index:300;display:flex;align-items:flex-end;justify-content:center;padding:16px }
+    .modal-box { background:#fff;border-radius:20px 20px 16px 16px;width:100%;max-width:440px;padding:22px 20px }
+    .modal-title { font-size:1rem;font-weight:800;color:#1e293b;margin-bottom:6px }
+    .modal-desc  { font-size:.82rem;color:#64748b;margin-bottom:18px;line-height:1.5 }
+    .modal-btns  { display:flex;gap:8px }
+    .btn-cancel  { flex:1;background:#f1f5f9;border:none;border-radius:10px;padding:11px;font-size:.85rem;font-weight:700;cursor:pointer;color:#475569 }
+    .btn-confirm { flex:1;background:#ef4444;border:none;border-radius:10px;padding:11px;font-size:.85rem;font-weight:700;cursor:pointer;color:#fff }
+  </style>
+</head>
+<body>
+<div class="topbar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <span class="topbar-title">👥 Meus Pacientes</span>
+  <button class="btn-novo" onclick="novoPaciente()">+ Novo</button>
+</div>
+
+<div class="busca-wrap">
+  <input class="busca-input" type="search" placeholder="Buscar paciente..." id="busca" oninput="filtrar()">
+</div>
+
+<div id="pac-list" class="pac-list">
+  <p class="vazio">Carregando...</p>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="js/db.js"></script>
+<script src="js/utils.js"></script>
+<script>
+
+let _pacs    = [];
+let _medMap  = {};   // pid → meds[]
+let _doseMap = {};   // pid → { tomadas, perdidas }
+let _soapMap = {};   // pid → last soap date
+let _activePid = getActivePacienteId();
+let _filtro  = '';
+
+function iniciaisNome(nome) {
+  if (!nome) return '?';
+  return nome.trim().split(/\s+/).slice(0,2).map(p=>p[0].toUpperCase()).join('');
+}
+
+async function init() {
+  _pacs = (await dbGetAll('pacientes')) || [];
+  if (!_pacs.length) {
+    document.getElementById('pac-list').innerHTML =
+      `<p class="vazio">Nenhum paciente cadastrado.<br><a href="cadastro.html" style="color:#6366f1;font-weight:700">Cadastrar primeiro paciente →</a></p>`;
+    return;
+  }
+
+  /* Medicamentos por paciente */
+  const hoje = new Date().toISOString().slice(0,10);
+  const todos = (await dbGetAll('medicamentos')) || [];
+  _pacs.forEach(p => {
+    _medMap[p.id] = todos.filter(m => m.pacienteId===p.id && m.ativo!==false && (!m.dataFim||m.dataFim>=hoje));
+  });
+
+  /* Aderência dos últimos 30 dias */
+  const dt30 = new Date(); dt30.setDate(dt30.getDate()-30);
+  const d30  = dt30.toISOString().slice(0,10);
+  try {
+    const doses = (await dbGetAll('doses')) || [];
+    const recentDoses = doses.filter(d => d.data >= d30);
+    const medOwner = {};
+    todos.forEach(m => { medOwner[m.id] = m.pacienteId; });
+    recentDoses.forEach(d => {
+      const pid = medOwner[d.medicamentoId];
+      if (!pid) return;
+      if (!_doseMap[pid]) _doseMap[pid] = { tomadas:0, perdidas:0 };
+      if (d.status==='tomado')  _doseMap[pid].tomadas++;
+      if (d.status==='perdido') _doseMap[pid].perdidas++;
+    });
+  } catch(e) {}
+
+  /* Última anotação SOAP por paciente */
+  await Promise.allSettled(_pacs.map(async p => {
+    try {
+      const soaps = (await dbGetConfig('soap_'+p.id)) || [];
+      if (soaps.length) {
+        const ul = soaps.reduce((a,b) => a.data > b.data ? a : b);
+        _soapMap[p.id] = ul.data;
+      }
+    } catch(e) {}
+  }));
+
+  renderList();
+}
+
+function filtrar() {
+  _filtro = document.getElementById('busca').value.toLowerCase();
+  renderList();
+}
+
+function renderList() {
+  const filtered = _filtro
+    ? _pacs.filter(p => p.nome.toLowerCase().includes(_filtro))
+    : _pacs;
+
+  if (!filtered.length) {
+    document.getElementById('pac-list').innerHTML = `<p class="vazio">Nenhum paciente encontrado.</p>`;
+    return;
+  }
+
+  /* Ordena: ativo primeiro, depois por nome */
+  const sorted = [...filtered].sort((a,b) => {
+    if (a.id===_activePid) return -1;
+    if (b.id===_activePid) return 1;
+    return a.nome.localeCompare(b.nome, 'pt-BR');
+  });
+
+  document.getElementById('pac-list').innerHTML = sorted.map(p => cardHTML(p)).join('');
+}
+
+function cardHTML(p) {
+  const isAtivo  = p.id === _activePid;
+  const ini      = iniciaisNome(p.nome);
+  const meds     = _medMap[p.id]||[];
+  const doses    = _doseMap[p.id]||{tomadas:0,perdidas:0};
+  const total    = doses.tomadas + doses.perdidas;
+  const adesao   = total ? Math.round(doses.tomadas/total*100) : null;
+  const soapDate = _soapMap[p.id];
+  const idadeStr = p.idadePac ? p.idadePac+' anos' : '';
+  const sexoStr  = {M:'M',F:'F'}[p.sexoPac]||'';
+
+  /* Foto */
+  const doc = p.documentos||{};
+  const fotoSrc = doc.fotos?.[0]?.img;
+  const avatarHTML = fotoSrc
+    ? `<img class="pac-foto" src="${fotoSrc}" alt="${p.nome}">`
+    : `<div class="pac-ini">${ini}</div>`;
+
+  /* Cor aderência */
+  const aCorVal = adesao===null ? '#94a3b8'
+    : adesao>=75 ? '#16a34a'
+    : adesao>=50 ? '#d97706' : '#dc2626';
+
+  /* Última consulta SOAP */
+  let consulta = '—';
+  if (soapDate) {
+    const [y,m,d] = soapDate.split('-');
+    consulta = `${d}/${m}/${y}`;
+  }
+
+  return `<div class="pac-card${isAtivo?' ativo':''}" id="card-${p.id}">
+    <div class="pac-card-top">
+      ${avatarHTML}
+      <div style="flex:1;min-width:0">
+        <p class="pac-nome">${p.nome}</p>
+        <p class="pac-meta">${[idadeStr,sexoStr,p.tipoSanguineo].filter(Boolean).join(' · ')}</p>
+        ${p.alergias ? `<p class="pac-meta" style="color:#dc2626">⚠️ ${p.alergias.slice(0,50)}</p>` : ''}
+      </div>
+      ${isAtivo ? `<span class="ativo-badge">✓ Ativo</span>` : ''}
+    </div>
+
+    <div class="pac-stats">
+      <div class="stat-cell">
+        <div class="stat-val" style="color:#6366f1">${meds.length}</div>
+        <div class="stat-lbl">Meds</div>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-val" style="color:${aCorVal}">${adesao!==null ? adesao+'%' : '—'}</div>
+        <div class="stat-lbl">Adesão 30d</div>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-val" style="color:#0891b2;font-size:.75rem">${consulta}</div>
+        <div class="stat-lbl">Consulta</div>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-val" style="color:#d97706">${p.tipoSanguineo||'?'}</div>
+        <div class="stat-lbl">Tipo sang.</div>
+      </div>
+    </div>
+
+    <div class="pac-actions">
+      <button class="pac-btn" onclick="ativar(${p.id})">
+        ${isAtivo ? '✓ Ativo' : '⟳ Selecionar'}
+      </button>
+      <button class="pac-btn" onclick="abrirPerfil(${p.id})">👤 Perfil</button>
+      <button class="pac-btn" onclick="abrirMeds(${p.id})">💊 Meds</button>
+      <button class="pac-btn danger" onclick="confirmarExcluir(${p.id})">🗑</button>
+    </div>
+  </div>`;
+}
+
+function ativar(pid) {
+  _activePid = pid;
+  setActivePacienteId(pid);
+  showToast('✓ Paciente selecionado');
+  renderList();
+}
+
+function abrirPerfil(pid) {
+  if (pid !== _activePid) { ativar(pid); }
+  window.location.href = 'perfil.html';
+}
+
+function abrirMeds(pid) {
+  if (pid !== _activePid) { ativar(pid); }
+  window.location.href = 'index.html';
+}
+
+function novoPaciente() {
+  window.location.href = 'cadastro.html?novo=1';
+}
+
+let _excluirPid = null;
+function confirmarExcluir(pid) {
+  if (pid === _activePid) { showToast('Não é possível excluir o paciente ativo.'); return; }
+  _excluirPid = pid;
+  const p = _pacs.find(x => x.id === pid);
+  const div = document.createElement('div');
+  div.className = 'modal-bg';
+  div.id = 'modal-excluir';
+  div.innerHTML = `<div class="modal-box">
+    <p class="modal-title">Excluir ${p?.nome||'paciente'}?</p>
+    <p class="modal-desc">Todos os medicamentos, doses e registros deste paciente serão excluídos permanentemente. Esta ação não pode ser desfeita.</p>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="document.getElementById('modal-excluir').remove()">Cancelar</button>
+      <button class="btn-confirm" onclick="excluir()">Excluir</button>
+    </div>
+  </div>`;
+  document.body.appendChild(div);
+}
+
+async function excluir() {
+  if (!_excluirPid) return;
+  document.getElementById('modal-excluir')?.remove();
+
+  const pid = _excluirPid;
+  try {
+    /* Exclui medicamentos */
+    const meds = (await dbGetAll('medicamentos')).filter(m => m.pacienteId===pid);
+    await Promise.all(meds.map(m => dbDelete('medicamentos', m.id)));
+
+    /* Exclui doses relacionadas */
+    const medIds = new Set(meds.map(m=>m.id));
+    const doses  = (await dbGetAll('doses')).filter(d => medIds.has(d.medicamentoId));
+    await Promise.all(doses.map(d => dbDelete('doses', d.id)));
+
+    /* Exclui o paciente */
+    await dbDelete('pacientes', pid);
+
+    /* Limpa configs */
+    const configKeys = ['soap_','sintomas_','ram_','agenda_eventos_'];
+    await Promise.allSettled(configKeys.map(k => dbSetConfig(k+pid, null)));
+
+    _pacs = _pacs.filter(p => p.id !== pid);
+    delete _medMap[pid];
+    delete _doseMap[pid];
+    delete _soapMap[pid];
+    showToast('Paciente excluído');
+    renderList();
+  } catch(e) {
+    showToast('Erro ao excluir: '+e.message);
+  }
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
