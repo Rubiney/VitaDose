@@ -49,6 +49,9 @@
 <!-- Chips de tipo de exame -->
 <div class="lab-chip-wrap" id="chips-wrap"></div>
 
+<!-- Alertas fármaco-laboratório -->
+<div id="lab-farma-alertas"></div>
+
 <!-- Gráfico de tendência -->
 <div class="chart-box" id="chart-box" style="display:none">
   <p class="chart-last" id="chart-last"></p>
@@ -84,6 +87,7 @@
 <script src="js/utils.js"></script>
 <script src="js/ajusterenal.js"></script>
 <script src="js/laboratorio.js"></script>
+<script src="js/lab_farma.js"></script>
 <script>
 /* EXAMES, statusLab() e gerarSVG() são fornecidos por js/laboratorio.js */
 
@@ -91,6 +95,7 @@ let tipoAtivo = 'creatinina';
 let paciente  = null;
 let registros = []; // todos do paciente
 let _pid      = null;
+let _meds     = []; // medicamentos ativos (para cruzamento fármaco-lab)
 
 async function init() {
   _pid = getActivePacienteId();
@@ -104,9 +109,18 @@ async function init() {
   }
 
   registros = await dbGetByIndex('laboratorio', 'pacienteId', _pid);
+
+  // Carrega medicamentos ativos para cruzamento fármaco-laboratório
+  try {
+    const todos = await dbGetByIndex('medicamentos', 'pacienteId', _pid);
+    const hj    = new Date().toISOString().slice(0, 10);
+    _meds = todos.filter(m => m.ativo !== false && (!m.dataFim || m.dataFim >= hj));
+  } catch(e) {}
+
   document.getElementById('inp-data').value = new Date().toISOString().slice(0,10);
   renderChips();
   selecionarTipo(tipoAtivo);
+  renderLabFarmaAlertas();
 }
 
 function renderChips() {
@@ -180,6 +194,7 @@ async function salvarRegistro() {
   renderChips();
   renderChart();
   renderLista();
+  renderLabFarmaAlertas();
 }
 
 async function excluirRegistro(id) {
@@ -188,6 +203,50 @@ async function excluirRegistro(id) {
   renderChips();
   renderChart();
   renderLista();
+  renderLabFarmaAlertas();
+}
+
+function renderLabFarmaAlertas() {
+  const wrap = document.getElementById('lab-farma-alertas');
+  if (!wrap || typeof verificarLabFarma !== 'function' || !_meds.length) {
+    if (wrap) wrap.innerHTML = '';
+    return;
+  }
+  const ultimosLab = {};
+  for (const r of registros) {
+    if (!ultimosLab[r.tipo] || r.data > ultimosLab[r.tipo].data)
+      ultimosLab[r.tipo] = { valor: r.valor, data: r.data };
+  }
+  const alertas = verificarLabFarma(ultimosLab, _meds);
+  if (!alertas.length) { wrap.innerHTML = ''; return; }
+
+  const itens = alertas.map(a => {
+    const isGrave = a.risco === 'grave';
+    const bg    = isGrave ? '#fff5f5' : '#fff7ed';
+    const borda = isGrave ? '#ef4444' : '#f97316';
+    const cor   = isGrave ? '#991b1b' : '#9a3412';
+    const exObj = EXAMES.find(e => e.id === a.exame);
+    const exLbl = exObj ? `${exObj.label} (${exObj.unidade})` : a.exame;
+    return `<div style="background:${bg};border-left:3px solid ${borda};border-radius:10px;padding:12px 14px;margin-bottom:8px">
+      <p style="font-weight:700;color:${cor};font-size:.83rem;margin-bottom:3px">${isGrave ? '🔴' : '🟠'} ${a.titulo}</p>
+      <p style="font-size:.77rem;color:#475569;margin-bottom:4px">
+        <strong>${exLbl}:</strong> ${a.labValor} (${a.labData}) ·
+        <strong>Med:</strong> ${a.medsTrigger.join(', ')}
+      </p>
+      <p style="font-size:.77rem;color:#475569;line-height:1.5;margin-bottom:6px">${a.desc}</p>
+      <div style="background:#f0fdf4;border-radius:6px;padding:6px 8px">
+        <p style="font-size:.75rem;color:#047857;font-weight:600;margin:0">✅ Conduta: ${a.conduta}</p>
+      </div>
+    </div>`;
+  }).join('');
+
+  wrap.innerHTML = `
+    <div style="padding:0 16px 4px">
+      <p style="font-size:.72rem;font-weight:800;color:#991b1b;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;margin-top:4px">
+        🔬 Alertas Fármaco-Laboratório (${alertas.length})
+      </p>
+      ${itens}
+    </div>`;
 }
 
 function renderLista() {

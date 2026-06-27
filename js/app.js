@@ -5,6 +5,7 @@ let medicamentos = [];
 let dosesHoje   = [];
 let _todasDoses = [];
 let _adesaoMap  = {};
+let _ultimosLab = {};
 let confirmPending = null;
 let _fotosMap   = {};
 
@@ -51,6 +52,16 @@ async function init() {
   const allDoses = await dbGetAll('doses');
   _todasDoses = allDoses;
   dosesHoje = allDoses.filter(d => d.data === hoje());
+
+  // Últimos valores laboratoriais por tipo (para interação fármaco-laboratório)
+  _ultimosLab = {};
+  try {
+    const labRecs = await dbGetByIndex('laboratorio', 'pacienteId', pid);
+    for (const r of labRecs) {
+      if (!_ultimosLab[r.tipo] || r.data > _ultimosLab[r.tipo].data)
+        _ultimosLab[r.tipo] = { valor: r.valor, data: r.data };
+    }
+  } catch(e) {}
 
   renderBannerAlergia(paciente);
   renderSandboxBanner();
@@ -440,8 +451,10 @@ function renderAlertas() {
   const acb     = (typeof calcularCargaAnticolin === 'function') ? calcularCargaAnticolin(medicamentos) : null;
   const cis     = (typeof verificarContraindicacoes === 'function' && paciente?.condicoes?.length)
     ? verificarContraindicacoes(medicamentos, paciente.condicoes) : [];
+  const labFarma = (typeof verificarLabFarma === 'function' && Object.keys(_ultimosLab).length)
+    ? verificarLabFarma(_ultimosLab, medicamentos) : [];
 
-  if (!alertas.length && !dups.length && !polif && (!acb || acb.total === 0) && !cis.length) { wrap.innerHTML = ''; return; }
+  if (!alertas.length && !dups.length && !polif && (!acb || acb.total === 0) && !cis.length && !labFarma.length) { wrap.innerHTML = ''; return; }
 
   const nivelCor = {
     grave:    { borda:'#ef4444', bg:'#fff5f5', icone:'🔴' },
@@ -480,7 +493,30 @@ function renderAlertas() {
 
   let html = '<p class="sec-header">Alertas Clínicos</p><div class="alertas-sec">';
 
-  // Contraindicações por Patologia (aparecem primeiro — podem ser graves)
+  // Interações Fármaco-Laboratório (exames alterados × medicamentos em uso)
+  labFarma.forEach(a => {
+    const isGrave = a.risco === 'grave';
+    const bg    = isGrave ? '#fff5f5' : '#fff7ed';
+    const borda = isGrave ? '#ef4444' : '#f97316';
+    const exObj = (typeof EXAMES !== 'undefined') ? EXAMES.find(e => e.id === a.exame) : null;
+    const exLbl = exObj ? `${exObj.label} (${exObj.unidade})` : a.exame;
+    html += `<div class="al-card" style="border-left-color:${borda};background:${bg}">
+      <span class="al-icon">🔬</span>
+      <div>
+        <p class="al-title">${isGrave ? '🔴' : '🟠'} ${a.titulo}</p>
+        <p class="al-desc" style="font-size:.77rem;color:#64748b;margin-bottom:4px">
+          <strong>${exLbl}:</strong> ${a.labValor} (${a.labData}) ·
+          <strong>Med:</strong> ${a.medsTrigger.join(', ')}
+        </p>
+        <p class="al-desc">${a.desc}</p>
+        <div style="background:#f0fdf4;border-radius:6px;padding:5px 8px;margin-top:5px">
+          <p style="font-size:.77rem;color:#047857;font-weight:600;margin:0">✅ Conduta: ${a.conduta}</p>
+        </div>
+      </div>
+    </div>`;
+  });
+
+  // Contraindicações por Patologia (aparecem logo após — podem ser graves)
   cis.forEach(ci => {
     const isGrave = ci.risco === 'grave';
     const bg = isGrave ? '#fff5f5' : '#fff7ed';

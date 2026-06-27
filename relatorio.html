@@ -163,8 +163,10 @@
   <script src="js/interacoes.js"></script>
   <script src="js/duplicidade.js"></script>
   <script src="js/anticolin.js"></script>
+  <script src="js/laboratorio.js"></script>
   <script src="js/adesao.js"></script>
   <script src="js/contraindicacoes.js"></script>
+  <script src="js/lab_farma.js"></script>
   <script src="js/reacoes.js"></script>
   <script>
   document.addEventListener('DOMContentLoaded', gerarRelatorio);
@@ -243,6 +245,18 @@
     for (const tipo of Object.keys(labPorTipo)) {
       labPorTipo[tipo].sort((a,b) => b.data.localeCompare(a.data));
     }
+
+    /* ── Interações Fármaco-Laboratório ── */
+    const labFarmaAlerts = (typeof verificarLabFarma === 'function' && Object.keys(labPorTipo).length)
+      ? verificarLabFarma(
+          Object.fromEntries(
+            Object.entries(labPorTipo).map(([tipo, lista]) =>
+              [tipo, { valor: lista[0].valor, data: lista[0].data }]
+            )
+          ),
+          meds
+        )
+      : [];
 
     /* ── Beers ── */
     const beersAlertas = [];
@@ -572,6 +586,30 @@
           <p style="font-size:.72rem;color:#888;margin-top:8px">
             Baseado em confirmações de dose registradas no app. Adesão ≥ 80% é considerada adequada (WHO).
           </p>
+        </div>` : ''}
+
+      <!-- Interações Fármaco-Laboratório -->
+      ${labFarmaAlerts.length > 0 ? `
+        <div class="sec">
+          <p class="sec-title">🔬 Interações Fármaco-Laboratório</p>
+          <p style="font-size:.72rem;color:#666;margin-bottom:10px">
+            Cruzamento dos exames mais recentes com os medicamentos em uso. Verificar com o médico prescritor.
+          </p>
+          ${labFarmaAlerts.map(a => {
+            const isGrave = a.risco === 'grave';
+            const bg    = isGrave ? '#fff5f5' : '#fff7ed';
+            const borda = isGrave ? '#fc8181' : '#f6ad55';
+            const cor   = isGrave ? '#c53030' : '#c05621';
+            return `<div class="alerta-item" style="background:${bg};border-left-color:${borda};margin-bottom:10px">
+              <p style="font-weight:700;color:${cor};font-size:.82rem;margin-bottom:4px">${isGrave?'🔴':'🟠'} ${a.titulo}</p>
+              <p style="font-size:.77rem;color:#4a5568;margin-bottom:3px">
+                <strong>Exame:</strong> ${a.labValor} (${a.labData}) ·
+                <strong>Medicamento:</strong> ${a.medsTrigger.join(', ')}
+              </p>
+              <p style="font-size:.77rem;color:#4a5568;line-height:1.5;margin-bottom:6px">${a.desc}</p>
+              <p style="font-size:.77rem;color:#276749;font-weight:600">✅ Conduta: ${a.conduta}</p>
+            </div>`;
+          }).join('')}
         </div>` : ''}
 
       <!-- Histórico Laboratorial -->
