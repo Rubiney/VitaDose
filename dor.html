@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Avaliação da Dor — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .tabs { display:flex;gap:6px;margin-bottom:14px }
+    .tab-btn { flex:1;padding:10px;border-radius:10px;border:1.5px solid #e2e8f0;background:#f8fafc;font-size:.8rem;font-weight:700;color:#64748b;cursor:pointer }
+    .tab-btn.active { background:#1e3a5f;color:#fff;border-color:#1e3a5f }
+    .tab-panel { display:none }
+    .tab-panel.active { display:block }
+
+    /* NRS Scale */
+    .nrs-row { display:flex;gap:4px;justify-content:space-between;margin:12px 0 6px }
+    .nrs-btn { flex:1;aspect-ratio:1;border-radius:9px;border:1.5px solid #e2e8f0;background:#f8fafc;font-size:.85rem;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s }
+    .nrs-btn.sel { color:#fff;border-color:transparent }
+    .nrs-label { display:flex;justify-content:space-between;font-size:.6rem;color:#94a3b8;margin-bottom:14px }
+
+    .field-lbl { font-size:.7rem;font-weight:700;color:#64748b;display:block;margin-bottom:6px;margin-top:14px }
+    .field-sel { width:100%;border:1.5px solid #e2e8f0;border-radius:9px;padding:9px 12px;font-size:.82rem;background:#fff;box-sizing:border-box }
+    .field-inp { width:100%;border:1.5px solid #e2e8f0;border-radius:9px;padding:9px 12px;font-size:.82rem;background:#fff;box-sizing:border-box }
+
+    .char-grid { display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:4px }
+    .char-btn  { border:1.5px solid #e2e8f0;border-radius:9px;padding:8px 4px;font-size:.68rem;text-align:center;cursor:pointer;background:#f8fafc }
+    .char-btn.sel { border-color:#1e3a5f;background:#ede9fe;color:#1e3a5f;font-weight:700 }
+
+    /* DN4 */
+    .dn4-row { display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid #f1f5f9 }
+    .dn4-row:last-child { border-bottom:none }
+    .dn4-q { font-size:.82rem;flex:1;line-height:1.4 }
+    .dn4-tog { display:flex;border:1.5px solid #e2e8f0;border-radius:8px;overflow:hidden;flex-shrink:0 }
+    .dn4-btn { padding:6px 12px;font-size:.72rem;font-weight:700;cursor:pointer;background:#f8fafc;border:none;color:#64748b }
+    .dn4-btn.sim { background:#1e3a5f;color:#fff }
+    .dn4-btn.nao { background:#f8fafc;color:#64748b }
+
+    .dn4-result { border-radius:12px;padding:14px;margin-top:14px;text-align:center }
+    .dn4-score { font-size:2rem;font-weight:900 }
+
+    /* History */
+    .spark-wrap { height:60px;margin-bottom:8px }
+    .hist-item { background:#f8fafc;border-radius:10px;padding:10px 12px;margin-bottom:6px;display:flex;align-items:center;gap:10px;border:1px solid #e2e8f0 }
+    .hist-score { font-size:1.2rem;font-weight:900;min-width:36px;text-align:center }
+    .hist-meta  { flex:1;font-size:.72rem;color:#64748b }
+    .hist-char  { font-size:.65rem;color:#94a3b8;margin-top:2px }
+
+    .score-interp { display:inline-block;padding:3px 10px;border-radius:999px;font-size:.68rem;font-weight:700;color:#fff }
+    .sec-lbl { font-size:.62rem;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.08em;margin:14px 0 8px }
+  </style>
+</head>
+<body>
+
+<header class="top-bar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <span class="top-title">Avaliação da Dor</span>
+  <div class="top-right"></div>
+</header>
+
+<main class="container" style="padding-bottom:90px">
+
+  <div class="tabs">
+    <button class="tab-btn active" onclick="showTab('nrs',this)">📊 Diário NRS</button>
+    <button class="tab-btn"        onclick="showTab('dn4',this)">🧠 DN4 Neuropática</button>
+    <button class="tab-btn"        onclick="showTab('hist',this)">📈 Histórico</button>
+  </div>
+
+  <!-- ═══ Tab: NRS ═══ -->
+  <div id="tab-nrs" class="tab-panel active">
+    <div class="card">
+      <div class="card-title">Escala Numérica de Dor (NRS 0–10)</div>
+
+      <div class="nrs-row" id="nrsRow">
+        <!-- rendered by JS -->
+      </div>
+      <div class="nrs-label"><span>Sem dor</span><span>Dor moderada</span><span>Dor insuportável</span></div>
+      <div id="nrsInterp" style="text-align:center;font-size:.8rem;margin-bottom:4px"></div>
+
+      <label class="field-lbl">Localização</label>
+      <select class="field-sel" id="locSel">
+        <option value="">Selecione…</option>
+        <option>Cabeça / Crânio</option>
+        <option>Face / Maxilar / DTM</option>
+        <option>Pescoço / Cervical</option>
+        <option>Tórax / Peito</option>
+        <option>Ombros / Braços</option>
+        <option>Mãos / Punhos</option>
+        <option>Abdômen superior</option>
+        <option>Abdômen inferior / Pelve</option>
+        <option>Lombar / Coluna</option>
+        <option>Quadris / Joelhos</option>
+        <option>Pernas / Panturrilhas</option>
+        <option>Pés / Tornozelos</option>
+        <option>Difusa / Generalizada</option>
+        <option>Outro</option>
+      </select>
+
+      <label class="field-lbl">Caráter da dor (selecione todos que se aplicam)</label>
+      <div class="char-grid" id="charGrid">
+        <div class="char-btn" onclick="toggleChar(this)" data-c="Queimação">🔥 Queimação</div>
+        <div class="char-btn" onclick="toggleChar(this)" data-c="Pontada">📍 Pontada</div>
+        <div class="char-btn" onclick="toggleChar(this)" data-c="Pressão">🪨 Pressão</div>
+        <div class="char-btn" onclick="toggleChar(this)" data-c="Latejamento">💗 Latejamento</div>
+        <div class="char-btn" onclick="toggleChar(this)" data-c="Choque">⚡ Choque</div>
+        <div class="char-btn" onclick="toggleChar(this)" data-c="Formigamento">🐜 Formigamento</div>
+        <div class="char-btn" onclick="toggleChar(this)" data-c="Adormecimento">😶 Adormecimento</div>
+        <div class="char-btn" onclick="toggleChar(this)" data-c="Facada">🗡️ Facada</div>
+        <div class="char-btn" onclick="toggleChar(this)" data-c="Cólica">🌀 Cólica</div>
+      </div>
+
+      <label class="field-lbl">Duração do episódio</label>
+      <select class="field-sel" id="durSel">
+        <option value="">Selecione…</option>
+        <option>Minutos (aguda)</option>
+        <option>Horas</option>
+        <option>Dia inteiro</option>
+        <option>Contínua há dias</option>
+        <option>Contínua há semanas</option>
+        <option>Crônica (meses/anos)</option>
+      </select>
+
+      <label class="field-lbl">Fatores de alívio</label>
+      <input type="text" class="field-inp" id="alivioInp" placeholder="Ex: repouso, calor, analgésico, sono…">
+
+      <label class="field-lbl">Fatores de piora</label>
+      <input type="text" class="field-inp" id="pioraInp" placeholder="Ex: movimento, frio, estresse, posição…">
+
+      <label class="field-lbl">Observação</label>
+      <input type="text" class="field-inp" id="obsInp" placeholder="Sintomas associados, contexto…">
+
+      <button class="btn" style="width:100%;background:#1e3a5f;color:#fff;margin-top:16px" onclick="salvarNRS()">
+        💾 Registrar avaliação
+      </button>
+    </div>
+  </div>
+
+  <!-- ═══ Tab: DN4 ═══ -->
+  <div id="tab-dn4" class="tab-panel">
+    <div class="card">
+      <div class="card-title">DN4-Entrevista — Rastreio de Dor Neuropática</div>
+      <p style="font-size:.73rem;color:#64748b;margin-bottom:14px;line-height:1.5">
+        Versão entrevista do DN4 (7 itens — sem exame físico). Pergunte ao paciente se a dor apresenta as seguintes características.<br>
+        <strong>Score ≥ 3/7 = rastreio positivo para dor neuropática.</strong>
+      </p>
+
+      <div id="dn4Items">
+        <div class="dn4-row">
+          <span class="dn4-q">1. A dor tem característica de <strong>queimação</strong>?</span>
+          <div class="dn4-tog"><button class="dn4-btn" data-idx="0" data-val="0" onclick="selDN4(this,0,1)">Sim</button><button class="dn4-btn" data-idx="0" data-val="1" onclick="selDN4(this,0,0)">Não</button></div>
+        </div>
+        <div class="dn4-row">
+          <span class="dn4-q">2. A dor provoca <strong>sensação de frio doloroso</strong>?</span>
+          <div class="dn4-tog"><button class="dn4-btn" data-idx="1" data-val="0" onclick="selDN4(this,1,1)">Sim</button><button class="dn4-btn" data-idx="1" data-val="1" onclick="selDN4(this,1,0)">Não</button></div>
+        </div>
+        <div class="dn4-row">
+          <span class="dn4-q">3. A dor se assemelha a <strong>choques elétricos</strong>?</span>
+          <div class="dn4-tog"><button class="dn4-btn" data-idx="2" data-val="0" onclick="selDN4(this,2,1)">Sim</button><button class="dn4-btn" data-idx="2" data-val="1" onclick="selDN4(this,2,0)">Não</button></div>
+        </div>
+        <div class="dn4-row">
+          <span class="dn4-q">4. A dor é acompanhada de <strong>formigamento</strong> na mesma área?</span>
+          <div class="dn4-tog"><button class="dn4-btn" data-idx="3" data-val="0" onclick="selDN4(this,3,1)">Sim</button><button class="dn4-btn" data-idx="3" data-val="1" onclick="selDN4(this,3,0)">Não</button></div>
+        </div>
+        <div class="dn4-row">
+          <span class="dn4-q">5. A dor é acompanhada de <strong>adormecimento</strong> (dormência)?</span>
+          <div class="dn4-tog"><button class="dn4-btn" data-idx="4" data-val="0" onclick="selDN4(this,4,1)">Sim</button><button class="dn4-btn" data-idx="4" data-val="1" onclick="selDN4(this,4,0)">Não</button></div>
+        </div>
+        <div class="dn4-row">
+          <span class="dn4-q">6. A dor provoca <strong>coceira</strong> na região dolorosa?</span>
+          <div class="dn4-tog"><button class="dn4-btn" data-idx="5" data-val="0" onclick="selDN4(this,5,1)">Sim</button><button class="dn4-btn" data-idx="5" data-val="1" onclick="selDN4(this,5,0)">Não</button></div>
+        </div>
+        <div class="dn4-row">
+          <span class="dn4-q">7. A dor é provocada ou piora com o <strong>toque leve</strong> (roupa, lençol)?</span>
+          <div class="dn4-tog"><button class="dn4-btn" data-idx="6" data-val="0" onclick="selDN4(this,6,1)">Sim</button><button class="dn4-btn" data-idx="6" data-val="1" onclick="selDN4(this,6,0)">Não</button></div>
+        </div>
+      </div>
+
+      <div class="dn4-result" id="dn4Result"></div>
+    </div>
+
+    <div class="card" style="font-size:.73rem;color:#64748b">
+      <strong style="color:#1e3a5f;display:block;margin-bottom:6px">📌 Implicações farmacoterapêuticas</strong>
+      <strong>Dor neuropática (≥3/7):</strong> Neuromoduladores como primeira linha — amitriptilina (10–150 mg/noite), duloxetina (30–60 mg/dia), gabapentina (300–3600 mg/dia), pregabalina (75–600 mg/dia). AINEs e opioides têm eficácia limitada.<br><br>
+      <strong>Dor nociceptiva (&lt;3/7):</strong> Analgésicos simples (paracetamol, AINEs) como escada analgésica da OMS. Fisioterapia e abordagem multidisciplinar.<br><br>
+      <strong>Referência:</strong> Bouhassira D et al. Pain. 2005;114(1-2):29-36. Perez C et al. J Pain. 2007;8(1):52-8.
+    </div>
+  </div>
+
+  <!-- ═══ Tab: Histórico ═══ -->
+  <div id="tab-hist" class="tab-panel">
+    <div class="card" id="histCard">
+      <div class="card-title">📈 Histórico de Dor</div>
+      <div id="sparkContainer" style="margin-bottom:10px"></div>
+      <div id="histList"><p style="color:#94a3b8;font-size:.82rem;text-align:center;padding:20px 0">Nenhum registro. Adicione avaliações na aba "Diário NRS".</p></div>
+    </div>
+  </div>
+
+</main>
+
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+
+<script src="js/db.js"></script>
+<script>
+const pid  = localStorage.getItem('vd_active');
+const KEY  = 'dor_hist_' + pid;
+let _nrs   = 0;
+let _chars = [];
+let _dn4   = [0,0,0,0,0,0,0];
+
+// ── NRS Scale ───────────────────────────────────────────────────────────
+const _NRS_COLORS = ['#16a34a','#22c55e','#4ade80','#a3e635','#eab308','#f97316','#ef4444','#dc2626','#b91c1c','#991b1b','#7f1d1d'];
+
+function initNRS() {
+  const row = document.getElementById('nrsRow');
+  row.innerHTML = Array.from({length:11},(_,i) =>
+    `<button class="nrs-btn${i===0?' sel':''}" onclick="selNRS(${i})" style="${i===0?'background:'+_NRS_COLORS[0]+';border-color:'+_NRS_COLORS[0]:''}">${i}</button>`
+  ).join('');
+  updateNRSInterp(0);
+}
+
+function selNRS(val) {
+  _nrs = val;
+  document.querySelectorAll('.nrs-btn').forEach((b,i) => {
+    b.classList.toggle('sel', i === val);
+    b.style.background = i === val ? _NRS_COLORS[i] : '';
+    b.style.borderColor = i === val ? _NRS_COLORS[i] : '';
+    b.style.color = i === val ? '#fff' : '';
+  });
+  updateNRSInterp(val);
+}
+
+function updateNRSInterp(val) {
+  const el = document.getElementById('nrsInterp');
+  let txt, cor;
+  if (val === 0)      { txt='Sem dor'; cor='#16a34a' }
+  else if (val <= 3)  { txt='Dor leve'; cor='#65a30d' }
+  else if (val <= 6)  { txt='Dor moderada'; cor='#d97706' }
+  else if (val <= 9)  { txt='Dor intensa'; cor='#dc2626' }
+  else                { txt='Dor insuportável'; cor='#7f1d1d' }
+  el.innerHTML = `<span style="font-size:1rem;font-weight:800;color:${cor}">${val}/10 — ${txt}</span>`;
+}
+
+function toggleChar(el) {
+  el.classList.toggle('sel');
+  _chars = [...document.querySelectorAll('.char-btn.sel')].map(b => b.dataset.c);
+}
+
+// ── DN4 ────────────────────────────────────────────────────────────────
+function selDN4(btn, idx, val) {
+  _dn4[idx] = val;
+  const tog = btn.parentElement;
+  tog.querySelectorAll('.dn4-btn').forEach(b => b.className = 'dn4-btn');
+  btn.classList.add(val === 1 ? 'sim' : 'nao');
+  calcDN4();
+}
+
+function calcDN4() {
+  const score = _dn4.reduce((a,b)=>a+b,0);
+  const el = document.getElementById('dn4Result');
+  let cor, titulo, texto;
+  if (score >= 3) {
+    cor='#7c3aed';
+    titulo='Rastreio positivo — Possível dor neuropática';
+    texto='Score ≥3/7: características sugestivas de dor neuropática. Considerar neuromoduladores (amitriptilina, duloxetina, gabapentina, pregabalina) em conjunto com avaliação médica.';
+  } else {
+    cor='#16a34a';
+    titulo='Rastreio negativo — Dor provavelmente nociceptiva';
+    texto='Score <3/7: padrão mais consistente com dor nociceptiva. Analgesia escalonada (paracetamol → AINEs → tramadol → opioides) conforme intensidade.';
+  }
+  el.innerHTML = `<div style="background:${cor}18;border:2px solid ${cor};border-radius:12px;padding:14px">
+    <div class="dn4-score" style="color:${cor}">${score}/7</div>
+    <div style="font-size:.75rem;font-weight:700;color:${cor};margin-top:4px">${titulo}</div>
+    <div style="font-size:.75rem;color:#1e293b;margin-top:8px;text-align:left;line-height:1.5">${texto}</div>
+  </div>`;
+}
+
+// ── Save / History ─────────────────────────────────────────────────────
+async function salvarNRS() {
+  if (!pid) { alert('Nenhum paciente ativo.'); return; }
+  const loc   = document.getElementById('locSel').value;
+  const dur   = document.getElementById('durSel').value;
+  const alivio= document.getElementById('alivioInp').value.trim();
+  const piora = document.getElementById('pioraInp').value.trim();
+  const obs   = document.getElementById('obsInp').value.trim();
+
+  const entry = {
+    id: Date.now(),
+    data: new Date().toISOString().slice(0,16),
+    nrs: _nrs,
+    localizacao: loc,
+    caracteres: [..._chars],
+    duracao: dur,
+    alivio, piora, obs,
+  };
+
+  const hist = await dbGetConfig(KEY) || [];
+  hist.push(entry);
+  await dbSetConfig(KEY, hist);
+  showTab('hist', document.querySelectorAll('.tab-btn')[2]);
+  renderHist(hist);
+  alert('Avaliação registrada!');
+}
+
+async function carregarHist() {
+  if (!pid) return;
+  const hist = await dbGetConfig(KEY) || [];
+  if (hist.length) renderHist(hist);
+}
+
+function renderHist(hist) {
+  const sorted = [...hist].sort((a,b) => b.data < a.data ? -1 : 1);
+  renderSparkline(sorted);
+
+  const el = document.getElementById('histList');
+  el.innerHTML = sorted.slice(0,20).map(h => {
+    const dt  = h.data ? new Date(h.data.replace('T',' ')).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) : '—';
+    const cor = h.nrs <= 3 ? '#16a34a' : h.nrs <= 6 ? '#d97706' : '#dc2626';
+    const chars = h.caracteres?.join(', ') || '—';
+    return `<div class="hist-item">
+      <div class="hist-score" style="color:${cor}">${h.nrs}</div>
+      <div style="flex:1">
+        <div class="hist-meta">${dt}${h.localizacao ? ' · ' + h.localizacao : ''}</div>
+        <div class="hist-char">${chars}</div>
+        ${h.obs ? `<div class="hist-char" style="color:#475569">${h.obs}</div>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderSparkline(sorted) {
+  const el = document.getElementById('sparkContainer');
+  const last30 = sorted.slice(0,30).reverse();
+  if (last30.length < 2) { el.innerHTML=''; return; }
+
+  const W=300, H=60, pad=4;
+  const max=10, n=last30.length;
+  const pts = last30.map((h,i) => {
+    const x = pad + i * (W - 2*pad) / (n-1);
+    const y = H - pad - (h.nrs/max) * (H-2*pad);
+    return `${x},${y}`;
+  }).join(' ');
+
+  const avg = Math.round(last30.reduce((s,h)=>s+h.nrs,0)/last30.length * 10) / 10;
+  const cor = avg <= 3 ? '#16a34a' : avg <= 6 ? '#d97706' : '#dc2626';
+
+  el.innerHTML = `<div style="position:relative">
+    <svg viewBox="0 0 ${W} ${H}" style="width:100%;height:60px">
+      <polyline points="${pts}" fill="none" stroke="${cor}" stroke-width="2" stroke-linejoin="round"/>
+      ${last30.map((h,i) => {
+        const x = pad + i * (W - 2*pad) / (n-1);
+        const y = H - pad - (h.nrs/max) * (H-2*pad);
+        const c = h.nrs <= 3 ? '#16a34a' : h.nrs <= 6 ? '#d97706' : '#dc2626';
+        return `<circle cx="${x}" cy="${y}" r="3" fill="${c}"/>`;
+      }).join('')}
+    </svg>
+    <div style="font-size:.68rem;color:#94a3b8;text-align:right">Média: <strong style="color:${cor}">${avg}/10</strong> · ${last30.length} registros</div>
+  </div>`;
+}
+
+// ── Tabs ────────────────────────────────────────────────────────────────
+function showTab(id, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  btn.classList.add('active');
+}
+
+// Init
+initNRS();
+calcDN4();
+carregarHist();
+</script>
+</body>
+</html>

@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Interação Alimento–Medicamento — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .ia-hdr { background:linear-gradient(135deg,#7c3aed,#0f766e);color:#fff;border-radius:14px;padding:18px;margin-bottom:14px }
+    .ia-title { font-size:1rem;font-weight:800;margin-bottom:4px }
+    .ia-sub { font-size:.73rem;opacity:.8 }
+    .stats-row { display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px }
+    .stat-box { border-radius:12px;padding:12px;text-align:center;border:2px solid }
+    .stat-num { font-size:1.5rem;font-weight:900 }
+    .stat-lbl { font-size:.6rem;font-weight:700;margin-top:2px }
+    .ia-card { border-radius:14px;padding:14px;margin-bottom:10px;border-left:5px solid }
+    .ia-card.grave    { background:#fef2f2;border-left-color:#dc2626 }
+    .ia-card.moderado { background:#fffbeb;border-left-color:#d97706 }
+    .risk-badge { display:inline-block;padding:3px 9px;border-radius:999px;font-size:.65rem;font-weight:800;color:#fff;margin-bottom:8px }
+    .rb-grave    { background:#dc2626 }
+    .rb-moderado { background:#d97706 }
+    .ia-titulo  { font-size:.9rem;font-weight:800;color:#1e3a5f;margin-bottom:4px }
+    .ia-alimento{ font-size:.75rem;color:#4b5563;margin-bottom:8px }
+    .ia-alimento span { font-weight:700;color:#374151 }
+    .ia-desc    { font-size:.78rem;line-height:1.6;color:#374151;margin-bottom:8px }
+    .ia-conduta { font-size:.78rem;line-height:1.5;background:#fff;border-radius:8px;padding:8px 10px;border-left:3px solid #0369a1;color:#1e3a5f }
+    .ia-meds    { font-size:.68rem;color:#64748b;margin-top:8px }
+    .ia-meds span { background:#f1f5f9;border-radius:5px;padding:2px 6px;margin-right:4px;display:inline-block;margin-bottom:2px }
+    .btn-check  { width:100%;background:#7c3aed;color:#fff;border:none;border-radius:12px;padding:14px;font-size:.88rem;font-weight:700;cursor:pointer;margin-bottom:14px }
+    .empty-state { text-align:center;padding:30px 0;color:#94a3b8;font-size:.85rem }
+    .empty-ok    { text-align:center;padding:24px;background:#f0fdf4;border-radius:14px;border:2px solid #86efac }
+    .sec-lbl { font-size:.62rem;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.08em;margin:14px 0 8px }
+  </style>
+</head>
+<body>
+
+<header class="top-bar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <span class="top-title">Interação Alimento–Med.</span>
+  <div class="top-right"></div>
+</header>
+
+<main class="container" style="padding-bottom:90px">
+
+  <div class="ia-hdr">
+    <div class="ia-title">🍽️ Interações Alimento–Medicamento</div>
+    <div class="ia-sub">Verificação automática nos medicamentos ativos · Base: Stockley's / UpToDate / Micromedex</div>
+  </div>
+
+  <button class="btn-check" onclick="verificar()">🔍 Verificar medicamentos ativos</button>
+
+  <!-- Stats -->
+  <div class="stats-row" id="statsRow" style="display:none">
+    <div class="stat-box" style="border-color:#dc2626;color:#dc2626">
+      <div class="stat-num" id="nGrave">0</div>
+      <div class="stat-lbl">GRAVES</div>
+    </div>
+    <div class="stat-box" style="border-color:#d97706;color:#d97706">
+      <div class="stat-num" id="nMod">0</div>
+      <div class="stat-lbl">MODERADAS</div>
+    </div>
+    <div class="stat-box" style="border-color:#16a34a;color:#16a34a">
+      <div class="stat-num" id="nMeds">0</div>
+      <div class="stat-lbl">MEDS ANALISADOS</div>
+    </div>
+  </div>
+
+  <div id="resultArea">
+    <p class="empty-state">Nenhuma verificação realizada.<br>Toque em "Verificar" para analisar os medicamentos do paciente ativo.</p>
+  </div>
+
+  <!-- Legenda -->
+  <div class="card" style="margin-top:4px;font-size:.73rem;color:#64748b">
+    <strong style="color:#1e3a5f;display:block;margin-bottom:6px">📌 Sobre as interações</strong>
+    <strong style="color:#dc2626">GRAVE:</strong> Risco clinicamente significativo — evitar combinação ou monitorar intensamente.<br>
+    <strong style="color:#d97706">MODERADO:</strong> Interação possível — gerenciável com ajuste de horário, dose ou dieta.<br><br>
+    <strong>Referências:</strong> Stockley's Drug Interactions; UpToDate; Micromedex 2.0; SBCFF 2023.
+  </div>
+
+</main>
+
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+
+<script src="js/alimento.js"></script>
+<script src="js/db.js"></script>
+<script>
+const pid = localStorage.getItem('vd_active');
+
+async function verificar() {
+  if (!pid) { alert('Nenhum paciente ativo.'); return; }
+  const all  = await dbGetAll('medicamentos');
+  const meds = all.filter(m => m.status === 'ativo' && (!m.pacienteId || String(m.pacienteId) === String(pid)));
+
+  document.getElementById('nMeds').textContent = meds.length;
+  document.getElementById('statsRow').style.display = 'grid';
+
+  if (!meds.length) {
+    document.getElementById('resultArea').innerHTML = '<p class="empty-state">Nenhum medicamento ativo encontrado.</p>';
+    return;
+  }
+
+  const alertas = verificarAlimentoFarma(meds);
+  const graves  = alertas.filter(a => a.risco === 'grave');
+  const mods    = alertas.filter(a => a.risco !== 'grave');
+
+  document.getElementById('nGrave').textContent = graves.length;
+  document.getElementById('nMod').textContent   = mods.length;
+
+  if (!alertas.length) {
+    document.getElementById('resultArea').innerHTML = `
+      <div class="empty-ok">
+        <div style="font-size:2rem;margin-bottom:8px">✅</div>
+        <strong style="color:#16a34a;display:block;margin-bottom:4px">Nenhuma interação identificada</strong>
+        <span style="font-size:.78rem;color:#4b5563">Os ${meds.length} medicamento(s) analisado(s) não apresentam interações alimento-medicamento conhecidas na base de dados.</span>
+      </div>`;
+    return;
+  }
+
+  let html = '';
+  if (graves.length) {
+    html += `<p class="sec-lbl">⚠️ Interações Graves (${graves.length})</p>`;
+    html += graves.map(renderCard).join('');
+  }
+  if (mods.length) {
+    html += `<p class="sec-lbl">⚡ Interações Moderadas (${mods.length})</p>`;
+    html += mods.map(renderCard).join('');
+  }
+  document.getElementById('resultArea').innerHTML = html;
+}
+
+function renderCard(a) {
+  const cls = a.risco === 'grave' ? 'grave' : 'moderado';
+  const rbCls = a.risco === 'grave' ? 'rb-grave' : 'rb-moderado';
+  const label = a.risco === 'grave' ? '⚠️ GRAVE' : '⚡ MODERADO';
+  return `<div class="ia-card ${cls}">
+    <span class="risk-badge ${rbCls}">${label}</span>
+    <div class="ia-titulo">${x(a.titulo)}</div>
+    <div class="ia-alimento">🍽️ Alimento: <span>${x(a.alimento)}</span></div>
+    <div class="ia-desc">${x(a.desc)}</div>
+    <div class="ia-conduta">💡 <strong>Conduta:</strong> ${x(a.conduta)}</div>
+    <div class="ia-meds">Medicamento(s): ${(a.medsTrigger||[]).map(m=>`<span>${x(m)}</span>`).join('')}</div>
+  </div>`;
+}
+
+function x(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+</script>
+</body>
+</html>

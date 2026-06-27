@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Farmácia Popular — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .fp-hdr { background:linear-gradient(135deg,#065f46,#0369a1);color:#fff;border-radius:14px;padding:18px;margin-bottom:14px }
+    .fp-title { font-size:1rem;font-weight:800;margin-bottom:4px }
+    .fp-sub   { font-size:.73rem;opacity:.8 }
+
+    .stats-row { display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px }
+    .stat-box  { border-radius:12px;padding:12px;text-align:center;border:2px solid }
+    .stat-num  { font-size:1.5rem;font-weight:900 }
+    .stat-lbl  { font-size:.6rem;font-weight:700;margin-top:2px }
+
+    .med-row { display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #f1f5f9 }
+    .med-row:last-child { border-bottom:none }
+    .med-icon { width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:800;flex-shrink:0 }
+    .med-name { font-size:.82rem;font-weight:700;flex:1 }
+    .med-sub  { font-size:.68rem;display:block }
+    .tag { display:inline-block;padding:2px 8px;border-radius:999px;font-size:.62rem;font-weight:800;color:#fff;flex-shrink:0 }
+    .tag-fp   { background:#16a34a }
+    .tag-ceaf { background:#0369a1 }
+    .tag-nc   { background:#94a3b8 }
+
+    .btn-check { width:100%;background:#065f46;color:#fff;border:none;border-radius:12px;padding:14px;font-size:.88rem;font-weight:700;cursor:pointer;margin-bottom:14px }
+    .sec-lbl { font-size:.62rem;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.08em;margin:14px 0 8px }
+    .empty-msg { text-align:center;color:#94a3b8;font-size:.82rem;padding:24px 0 }
+
+    .how-row { display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-bottom:1px solid #f1f5f9 }
+    .how-row:last-child { border-bottom:none }
+    .how-step { width:24px;height:24px;border-radius:50%;background:#0369a1;color:#fff;font-size:.72rem;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px }
+    .how-txt  { font-size:.78rem;line-height:1.5;flex:1 }
+
+    .cond-chip { display:inline-block;background:#e0f2fe;color:#0369a1;border-radius:6px;padding:1px 7px;font-size:.62rem;font-weight:700;margin-left:4px }
+    .ceaf-chip { display:inline-block;background:#ede9fe;color:#7c3aed;border-radius:6px;padding:1px 7px;font-size:.62rem;font-weight:700;margin-left:4px }
+  </style>
+</head>
+<body>
+
+<header class="top-bar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <span class="top-title">Farmácia Popular / CEAF</span>
+  <div class="top-right"></div>
+</header>
+
+<main class="container" style="padding-bottom:90px">
+
+  <div class="fp-hdr">
+    <div class="fp-title">🏥 Acesso a Medicamentos — SUS</div>
+    <div class="fp-sub">Farmácia Popular (gratuito/subsidiado) · CEAF — Medicamentos de Alto Custo · Programa Mais Saúde</div>
+  </div>
+
+  <button class="btn-check" onclick="verificar()">🔍 Verificar medicamentos do paciente</button>
+
+  <!-- Stats -->
+  <div class="stats-row" id="statsRow" style="display:none">
+    <div class="stat-box" style="border-color:#16a34a;color:#16a34a">
+      <div class="stat-num" id="nFP">0</div><div class="stat-lbl">FARMÁCIA<br>POPULAR</div>
+    </div>
+    <div class="stat-box" style="border-color:#0369a1;color:#0369a1">
+      <div class="stat-num" id="nCEAF">0</div><div class="stat-lbl">CEAF<br>ALTO CUSTO</div>
+    </div>
+    <div class="stat-box" style="border-color:#94a3b8;color:#64748b">
+      <div class="stat-num" id="nNC">0</div><div class="stat-lbl">SEM<br>COBERTURA</div>
+    </div>
+  </div>
+
+  <div id="resultArea"><p class="empty-msg">Toque em "Verificar" para analisar os medicamentos do paciente ativo.</p></div>
+
+  <!-- Como acessar: Farmácia Popular -->
+  <div class="card">
+    <div class="card-title">📋 Como acessar a Farmácia Popular</div>
+    <div class="how-row">
+      <div class="how-step">1</div>
+      <div class="how-txt"><strong>Documentos necessários:</strong> RG ou CPF, receita médica válida (30–180 dias conforme medicamento) e cartão SUS (para alguns itens).</div>
+    </div>
+    <div class="how-row">
+      <div class="how-step">2</div>
+      <div class="how-txt"><strong>Onde retirar:</strong> Farmácias e drogarias credenciadas ao programa Farmácia Popular em todo o Brasil. Busque em <em>consultafarmaciasdocidadao.saude.gov.br</em></div>
+    </div>
+    <div class="how-row">
+      <div class="how-step">3</div>
+      <div class="how-txt"><strong>Diabetes e hipertensão:</strong> Medicamentos são 100% gratuitos. Asma, rinite, osteoporose, glaucoma, dislipidemia, Parkinson e anticoncepcionais têm descontos de até 90%.</div>
+    </div>
+    <div class="how-row">
+      <div class="how-step">4</div>
+      <div class="how-txt"><strong>Formulários:</strong> Apenas receita médica e documento de identificação. Não é necessário Laudo médico para a Farmácia Popular.</div>
+    </div>
+  </div>
+
+  <!-- Como acessar: CEAF -->
+  <div class="card">
+    <div class="card-title">📋 Como acessar o CEAF (Alto Custo)</div>
+    <div class="how-row">
+      <div class="how-step">1</div>
+      <div class="how-txt"><strong>Laudo de Medicamento Especializado (LME):</strong> Formulário preenchido e assinado pelo médico especialista da rede SUS com CID, dose, justificativa clínica e número do protocolo PCDT.</div>
+    </div>
+    <div class="how-row">
+      <div class="how-step">2</div>
+      <div class="how-txt"><strong>Documentos:</strong> LME preenchido, cópia RG, CPF e comprovante de residência, exames que comprovem o diagnóstico, receita médica, cartão SUS.</div>
+    </div>
+    <div class="how-row">
+      <div class="how-step">3</div>
+      <div class="how-txt"><strong>Onde solicitar:</strong> CEMA (Centro de Medicamentos de Alto Custo) da Secretaria Estadual de Saúde ou DAF/DENAFAR do município — varia por estado.</div>
+    </div>
+    <div class="how-row">
+      <div class="how-step">4</div>
+      <div class="how-txt"><strong>Prazo:</strong> Avaliação em até 10 dias úteis. Em caso de urgência, solicitar habilitação por tutela/mandado judicial.</div>
+    </div>
+    <div class="how-row">
+      <div class="how-step">5</div>
+      <div class="how-txt"><strong>Renovação:</strong> Geralmente semestral ou anual com novos exames e avaliação médica. O farmacêutico pode auxiliar na organização da documentação.</div>
+    </div>
+  </div>
+
+  <!-- Referências -->
+  <div class="card" style="font-size:.72rem;color:#64748b">
+    <strong style="color:#1e3a5f;display:block;margin-bottom:6px">📌 Referências</strong>
+    Programa Farmácia Popular do Brasil (PFPB) — MS/SCTIE (Portaria GM/MS nº 971/2022 e atualizações).<br>
+    CEAF — Componente Especializado da Assistência Farmacêutica (PCTD vigentes — DAF/SCTIE).<br>
+    RENAME 2022 — Relação Nacional de Medicamentos Essenciais.
+  </div>
+
+</main>
+
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+
+<script src="js/db.js"></script>
+<script>
+const pid = localStorage.getItem('vd_active');
+
+/* ── Farmácia Popular ─────────────────────────────────────────────────── */
+const _FP = [
+  // Hipertensão (gratuito)
+  { r:/losartan[a]?/i,             n:'Losartana',               cond:'Hipertensão',   gratu:true },
+  { r:/captopril/i,                n:'Captopril',               cond:'Hipertensão',   gratu:true },
+  { r:/enalapril/i,                n:'Enalapril',               cond:'Hipertensão',   gratu:true },
+  { r:/propranolol/i,              n:'Propranolol',             cond:'Hipertensão',   gratu:true },
+  { r:/atenolol/i,                 n:'Atenolol',                cond:'Hipertensão',   gratu:true },
+  { r:/metoprolol/i,               n:'Metoprolol',              cond:'Hipertensão',   gratu:true },
+  { r:/anlodipino|amlodipino/i,    n:'Anlodipino',              cond:'Hipertensão',   gratu:true },
+  { r:/hidroclorotiazida/i,        n:'Hidroclorotiazida',       cond:'Hipertensão',   gratu:true },
+  { r:/ramipril/i,                 n:'Ramipril',                cond:'Hipertensão',   gratu:true },
+  { r:/carvedilol/i,               n:'Carvedilol',              cond:'Hipertensão',   gratu:true },
+  // Diabetes (gratuito)
+  { r:/metformina/i,               n:'Metformina',              cond:'Diabetes',      gratu:true },
+  { r:/glibenclamida/i,            n:'Glibenclamida',           cond:'Diabetes',      gratu:true },
+  { r:/glipizida/i,                n:'Glipizida',               cond:'Diabetes',      gratu:true },
+  { r:/insulina.?nph|nph.?insulina/i, n:'Insulina NPH',        cond:'Diabetes',      gratu:true },
+  { r:/insulina.?regular/i,        n:'Insulina Regular',        cond:'Diabetes',      gratu:true },
+  // Dislipidemia (descontada)
+  { r:/sinvastatina/i,             n:'Sinvastatina',            cond:'Dislipidemia',  gratu:false },
+  { r:/atorvastatina/i,            n:'Atorvastatina',           cond:'Dislipidemia',  gratu:false },
+  // Asma (descontada)
+  { r:/salbutamol|albuterol/i,     n:'Salbutamol',              cond:'Asma',          gratu:false },
+  { r:/formoterol/i,               n:'Formoterol / Budesonida', cond:'Asma',          gratu:false },
+  { r:/beclometasona/i,            n:'Beclometasona',           cond:'Asma',          gratu:false },
+  { r:/ipratropio/i,               n:'Ipratrópio',              cond:'Asma',          gratu:false },
+  { r:/montelucaste/i,             n:'Montelucaste',            cond:'Asma / Rinite', gratu:false },
+  { r:/teofilina/i,                n:'Teofilina',               cond:'Asma',          gratu:false },
+  // Rinite (descontada)
+  { r:/loratadina/i,               n:'Loratadina',              cond:'Rinite',        gratu:false },
+  { r:/cetirizina/i,               n:'Cetirizina',              cond:'Rinite',        gratu:false },
+  { r:/fexofenadina/i,             n:'Fexofenadina',            cond:'Rinite',        gratu:false },
+  { r:/desloratadina/i,            n:'Desloratadina',           cond:'Rinite',        gratu:false },
+  { r:/fluticasona/i,              n:'Fluticasona (nasal)',      cond:'Rinite',        gratu:false },
+  { r:/budesonida.?nasal|nasal.?budesonida/i, n:'Budesonida (nasal)', cond:'Rinite', gratu:false },
+  // Osteoporose (descontada)
+  { r:/alendronato/i,              n:'Alendronato',             cond:'Osteoporose',   gratu:false },
+  { r:/carbonato.?c[aá]lcio/i,     n:'Carbonato de Cálcio',     cond:'Osteoporose',   gratu:false },
+  { r:/colecalciferol|vitamina.?d3/i, n:'Vitamina D3',         cond:'Osteoporose',   gratu:false },
+  { r:/risedronato/i,              n:'Risedronato',             cond:'Osteoporose',   gratu:false },
+  // Glaucoma (descontada)
+  { r:/timolol/i,                  n:'Timolol (colírio)',        cond:'Glaucoma',      gratu:false },
+  { r:/latanoprosta/i,             n:'Latanoprosta',            cond:'Glaucoma',      gratu:false },
+  { r:/brimonidina/i,              n:'Brimonidina',             cond:'Glaucoma',      gratu:false },
+  { r:/dorzolamida/i,              n:'Dorzolamida',             cond:'Glaucoma',      gratu:false },
+  { r:/bimatoprosta/i,             n:'Bimatoprosta',            cond:'Glaucoma',      gratu:false },
+  // Parkinson (descontada)
+  { r:/levodopa/i,                 n:'Levodopa / Carbidopa',    cond:'Parkinson',     gratu:false },
+  { r:/selegilina/i,               n:'Selegilina',              cond:'Parkinson',     gratu:false },
+  { r:/entacapona/i,               n:'Entacapona',              cond:'Parkinson',     gratu:false },
+  { r:/biperideno/i,               n:'Biperideno',              cond:'Parkinson',     gratu:false },
+  // Anticoncepcionais (descontado)
+  { r:/levonorgestrel/i,           n:'Anticoncepcional (LNG)',  cond:'Contracepção',  gratu:false },
+  { r:/desogestrel/i,              n:'Desogestrel',             cond:'Contracepção',  gratu:false },
+];
+
+/* ── CEAF ───────────────────────────────────────────────────────────────── */
+const _CEAF = [
+  // Imunossupressores
+  { r:/tacrolimus|tacrolimo/i,     n:'Tacrolimus',              cond:'Transplante',       grupo:'1A' },
+  { r:/ciclosporina/i,             n:'Ciclosporina',            cond:'Transplante/Autoimune', grupo:'1A' },
+  { r:/micofenolato/i,             n:'Micofenolato',            cond:'Transplante',       grupo:'1A' },
+  { r:/azatioprina/i,              n:'Azatioprina',             cond:'Transplante/AR/IBD', grupo:'1B' },
+  { r:/sirolimus|sirolimo/i,       n:'Sirolimus',               cond:'Transplante',       grupo:'1A' },
+  // Biológicos AR/autoimune
+  { r:/adalimumabe/i,              n:'Adalimumabe',             cond:'AR / Psoríase / Crohn', grupo:'1A' },
+  { r:/etanercept|etanercepte/i,   n:'Etanercepte',             cond:'AR / Psoríase',     grupo:'1A' },
+  { r:/infliximabe/i,              n:'Infliximabe',             cond:'AR / Crohn / RCU',  grupo:'1A' },
+  { r:/abatacept|abatacepte/i,     n:'Abatacepte',              cond:'AR refratária',     grupo:'1A' },
+  { r:/rituximab/i,                n:'Rituximabe',              cond:'AR / Linfoma / LES', grupo:'1A' },
+  { r:/secukinumab/i,              n:'Secuquinumabe',           cond:'Psoríase / EA',     grupo:'1A' },
+  { r:/ustekinumab/i,              n:'Ustequinumabe',           cond:'Psoríase / Crohn',  grupo:'1A' },
+  // Esclerose Múltipla
+  { r:/interferon.?beta/i,         n:'Interferon Beta',         cond:'Esclerose Múltipla', grupo:'1A' },
+  { r:/glatiramer/i,               n:'Acetato de Glatirâmer',   cond:'Esclerose Múltipla', grupo:'1A' },
+  { r:/natalizumabe/i,             n:'Natalizumabe',            cond:'Esclerose Múltipla', grupo:'1A' },
+  { r:/fingolimode/i,              n:'Fingolimode',             cond:'Esclerose Múltipla', grupo:'1A' },
+  { r:/teriflunomida/i,            n:'Teriflunomida',           cond:'Esclerose Múltipla', grupo:'1A' },
+  { r:/dimetil.?fumarato/i,        n:'Dimetil Fumarato',        cond:'Esclerose Múltipla', grupo:'1A' },
+  // Hepatite B e C
+  { r:/tenofovir/i,                n:'Tenofovir',               cond:'Hepatite B / HIV',  grupo:'1B' },
+  { r:/entecavir/i,                n:'Entecavir',               cond:'Hepatite B',        grupo:'1B' },
+  { r:/sofosbuvir/i,               n:'Sofosbuvir',              cond:'Hepatite C',        grupo:'1A' },
+  { r:/daclatasvir/i,              n:'Daclatasvir',             cond:'Hepatite C',        grupo:'1A' },
+  { r:/ledipasvir/i,               n:'Ledipasvir',              cond:'Hepatite C',        grupo:'1A' },
+  // Insulinas análogas
+  { r:/insulina.?glargin|glargin[a]?/i, n:'Insulina Glargina',  cond:'DM tipo 1 / DM2 selecionado', grupo:'1B' },
+  { r:/insulina.?detemir|detemir/i,     n:'Insulina Detemir',   cond:'DM tipo 1',        grupo:'1B' },
+  { r:/insulina.?lispro|lispro/i,       n:'Insulina Lispro',    cond:'DM tipo 1',        grupo:'1B' },
+  { r:/insulina.?asparte|asparte/i,     n:'Insulina Asparte',   cond:'DM tipo 1',        grupo:'1B' },
+  { r:/insulina.?glulisina/i,           n:'Insulina Glulisina',  cond:'DM tipo 1',        grupo:'1B' },
+  // Anemia renal
+  { r:/eritropoetina|epoetina|darbepoetina/i, n:'Eritropoetina', cond:'Anemia renal crônica', grupo:'1A' },
+  // Hipertensão Pulmonar
+  { r:/bosentana|bosentan/i,       n:'Bosentana',               cond:'Hipertensão Pulmonar', grupo:'1A' },
+  { r:/ambrisentana/i,             n:'Ambrisentana',            cond:'Hipertensão Pulmonar', grupo:'1A' },
+  { r:/riociguat/i,                n:'Riociguat',               cond:'Hipertensão Pulmonar', grupo:'1A' },
+  // Asma grave
+  { r:/omalizumabe/i,              n:'Omalizumabe',             cond:'Asma grave',        grupo:'1A' },
+  { r:/mepolizumabe/i,             n:'Mepolizumabe',            cond:'Asma grave',        grupo:'1A' },
+  // Antiepiléticos
+  { r:/lamotrigina/i,              n:'Lamotrigina',             cond:'Epilepsia refratária', grupo:'1B' },
+  { r:/topiramato/i,               n:'Topiramato',              cond:'Epilepsia refratária', grupo:'1B' },
+  { r:/levetiracetam/i,            n:'Levetiracetam',           cond:'Epilepsia refratária', grupo:'1B' },
+  { r:/oxcarbazepina/i,            n:'Oxcarbazepina',           cond:'Epilepsia refratária', grupo:'1B' },
+  { r:/vigabatrina/i,              n:'Vigabatrina',             cond:'Epilepsia refratária', grupo:'1B' },
+  // Doença de Crohn / RCU
+  { r:/mesalazina/i,               n:'Mesalazina',              cond:'DII (Crohn/RCU)',   grupo:'1B' },
+  { r:/vedolizumabe/i,             n:'Vedolizumabe',            cond:'DII refratária',    grupo:'1A' },
+  // Metotrexato oncologia/AR
+  { r:/metotrexato/i,              n:'Metotrexato (oncologia/AR)', cond:'AR grave / Neoplasia', grupo:'1B' },
+  // Leucemia / neoplasia
+  { r:/imatinibe/i,                n:'Imatinibe',               cond:'LMC / GIST',        grupo:'1A' },
+  { r:/dasatinibe/i,               n:'Dasatinibe',              cond:'LMC refratária',    grupo:'1A' },
+  { r:/nilotinibe/i,               n:'Nilotinibe',              cond:'LMC refratária',    grupo:'1A' },
+  // Doença de Gaucher
+  { r:/imiglicerase|velaglicerase|taliglucerase/i, n:'Enzima para Gaucher', cond:'Doença de Gaucher', grupo:'1A' },
+];
+
+function norm(s) { return (s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,''); }
+
+async function verificar() {
+  if (!pid) { alert('Nenhum paciente ativo.'); return; }
+  const all  = await dbGetAll('medicamentos');
+  const meds = all.filter(m => m.status === 'ativo' && (!m.pacienteId || String(m.pacienteId) === String(pid)));
+
+  if (!meds.length) {
+    document.getElementById('resultArea').innerHTML = '<p class="empty-msg">Nenhum medicamento ativo encontrado.</p>';
+    document.getElementById('statsRow').style.display = 'none';
+    return;
+  }
+
+  const fp_gratu = [], fp_desc = [], ceaf = [], nc = [];
+
+  meds.forEach(m => {
+    const n = norm(m.nome || '');
+
+    const fpMatch = _FP.find(e => e.r.test(n));
+    if (fpMatch) {
+      (fpMatch.gratu ? fp_gratu : fp_desc).push({ med: m.nome, match: fpMatch });
+      return;
+    }
+
+    const ceafMatch = _CEAF.find(e => e.r.test(n));
+    if (ceafMatch) {
+      ceaf.push({ med: m.nome, match: ceafMatch });
+      return;
+    }
+
+    nc.push(m.nome);
+  });
+
+  const nFP = fp_gratu.length + fp_desc.length;
+  document.getElementById('nFP').textContent   = nFP;
+  document.getElementById('nCEAF').textContent  = ceaf.length;
+  document.getElementById('nNC').textContent    = nc.length;
+  document.getElementById('statsRow').style.display = 'grid';
+
+  let html = '';
+
+  if (fp_gratu.length) {
+    html += `<p class="sec-lbl">✅ Farmácia Popular — GRATUITO (${fp_gratu.length})</p>
+    <div class="card" style="padding:8px 14px">
+      ${fp_gratu.map(f => renderMedRow(f.med, f.match, 'fp', '100% gratuito')).join('')}
+    </div>`;
+  }
+
+  if (fp_desc.length) {
+    html += `<p class="sec-lbl">💰 Farmácia Popular — Com Desconto (${fp_desc.length})</p>
+    <div class="card" style="padding:8px 14px">
+      ${fp_desc.map(f => renderMedRow(f.med, f.match, 'fp', 'Até 90% de desconto')).join('')}
+    </div>`;
+  }
+
+  if (ceaf.length) {
+    html += `<p class="sec-lbl">📋 CEAF — Alto Custo / Especializado (${ceaf.length})</p>
+    <div class="card" style="padding:8px 14px">
+      ${ceaf.map(f => renderMedRow(f.med, f.match, 'ceaf', 'Requer LME + PCDT')).join('')}
+    </div>`;
+  }
+
+  if (nc.length) {
+    html += `<p class="sec-lbl">➖ Sem cobertura identificada (${nc.length})</p>
+    <div class="card" style="padding:8px 14px">
+      ${nc.map(nome => `<div class="med-row">
+        <div class="med-icon" style="background:#f1f5f9;color:#64748b">💊</div>
+        <div class="med-name" style="color:#64748b">${x(nome)}<span class="med-sub" style="color:#94a3b8">Não encontrado nas bases consultadas</span></div>
+        <span class="tag tag-nc">N/A</span>
+      </div>`).join('')}
+    </div>`;
+  }
+
+  if (!html) html = '<p class="empty-msg">Nenhum medicamento analisado.</p>';
+  document.getElementById('resultArea').innerHTML = html;
+}
+
+function renderMedRow(nome, match, tipo, desc) {
+  const isceaf = tipo === 'ceaf';
+  const tagCls = isceaf ? 'tag-ceaf' : 'tag-fp';
+  const tagTxt = isceaf ? 'CEAF' : 'FP';
+  const bgIcon = isceaf ? '#ede9fe' : '#d1fae5';
+  const coIcon = isceaf ? '#7c3aed' : '#16a34a';
+  const icon   = isceaf ? '📋' : '✅';
+  const chipCls= isceaf ? 'ceaf-chip' : 'cond-chip';
+  return `<div class="med-row">
+    <div class="med-icon" style="background:${bgIcon};color:${coIcon}">${icon}</div>
+    <div style="flex:1">
+      <div class="med-name">${x(nome)}<span class="${chipCls}">${x(match.cond)}</span>${isceaf ? `<span class="ceaf-chip">Grupo ${match.grupo}</span>` : ''}</div>
+      <span class="med-sub" style="color:#4b5563">${x(match.n)} · ${desc}</span>
+    </div>
+    <span class="tag ${tagCls}">${tagTxt}</span>
+  </div>`;
+}
+
+function x(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+</script>
+</body>
+</html>
