@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Dose Pediátrica — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <style>
+    body { background:#f8fafc;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif }
+
+    .topbar { display:flex;align-items:center;gap:10px;padding:14px 16px;background:#fff;border-bottom:1px solid #e2e8f0;position:sticky;top:0;z-index:100 }
+    .back-btn { background:none;border:none;font-size:1.3rem;cursor:pointer;padding:4px 8px;color:#475569;border-radius:8px }
+    .back-btn:hover { background:#f1f5f9 }
+    .topbar-title { font-size:1rem;font-weight:700;color:#1e293b }
+
+    .card { background:#fff;border-radius:14px;padding:16px;margin:0 16px 12px;box-shadow:0 1px 4px rgba(0,0,0,.06) }
+    .label-sm { font-size:.7rem;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px;display:block }
+
+    /* Peso */
+    .peso-row { display:flex;align-items:center;gap:12px }
+    .peso-input { flex:1;border:2px solid #e2e8f0;border-radius:10px;padding:14px 16px;font-size:1.5rem;font-weight:700;color:#1e293b;text-align:center;outline:none;transition:border-color .2s;-webkit-appearance:none }
+    .peso-input:focus { border-color:#6366f1 }
+    .peso-unit { font-size:1.1rem;color:#64748b;font-weight:600;white-space:nowrap }
+    .peso-ref { font-size:.72rem;color:#6366f1;margin-top:6px;display:none }
+
+    /* Busca */
+    .search-wrap { position:relative }
+    .search-input { width:100%;border:2px solid #e2e8f0;border-radius:10px;padding:12px 16px;font-size:.95rem;color:#1e293b;outline:none;box-sizing:border-box;transition:border-color .2s }
+    .search-input:focus { border-color:#6366f1 }
+    .search-dropdown { position:absolute;top:calc(100% + 4px);left:0;right:0;background:#fff;border:1px solid #e2e8f0;border-radius:10px;box-shadow:0 4px 20px rgba(0,0,0,.12);z-index:200;max-height:240px;overflow-y:auto;display:none }
+    .search-dropdown.open { display:block }
+    .search-opt { padding:11px 16px;cursor:pointer;font-size:.88rem;color:#1e293b;border-bottom:1px solid #f1f5f9;line-height:1.3 }
+    .search-opt:last-child { border-bottom:none }
+    .search-opt:hover,.search-opt:focus-within { background:#f8fafc }
+    .search-opt-sub { font-size:.72rem;color:#94a3b8 }
+    .forma-sel { width:100%;border:2px solid #e2e8f0;border-radius:10px;padding:10px 14px;font-size:.88rem;color:#1e293b;background:#fff;outline:none;box-sizing:border-box;margin-top:10px;display:none;cursor:pointer }
+    .forma-sel:focus { border-color:#6366f1 }
+
+    /* Chips rápidos */
+    .chips-row { display:flex;flex-wrap:wrap;gap:7px }
+    .chip { background:#f1f5f9;border:none;border-radius:20px;padding:7px 14px;font-size:.8rem;color:#475569;cursor:pointer;font-weight:600;transition:all .15s;white-space:nowrap }
+    .chip:hover { background:#e2e8f0 }
+    .chip.ativo { background:#6366f1;color:#fff }
+
+    /* Resultado */
+    .res-card { border-radius:16px;padding:20px;margin:0 16px 12px;color:#fff }
+    .res-card.roxo { background:linear-gradient(135deg,#6366f1,#8b5cf6) }
+    .res-card.verde { background:linear-gradient(135deg,#059669,#047857) }
+    .res-card.amarelo { background:linear-gradient(135deg,#d97706,#b45309) }
+    .res-card.vermelho { background:linear-gradient(135deg,#dc2626,#b91c1c) }
+    .res-nome { font-size:1rem;font-weight:800;margin-bottom:2px }
+    .res-sub { font-size:.75rem;opacity:.8;margin-bottom:14px }
+    .res-dose { font-size:1.7rem;font-weight:800;margin-bottom:2px;line-height:1.1 }
+    .res-dose-label { font-size:.73rem;opacity:.8 }
+    .res-grid { display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:14px }
+    .res-item { background:rgba(255,255,255,.18);border-radius:9px;padding:10px 12px }
+    .res-item-l { font-size:.66rem;text-transform:uppercase;letter-spacing:.06em;opacity:.75 }
+    .res-item-v { font-size:.95rem;font-weight:700;margin-top:2px }
+    .res-nota { background:rgba(255,255,255,.15);border-radius:9px;padding:10px 12px;margin-top:10px;font-size:.78rem;line-height:1.55 }
+    .res-alerta { background:rgba(0,0,0,.18);border-radius:8px;padding:8px 12px;margin-top:8px;font-size:.78rem;font-weight:700;border-left:3px solid rgba(255,255,255,.5) }
+    .res-limite { font-size:.7rem;background:rgba(255,255,255,.2);border-radius:4px;padding:2px 7px;vertical-align:middle;margin-left:4px }
+
+    /* Dose por faixa etária */
+    .faixa-row { display:flex;justify-content:space-between;align-items:center;background:rgba(255,255,255,.18);border-radius:8px;padding:9px 12px;margin-bottom:7px }
+    .faixa-row:last-child { margin-bottom:0 }
+
+    /* Aviso de peso faltando */
+    .sem-peso { text-align:center;color:#94a3b8;font-size:.85rem;padding:24px 0 }
+
+    /* Disclaimer */
+    .disclaimer { background:#fef3c7;border-left:3px solid #f59e0b;border-radius:8px;padding:10px 14px;font-size:.74rem;color:#78350f;margin:0 16px 24px;line-height:1.5 }
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <span class="topbar-title">👶 Calculadora de Dose Pediátrica</span>
+</div>
+
+<div style="height:14px"></div>
+
+<!-- Peso -->
+<div class="card">
+  <span class="label-sm">Peso do Paciente</span>
+  <div class="peso-row">
+    <input type="number" id="inp-peso" class="peso-input" placeholder="0,0"
+      min="0.1" max="150" step="0.1" oninput="onPesoChange()" inputmode="decimal">
+    <span class="peso-unit">kg</span>
+  </div>
+  <div class="peso-ref" id="peso-ref"></div>
+</div>
+
+<!-- Medicamento -->
+<div class="card">
+  <span class="label-sm">Medicamento</span>
+  <div class="search-wrap">
+    <input type="text" id="inp-busca" class="search-input"
+      placeholder="Buscar medicamento pediátrico..."
+      oninput="onBuscaChange()" onfocus="onBuscaFocus()"
+      autocomplete="off" autocorrect="off" spellcheck="false">
+    <div id="search-dd" class="search-dropdown"></div>
+  </div>
+  <select id="sel-forma" class="forma-sel" onchange="onFormaChange()"></select>
+</div>
+
+<!-- Acesso rápido -->
+<div class="card">
+  <span class="label-sm">Acesso Rápido</span>
+  <div class="chips-row" id="chips-rapidos"></div>
+</div>
+
+<!-- Resultado -->
+<div id="resultado"></div>
+
+<!-- Disclaimer -->
+<div class="disclaimer">
+  ⚠️ <strong>Ferramenta de apoio clínico.</strong>
+  Doses baseadas em referências pediátricas (Taketomo et al., Lexi-Comp Pediatric; SBPD).
+  Sempre confirmar a prescrição com o médico responsável. Doses podem variar
+  conforme indicação, gravidade e condições clínicas específicas.
+</div>
+
+<script src="js/db.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/pedidose.js"></script>
+<script>
+
+const RAPIDOS = ['paracetamol','ibuprofeno','dipirona','amoxicilina','azitromicina',
+                 'cefalexina','prednisolona','ondansetrona','cetirizina','loratadina'];
+
+let _medAtual  = null;
+let _pesoAtual = 0;
+let _formaIdx  = 0;
+
+/* ─── Init ─────────────────────────────────────────────── */
+async function init() {
+  const pid = typeof getActivePacienteId === 'function' ? getActivePacienteId() : null;
+  if (pid) {
+    try {
+      const pac = await dbGet('pacientes', pid);
+      if (pac?.pesoPac) {
+        const pesoNum = parseFloat(pac.pesoPac);
+        if (pesoNum > 0) {
+          document.getElementById('inp-peso').value = pesoNum;
+          _pesoAtual = pesoNum;
+          const refEl = document.getElementById('peso-ref');
+          refEl.textContent = `✓ Peso do perfil de ${pac.nome || 'paciente'}: ${pesoNum} kg`;
+          refEl.style.display = 'block';
+        }
+      }
+    } catch(e) {}
+  }
+  renderChipsRapidos();
+}
+
+/* ─── Peso ──────────────────────────────────────────────── */
+function onPesoChange() {
+  const v = parseFloat(document.getElementById('inp-peso').value);
+  _pesoAtual = (isNaN(v) || v <= 0) ? 0 : v;
+  if (_medAtual) renderResultado();
+}
+
+/* ─── Busca ─────────────────────────────────────────────── */
+function onBuscaChange() {
+  const q = document.getElementById('inp-busca').value.trim();
+  if (q.length < 1) { fecharDD(); return; }
+  renderDD(buscarPediMed(q).slice(0, 12));
+}
+
+function onBuscaFocus() {
+  const q = document.getElementById('inp-busca').value.trim();
+  if (q.length >= 1) renderDD(buscarPediMed(q).slice(0, 12));
+}
+
+function renderDD(meds) {
+  const dd = document.getElementById('search-dd');
+  if (!meds.length) { fecharDD(); return; }
+  dd.innerHTML = meds.map(m =>
+    `<div class="search-opt" onclick="selecionarMed('${m.id}')">
+      ${m.nome}
+      <div class="search-opt-sub">${PEDI_GRUPOS[m.grupo] || m.grupo}</div>
+    </div>`
+  ).join('');
+  dd.classList.add('open');
+}
+
+function fecharDD() {
+  document.getElementById('search-dd').classList.remove('open');
+}
+
+document.addEventListener('click', e => {
+  if (!e.target.closest('.search-wrap')) fecharDD();
+});
+
+/* ─── Seleção de medicamento ─────────────────────────────── */
+function selecionarMed(id) {
+  _medAtual = PEDI_MEDS.find(m => m.id === id);
+  _formaIdx = 0;
+  fecharDD();
+  if (!_medAtual) return;
+  document.getElementById('inp-busca').value = _medAtual.nome;
+  renderFormas();
+  renderResultado();
+  renderChipsRapidos();
+}
+
+function renderFormas() {
+  const sel = document.getElementById('sel-forma');
+  if (!_medAtual?.formas?.length || _medAtual.naoUsaPeso || _medAtual.formas.length < 2) {
+    sel.style.display = 'none';
+    return;
+  }
+  sel.innerHTML = _medAtual.formas.map((f, i) =>
+    `<option value="${i}">${f.desc}</option>`
+  ).join('');
+  sel.value = 0;
+  sel.style.display = 'block';
+}
+
+function onFormaChange() {
+  _formaIdx = parseInt(document.getElementById('sel-forma').value) || 0;
+  renderResultado();
+}
+
+/* ─── Chips rápidos ─────────────────────────────────────── */
+function renderChipsRapidos() {
+  document.getElementById('chips-rapidos').innerHTML = RAPIDOS.map(id => {
+    const m = PEDI_MEDS.find(x => x.id === id);
+    if (!m) return '';
+    const ativo = _medAtual?.id === id ? ' ativo' : '';
+    const label = m.nome.split(' /')[0].split(' +')[0].split('(')[0].trim();
+    return `<button class="chip${ativo}" onclick="selecionarMed('${id}')">${label}</button>`;
+  }).join('');
+}
+
+/* ─── Renderização do resultado ───────────────────────────── */
+function renderResultado() {
+  const wrap = document.getElementById('resultado');
+  if (!_medAtual) { wrap.innerHTML = ''; return; }
+
+  if (!_pesoAtual || _pesoAtual <= 0) {
+    wrap.innerHTML = `<div class="card"><p class="sem-peso">↑ Informe o peso do paciente para calcular a dose.</p></div>`;
+    return;
+  }
+
+  const res = calcularDosePediatrica(_medAtual.id, _pesoAtual, _formaIdx);
+  if (!res) { wrap.innerHTML = ''; return; }
+
+  /* Dose por faixa etária (sem cálculo por peso) */
+  if (res.naoUsaPeso) {
+    const entradas = Object.entries(_medAtual.notaDosePorIdade || {});
+    wrap.innerHTML = `
+      <div class="res-card verde">
+        <p class="res-nome">${_medAtual.nome}</p>
+        <p class="res-sub">Dose por faixa etária (não depende do peso)</p>
+        ${entradas.map(([faixa, dose]) => `
+          <div class="faixa-row">
+            <span style="font-size:.82rem">${faixa}</span>
+            <span style="font-weight:800;font-size:.9rem">${dose}</span>
+          </div>`).join('')}
+        ${_medAtual.alerta ? `<div class="res-alerta">⚠️ ${_medAtual.alerta}</div>` : ''}
+        <div class="res-nota">📌 ${_medAtual.nota}</div>
+      </div>`;
+    return;
+  }
+
+  const cor   = _medAtual.alerta ? 'amarelo' : 'roxo';
+  const forma = _medAtual.formas?.[_formaIdx];
+  const formaTxt = forma ? forma.desc : '—';
+
+  const doseTxt = res.doseUnica
+    ? `${res.doseMin} mg/dose`
+    : `${res.doseMin}–${res.doseMax} mg/dose`;
+
+  const limiteTxt = (res.limitadaMin || res.limitadaMax)
+    ? `<span class="res-limite">limitada ao máximo</span>` : '';
+
+  let medidaTxt = '';
+  if (res.volMin !== null) {
+    medidaTxt = res.doseUnica ? `${res.volMin} mL` : `${res.volMin}–${res.volMax} mL`;
+  } else if (res.compMin !== null) {
+    medidaTxt = res.doseUnica ? `${res.compMin} cp.` : `${res.compMin}–${res.compMax} cp.`;
+  }
+
+  const doseMgKgTxt = Array.isArray(_medAtual.doseMgKg)
+    ? `${_medAtual.doseMgKg[0]}–${_medAtual.doseMgKg[1]} mg/kg`
+    : `${_medAtual.doseMgKg} mg/kg`;
+
+  const gridItems = [
+    { l:'Dose/kg', v: doseMgKgTxt },
+    { l:'Dose máxima', v: `${_medAtual.doseMaxMg} mg/dose` },
+    medidaTxt ? { l: res.volMin !== null ? 'Volume' : 'Comprimidos', v: medidaTxt } : null,
+    _medAtual.doseMaxDiaMg ? { l:'Máx. diário', v: `${_medAtual.doseMaxDiaMg >= 1000 ? (_medAtual.doseMaxDiaMg/1000).toFixed(1)+' g' : _medAtual.doseMaxDiaMg+' mg'}` } : null,
+  ].filter(Boolean);
+
+  wrap.innerHTML = `
+    <div class="res-card ${cor}">
+      <p class="res-nome">${_medAtual.nome}</p>
+      <p class="res-sub">${formaTxt} · Paciente ${_pesoAtual} kg</p>
+
+      <p class="res-dose">${doseTxt}${limiteTxt}</p>
+      <p class="res-dose-label">Intervalo: ${_medAtual.intervalo}</p>
+
+      <div class="res-grid">
+        ${gridItems.map(it => `
+          <div class="res-item">
+            <p class="res-item-l">${it.l}</p>
+            <p class="res-item-v">${it.v}</p>
+          </div>`).join('')}
+      </div>
+
+      ${_medAtual.alerta ? `<div class="res-alerta">⚠️ ${_medAtual.alerta}</div>` : ''}
+      <div class="res-nota">📌 ${_medAtual.nota}</div>
+    </div>`;
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
