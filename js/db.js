@@ -114,10 +114,14 @@ async function dbDelete(store, id) {
 
 /* Export / import backup */
 async function exportarBackup() {
-  const [pacientes, medicamentos, doses, laboratorio] = await Promise.all([
-    dbGetAll('pacientes'), dbGetAll('medicamentos'), dbGetAll('doses'), dbGetAll('laboratorio'),
+  const [pacientes, medicamentos, doses, laboratorio, diario, config] = await Promise.all([
+    dbGetAll('pacientes'), dbGetAll('medicamentos'), dbGetAll('doses'),
+    dbGetAll('laboratorio'), dbGetAll('diario'), dbGetAll('config'),
   ]);
-  const payload = { vitadose: true, v: 2, exportadoEm: new Date().toISOString(), pacientes, medicamentos, doses, laboratorio };
+  const payload = {
+    vitadose: true, v: 3, exportadoEm: new Date().toISOString(),
+    pacientes, medicamentos, doses, laboratorio, diario, config,
+  };
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
   const url  = URL.createObjectURL(blob);
   const a    = document.createElement('a');
@@ -125,6 +129,36 @@ async function exportarBackup() {
   a.download = `vitadose-backup-${new Date().toISOString().slice(0,10)}.json`;
   a.click();
   URL.revokeObjectURL(url);
+  localStorage.setItem('vd_last_backup', new Date().toISOString());
+}
+
+async function importarBackup(file) {
+  const text = await file.text();
+  const data = JSON.parse(text);
+  if (!data.vitadose) throw new Error('Arquivo de backup inválido.');
+  const d = await openDB();
+  // Restaura stores principais (limpa antes)
+  await new Promise((resolve, reject) => {
+    const stores = ['pacientes','medicamentos','doses','laboratorio','diario'];
+    const tx = d.transaction(stores, 'readwrite');
+    stores.forEach(s => tx.objectStore(s).clear());
+    (data.pacientes    || []).forEach(p  => tx.objectStore('pacientes').add(p));
+    (data.medicamentos || []).forEach(m  => tx.objectStore('medicamentos').add(m));
+    (data.doses        || []).forEach(dv => tx.objectStore('doses').add(dv));
+    (data.laboratorio  || []).forEach(l  => tx.objectStore('laboratorio').add(l));
+    (data.diario       || []).forEach(di => tx.objectStore('diario').add(di));
+    tx.oncomplete = resolve;
+    tx.onerror    = () => reject(tx.error);
+  });
+  // Restaura config (put para não sobrescrever chaves inexistentes)
+  if (data.config && data.config.length) {
+    await new Promise((resolve, reject) => {
+      const tx = d.transaction('config', 'readwrite');
+      data.config.forEach(c => tx.objectStore('config').put(c));
+      tx.oncomplete = resolve;
+      tx.onerror    = () => reject(tx.error);
+    });
+  }
 }
 
 /* ── Diário Clínico ── */

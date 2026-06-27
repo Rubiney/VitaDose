@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Dashboard Clínico — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <style>
+    body { background:#f8fafc;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif }
+    .topbar { display:flex;align-items:center;gap:10px;padding:14px 16px;background:#fff;border-bottom:1px solid #e2e8f0;position:sticky;top:0;z-index:100 }
+    .back-btn { background:none;border:none;font-size:1.3rem;cursor:pointer;padding:4px 8px;color:#475569;border-radius:8px }
+    .topbar-title { font-size:1rem;font-weight:700;color:#1e293b;flex:1 }
+    .sec-title { font-size:.7rem;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.1em;padding:0 16px;margin:14px 0 6px }
+    .card { background:#fff;border-radius:14px;margin:0 16px 10px;box-shadow:0 1px 4px rgba(0,0,0,.06);overflow:hidden }
+
+    /* Risco card */
+    .risco-card { padding:18px 20px;display:flex;align-items:center;gap:16px }
+    .risco-circle { width:64px;height:64px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.2rem;font-weight:900;color:#fff;flex-shrink:0 }
+    .risco-info { flex:1 }
+    .risco-nivel { font-size:1rem;font-weight:800;margin-bottom:3px }
+    .risco-sub   { font-size:.75rem;color:#64748b;line-height:1.45 }
+    .risco-breakdown { font-size:.72rem;color:#475569;margin-top:5px }
+
+    /* Alertas */
+    .alerta-row { display:flex;align-items:flex-start;gap:10px;padding:11px 14px;border-bottom:1px solid #f1f5f9 }
+    .alerta-row:last-child { border-bottom:none }
+    .alerta-dot { width:8px;height:8px;border-radius:50%;margin-top:5px;flex-shrink:0 }
+    .alerta-body { flex:1 }
+    .alerta-titulo { font-size:.82rem;font-weight:700;color:#1e293b;margin-bottom:1px }
+    .alerta-sub    { font-size:.72rem;color:#64748b }
+
+    /* Metas mini */
+    .metas-grid { display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:12px 14px }
+    .meta-mini  { text-align:center;background:#f8fafc;border-radius:10px;padding:10px 6px }
+    .meta-num   { font-size:1.5rem;font-weight:900 }
+    .meta-lbl   { font-size:.65rem;color:#64748b;font-weight:600;margin-top:2px }
+
+    /* Adesão */
+    .ad-bar-wrap { padding:14px 16px }
+    .ad-label    { display:flex;justify-content:space-between;font-size:.78rem;font-weight:600;color:#475569;margin-bottom:6px }
+    .ad-bar      { height:10px;background:#e2e8f0;border-radius:10px;overflow:hidden }
+    .ad-fill     { height:100%;border-radius:10px;transition:width .4s }
+    .ad-meds     { margin-top:10px }
+    .ad-med-row  { display:flex;align-items:center;gap:8px;margin-bottom:5px }
+    .ad-med-name { font-size:.75rem;color:#475569;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis }
+    .ad-pct      { font-size:.75rem;font-weight:700;flex-shrink:0;width:36px;text-align:right }
+    .ad-mini-bar { height:5px;background:#e2e8f0;border-radius:5px;flex:1;overflow:hidden }
+    .ad-mini-fill{ height:100%;border-radius:5px }
+
+    /* Últimos exames */
+    .lab-row { display:flex;align-items:center;gap:8px;padding:9px 14px;border-bottom:1px solid #f1f5f9 }
+    .lab-row:last-child { border-bottom:none }
+    .lab-nome { font-size:.82rem;font-weight:600;color:#1e293b;flex:1 }
+    .lab-val  { font-size:.82rem;font-weight:800 }
+    .lab-data { font-size:.68rem;color:#94a3b8;text-align:right }
+
+    /* Links rápidos */
+    .links-grid { display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:12px 14px }
+    .link-item  { display:flex;flex-direction:column;align-items:center;gap:5px;background:#f8fafc;border-radius:12px;padding:12px 6px;text-decoration:none;transition:background .15s }
+    .link-item:active { background:#e2e8f0 }
+    .link-icon  { font-size:1.4rem }
+    .link-lbl   { font-size:.65rem;font-weight:700;color:#475569;text-align:center;line-height:1.3 }
+
+    /* Diário info */
+    .diario-banner { display:flex;align-items:center;gap:12px;padding:12px 14px }
+    .diario-icon   { font-size:1.4rem }
+    .diario-info   { flex:1 }
+    .diario-title  { font-size:.85rem;font-weight:700;color:#1e293b }
+    .diario-sub    { font-size:.73rem;color:#64748b;margin-top:1px }
+    .diario-btn    { background:#047857;color:#fff;border:none;border-radius:8px;padding:8px 12px;font-size:.75rem;font-weight:700;cursor:pointer;text-decoration:none;display:inline-block }
+
+    .empty-sec { padding:14px 16px;font-size:.82rem;color:#94a3b8;text-align:center }
+    .badge-risco { display:inline-block;font-size:.68rem;font-weight:700;border-radius:5px;padding:2px 8px }
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <span class="topbar-title">📊 Dashboard Clínico</span>
+</div>
+
+<div id="app" style="padding-bottom:80px">
+  <p style="text-align:center;color:#94a3b8;padding:40px">Carregando...</p>
+</div>
+
+<script src="js/db.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/laboratorio.js"></script>
+<script src="js/interacoes.js"></script>
+<script src="js/duplicidade.js"></script>
+<script src="js/anticolin.js"></script>
+<script src="js/beers.js"></script>
+<script src="js/ajusterenal.js"></script>
+<script src="js/contraindicacoes.js"></script>
+<script src="js/lab_farma.js"></script>
+<script src="js/alimento.js"></script>
+<script src="js/stopp_start.js"></script>
+<script src="js/adesao.js"></script>
+<script src="js/risco.js"></script>
+<script>
+
+/* ─── Metas resumidas (espelho de metas.html) ─────────── */
+const _METAS_QUICK = [
+  { condicoes:['dm','dm2','diabetes'],     exame:'hba1c',      ok: v=>v<7.0,   atencao: v=>v<8.0 },
+  { condicoes:['has','hipertensao'],       exame:'__pa_sis',   ok: v=>v<130,   atencao: v=>v<140 },
+  { condicoes:['dislipidemia','colesterol'],exame:'ldl',        ok: v=>v<130,   atencao: v=>v<160 },
+  { condicoes:['hipotireoidismo'],         exame:'tsh',        ok: v=>v>=0.5&&v<=4.5, atencao:v=>v<=10 },
+  { condicoes:['drc','insuficiencia_renal','renal'], exame:'creatinina', ok:v=>v<1.2, atencao:v=>v<2.0 },
+  { condicoes:['anticoagulacao','fibrilacao'], exame:'inr',    ok: v=>v>=2&&v<=3, atencao:v=>v>=1.5&&v<=3.5 },
+  { condicoes:['dislipidemia'],            exame:'hdl',        ok: v=>v>40,    atencao:v=>v>35 },
+  { condicoes:['insuficiencia_cardiaca','ic'],exame:'sodio',   ok:v=>v>=136&&v<=145, atencao:v=>v>=130&&v<=150 },
+];
+
+/* ─── Init ─────────────────────────────────────────────── */
+async function init() {
+  const pid = typeof getActivePacienteId === 'function' ? getActivePacienteId() : null;
+  if (!pid) { window.location.href = 'index.html'; return; }
+  const pac = await dbGet('pacientes', pid);
+  if (!pac) { window.location.href = 'index.html'; return; }
+
+  const hj    = new Date().toISOString().slice(0,10);
+  const todos  = await dbGetByIndex('medicamentos','pacienteId', pid);
+  const meds   = todos.filter(m => m.ativo !== false && (!m.dataFim || m.dataFim >= hj));
+
+  /* Últimos labs */
+  let labRecs = [];
+  try { labRecs = await dbGetByIndex('laboratorio','pacienteId', pid); } catch(e) {}
+  const ultimosLab = {};
+  for (const r of labRecs) {
+    if (!ultimosLab[r.tipo] || r.data > ultimosLab[r.tipo].data)
+      ultimosLab[r.tipo] = { valor: r.valor, data: r.data };
+  }
+
+  /* PA do diário */
+  let ultPA = null;
+  try {
+    const diarios = (await dbGetAll('diario'))
+      .filter(d => (!d.pacienteId || d.pacienteId === pid) && d.paSis && d.data)
+      .sort((a,b) => b.data.localeCompare(a.data));
+    if (diarios.length) ultPA = diarios[0];
+  } catch(e) {}
+
+  /* Último diário com qualquer dado */
+  let diasSemDiario = null;
+  try {
+    const ultDiario = (await dbGetAll('diario'))
+      .filter(d => (!d.pacienteId || d.pacienteId === pid) && d.data)
+      .sort((a,b) => b.data.localeCompare(a.data))[0];
+    if (ultDiario) {
+      const diff = Math.floor((Date.now() - new Date(ultDiario.data+'T12:00:00')) / 86400000);
+      diasSemDiario = diff;
+    }
+  } catch(e) {}
+
+  /* Adesão 30 dias */
+  let adesaoData = [];
+  try {
+    const todasDoses = await dbGetAll('doses');
+    if (typeof calcularAdesao === 'function') {
+      adesaoData = meds
+        .filter(m => m.horarios && m.horarios.length)
+        .map(m => ({ nome: m.nome, ad: calcularAdesao(m, todasDoses) }))
+        .filter(x => x.ad);
+    }
+  } catch(e) {}
+
+  /* Score de risco */
+  const risco = (typeof calcularRiscoFarmacoterapeutico === 'function' && meds.length)
+    ? calcularRiscoFarmacoterapeutico({ medicamentos: meds, paciente: pac, ultimosLab, tfg: pac.tfg || null })
+    : null;
+
+  /* Alertas críticos */
+  const alertas = coletarAlertas(meds, pac, ultimosLab);
+
+  /* Metas rápidas */
+  const condicoes = (pac.condicoes || []).map(c => c.toLowerCase());
+  const metasRes  = avaliarMetas(condicoes, ultimosLab, ultPA, pac.tfg);
+
+  renderDashboard(pac, meds, risco, alertas, adesaoData, metasRes, ultimosLab, diasSemDiario);
+}
+
+/* ─── Coleta alertas de todos os módulos ─────────────── */
+function coletarAlertas(meds, pac, ultimosLab) {
+  const lista = [];
+  if (!meds.length) return lista;
+
+  if (typeof verificarLabFarma === 'function' && Object.keys(ultimosLab).length) {
+    verificarLabFarma(ultimosLab, meds).forEach(a =>
+      lista.push({ dot: a.risco==='grave'?'#dc2626':'#f97316', titulo: a.titulo, sub: a.desc?.slice(0,80) }));
+  }
+  if (typeof verificarContraindicacoes === 'function' && pac.condicoes?.length) {
+    verificarContraindicacoes(meds, pac.condicoes).forEach(a =>
+      lista.push({ dot: a.risco==='grave'?'#dc2626':'#f97316', titulo: a.med + ' — contraindicação', sub: a.motivo?.slice(0,80) }));
+  }
+  if (typeof verificarAlimentoFarma === 'function') {
+    verificarAlimentoFarma(meds).filter(a => a.risco==='grave').forEach(a =>
+      lista.push({ dot: '#dc2626', titulo: a.titulo, sub: a.desc?.slice(0,80) }));
+  }
+  if (typeof verificarSTOPP === 'function') {
+    verificarSTOPP(meds, pac).filter(a => a.risco==='grave').forEach(a =>
+      lista.push({ dot: '#dc2626', titulo: 'STOPP ' + a.codigo + ': ' + a.titulo, sub: a.motivo?.slice(0,80) }));
+  }
+  if (typeof verificarDuplicidade === 'function') {
+    verificarDuplicidade(meds).filter(d => d.nivel==='grave').forEach(d =>
+      lista.push({ dot: '#6366f1', titulo: 'Duplicidade: ' + d.classe, sub: d.meds.join(' + ') }));
+  }
+
+  return lista.slice(0, 6);
+}
+
+/* ─── Avalia metas rápidas ────────────────────────────── */
+function avaliarMetas(condicoes, ultimosLab, ultPA, tfg) {
+  let nMeta = 0, nAtencao = 0, nFora = 0;
+  if (!condicoes.length) return { nMeta, nAtencao, nFora };
+
+  const getV = exame => {
+    if (exame === '__pa_sis') return ultPA?.paSis ?? null;
+    if (exame === '__tfg')    return tfg ?? null;
+    return ultimosLab[exame]?.valor ?? null;
+  };
+
+  for (const m of _METAS_QUICK) {
+    if (!m.condicoes.some(c => condicoes.includes(c))) continue;
+    const v = getV(m.exame);
+    if (v === null) continue;
+    if (m.ok(v))       nMeta++;
+    else if (m.atencao(v)) nAtencao++;
+    else               nFora++;
+  }
+  return { nMeta, nAtencao, nFora };
+}
+
+/* ─── Render ──────────────────────────────────────────── */
+function renderDashboard(pac, meds, risco, alertas, adesaoData, metasRes, ultimosLab, diasSemDiario) {
+  const fmtData = d => { if(!d) return ''; const [y,m,di]=d.split('-'); return `${di}/${m}/${y}`; };
+
+  /* Adesão média */
+  const adMedia = adesaoData.length
+    ? Math.round(adesaoData.reduce((s,x) => s + x.ad.pct, 0) / adesaoData.length) : null;
+  const adCor   = adMedia >= 80 ? '#16a34a' : adMedia >= 50 ? '#d97706' : '#dc2626';
+
+  /* Últimos exames (top 5 com status) */
+  const labCards = typeof EXAMES !== 'undefined'
+    ? EXAMES.filter(e => ultimosLab[e.id]).map(e => {
+        const r  = ultimosLab[e.id];
+        const st = typeof statusLab === 'function' ? statusLab(e.id, r.valor) : null;
+        const cor = st === 'alto' ? '#dc2626' : st === 'baixo' ? '#2563eb' : '#16a34a';
+        return { label: e.label, val: r.valor + ' ' + e.unidade, data: r.data, cor };
+      }).slice(0,5)
+    : [];
+
+  document.getElementById('app').innerHTML = `
+    <!-- Paciente -->
+    <div style="padding:14px 16px 6px;display:flex;align-items:center;gap:10px">
+      <div style="width:38px;height:38px;border-radius:50%;background:#6366f1;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.9rem;flex-shrink:0">
+        ${iniciaisNome(pac.nome)}
+      </div>
+      <div>
+        <p style="font-size:.95rem;font-weight:800;color:#1e293b;margin:0">${pac.nome||'Paciente'}</p>
+        <p style="font-size:.72rem;color:#64748b;margin:0">${meds.length} med${meds.length!==1?'s':''} ativo${meds.length!==1?'s':''} · ${new Date().toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long'})}</p>
+      </div>
+    </div>
+
+    <!-- Score de Risco -->
+    <p class="sec-title">Risco Farmacoterapêutico</p>
+    ${risco ? `
+    <div class="card">
+      <div class="risco-card">
+        <div class="risco-circle" style="background:${risco.cor}">${risco.pontos}</div>
+        <div class="risco-info">
+          <p class="risco-nivel" style="color:${risco.cor}">${risco.icone} ${risco.label}</p>
+          <p class="risco-sub">
+            ${risco.nivel==='baixo' ? 'Farmacoterapia sem alertas significativos.' :
+              risco.nivel==='moderado' ? 'Revisar itens com o médico prescritor.' :
+              risco.nivel==='alto' ? 'Intervenção farmacêutica recomendada.' :
+              'Reavaliação urgente da farmacoterapia.'}
+          </p>
+          ${risco.breakdown.length ? `<p class="risco-breakdown">${risco.breakdown.slice(0,3).map(b => b.icone+' '+b.categoria).join(' · ')}</p>` : ''}
+        </div>
+        <a href="relatorio.html" style="background:${risco.cor};color:#fff;border:none;border-radius:8px;padding:8px 10px;font-size:.72rem;font-weight:700;text-decoration:none;flex-shrink:0">
+          Ver relatório
+        </a>
+      </div>
+    </div>` : `<div class="card"><p class="empty-sec">Adicione medicamentos para calcular o risco.</p></div>`}
+
+    <!-- Alertas críticos -->
+    ${alertas.length ? `
+    <p class="sec-title">Alertas Críticos (${alertas.length})</p>
+    <div class="card">
+      ${alertas.map(a => `
+      <div class="alerta-row">
+        <div class="alerta-dot" style="background:${a.dot}"></div>
+        <div class="alerta-body">
+          <p class="alerta-titulo">${a.titulo}</p>
+          ${a.sub ? `<p class="alerta-sub">${a.sub}</p>` : ''}
+        </div>
+      </div>`).join('')}
+    </div>` : ''}
+
+    <!-- Metas Terapêuticas -->
+    ${(pac.condicoes?.length) ? `
+    <p class="sec-title">Metas Terapêuticas</p>
+    <div class="card">
+      <div class="metas-grid">
+        <div class="meta-mini"><div class="meta-num" style="color:#16a34a">${metasRes.nMeta}</div><div class="meta-lbl">Em meta</div></div>
+        <div class="meta-mini"><div class="meta-num" style="color:#d97706">${metasRes.nAtencao}</div><div class="meta-lbl">Atenção</div></div>
+        <div class="meta-mini"><div class="meta-num" style="color:#dc2626">${metasRes.nFora}</div><div class="meta-lbl">Fora</div></div>
+      </div>
+      <div style="padding:0 14px 12px">
+        <a href="metas.html" style="display:block;text-align:center;background:#16a34a;color:#fff;border-radius:8px;padding:9px;font-size:.78rem;font-weight:700;text-decoration:none">
+          Ver todas as metas →
+        </a>
+      </div>
+    </div>` : ''}
+
+    <!-- Adesão 30 dias -->
+    ${adesaoData.length ? `
+    <p class="sec-title">Adesão Terapêutica (30 dias)</p>
+    <div class="card">
+      <div class="ad-bar-wrap">
+        <div class="ad-label">
+          <span>Média geral</span>
+          <span style="color:${adCor};font-size:.85rem">${adMedia}%</span>
+        </div>
+        <div class="ad-bar">
+          <div class="ad-fill" style="width:${adMedia}%;background:${adCor}"></div>
+        </div>
+        <div class="ad-meds">
+          ${adesaoData.map(x => {
+            const cor = x.ad.nivel==='alta'?'#16a34a':x.ad.nivel==='media'?'#d97706':'#dc2626';
+            return `<div class="ad-med-row">
+              <span class="ad-med-name">${x.nome}</span>
+              <div class="ad-mini-bar"><div class="ad-mini-fill" style="width:${x.ad.pct}%;background:${cor}"></div></div>
+              <span class="ad-pct" style="color:${cor}">${x.ad.pct}%</span>
+            </div>`;
+          }).join('')}
+        </div>
+      </div>
+    </div>` : ''}
+
+    <!-- Últimos Exames -->
+    ${labCards.length ? `
+    <p class="sec-title">Últimos Exames</p>
+    <div class="card">
+      ${labCards.map(l => `
+      <div class="lab-row">
+        <span class="lab-nome">${l.label}</span>
+        <span class="lab-val" style="color:${l.cor}">${l.val}</span>
+        <span class="lab-data">${fmtData(l.data)}</span>
+      </div>`).join('')}
+      <div style="padding:8px 14px">
+        <a href="laboratorio.html" style="font-size:.75rem;color:#6366f1;font-weight:700;text-decoration:none">Ver histórico completo →</a>
+      </div>
+    </div>` : ''}
+
+    <!-- Diário de Saúde -->
+    <p class="sec-title">Diário de Saúde</p>
+    <div class="card">
+      <div class="diario-banner">
+        <div class="diario-icon">📋</div>
+        <div class="diario-info">
+          <p class="diario-title">
+            ${diasSemDiario === null ? 'Nenhum registro ainda'
+              : diasSemDiario === 0 ? 'Registrado hoje ✅'
+              : diasSemDiario === 1 ? 'Último registro ontem'
+              : `Sem registro há ${diasSemDiario} dias`}
+          </p>
+          <p class="diario-sub">PA, glicemia, peso e IMC</p>
+        </div>
+        <a href="diario.html" class="diario-btn">Registrar</a>
+      </div>
+    </div>
+
+    <!-- Atalhos rápidos -->
+    <p class="sec-title">Ferramentas</p>
+    <div class="card">
+      <div class="links-grid">
+        <a href="tfg.html"          class="link-item"><span class="link-icon">🫘</span><span class="link-lbl">Calc. TFG</span></a>
+        <a href="pedidose.html"     class="link-item"><span class="link-icon">👶</span><span class="link-lbl">Dose Pediátrica</span></a>
+        <a href="farmacinetica.html"class="link-item"><span class="link-icon">⚗️</span><span class="link-lbl">Farmacocinética</span></a>
+        <a href="conciliacao.html"  class="link-item"><span class="link-icon">🔄</span><span class="link-lbl">Conciliação</span></a>
+        <a href="timeline.html"     class="link-item"><span class="link-icon">📅</span><span class="link-lbl">Linha do Tempo</span></a>
+        <a href="backup.html"       class="link-item"><span class="link-icon">☁️</span><span class="link-lbl">Backup</span></a>
+        <a href="metas.html"        class="link-item"><span class="link-icon">🎯</span><span class="link-lbl">Metas</span></a>
+        <a href="relatorio.html"    class="link-item"><span class="link-icon">📄</span><span class="link-lbl">Relatório PDF</span></a>
+        <a href="orientacao.html"   class="link-item"><span class="link-icon">📋</span><span class="link-lbl">Orientações</span></a>
+      </div>
+    </div>
+  `;
+}
+
+function iniciaisNome(nome) {
+  if (!nome) return '?';
+  const p = nome.trim().split(/\s+/);
+  return (p[0][0] + (p[1]?.[0] || '')).toUpperCase();
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>

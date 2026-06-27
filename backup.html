@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Backup e Exportação — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <style>
+    body { background:#f8fafc;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif }
+    .topbar { display:flex;align-items:center;gap:10px;padding:14px 16px;background:#fff;border-bottom:1px solid #e2e8f0;position:sticky;top:0;z-index:100 }
+    .back-btn { background:none;border:none;font-size:1.3rem;cursor:pointer;padding:4px 8px;color:#475569;border-radius:8px }
+    .topbar-title { font-size:1rem;font-weight:700;color:#1e293b;flex:1 }
+    .sec-title { font-size:.7rem;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.1em;padding:0 16px;margin:16px 0 6px }
+    .card { background:#fff;border-radius:14px;margin:0 16px 10px;box-shadow:0 1px 4px rgba(0,0,0,.06);overflow:hidden }
+    .stat-grid { display:grid;grid-template-columns:repeat(2,1fr);gap:8px;padding:14px }
+    .stat-item { background:#f8fafc;border-radius:10px;padding:12px;text-align:center }
+    .stat-num  { font-size:1.6rem;font-weight:900;color:#6366f1 }
+    .stat-lbl  { font-size:.68rem;color:#64748b;font-weight:600;margin-top:2px }
+    .action-row { display:flex;align-items:center;gap:12px;padding:13px 16px;border-bottom:1px solid #f1f5f9 }
+    .action-row:last-child { border-bottom:none }
+    .action-icon { font-size:1.4rem;width:36px;text-align:center;flex-shrink:0 }
+    .action-info { flex:1 }
+    .action-title { font-size:.87rem;font-weight:700;color:#1e293b }
+    .action-desc  { font-size:.73rem;color:#64748b;margin-top:1px }
+    .action-btn { background:#6366f1;color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:.78rem;font-weight:700;cursor:pointer;white-space:nowrap }
+    .action-btn.verde  { background:#16a34a }
+    .action-btn.azul   { background:#0369a1 }
+    .action-btn.danger { background:#dc2626 }
+    .action-btn.outline{ background:#fff;color:#475569;border:1.5px solid #e2e8f0 }
+    .last-backup { font-size:.72rem;color:#16a34a;font-weight:600;padding:6px 16px 0 }
+    .warn-box { background:#fef3c7;border:1.5px solid #fcd34d;border-radius:10px;padding:11px 14px;margin:0 16px 10px;font-size:.78rem;color:#92400e;line-height:1.5 }
+
+    /* Modal de confirmação */
+    .modal-bg { position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;display:flex;align-items:center;justify-content:center;padding:20px }
+    .modal    { background:#fff;border-radius:16px;padding:24px 20px;max-width:360px;width:100%;box-shadow:0 8px 32px rgba(0,0,0,.2) }
+    .modal h3 { font-size:1rem;font-weight:800;color:#1e293b;margin:0 0 8px }
+    .modal p  { font-size:.83rem;color:#475569;line-height:1.55;margin:0 0 18px }
+    .modal-btns { display:flex;gap:8px }
+    .modal-btns button { flex:1;padding:11px;border-radius:10px;font-weight:700;font-size:.85rem;cursor:pointer;border:none }
+    .btn-cancel  { background:#f1f5f9;color:#475569 }
+    .btn-confirm { background:#dc2626;color:#fff }
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <span class="topbar-title">☁️ Backup e Exportação</span>
+</div>
+
+<!-- Resumo de dados -->
+<p class="sec-title">Dados Armazenados</p>
+<div class="card">
+  <div class="stat-grid" id="stats">
+    <div class="stat-item"><div class="stat-num">—</div><div class="stat-lbl">Pacientes</div></div>
+    <div class="stat-item"><div class="stat-num">—</div><div class="stat-lbl">Medicamentos</div></div>
+    <div class="stat-item"><div class="stat-num">—</div><div class="stat-lbl">Exames Lab.</div></div>
+    <div class="stat-item"><div class="stat-num">—</div><div class="stat-lbl">Diário</div></div>
+  </div>
+</div>
+
+<!-- Backup JSON -->
+<p class="sec-title">Backup Completo</p>
+<p class="warn-box">⚠️ Seus dados ficam <strong>somente neste aparelho</strong>. Se trocar de celular ou reinstalar o app, todos os dados serão perdidos. Salve o backup regularmente.</p>
+<div id="last-backup-info"></div>
+<div class="card">
+  <div class="action-row">
+    <div class="action-icon">📤</div>
+    <div class="action-info">
+      <p class="action-title">Exportar backup completo</p>
+      <p class="action-desc">Salva todos os dados como arquivo .json</p>
+    </div>
+    <button class="action-btn verde" onclick="fazerBackup()">Exportar</button>
+  </div>
+  <div class="action-row">
+    <label class="action-row" style="padding:0;border:none;cursor:pointer;display:contents">
+      <div class="action-icon">📥</div>
+      <div class="action-info">
+        <p class="action-title">Importar backup</p>
+        <p class="action-desc">Restaura dados de um arquivo .json</p>
+      </div>
+      <button class="action-btn outline" onclick="this.previousElementSibling.previousElementSibling.click()">Importar</button>
+      <input type="file" id="file-import" accept=".json" style="display:none" onchange="confirmarImport(this)">
+    </label>
+  </div>
+</div>
+
+<!-- Exportar CSV -->
+<p class="sec-title">Exportar para Planilha (CSV)</p>
+<div class="card">
+  <div class="action-row">
+    <div class="action-icon">🔬</div>
+    <div class="action-info">
+      <p class="action-title">Exames Laboratoriais</p>
+      <p class="action-desc">Todos os exames de todos os pacientes</p>
+    </div>
+    <button class="action-btn azul" onclick="exportarCSVLab()">CSV</button>
+  </div>
+  <div class="action-row">
+    <div class="action-icon">💊</div>
+    <div class="action-info">
+      <p class="action-title">Medicamentos em uso</p>
+      <p class="action-desc">Nome, dose, horários, paciente</p>
+    </div>
+    <button class="action-btn azul" onclick="exportarCSVMeds()">CSV</button>
+  </div>
+  <div class="action-row">
+    <div class="action-icon">📋</div>
+    <div class="action-info">
+      <p class="action-title">Diário de Saúde</p>
+      <p class="action-desc">PA, glicemia, peso por data</p>
+    </div>
+    <button class="action-btn azul" onclick="exportarCSVDiario()">CSV</button>
+  </div>
+</div>
+
+<!-- Zona de perigo -->
+<p class="sec-title">Zona de Risco</p>
+<div class="card">
+  <div class="action-row">
+    <div class="action-icon">🗑️</div>
+    <div class="action-info">
+      <p class="action-title" style="color:#dc2626">Apagar todos os dados</p>
+      <p class="action-desc">Remove todos os pacientes, meds e histórico</p>
+    </div>
+    <button class="action-btn danger" onclick="confirmarApagar()">Apagar</button>
+  </div>
+</div>
+
+<div style="height:80px"></div>
+
+<!-- Modal de confirmação -->
+<div id="modal-bg" class="modal-bg" style="display:none">
+  <div class="modal">
+    <h3 id="modal-title">Confirmar ação</h3>
+    <p id="modal-msg">Tem certeza?</p>
+    <div class="modal-btns">
+      <button class="btn-cancel"  onclick="fecharModal()">Cancelar</button>
+      <button class="btn-confirm" id="modal-confirm">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/db.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/laboratorio.js"></script>
+<script>
+
+async function init() {
+  const [pac, meds, labs, diary] = await Promise.all([
+    dbGetAll('pacientes'), dbGetAll('medicamentos'),
+    dbGetAll('laboratorio'), dbGetAll('diario'),
+  ]);
+  document.getElementById('stats').innerHTML = `
+    <div class="stat-item"><div class="stat-num">${pac.length}</div><div class="stat-lbl">Paciente${pac.length!==1?'s':''}</div></div>
+    <div class="stat-item"><div class="stat-num">${meds.length}</div><div class="stat-lbl">Medicamento${meds.length!==1?'s':''}</div></div>
+    <div class="stat-item"><div class="stat-num">${labs.length}</div><div class="stat-lbl">Exames Lab.</div></div>
+    <div class="stat-item"><div class="stat-num">${diary.length}</div><div class="stat-lbl">Registros Diário</div></div>
+  `;
+  const last = localStorage.getItem('vd_last_backup');
+  if (last) {
+    const dt = new Date(last).toLocaleDateString('pt-BR', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
+    document.getElementById('last-backup-info').innerHTML =
+      `<p class="last-backup">✅ Último backup: ${dt}</p>`;
+  }
+}
+
+async function fazerBackup() {
+  await exportarBackup();
+  showToast('✓ Backup exportado!');
+  const dt = new Date().toLocaleDateString('pt-BR', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
+  document.getElementById('last-backup-info').innerHTML =
+    `<p class="last-backup">✅ Último backup: ${dt}</p>`;
+}
+
+/* ── Importar ── */
+let _importFile = null;
+function confirmarImport(input) {
+  _importFile = input.files[0];
+  if (!_importFile) return;
+  abrirModal(
+    '📥 Restaurar Backup',
+    `Isso vai <strong>substituir todos os dados atuais</strong> pelo conteúdo do arquivo <em>${_importFile.name}</em>. Esta ação não pode ser desfeita.`,
+    executarImport
+  );
+}
+async function executarImport() {
+  fecharModal();
+  try {
+    await importarBackup(_importFile);
+    showToast('✓ Backup restaurado com sucesso!');
+    setTimeout(() => { location.href = 'index.html'; }, 1400);
+  } catch(e) {
+    showToast('Erro: ' + e.message);
+  }
+}
+
+/* ── CSV Exames ── */
+async function exportarCSVLab() {
+  const labs = await dbGetAll('laboratorio');
+  const pacs = await dbGetAll('pacientes');
+  const nomePac = id => (pacs.find(p => p.id === id)?.nome) || 'Paciente ' + id;
+  const REFS = typeof EXAMES !== 'undefined'
+    ? Object.fromEntries(EXAMES.map(e => [e.id, e.label + (e.unidade ? ' (' + e.unidade + ')' : '')]))
+    : {};
+  const header = 'Paciente,Data,Exame,Valor,Observação';
+  const rows = labs.map(r =>
+    [nomePac(r.pacienteId), r.data, REFS[r.tipo]||r.tipo, r.valor, r.obs||''].map(csvEsc).join(',')
+  );
+  downloadCSV([header, ...rows].join('\n'), `vitadose-exames-${today()}.csv`);
+  showToast('✓ CSV de exames exportado');
+}
+
+/* ── CSV Medicamentos ── */
+async function exportarCSVMeds() {
+  const meds = await dbGetAll('medicamentos');
+  const pacs = await dbGetAll('pacientes');
+  const nomePac = id => (pacs.find(p => p.id === id)?.nome) || 'Paciente ' + id;
+  const header = 'Paciente,Medicamento,Dose,Forma,Horários,Estoque,Data Início,Data Fim,Ativo';
+  const rows = meds.map(m =>
+    [
+      nomePac(m.pacienteId), m.nome||'', m.dose||'', m.forma||'',
+      (m.horarios||[]).join(';'), m.estoque??'',
+      m.dataInicio||'', m.dataFim||'', m.ativo===false?'Não':'Sim',
+    ].map(csvEsc).join(',')
+  );
+  downloadCSV([header, ...rows].join('\n'), `vitadose-medicamentos-${today()}.csv`);
+  showToast('✓ CSV de medicamentos exportado');
+}
+
+/* ── CSV Diário ── */
+async function exportarCSVDiario() {
+  const diary = await dbGetAll('diario');
+  const header = 'Data,PA Sistólica,PA Diastólica,Glicemia,Contexto Glicemia,Peso (kg),IMC';
+  const rows = diary.map(d =>
+    [d.data, d.paSis||'', d.paDia||'', d.glicemia||'', d.glicemiaCtx||'', d.peso||'', d.imc||'']
+      .map(csvEsc).join(',')
+  );
+  downloadCSV([header, ...rows].join('\n'), `vitadose-diario-${today()}.csv`);
+  showToast('✓ CSV do diário exportado');
+}
+
+/* ── Apagar tudo ── */
+function confirmarApagar() {
+  abrirModal(
+    '🗑️ Apagar Todos os Dados',
+    'Esta ação vai <strong>apagar permanentemente</strong> todos os pacientes, medicamentos, exames e histórico. <strong>Não pode ser desfeita.</strong> Exporte o backup antes.',
+    executarApagar
+  );
+}
+async function executarApagar() {
+  fecharModal();
+  const d = await openDB();
+  await new Promise((res, rej) => {
+    const stores = ['pacientes','medicamentos','doses','laboratorio','diario'];
+    const tx = d.transaction(stores, 'readwrite');
+    stores.forEach(s => tx.objectStore(s).clear());
+    tx.oncomplete = res; tx.onerror = () => rej(tx.error);
+  });
+  localStorage.removeItem('vd_active_paciente');
+  showToast('Dados apagados.');
+  setTimeout(() => { location.href = 'index.html'; }, 1400);
+}
+
+/* ── Modal ── */
+function abrirModal(titulo, msg, onConfirm) {
+  document.getElementById('modal-title').textContent = titulo;
+  document.getElementById('modal-msg').innerHTML = msg;
+  document.getElementById('modal-confirm').onclick = onConfirm;
+  document.getElementById('modal-bg').style.display = 'flex';
+}
+function fecharModal() {
+  document.getElementById('modal-bg').style.display = 'none';
+  const fi = document.getElementById('file-import');
+  if (fi) fi.value = '';
+}
+document.getElementById('modal-bg').addEventListener('click', e => {
+  if (e.target === document.getElementById('modal-bg')) fecharModal();
+});
+
+/* ── Utils ── */
+function csvEsc(v) {
+  const s = String(v ?? '');
+  return s.includes(',') || s.includes('"') || s.includes('\n')
+    ? '"' + s.replace(/"/g, '""') + '"' : s;
+}
+function today() { return new Date().toISOString().slice(0,10); }
+function downloadCSV(csv, nome) {
+  const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url; a.download = nome; a.click();
+  URL.revokeObjectURL(url);
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>

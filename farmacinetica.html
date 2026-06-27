@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Farmacocinética Clínica — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <style>
+    body { background:#f8fafc;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif }
+    .topbar { display:flex;align-items:center;gap:10px;padding:14px 16px;background:#fff;border-bottom:1px solid #e2e8f0;position:sticky;top:0;z-index:100 }
+    .back-btn { background:none;border:none;font-size:1.3rem;cursor:pointer;padding:4px 8px;color:#475569;border-radius:8px }
+    .topbar-title { font-size:1rem;font-weight:700;color:#1e293b;flex:1 }
+
+    /* Abas */
+    .tabs { display:flex;overflow-x:auto;scrollbar-width:none;border-bottom:2px solid #e2e8f0;background:#fff }
+    .tabs::-webkit-scrollbar { display:none }
+    .tab { flex-shrink:0;padding:12px 16px;font-size:.8rem;font-weight:700;color:#94a3b8;border-bottom:2px solid transparent;margin-bottom:-2px;cursor:pointer;white-space:nowrap;background:none;border-top:none;border-left:none;border-right:none }
+    .tab.ativo { color:#6366f1;border-bottom-color:#6366f1 }
+
+    /* Formulário */
+    .panel { padding:14px 16px 80px }
+    .form-group { margin-bottom:14px }
+    .form-label { font-size:.72rem;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px;display:block }
+    .form-input { width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:10px;padding:10px 12px;font-size:.88rem;color:#1e293b;background:#fff }
+    .form-input:focus { outline:none;border-color:#6366f1 }
+    .form-select { width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:10px;padding:10px 12px;font-size:.88rem;color:#1e293b;background:#fff }
+    .form-row { display:grid;grid-template-columns:1fr 1fr;gap:10px }
+    .calc-btn { background:#6366f1;color:#fff;border:none;border-radius:12px;padding:14px;font-size:.9rem;font-weight:700;width:100%;cursor:pointer;margin-top:4px }
+    .limpar-btn { background:#f1f5f9;color:#64748b;border:none;border-radius:12px;padding:11px;font-size:.82rem;font-weight:700;width:100%;cursor:pointer;margin-top:6px }
+
+    /* Resultado */
+    .resultado { background:#fff;border-radius:14px;padding:16px;margin-top:14px;box-shadow:0 1px 4px rgba(0,0,0,.07);display:none }
+    .resultado.visivel { display:block }
+    .res-titulo { font-size:.72rem;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.1em;margin-bottom:12px }
+    .res-item { display:flex;justify-content:space-between;align-items:baseline;padding:8px 0;border-bottom:1px solid #f1f5f9 }
+    .res-item:last-child { border-bottom:none }
+    .res-label { font-size:.8rem;color:#475569;font-weight:600 }
+    .res-value { font-size:.95rem;font-weight:900;color:#1e293b }
+    .res-unit  { font-size:.72rem;color:#94a3b8;font-weight:500;margin-left:3px }
+    .alerta-res { border-radius:8px;padding:10px 12px;margin-top:10px;font-size:.78rem;line-height:1.5;font-weight:600 }
+    .alerta-amarelo { background:#fef3c7;color:#92400e }
+    .alerta-vermelho { background:#fee2e2;color:#991b1b }
+    .alerta-verde   { background:#dcfce7;color:#166534 }
+    .fonte-res { font-size:.68rem;color:#94a3b8;margin-top:10px;line-height:1.6 }
+
+    .info-box { background:#eff6ff;border-radius:10px;padding:10px 12px;margin-bottom:14px;font-size:.78rem;color:#1e40af;line-height:1.55 }
+    .divider  { border:none;border-top:1px solid #e2e8f0;margin:14px 0 }
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <span class="topbar-title">⚗️ Farmacocinética Clínica</span>
+</div>
+
+<!-- Abas -->
+<div class="tabs">
+  <button class="tab ativo" onclick="showTab('vanc')">💉 Vancomicina</button>
+  <button class="tab"       onclick="showTab('amino')">💊 Aminoglicosídeos</button>
+  <button class="tab"       onclick="showTab('fenitoin')">🧠 Fenitoína</button>
+  <button class="tab"       onclick="showTab('litio')">⚗️ Lítio</button>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     VANCOMICINA
+══════════════════════════════════════════════════════ -->
+<div id="tab-vanc" class="panel">
+  <div class="info-box">
+    <strong>Vancomicina AUC/MIC</strong> — Método AUC-guiado (ASHP/IDSA 2020). Calcula dose inicial para atingir AUC₂₄ de 400–600 mg·h/L. Requer ajuste posterior com monitorização de nível sérico.
+  </div>
+  <div class="form-row">
+    <div class="form-group">
+      <label class="form-label">Peso Real (kg)</label>
+      <input class="form-input" id="v-peso" type="number" placeholder="ex: 70" min="1" max="300">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Altura (cm)</label>
+      <input class="form-input" id="v-altura" type="number" placeholder="ex: 170" min="100" max="220">
+    </div>
+  </div>
+  <div class="form-row">
+    <div class="form-group">
+      <label class="form-label">TFG / ClCr (mL/min)</label>
+      <input class="form-input" id="v-tfg" type="number" placeholder="ex: 80" min="1" max="200">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Sexo</label>
+      <select class="form-select" id="v-sexo">
+        <option value="M">Masculino</option>
+        <option value="F">Feminino</option>
+      </select>
+    </div>
+  </div>
+  <div class="form-group">
+    <label class="form-label">MIC alvo (mg/L) — padrão: 1</label>
+    <input class="form-input" id="v-mic" type="number" placeholder="1" value="1" min="0.5" max="4" step="0.5">
+  </div>
+  <button class="calc-btn" onclick="calcVanc()">Calcular Dose Inicial</button>
+  <button class="limpar-btn" onclick="limparVanc()">Limpar</button>
+
+  <div class="resultado" id="res-vanc"></div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     AMINOGLICOSÍDEOS
+══════════════════════════════════════════════════════ -->
+<div id="tab-amino" class="panel" style="display:none">
+  <div class="info-box">
+    <strong>Aminoglicosídeos — Dose Intervalar Estendida</strong> (Hartford Nomogram simplificado). Gentamicina e Amicacina. Indicado para infecções sistêmicas não-endocardite.
+  </div>
+  <div class="form-group">
+    <label class="form-label">Medicamento</label>
+    <select class="form-select" id="a-drug" onchange="renderAminoDrug()">
+      <option value="gent">Gentamicina</option>
+      <option value="amik">Amicacina</option>
+      <option value="tobr">Tobramicina</option>
+    </select>
+  </div>
+  <div class="form-row">
+    <div class="form-group">
+      <label class="form-label">Peso Real (kg)</label>
+      <input class="form-input" id="a-peso" type="number" placeholder="ex: 70" min="1" max="300">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Altura (cm)</label>
+      <input class="form-input" id="a-altura" type="number" placeholder="ex: 170" min="100" max="220">
+    </div>
+  </div>
+  <div class="form-row">
+    <div class="form-group">
+      <label class="form-label">TFG / ClCr (mL/min)</label>
+      <input class="form-input" id="a-tfg" type="number" placeholder="ex: 80" min="1" max="200">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Sexo</label>
+      <select class="form-select" id="a-sexo">
+        <option value="M">Masculino</option>
+        <option value="F">Feminino</option>
+      </select>
+    </div>
+  </div>
+  <div class="form-group">
+    <label class="form-label">Indicação</label>
+    <select class="form-select" id="a-ind">
+      <option value="sinergismo">Sinergismo (endocardite/baixa dose)</option>
+      <option value="empirico" selected>Empírico / Sistêmico</option>
+      <option value="pseudomonas">Pseudomonas / Gram-negativo grave</option>
+    </select>
+  </div>
+  <button class="calc-btn" onclick="calcAmino()">Calcular Dose</button>
+  <button class="limpar-btn" onclick="limparAmino()">Limpar</button>
+
+  <div class="resultado" id="res-amino"></div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     FENITOÍNA
+══════════════════════════════════════════════════════ -->
+<div id="tab-fenitoin" class="panel" style="display:none">
+  <div class="info-box">
+    <strong>Equação de Sheiner-Tozer</strong> — Corrige o nível sérico de fenitoína para hipoalbuminemia. Também ajusta para insuficiência renal (Winter-Tozer).
+  </div>
+  <div class="form-row">
+    <div class="form-group">
+      <label class="form-label">Fenitoína medida (mg/L)</label>
+      <input class="form-input" id="f-nivel" type="number" placeholder="ex: 10" min="0" max="50" step="0.1">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Albumina sérica (g/dL)</label>
+      <input class="form-input" id="f-alb" type="number" placeholder="ex: 3.5" min="0.5" max="6" step="0.1">
+    </div>
+  </div>
+  <div class="form-group">
+    <label class="form-label">Condição</label>
+    <select class="form-select" id="f-cond">
+      <option value="normal">Hipoalbuminemia sem IR</option>
+      <option value="renal">Hipoalbuminemia + IR (TFG &lt; 25 mL/min)</option>
+    </select>
+  </div>
+  <hr class="divider">
+  <p style="font-size:.72rem;font-weight:700;color:#64748b;margin-bottom:8px">Faixa terapêutica alvo: 10–20 mg/L (total)</p>
+  <button class="calc-btn" onclick="calcFenitoin()">Calcular Nível Corrigido</button>
+  <button class="limpar-btn" onclick="limparFenitoin()">Limpar</button>
+
+  <div class="resultado" id="res-fenitoin"></div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     LÍTIO
+══════════════════════════════════════════════════════ -->
+<div id="tab-litio" class="panel" style="display:none">
+  <div class="info-box">
+    <strong>Lítio — Dose Inicial Estimada</strong> (equação de Pepin & Bhatt). Estima a dose oral diária de lítio (carbonato) para atingir litememia alvo. Requer monitorização obrigatória em 5–7 dias.
+  </div>
+  <div class="form-row">
+    <div class="form-group">
+      <label class="form-label">Peso (kg)</label>
+      <input class="form-input" id="l-peso" type="number" placeholder="ex: 70" min="1" max="300">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Idade (anos)</label>
+      <input class="form-input" id="l-idade" type="number" placeholder="ex: 40" min="18" max="100">
+    </div>
+  </div>
+  <div class="form-row">
+    <div class="form-group">
+      <label class="form-label">TFG / ClCr (mL/min)</label>
+      <input class="form-input" id="l-tfg" type="number" placeholder="ex: 80" min="1" max="200">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Sexo</label>
+      <select class="form-select" id="l-sexo">
+        <option value="M">Masculino</option>
+        <option value="F">Feminino</option>
+      </select>
+    </div>
+  </div>
+  <div class="form-group">
+    <label class="form-label">Litememia alvo (mEq/L)</label>
+    <select class="form-select" id="l-alvo">
+      <option value="0.6">0,6 mEq/L (manutenção / idoso)</option>
+      <option value="0.8" selected>0,8 mEq/L (manutenção padrão)</option>
+      <option value="1.0">1,0 mEq/L (episódio agudo)</option>
+      <option value="1.2">1,2 mEq/L (mania aguda refratária)</option>
+    </select>
+  </div>
+  <button class="calc-btn" onclick="calcLitio()">Calcular Dose Inicial</button>
+  <button class="limpar-btn" onclick="limparLitio()">Limpar</button>
+
+  <div class="resultado" id="res-litio"></div>
+</div>
+
+<script src="js/db.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/tfg.js"></script>
+<script>
+
+/* ─── Auto-preenche campos com dados do paciente ──────── */
+async function init() {
+  const pid = typeof getActivePacienteId === 'function' ? getActivePacienteId() : null;
+  if (!pid) return;
+  const pac = await dbGet('pacientes', pid);
+  if (!pac) return;
+
+  if (pac.pesoPac) {
+    ['v-peso','a-peso','l-peso'].forEach(id => {
+      const el = document.getElementById(id); if (el) el.value = pac.pesoPac;
+    });
+  }
+  if (pac.idadePac) {
+    document.getElementById('l-idade').value = pac.idadePac;
+  }
+  if (pac.sexoPac) {
+    ['v-sexo','a-sexo','l-sexo'].forEach(id => {
+      const el = document.getElementById(id); if (el) el.value = pac.sexoPac;
+    });
+  }
+  if (pac.tfg) {
+    ['v-tfg','a-tfg','l-tfg'].forEach(id => {
+      const el = document.getElementById(id); if (el) el.value = Math.round(pac.tfg);
+    });
+  }
+  if (pac.alturaPac) {
+    ['v-altura','a-altura'].forEach(id => {
+      const el = document.getElementById(id); if (el) el.value = pac.alturaPac;
+    });
+  }
+}
+
+/* ─── Peso ideal (Devine) ─────────────────────────────── */
+function pesoIdeal(altCm, sexo) {
+  const h = altCm - 152.4;
+  return sexo === 'F' ? 45.5 + 0.9 * (altCm - 152.4) : 50.0 + 0.9 * h;
+}
+function pesoDose(pesoReal, altCm, sexo) {
+  const pi = pesoIdeal(altCm, sexo);
+  if (pesoReal <= pi) return pesoReal;
+  return pi + 0.4 * (pesoReal - pi); // peso ajustado (obeso)
+}
+
+/* ─── Tabs ────────────────────────────────────────────── */
+function showTab(nome) {
+  ['vanc','amino','fenitoin','litio'].forEach(t => {
+    document.getElementById('tab-'+t).style.display = t === nome ? '' : 'none';
+  });
+  document.querySelectorAll('.tab').forEach((btn,i) => {
+    btn.classList.toggle('ativo', ['vanc','amino','fenitoin','litio'][i] === nome);
+  });
+}
+
+/* ═══════════════════════════════════════════════════════
+   VANCOMICINA
+═══════════════════════════════════════════════════════ */
+function calcVanc() {
+  const peso   = parseFloat(document.getElementById('v-peso').value);
+  const altura = parseFloat(document.getElementById('v-altura').value);
+  const tfg    = parseFloat(document.getElementById('v-tfg').value);
+  const sexo   = document.getElementById('v-sexo').value;
+  const mic    = parseFloat(document.getElementById('v-mic').value) || 1;
+
+  if (!peso || !tfg) { showToast('Informe peso e TFG'); return; }
+
+  // Vd estimado: 0.7 L/kg (peso real, capped por IBW se obeso)
+  const pd   = altura ? pesoDose(peso, altura, sexo) : peso;
+  const vd   = 0.7 * pd;
+
+  // Clearance de vancomicina estimado (Matzke): ClVanc = 0.689 × ClCr + 3.66 (mL/min)
+  const clVanc = 0.689 * tfg + 3.66; // mL/min
+  const clVancLh = clVanc * 0.06;    // L/h
+
+  // AUC-alvo = 500 mg·h/L (meio da faixa 400–600), AUC = Dose/Cl
+  const aucAlvo  = 500;
+  const doseDia  = Math.round(aucAlvo * clVancLh / 10) * 10; // mg/dia, arredonda p/ 10
+  const t12      = (vd * Math.LN2) / clVancLh;               // t½ horas
+
+  // Intervalo ideal (q8, q12, q24 baseado na TFG)
+  const intervalo = tfg >= 70 ? 8 : tfg >= 40 ? 12 : tfg >= 20 ? 24 : 48;
+  const doses_dia = 24 / intervalo;
+  const dosePorInfusao = Math.round(doseDia / doses_dia / 50) * 50; // múltiplo de 50 mg
+
+  // Dose de ataque (15–25 mg/kg peso real, max 3000 mg)
+  const ataque = Math.min(Math.round(25 * peso / 250) * 250, 3000);
+
+  // Nível de vale esperado (Cmin = Cp × e^(−ke×τ))
+  const ke    = clVancLh / vd;
+  const cPico = dosePorInfusao / vd;
+  const cVale = cPico * Math.exp(-ke * intervalo);
+
+  const el = document.getElementById('res-vanc');
+  el.className = 'resultado visivel';
+
+  const alertVale = cVale < 10 ? 'alerta-vermelho' : cVale > 20 ? 'alerta-vermelho' : 'alerta-verde';
+  const msgVale   = cVale < 10 ? '⚠️ Vale estimado abaixo de 10 mg/L — risco de falha terapêutica.'
+                  : cVale > 20 ? '⚠️ Vale estimado acima de 20 mg/L — risco de nefrotoxicidade.'
+                  : '✅ Vale estimado dentro da faixa segura (10–20 mg/L).';
+
+  el.innerHTML = `
+    <p class="res-titulo">Resultado — Vancomicina</p>
+    <div class="res-item"><span class="res-label">Dose de ataque</span><span class="res-value">${ataque} <span class="res-unit">mg IV único</span></span></div>
+    <div class="res-item"><span class="res-label">Dose de manutenção</span><span class="res-value">${dosePorInfusao} <span class="res-unit">mg IV a cada ${intervalo}h</span></span></div>
+    <div class="res-item"><span class="res-label">Dose diária total</span><span class="res-value">${doseDia} <span class="res-unit">mg/dia</span></span></div>
+    <div class="res-item"><span class="res-label">AUC₂₄ estimado</span><span class="res-value">${Math.round(doseDia / clVancLh)} <span class="res-unit">mg·h/L (alvo 400–600)</span></span></div>
+    <div class="res-item"><span class="res-label">Nível de vale estimado (Cmin)</span><span class="res-value">${cVale.toFixed(1)} <span class="res-unit">mg/L</span></span></div>
+    <div class="res-item"><span class="res-label">Meia-vida estimada</span><span class="res-value">${t12.toFixed(1)} <span class="res-unit">h</span></span></div>
+    <div class="res-item"><span class="res-label">ClVanc estimado</span><span class="res-value">${clVanc.toFixed(0)} <span class="res-unit">mL/min</span></span></div>
+    <div class="alerta-res ${alertVale}">${msgVale}</div>
+    <div class="alerta-res alerta-amarelo">⚠️ Monitorizar nível sérico de vale (coleta 30 min antes da 3ª ou 4ª dose). Ajustar conforme TDM.</div>
+    <p class="fonte-res">Matzke GR et al. ASHP/IDSA/SIDP Guidelines for Vancomycin Dosing, 2020. MIC alvo: ${mic} mg/L. Peso dose: ${pd.toFixed(0)} kg.</p>
+  `;
+}
+function limparVanc() {
+  ['v-peso','v-altura','v-tfg','v-mic'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('res-vanc').className = 'resultado';
+}
+
+/* ═══════════════════════════════════════════════════════
+   AMINOGLICOSÍDEOS
+═══════════════════════════════════════════════════════ */
+const _AMINO_CFG = {
+  gent: { nome:'Gentamicina', doses: { sinergismo:1.0, empirico:5.0, pseudomonas:7.0 } },
+  amik: { nome:'Amicacina',   doses: { sinergismo:7.5, empirico:15.0, pseudomonas:20.0 } },
+  tobr: { nome:'Tobramicina', doses: { sinergismo:1.0, empirico:5.0, pseudomonas:7.0 } },
+};
+
+function calcAmino() {
+  const drug   = document.getElementById('a-drug').value;
+  const peso   = parseFloat(document.getElementById('a-peso').value);
+  const altura = parseFloat(document.getElementById('a-altura').value);
+  const tfg    = parseFloat(document.getElementById('a-tfg').value);
+  const sexo   = document.getElementById('a-sexo').value;
+  const ind    = document.getElementById('a-ind').value;
+
+  if (!peso || !tfg) { showToast('Informe peso e TFG'); return; }
+
+  const cfg = _AMINO_CFG[drug];
+  const pd  = altura ? pesoDose(peso, altura, sexo) : peso;
+
+  const mgKg     = cfg.doses[ind];
+  const dose     = Math.round(mgKg * pd / 5) * 5; // múltiplo de 5 mg
+
+  // Intervalo baseado no TFG (Hartford)
+  const intervalo = tfg >= 60 ? 24 : tfg >= 40 ? 36 : tfg >= 20 ? 48 : 72;
+
+  // t½ estimada: t½ = (0.0693 × Vd) / Cl; Vd ~0.26 L/kg; Cl ∝ TFG
+  const vd  = 0.26 * pd;           // L
+  const cl  = (tfg / 100) * 4.5;  // L/h estimado
+  const t12 = (vd * 0.693) / cl;
+
+  // Cmáx estimado (pico ao fim da infusão 30 min)
+  const cMax = dose / vd;
+
+  const el = document.getElementById('res-amino');
+  el.className = 'resultado visivel';
+
+  const picoRef = drug === 'amik' ? '20–35 mg/L' : '5–10 mg/L';
+  const valeRef = drug === 'amik' ? '< 5 mg/L' : '< 1 mg/L';
+
+  el.innerHTML = `
+    <p class="res-titulo">Resultado — ${cfg.nome}</p>
+    <div class="res-item"><span class="res-label">Dose</span><span class="res-value">${dose} <span class="res-unit">mg IV a cada ${intervalo}h</span></span></div>
+    <div class="res-item"><span class="res-label">mg/kg</span><span class="res-value">${(dose/pd).toFixed(1)} <span class="res-unit">mg/kg (peso dose ${pd.toFixed(0)} kg)</span></span></div>
+    <div class="res-item"><span class="res-label">Pico estimado (Cmáx)</span><span class="res-value">${cMax.toFixed(1)} <span class="res-unit">mg/L (ref: ${picoRef})</span></span></div>
+    <div class="res-item"><span class="res-label">Meia-vida estimada</span><span class="res-value">${t12.toFixed(1)} <span class="res-unit">h</span></span></div>
+    <div class="alerta-res alerta-amarelo">⚠️ Monitorar vale (pré-dose) e pico (30 min após fim da infusão) na 3ª dose. Evitar vale > ${drug==='amik'?'5':'1'} mg/L para reduzir nefrotoxicidade e ototoxicidade.</div>
+    <p class="fonte-res">Hartford Nomogram (Gilbert DN, 1997). Faixas: pico ${picoRef} · vale ${valeRef}. Uso em infecções sistêmicas sem endocardite.</p>
+  `;
+}
+function limparAmino() {
+  ['a-peso','a-altura','a-tfg'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('res-amino').className = 'resultado';
+}
+
+/* ═══════════════════════════════════════════════════════
+   FENITOÍNA — Sheiner-Tozer / Winter-Tozer
+═══════════════════════════════════════════════════════ */
+function calcFenitoin() {
+  const nivel = parseFloat(document.getElementById('f-nivel').value);
+  const alb   = parseFloat(document.getElementById('f-alb').value);
+  const cond  = document.getElementById('f-cond').value;
+
+  if (!nivel || !alb) { showToast('Informe nível sérico e albumina'); return; }
+
+  // Sheiner-Tozer: Cc = Cm / ((0.2 × Alb) + 0.1)   [sem IR]
+  // Winter-Tozer:  Cc = Cm / ((0.1 × Alb) + 0.1)   [com IR]
+  let nivCorr;
+  if (cond === 'renal') {
+    nivCorr = nivel / (0.1 * alb + 0.1);
+  } else {
+    nivCorr = nivel / (0.2 * alb + 0.1);
+  }
+
+  const el = document.getElementById('res-fenitoin');
+  el.className = 'resultado visivel';
+
+  const status = nivCorr < 10 ? 'alerta-vermelho' : nivCorr > 20 ? 'alerta-vermelho' : 'alerta-verde';
+  const msgStatus = nivCorr < 10
+    ? `❌ Nível corrigido sub-terapêutico (< 10 mg/L) — considerar aumento de dose.`
+    : nivCorr > 20
+    ? `⚠️ Nível corrigido tóxico (> 20 mg/L) — reduzir dose e monitorar.`
+    : `✅ Nível corrigido dentro da faixa terapêutica (10–20 mg/L).`;
+
+  const albumRef = alb < 3.5 ? 'alerta-vermelho' : 'alerta-verde';
+  const msgAlb   = alb < 3.5 ? `⚠️ Hipoalbuminemia significativa (albumina ${alb} g/dL). A fenitoína livre pode estar elevada mesmo com nível total aparentemente normal.` : '';
+
+  el.innerHTML = `
+    <p class="res-titulo">Resultado — Fenitoína Corrigida</p>
+    <div class="res-item"><span class="res-label">Nível medido (total)</span><span class="res-value">${nivel} <span class="res-unit">mg/L</span></span></div>
+    <div class="res-item"><span class="res-label">Albumina</span><span class="res-value">${alb} <span class="res-unit">g/dL (ref: 3,5–5,0)</span></span></div>
+    <div class="res-item"><span class="res-label">Equação aplicada</span><span class="res-value">${cond==='renal'?'Winter-Tozer (IR)':'Sheiner-Tozer'}</span></div>
+    <div class="res-item"><span class="res-label">Nível corrigido estimado</span><span class="res-value" style="font-size:1.2rem">${nivCorr.toFixed(1)} <span class="res-unit">mg/L</span></span></div>
+    <div class="alerta-res ${status}">${msgStatus}</div>
+    ${msgAlb ? `<div class="alerta-res ${albumRef}">${msgAlb}</div>` : ''}
+    <p class="fonte-res">Sheiner LB & Tozer TN (1978); Winter ME, Basic Clinical Pharmacokinetics, 5ª ed. Faixa terapêutica total: 10–20 mg/L; livre: 1–2 mg/L.</p>
+  `;
+}
+function limparFenitoin() {
+  ['f-nivel','f-alb'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('res-fenitoin').className = 'resultado';
+}
+
+/* ═══════════════════════════════════════════════════════
+   LÍTIO
+═══════════════════════════════════════════════════════ */
+function calcLitio() {
+  const peso  = parseFloat(document.getElementById('l-peso').value);
+  const idade = parseFloat(document.getElementById('l-idade').value);
+  const tfg   = parseFloat(document.getElementById('l-tfg').value);
+  const sexo  = document.getElementById('l-sexo').value;
+  const alvo  = parseFloat(document.getElementById('l-alvo').value);
+
+  if (!peso || !tfg) { showToast('Informe peso e TFG'); return; }
+
+  // ClLi estimado: correlação com ClCr (Pepin 2003; Greil 1984)
+  // ClLi (mL/min) ≈ 0.235 × ClCr + fator_sexo × peso
+  // Simplificado: ClLi ≈ 20-25% do ClCr (renal clearance dominante)
+  const clLi    = 0.25 * tfg;               // mL/min
+  const clLiLh  = clLi * 0.06;             // L/h
+
+  // Dose para atingir litememia alvo (steady-state) com posologia tid
+  // Cp_ss = F × D / (Cl × τ); F≈1, τ=8h → D = Cp_ss × Cl × τ / F
+  // Para lítio oral (carbonato): F=0.95, Vd=0.7 L/kg
+  const vd      = 0.7 * peso;              // L
+  const f       = 0.95;
+  const tau     = 8;                        // 3× ao dia
+  const dose8h  = (alvo * clLiLh * tau) / f; // mmol/dose = mEq/dose
+  // Carbonato de lítio: 1 cp 300 mg ≈ 8.12 mmol → mg/dose ≈ dose_mmol × 36.9 mg/mmol / 0.9 (lítio elementar)
+  const doseMg  = dose8h * 36.94 / 0.9;   // mg de carbonato de lítio
+  const doseCp  = Math.round(doseMg / 300);// nº de comprimidos 300 mg
+
+  // t½ estimada
+  const t12 = (vd * Math.LN2) / clLiLh;
+
+  const el = document.getElementById('res-litio');
+  el.className = 'resultado visivel';
+
+  const aviso = tfg < 30 ? 'alerta-vermelho' : tfg < 60 ? 'alerta-amarelo' : '';
+  const msgAviso = tfg < 30
+    ? '🔴 TFG < 30 mL/min: lítio geralmente contraindicado. Consultar nefrologista.'
+    : tfg < 60
+    ? '⚠️ TFG 30–60 mL/min: reduzir dose e monitorar litememia a cada 3–5 dias inicialmente.'
+    : '';
+
+  el.innerHTML = `
+    <p class="res-titulo">Resultado — Lítio (Carbonato)</p>
+    <div class="res-item"><span class="res-label">Litememia alvo</span><span class="res-value">${alvo} <span class="res-unit">mEq/L</span></span></div>
+    <div class="res-item"><span class="res-label">Dose estimada</span><span class="res-value">${doseCp} <span class="res-unit">cp de 300 mg a cada 8h (3× dia)</span></span></div>
+    <div class="res-item"><span class="res-label">Dose diária</span><span class="res-value">${doseCp * 3 * 300} <span class="res-unit">mg/dia</span></span></div>
+    <div class="res-item"><span class="res-label">Clearance de Lítio (estimado)</span><span class="res-value">${clLi.toFixed(0)} <span class="res-unit">mL/min</span></span></div>
+    <div class="res-item"><span class="res-label">Meia-vida estimada</span><span class="res-value">${t12.toFixed(0)} <span class="res-unit">h</span></span></div>
+    ${aviso ? `<div class="alerta-res ${aviso}">${msgAviso}</div>` : ''}
+    <div class="alerta-res alerta-amarelo">⚠️ Coletar litememia 12h após última dose (estado de equilíbrio: 5–7 dias). Monitorar: função renal, tireoide, ECG. Interações: diuréticos tiazídicos, AINEs, IECAs elevam a litememia.</div>
+    <p class="fonte-res">Pepin J et al. Therapeutic Drug Monitoring 2003; Goodman & Gilman, 13ª ed. Dose inicial aproximada. Titulação obrigatória com monitorização.</p>
+  `;
+}
+function limparLitio() {
+  ['l-peso','l-idade','l-tfg'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('res-litio').className = 'resultado';
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
