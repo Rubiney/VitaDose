@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Risco Cardiovascular — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <style>
+    body { background:#f8fafc;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif }
+    .topbar { display:flex;align-items:center;gap:10px;padding:14px 16px;background:#fff;border-bottom:1px solid #e2e8f0;position:sticky;top:0;z-index:100 }
+    .back-btn { background:none;border:none;font-size:1.3rem;cursor:pointer;padding:4px 8px;color:#475569;border-radius:8px }
+    .topbar-title { font-size:1rem;font-weight:700;color:#1e293b;flex:1 }
+
+    .wrap { padding:12px 16px 80px }
+    .sec-title { font-size:.68rem;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.1em;margin:14px 0 8px }
+
+    /* Formulário */
+    .form-card { background:#fff;border-radius:14px;padding:16px;box-shadow:0 1px 4px rgba(0,0,0,.06);margin-bottom:12px }
+    .form-grid { display:grid;grid-template-columns:1fr 1fr;gap:10px }
+    .form-group { display:flex;flex-direction:column;gap:4px }
+    .form-group label { font-size:.67rem;font-weight:700;color:#64748b }
+    .form-input { border:1.5px solid #e2e8f0;border-radius:10px;padding:9px 12px;font-size:.88rem;color:#1e293b;background:#fff }
+    .form-input:focus { outline:none;border-color:#6366f1 }
+    .form-full  { grid-column:1/-1 }
+    .toggle-row { display:flex;gap:10px;grid-column:1/-1 }
+    .toggle-btn { flex:1;padding:10px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:.82rem;font-weight:700;color:#64748b;background:#fff;cursor:pointer }
+    .toggle-btn.on { border-color:#6366f1;background:#ede9fe;color:#4f46e5 }
+    .btn-calc { width:100%;background:#6366f1;color:#fff;border:none;border-radius:12px;padding:13px;font-size:.9rem;font-weight:800;cursor:pointer;margin-top:10px }
+
+    /* Resultado */
+    .resultado-card { border-radius:16px;padding:20px;margin-bottom:12px;text-align:center }
+    .res-pct   { font-size:3rem;font-weight:900;line-height:1;margin-bottom:4px }
+    .res-lbl   { font-size:1.1rem;font-weight:800;margin-bottom:4px }
+    .res-sub   { font-size:.8rem;opacity:.85;line-height:1.5 }
+    .gauge-wrap { margin:14px auto 8px;width:160px }
+    .gauge-svg  { width:160px;height:90px }
+
+    /* Detalhes por categoria */
+    .det-row { display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid #f1f5f9 }
+    .det-row:last-child { border-bottom:none }
+    .det-lbl  { font-size:.8rem;font-weight:600;color:#475569 }
+    .det-val  { font-size:.8rem;font-weight:800;color:#1e293b }
+
+    /* Recomendações */
+    .rec-item { display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-bottom:1px solid #f1f5f9 }
+    .rec-item:last-child { border-bottom:none }
+    .rec-icon { font-size:1.1rem;flex-shrink:0;margin-top:1px }
+    .rec-txt  { font-size:.8rem;color:#475569;line-height:1.5 }
+
+    .fonte { font-size:.65rem;color:#94a3b8;padding:4px 0 16px;line-height:1.7 }
+    .autofill-badge { font-size:.65rem;color:#16a34a;font-weight:700 }
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <span class="topbar-title">❤️ Risco Cardiovascular</span>
+</div>
+
+<div class="wrap">
+  <p style="font-size:.78rem;color:#64748b;margin:0 0 12px;line-height:1.5">
+    Escore de Framingham ATP III — risco de evento cardiovascular maior (IAM fatal/não-fatal, AVC) em 10 anos.
+  </p>
+
+  <div class="form-card">
+    <p class="sec-title" style="margin-top:0">Dados do paciente</p>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Idade (anos) <span class="autofill-badge" id="lbl-auto-idade"></span></label>
+        <input class="form-input" id="f-idade" type="number" min="20" max="79" placeholder="20–79">
+      </div>
+      <div class="form-group">
+        <label>Sexo</label>
+        <select class="form-input" id="f-sexo" style="appearance:auto">
+          <option value="M">Masculino</option>
+          <option value="F">Feminino</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>PA Sistólica (mmHg) <span class="autofill-badge" id="lbl-auto-pa"></span></label>
+        <input class="form-input" id="f-pa" type="number" min="90" max="260" placeholder="Ex: 130">
+      </div>
+      <div class="form-group">
+        <label>Tratado p/ HAS?</label>
+        <div class="toggle-row" style="margin-top:0">
+          <button class="toggle-btn" id="btn-has-nao" onclick="setHAS(false)">Não</button>
+          <button class="toggle-btn" id="btn-has-sim" onclick="setHAS(true)">Sim</button>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Colesterol Total (mg/dL) <span class="autofill-badge" id="lbl-auto-col"></span></label>
+        <input class="form-input" id="f-col" type="number" min="100" max="500" placeholder="Ex: 200">
+      </div>
+      <div class="form-group">
+        <label>HDL (mg/dL) <span class="autofill-badge" id="lbl-auto-hdl"></span></label>
+        <input class="form-input" id="f-hdl" type="number" min="20" max="120" placeholder="Ex: 50">
+      </div>
+      <div class="form-group form-full">
+        <label>Tabagismo ativo?</label>
+        <div class="toggle-row" style="margin-top:0">
+          <button class="toggle-btn" id="btn-tab-nao" onclick="setTab(false)">Não fumante</button>
+          <button class="toggle-btn" id="btn-tab-sim" onclick="setTab(true)">Fumante</button>
+        </div>
+      </div>
+      <div class="form-group form-full">
+        <label>Diabetes Mellitus?</label>
+        <div class="toggle-row" style="margin-top:0">
+          <button class="toggle-btn" id="btn-dm-nao" onclick="setDM(false)">Sem DM</button>
+          <button class="toggle-btn" id="btn-dm-sim" onclick="setDM(true)">Com DM</button>
+        </div>
+      </div>
+    </div>
+    <button class="btn-calc" onclick="calcular()">🔢 Calcular Risco</button>
+  </div>
+
+  <div id="resultado" style="display:none"></div>
+
+  <p class="fonte">Referência: Wilson PWF et al., Circulation 1998;97:1837-1847 (ATP III Framingham).<br>
+  LDL-alvo: SBC Diretriz de Dislipidemia 2023. Classificação de risco: SBC / ACC/AHA 2019.</p>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="js/db.js"></script>
+<script src="js/utils.js"></script>
+<script>
+
+let _tabagismo = false;
+let _dm = false;
+let _has = false;
+
+function setTab(v) {
+  _tabagismo = v;
+  document.getElementById('btn-tab-nao').classList.toggle('on', !v);
+  document.getElementById('btn-tab-sim').classList.toggle('on',  v);
+}
+function setDM(v) {
+  _dm = v;
+  document.getElementById('btn-dm-nao').classList.toggle('on', !v);
+  document.getElementById('btn-dm-sim').classList.toggle('on',  v);
+}
+function setHAS(v) {
+  _has = v;
+  document.getElementById('btn-has-nao').classList.toggle('on', !v);
+  document.getElementById('btn-has-sim').classList.toggle('on',  v);
+}
+
+/* ── Framingham ATP III point score ─────────────────── */
+function pontosIdade(idade, sexo) {
+  const faixas = {
+    M: [[20,34,-9],[35,39,-4],[40,44,0],[45,49,3],[50,54,6],[55,59,8],[60,64,10],[65,69,11],[70,74,12],[75,79,13]],
+    F: [[20,34,-7],[35,39,-3],[40,44,0],[45,49,3],[50,54,6],[55,59,8],[60,64,10],[65,69,12],[70,74,14],[75,79,16]],
+  };
+  for (const [min,max,pts] of faixas[sexo]) if (idade>=min && idade<=max) return pts;
+  return 0;
+}
+
+function pontosColesterol(col, idade, sexo) {
+  const tbl = {
+    M: [
+      [0,159, [0,0,0,0,0]],
+      [160,199,[4,3,2,1,0]],
+      [200,239,[7,5,3,1,0]],
+      [240,279,[9,6,4,2,1]],
+      [280,999,[11,8,5,3,1]],
+    ],
+    F: [
+      [0,159, [0,0,0,0,0]],
+      [160,199,[4,3,2,1,1]],
+      [200,239,[8,6,4,2,1]],
+      [240,279,[11,8,5,3,2]],
+      [280,999,[13,10,7,4,2]],
+    ],
+  };
+  const faixaIdade = idade<40?0:idade<50?1:idade<60?2:idade<70?3:4;
+  for (const [min,max,arr] of tbl[sexo]) if (col>=min && col<=max) return arr[faixaIdade];
+  return 0;
+}
+
+function pontosFumo(idade, sexo) {
+  if (!_tabagismo) return 0;
+  const tbl = {
+    M: [[20,39,8],[40,49,5],[50,59,3],[60,69,1],[70,79,1]],
+    F: [[20,39,9],[40,49,7],[50,59,4],[60,69,2],[70,79,1]],
+  };
+  for (const [min,max,pts] of tbl[sexo]) if (idade>=min && idade<=max) return pts;
+  return 0;
+}
+
+function pontosHDL(hdl) {
+  if (hdl >= 60) return -1;
+  if (hdl >= 50) return 0;
+  if (hdl >= 45) return 1; // Mulher: <45 = 2; Homem: 40-49 = 1, <40 = 2
+  return 2;
+}
+
+function pontosPA(pas, sexo, tratado) {
+  if (sexo === 'M') {
+    const tbl = tratado
+      ? [[0,119,0],[120,129,1],[130,139,2],[140,159,2],[160,999,3]]
+      : [[0,119,0],[120,129,0],[130,139,1],[140,159,1],[160,999,2]];
+    for (const [min,max,pts] of tbl) if (pas>=min && pas<=max) return pts;
+  } else {
+    const tbl = tratado
+      ? [[0,119,0],[120,129,3],[130,139,4],[140,159,5],[160,999,6]]
+      : [[0,119,-3],[120,129,0],[130,139,1],[140,159,2],[160,999,3]];
+    for (const [min,max,pts] of tbl) if (pas>=min && pas<=max) return pts;
+  }
+  return 0;
+}
+
+function pontoParaRisco(pts, sexo) {
+  const tblM = [[-99,-1,1],[0,0,1],[1,4,1],[5,5,2],[6,6,2],[7,7,3],[8,8,4],[9,9,5],[10,10,6],[11,11,8],[12,12,10],[13,13,12],[14,14,16],[15,15,20],[16,16,25],[17,999,30]];
+  const tblF = [[-99,8,1],[9,12,1],[13,13,2],[14,14,2],[15,15,3],[16,16,4],[17,17,5],[18,18,6],[19,19,8],[20,20,11],[21,21,14],[22,22,17],[23,23,22],[24,24,27],[25,999,30]];
+  const tbl = sexo==='M' ? tblM : tblF;
+  for (const [min,max,risco] of tbl) if (pts>=min && pts<=max) return risco;
+  return 1;
+}
+
+/* ── Gauge SVG ───────────────────────────────────────── */
+function gauge(pct, color) {
+  const r = 70; const cx = 80; const cy = 80;
+  const stroke = 12;
+  const circ = Math.PI * r;
+  const dash = (pct / 100) * circ;
+  return `<svg class="gauge-svg" viewBox="0 0 160 90">
+    <path d="M ${cx-r},${cy} A ${r},${r} 0 0,1 ${cx+r},${cy}" fill="none" stroke="#f1f5f9" stroke-width="${stroke}" stroke-linecap="round"/>
+    <path d="M ${cx-r},${cy} A ${r},${r} 0 0,1 ${cx+r},${cy}" fill="none" stroke="${color}" stroke-width="${stroke}" stroke-linecap="round"
+      stroke-dasharray="${dash} ${circ}" stroke-dashoffset="0" style="transition:stroke-dasharray .6s ease"/>
+  </svg>`;
+}
+
+/* ── Calcular ─────────────────────────────────────────── */
+function calcular() {
+  const idade = parseInt(document.getElementById('f-idade').value);
+  const sexo  = document.getElementById('f-sexo').value;
+  const pa    = parseInt(document.getElementById('f-pa').value);
+  const col   = parseInt(document.getElementById('f-col').value);
+  const hdl   = parseInt(document.getElementById('f-hdl').value);
+
+  if (!idade||!pa||!col||!hdl) { showToast('Preencha todos os campos obrigatórios'); return; }
+  if (idade<20||idade>79)      { showToast('Idade deve estar entre 20 e 79 anos');   return; }
+
+  const ptsId  = pontosIdade(idade, sexo);
+  const ptsCol = pontosColesterol(col, idade, sexo);
+  const ptsFum = pontosFumo(idade, sexo);
+  const ptsHDL = pontosHDL(hdl);
+  const ptsPA  = pontosPA(pa, sexo, _has);
+  const ptsDM  = _dm ? (sexo==='M' ? 0 : 4) : 0;
+  const total  = ptsId + ptsCol + ptsFum + ptsHDL + ptsPA + ptsDM;
+  const risco  = pontoParaRisco(total, sexo);
+
+  /* Categoria */
+  let cat, cor, desc;
+  if (risco < 5)       { cat='Baixo';          cor='#16a34a'; desc='Risco de evento CV < 5% em 10 anos'; }
+  else if (risco < 10) { cat='Intermediário';  cor='#d97706'; desc='Risco de evento CV 5–9% em 10 anos'; }
+  else if (risco < 20) { cat='Alto';           cor='#ea580c'; desc='Risco de evento CV 10–19% em 10 anos'; }
+  else                 { cat='Muito Alto';     cor='#dc2626'; desc='Risco de evento CV ≥ 20% em 10 anos'; }
+
+  /* LDL-alvo (SBC 2023) */
+  let ldlAlvo, ldlTxt;
+  if (risco >= 20 || (risco >= 10 && _dm)) {
+    ldlAlvo = 50;  ldlTxt = '< 50 mg/dL (risco muito alto / DM + alto risco)';
+  } else if (risco >= 10) {
+    ldlAlvo = 70;  ldlTxt = '< 70 mg/dL (risco alto)';
+  } else if (risco >= 5) {
+    ldlAlvo = 100; ldlTxt = '< 100 mg/dL (risco intermediário)';
+  } else {
+    ldlAlvo = 130; ldlTxt = '< 130 mg/dL (risco baixo)';
+  }
+
+  /* Recomendações */
+  const recs = [];
+  if (_tabagismo) recs.push({ icon:'🚬', txt:'Cessação do tabagismo — reduz em 50% o risco CV em 1 ano. É a intervenção de maior impacto isolado.' });
+  if (pa >= 130)  recs.push({ icon:'🩺', txt:`Meta de PA < 130/80 mmHg (SBC 2023). ${_has ? 'Revisar esquema anti-hipertensivo.' : 'Considerar início de terapia anti-hipertensiva.'}` });
+  if (col > 200)  recs.push({ icon:'💊', txt:`Meta de LDL: ${ldlTxt}. Avaliar introdução ou intensificação de estatina.` });
+  if (hdl < 40)   recs.push({ icon:'⚠️', txt:'HDL baixo: atividade aeróbica regular (150 min/semana), redução de triglicerídeos, cessação do tabagismo.' });
+  if (_dm)        recs.push({ icon:'🩸', txt:'HbA1c < 7% (ADA 2024). Avaliar uso de SGLT-2i ou GLP-1 RA para proteção cardiovascular adicional.' });
+  if (risco >= 10) recs.push({ icon:'💊', txt:'Considerar AAS 100mg/dia em prevenção secundária (confirmar indicação com o médico assistente).' });
+  recs.push({ icon:'🥗', txt:'Dieta mediterrânea ou DASH reduz risco CV em 25–30%. Reduzir sódio, gordura saturada e carnes processadas.' });
+  recs.push({ icon:'🏃', txt:'Atividade física aeróbica: 150 min/sem (moderada) ou 75 min/sem (intensa) — reduz mortalidade CV em 30%.' });
+
+  const wrap = document.getElementById('resultado');
+  wrap.style.display = '';
+  wrap.innerHTML = `
+    <!-- Resultado Principal -->
+    <div class="resultado-card" style="background:${cor}12;border:2px solid ${cor}30">
+      <div class="gauge-wrap">${gauge(Math.min(risco * 3.33, 100), cor)}</div>
+      <p class="res-pct" style="color:${cor}">${risco}%</p>
+      <p class="res-lbl" style="color:${cor}">Risco ${cat}</p>
+      <p class="res-sub" style="color:${cor}9a">${desc}</p>
+    </div>
+
+    <!-- Pontuação detalhada -->
+    <div class="form-card">
+      <p class="sec-title" style="margin-top:0">Pontuação Framingham</p>
+      <div class="det-row"><span class="det-lbl">Idade</span><span class="det-val">${ptsId > 0 ? '+' : ''}${ptsId} pts</span></div>
+      <div class="det-row"><span class="det-lbl">Colesterol Total</span><span class="det-val">+${ptsCol} pts</span></div>
+      <div class="det-row"><span class="det-lbl">HDL</span><span class="det-val">${ptsHDL > 0 ? '+' : ''}${ptsHDL} pts</span></div>
+      <div class="det-row"><span class="det-lbl">PA Sistólica${_has ? ' (tratada)' : ''}</span><span class="det-val">${ptsPA > 0 ? '+' : ''}${ptsPA} pts</span></div>
+      <div class="det-row"><span class="det-lbl">Tabagismo</span><span class="det-val">${ptsFum > 0 ? '+' : ''}${ptsFum} pts</span></div>
+      ${ptsDM ? `<div class="det-row"><span class="det-lbl">Diabetes</span><span class="det-val">+${ptsDM} pts</span></div>` : ''}
+      <div class="det-row" style="border-top:2px solid #e2e8f0;padding-top:11px;margin-top:2px">
+        <span class="det-lbl" style="font-weight:800;color:#1e293b">Total</span>
+        <span class="det-val" style="font-size:.95rem;color:${cor}">${total} pts → ${risco}% em 10 anos</span>
+      </div>
+      <div class="det-row">
+        <span class="det-lbl">Meta LDL (SBC 2023)</span>
+        <span class="det-val" style="color:${cor}">${ldlTxt.split(' ')[0]}</span>
+      </div>
+    </div>
+
+    <!-- Recomendações -->
+    <div class="form-card">
+      <p class="sec-title" style="margin-top:0">Recomendações Clínicas</p>
+      ${recs.map(r => `<div class="rec-item">
+        <span class="rec-icon">${r.icon}</span>
+        <span class="rec-txt">${r.txt}</span>
+      </div>`).join('')}
+    </div>
+  `;
+
+  wrap.scrollIntoView({ behavior:'smooth', block:'start' });
+}
+
+/* ── Auto-fill do paciente ───────────────────────────── */
+async function init() {
+  setTab(false); setDM(false); setHAS(false);
+  const pid = typeof getActivePacienteId === 'function' ? getActivePacienteId() : null;
+  if (!pid) return;
+  try {
+    const pac = await dbGet('pacientes', pid);
+    if (!pac) return;
+
+    if (pac.idadePac) {
+      document.getElementById('f-idade').value = pac.idadePac;
+      document.getElementById('lbl-auto-idade').textContent = '★ perfil';
+    }
+    if (pac.sexoPac) document.getElementById('f-sexo').value = pac.sexoPac;
+    if (pac.condicoes?.includes('dm')) setDM(true);
+    if (pac.condicoes?.includes('has')) setHAS(true);
+
+    /* Última PA do diário */
+    try {
+      const hj  = new Date().toISOString().slice(0,10);
+      const dt0 = new Date(); dt0.setDate(dt0.getDate()-30);
+      const ini = dt0.toISOString().slice(0,10);
+      const regs = await dbGetDiarioRange(ini, hj);
+      const com  = regs.filter(r => r.paSis).sort((a,b) => b.data.localeCompare(a.data));
+      if (com.length) {
+        document.getElementById('f-pa').value = com[0].paSis;
+        document.getElementById('lbl-auto-pa').textContent = '★ diário ' + com[0].data.slice(5).replace('-','/');
+      }
+    } catch(e) {}
+
+    /* Últimos lipídeos do laboratório */
+    try {
+      const labs = await dbGetAll('laboratorio');
+      const meus = labs.filter(l => l.pacienteId === pid);
+      const ult  = tipo => meus.filter(l => l.tipo === tipo).sort((a,b) => b.data.localeCompare(a.data))[0];
+      const col  = ult('colesterol');
+      const hdl  = ult('hdl');
+      if (col) {
+        document.getElementById('f-col').value = col.valor;
+        document.getElementById('lbl-auto-col').textContent = '★ lab ' + col.data.slice(5).replace('-','/');
+      }
+      if (hdl) {
+        document.getElementById('f-hdl').value = hdl.valor;
+        document.getElementById('lbl-auto-hdl').textContent = '★ lab ' + hdl.data.slice(5).replace('-','/');
+      }
+    } catch(e) {}
+  } catch(e) {}
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>

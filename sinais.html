@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sinais Vitais — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <style>
+    body { background:#f8fafc;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif }
+    .topbar { display:flex;align-items:center;gap:10px;padding:14px 16px;background:#fff;border-bottom:1px solid #e2e8f0;position:sticky;top:0;z-index:100 }
+    .back-btn { background:none;border:none;font-size:1.3rem;cursor:pointer;padding:4px 8px;color:#475569;border-radius:8px }
+    .topbar-title { font-size:1rem;font-weight:700;color:#1e293b;flex:1 }
+    .topbar-btn { background:#6366f1;color:#fff;border:none;border-radius:9px;padding:8px 14px;font-size:.8rem;font-weight:700;cursor:pointer }
+
+    /* Cards de métricas */
+    .metrics-grid { display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:12px 16px 6px }
+    .metric-card { background:#fff;border-radius:14px;padding:13px 14px;box-shadow:0 1px 4px rgba(0,0,0,.06);cursor:pointer;transition:box-shadow .15s }
+    .metric-card:hover { box-shadow:0 2px 8px rgba(0,0,0,.1) }
+    .metric-card.full { grid-column:1/-1 }
+    .mc-label { font-size:.65rem;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px }
+    .mc-value { font-size:1.3rem;font-weight:900;color:#1e293b;line-height:1;margin-bottom:3px }
+    .mc-sub   { font-size:.7rem;color:#94a3b8;margin-bottom:8px }
+    .mc-badge { font-size:.62rem;font-weight:700;border-radius:4px;padding:2px 7px;display:inline-block;margin-bottom:6px }
+    .ok    { background:#dcfce7;color:#166534 }
+    .warn  { background:#fef3c7;color:#92400e }
+    .alert { background:#fee2e2;color:#991b1b }
+    .gray  { background:#f1f5f9;color:#64748b }
+
+    /* Sparkline */
+    .sparkline-wrap { overflow:hidden;border-radius:4px }
+
+    /* Período selector */
+    .period-chips { display:flex;gap:8px;padding:0 16px 4px;overflow-x:auto;scrollbar-width:none }
+    .period-chip  { background:#f1f5f9;border:none;border-radius:20px;padding:6px 14px;font-size:.73rem;font-weight:700;color:#64748b;cursor:pointer;white-space:nowrap }
+    .period-chip.active { background:#6366f1;color:#fff }
+
+    /* Formulário de entrada */
+    .form-wrap { background:#fff;border-radius:16px;margin:8px 16px;padding:16px;box-shadow:0 1px 4px rgba(0,0,0,.06) }
+    .form-title { font-size:.78rem;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:.07em;margin-bottom:12px }
+    .form-grid { display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px }
+    .form-group label { display:block;font-size:.68rem;font-weight:700;color:#64748b;margin-bottom:4px }
+    .form-input { width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:10px;padding:9px 12px;font-size:.9rem;font-weight:700;color:#1e293b;background:#fff }
+    .form-input:focus { outline:none;border-color:#6366f1 }
+    .form-input-full { grid-column:1/-1 }
+    .btn-salvar { width:100%;background:#6366f1;color:#fff;border:none;border-radius:12px;padding:13px;font-size:.9rem;font-weight:800;cursor:pointer;margin-top:4px }
+
+    /* Histórico */
+    .sec-title { font-size:.68rem;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.1em;padding:0 16px;margin:12px 0 6px }
+    .card { background:#fff;border-radius:14px;margin:0 16px 80px;box-shadow:0 1px 4px rgba(0,0,0,.06);overflow:hidden }
+    .hist-item { display:flex;align-items:center;gap:10px;padding:11px 14px;border-bottom:1px solid #f1f5f9 }
+    .hist-item:last-child { border-bottom:none }
+    .hist-date { font-size:.72rem;font-weight:700;color:#64748b;min-width:40px }
+    .hist-body { flex:1 }
+    .hist-vals { display:flex;flex-wrap:wrap;gap:5px }
+    .hist-badge { font-size:.65rem;font-weight:700;border-radius:5px;padding:2px 8px }
+    .hist-empty { text-align:center;color:#94a3b8;padding:24px;font-size:.82rem }
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <span class="topbar-title">📈 Sinais Vitais</span>
+  <button class="topbar-btn" onclick="document.getElementById('form-sect').scrollIntoView({behavior:'smooth'})">+ Registrar</button>
+</div>
+
+<div id="app" style="padding-bottom:16px">
+  <p style="text-align:center;color:#94a3b8;padding:40px 20px;font-size:.85rem">Carregando...</p>
+</div>
+
+<script src="js/db.js"></script>
+<script src="js/utils.js"></script>
+<script>
+
+/* ─── Limites de referência ──────────────────────────── */
+const _REF = {
+  paSis:  { ok:[90,129], warn:[130,139], alert:[140,999], low:90 },
+  paDia:  { ok:[60,84],  warn:[85,89],   alert:[90,999],  low:60 },
+  fc:     { ok:[60,100], warn:[50,59],   alert:[0,49],    high:100 },
+  spo2:   { ok:[95,100], warn:[92,94],   alert:[0,91] },
+  gli:    { ok:[70,99],  warn:[100,125], alert:[126,999], low:70 },
+  peso:   { ok:null },
+};
+
+function statusPA(s, d) {
+  if (s >= 140 || d >= 90) return 'alert';
+  if (s >= 130 || d >= 85) return 'warn';
+  if (s < 90  || d < 60)  return 'warn';
+  return 'ok';
+}
+function statusVal(tipo, v) {
+  const r = _REF[tipo]; if (!r) return 'gray';
+  if (r.alert && v >= r.alert[0] && v <= r.alert[1]) return 'alert';
+  if (r.low   && v < r.low) return 'alert';
+  if (r.warn  && v >= r.warn[0] && v <= r.warn[1])   return 'warn';
+  if (r.ok    && v >= r.ok[0]   && v <= r.ok[1])     return 'ok';
+  return 'gray';
+}
+const _stLbl = { ok:'Normal', warn:'Atenção', alert:'Alterado', gray:'—' };
+
+/* ─── Sparkline SVG ─────────────────────────────────── */
+function sparkline(values, { w=110, h=38, color='#6366f1', color2=null } = {}) {
+  // values: number[] | {a,b}[] for dual (PA)
+  const isDual = values.length && typeof values[0] === 'object' && values[0] !== null && 'a' in values[0];
+  const pts1 = isDual ? values.map(v => v?.a ?? null) : values;
+  const pts2 = isDual ? values.map(v => v?.b ?? null) : [];
+  const all  = [...pts1, ...pts2].filter(v => v != null);
+  if (all.length < 2) return `<span style="font-size:.65rem;color:#cbd5e1">Sem dados</span>`;
+
+  const mn = Math.min(...all) - 2;
+  const mx = Math.max(...all) + 2;
+  const rng = mx - mn || 1;
+  const n = values.length;
+
+  const cx = (i) => (i / (n - 1)) * w;
+  const cy = (v) => h - ((v - mn) / rng) * (h - 6) - 3;
+
+  function poly(pts, col) {
+    const coords = pts.map((v, i) => v != null ? `${cx(i).toFixed(1)},${cy(v).toFixed(1)}` : null).filter(Boolean);
+    if (!coords.length) return '';
+    const lx = coords[coords.length-1].split(',')[0];
+    const ly = coords[coords.length-1].split(',')[1];
+    return `<polyline points="${coords.join(' ')}" fill="none" stroke="${col}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" opacity=".85"/>
+            <circle cx="${lx}" cy="${ly}" r="2.5" fill="${col}"/>`;
+  }
+
+  return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg">
+    ${poly(pts1, color)}
+    ${isDual && color2 ? poly(pts2, color2) : ''}
+  </svg>`;
+}
+
+/* ─── Estado ─────────────────────────────────────────── */
+let _regs = [];
+let _periodo = 14;
+
+/* ─── Init ──────────────────────────────────────────── */
+async function init() {
+  await carregarDados();
+  render();
+}
+
+async function carregarDados() {
+  const fim    = new Date().toISOString().slice(0,10);
+  const dt     = new Date(); dt.setDate(dt.getDate() - 59);
+  const inicio = dt.toISOString().slice(0,10);
+  _regs = await dbGetDiarioRange(inicio, fim);
+  _regs.sort((a,b) => b.data.localeCompare(a.data));
+}
+
+/* ─── Render principal ──────────────────────────────── */
+function render() {
+  const app   = document.getElementById('app');
+  const hoje  = new Date().toISOString().slice(0,10);
+  const ultimo = _regs[0] || {};
+
+  /* Monta séries para sparklines (últimos _periodo dias) */
+  const dt0 = new Date(); dt0.setDate(dt0.getDate() - (_periodo - 1));
+  const dias = Array.from({ length: _periodo }, (_, i) => {
+    const d = new Date(dt0); d.setDate(d.getDate() + i);
+    return d.toISOString().slice(0,10);
+  });
+  const regMap = {};
+  for (const r of _regs) regMap[r.data] = r;
+
+  const sPA   = dias.map(d => regMap[d] ? { a: regMap[d].paSis, b: regMap[d].paDia } : null);
+  const sGli  = dias.map(d => regMap[d]?.glicemia ?? null);
+  const sPeso = dias.map(d => regMap[d]?.peso ?? null);
+  const sFC   = dias.map(d => regMap[d]?.fc ?? null);
+  const sSpo2 = dias.map(d => regMap[d]?.spo2 ?? null);
+
+  const fmtData = d => { const [,m,di]=d.split('-'); return `${+di}/${+m}`; };
+
+  /* Status da última PA */
+  const stPA = ultimo.paSis ? statusPA(ultimo.paSis, ultimo.paDia) : 'gray';
+
+  app.innerHTML = `
+    <!-- Período -->
+    <div class="period-chips" style="padding-top:12px">
+      ${[7,14,30].map(p => `<button class="period-chip${_periodo===p?' active':''}" onclick="setPeriodo(${p})">${p} dias</button>`).join('')}
+    </div>
+
+    <!-- Cards métricas -->
+    <div class="metrics-grid">
+
+      <!-- Pressão Arterial -->
+      <div class="metric-card full">
+        <p class="mc-label">🩺 Pressão Arterial</p>
+        <div style="display:flex;align-items:flex-end;gap:12px">
+          <div>
+            ${ultimo.paSis
+              ? `<p class="mc-value">${ultimo.paSis}/${ultimo.paDia}</p>
+                 <p class="mc-sub">mmHg · ${fmtData(ultimo.data)}</p>
+                 <span class="mc-badge ${stPA}">${_stLbl[stPA]}</span>`
+              : `<p class="mc-value" style="color:#cbd5e1">—</p><p class="mc-sub">Sem registros</p>`}
+          </div>
+          <div class="sparkline-wrap" style="margin-left:auto">
+            ${sparkline(sPA, { w:130, h:40, color:'#ef4444', color2:'#fb923c' })}
+          </div>
+        </div>
+        ${ultimo.paSis ? `<p style="font-size:.65rem;color:#94a3b8;margin-top:4px">Vermelho = sistólica · Laranja = diastólica</p>` : ''}
+      </div>
+
+      <!-- Glicemia -->
+      <div class="metric-card">
+        <p class="mc-label">🩸 Glicemia</p>
+        ${ultimo.glicemia
+          ? `<p class="mc-value">${ultimo.glicemia}</p>
+             <p class="mc-sub">mg/dL · ${fmtData(ultimo.data)}</p>
+             <span class="mc-badge ${statusVal('gli', ultimo.glicemia)}">${_stLbl[statusVal('gli',ultimo.glicemia)]}</span>`
+          : `<p class="mc-value" style="color:#cbd5e1">—</p><p class="mc-sub">Sem registros</p>`}
+        <div class="sparkline-wrap">${sparkline(sGli, { w:100, h:36, color:'#f59e0b' })}</div>
+      </div>
+
+      <!-- Peso / IMC -->
+      <div class="metric-card">
+        <p class="mc-label">⚖️ Peso</p>
+        ${ultimo.peso
+          ? `<p class="mc-value">${ultimo.peso}</p>
+             <p class="mc-sub">kg · ${fmtData(ultimo.data)}${ultimo.imc ? ` · IMC ${ultimo.imc}` : ''}</p>
+             <span class="mc-badge gray">${ultimo.imc ? (ultimo.imc < 18.5 ? 'Baixo peso' : ultimo.imc < 25 ? 'Normal' : ultimo.imc < 30 ? 'Sobrepeso' : 'Obesidade') : '—'}</span>`
+          : `<p class="mc-value" style="color:#cbd5e1">—</p><p class="mc-sub">Sem registros</p>`}
+        <div class="sparkline-wrap">${sparkline(sPeso, { w:100, h:36, color:'#8b5cf6' })}</div>
+      </div>
+
+      <!-- FC -->
+      <div class="metric-card">
+        <p class="mc-label">❤️ Freq. Cardíaca</p>
+        ${ultimo.fc
+          ? `<p class="mc-value">${ultimo.fc}</p>
+             <p class="mc-sub">bpm · ${fmtData(ultimo.data)}</p>
+             <span class="mc-badge ${statusVal('fc', ultimo.fc)}">${_stLbl[statusVal('fc',ultimo.fc)]}</span>`
+          : `<p class="mc-value" style="color:#cbd5e1">—</p><p class="mc-sub">Sem registros</p>`}
+        <div class="sparkline-wrap">${sparkline(sFC, { w:100, h:36, color:'#ec4899' })}</div>
+      </div>
+
+      <!-- SpO2 -->
+      <div class="metric-card">
+        <p class="mc-label">💨 SpO₂</p>
+        ${ultimo.spo2
+          ? `<p class="mc-value">${ultimo.spo2}<span style="font-size:.75rem;font-weight:600">%</span></p>
+             <p class="mc-sub">· ${fmtData(ultimo.data)}</p>
+             <span class="mc-badge ${statusVal('spo2', ultimo.spo2)}">${_stLbl[statusVal('spo2',ultimo.spo2)]}</span>`
+          : `<p class="mc-value" style="color:#cbd5e1">—</p><p class="mc-sub">Sem registros</p>`}
+        <div class="sparkline-wrap">${sparkline(sSpo2, { w:100, h:36, color:'#06b6d4' })}</div>
+      </div>
+
+    </div>
+
+    <!-- Formulário -->
+    <div class="form-wrap" id="form-sect">
+      <p class="form-title">📝 Registrar medição</p>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>PA Sistólica (mmHg)</label>
+          <input class="form-input" id="f-pas" type="number" placeholder="Ex: 120" min="60" max="260">
+        </div>
+        <div class="form-group">
+          <label>PA Diastólica (mmHg)</label>
+          <input class="form-input" id="f-pad" type="number" placeholder="Ex: 80" min="40" max="160">
+        </div>
+        <div class="form-group">
+          <label>Freq. Cardíaca (bpm)</label>
+          <input class="form-input" id="f-fc" type="number" placeholder="Ex: 72" min="30" max="220">
+        </div>
+        <div class="form-group">
+          <label>SpO₂ (%)</label>
+          <input class="form-input" id="f-spo2" type="number" placeholder="Ex: 98" min="70" max="100">
+        </div>
+        <div class="form-group">
+          <label>Glicemia (mg/dL)</label>
+          <input class="form-input" id="f-gli" type="number" placeholder="Ex: 95" min="20" max="600">
+        </div>
+        <div class="form-group">
+          <label>Contexto glicemia</label>
+          <select class="form-input" id="f-gli-ctx" style="appearance:auto">
+            <option value="jejum">Jejum</option>
+            <option value="pos">Pós-prandial</option>
+            <option value="deitar">Ao deitar</option>
+            <option value="outro">Outro</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Peso (kg)</label>
+          <input class="form-input" id="f-peso" type="number" step="0.1" placeholder="Ex: 70.5" min="10" max="400">
+        </div>
+        <div class="form-group">
+          <label>Data</label>
+          <input class="form-input" id="f-data" type="date" value="${hoje}">
+        </div>
+      </div>
+      <button class="btn-salvar" onclick="salvar()">✓ Salvar registro</button>
+    </div>
+
+    <!-- Histórico -->
+    ${_regs.length ? `
+    <p class="sec-title">Últimos ${Math.min(_regs.length,30)} registros</p>
+    <div class="card">
+      ${_regs.slice(0, 30).map(r => {
+        const [y,m,d] = r.data.split('-');
+        const stP = r.paSis ? statusPA(r.paSis,r.paDia) : null;
+        const stG = r.glicemia ? statusVal('gli',r.glicemia) : null;
+        const stF = r.fc ? statusVal('fc',r.fc) : null;
+        const stS = r.spo2 ? statusVal('spo2',r.spo2) : null;
+        return `<div class="hist-item">
+          <span class="hist-date">${d}/${+m}</span>
+          <div class="hist-body">
+            <div class="hist-vals">
+              ${r.paSis  ? `<span class="hist-badge ${stP}">${r.paSis}/${r.paDia} mmHg</span>` : ''}
+              ${r.fc     ? `<span class="hist-badge ${stF}">${r.fc} bpm</span>` : ''}
+              ${r.glicemia ? `<span class="hist-badge ${stG}">${r.glicemia} mg/dL</span>` : ''}
+              ${r.peso   ? `<span class="hist-badge gray">${r.peso} kg${r.imc?' · IMC '+r.imc:''}</span>` : ''}
+              ${r.spo2   ? `<span class="hist-badge ${stS}">SpO₂ ${r.spo2}%</span>` : ''}
+            </div>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>` : ''}
+  `;
+}
+
+function setPeriodo(p) { _periodo = p; render(); }
+
+async function salvar() {
+  const pas  = parseInt(document.getElementById('f-pas').value) || null;
+  const pad  = parseInt(document.getElementById('f-pad').value) || null;
+  const fc   = parseInt(document.getElementById('f-fc').value)  || null;
+  const spo2 = parseInt(document.getElementById('f-spo2').value)|| null;
+  const gli  = parseInt(document.getElementById('f-gli').value) || null;
+  const ctx  = document.getElementById('f-gli-ctx').value;
+  const peso = parseFloat(document.getElementById('f-peso').value) || null;
+  const data = document.getElementById('f-data').value;
+
+  if (!pas && !gli && !peso && !fc && !spo2) { showToast('Preencha ao menos um campo'); return; }
+  if ((pas && !pad) || (!pas && pad)) { showToast('Informe sistólica e diastólica'); return; }
+
+  // Busca altura do paciente para calcular IMC
+  let altura = await dbGetConfig('altura').catch(() => null);
+  const imc = (peso && altura && altura >= 100)
+    ? parseFloat((peso / Math.pow(altura/100, 2)).toFixed(1))
+    : null;
+
+  // Busca registro existente para esta data
+  const existentes = await dbGetDiario(data);
+  const reg = existentes[0] || {};
+  if (existentes[0]) reg.id = existentes[0].id;
+
+  Object.assign(reg, { data, paSis: pas || reg.paSis || null, paDia: pad || reg.paDia || null,
+    fc: fc || reg.fc || null, spo2: spo2 || reg.spo2 || null,
+    glicemia: gli || reg.glicemia || null, glicemiaCtx: gli ? ctx : (reg.glicemiaCtx || 'jejum'),
+    peso: peso || reg.peso || null, imc: imc || reg.imc || null });
+
+  await dbSalvarDiario(reg);
+  showToast('✓ Registro salvo');
+  document.getElementById('f-pas').value = '';
+  document.getElementById('f-pad').value = '';
+  document.getElementById('f-fc').value  = '';
+  document.getElementById('f-spo2').value= '';
+  document.getElementById('f-gli').value = '';
+  document.getElementById('f-peso').value= '';
+  await carregarDados();
+  render();
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>

@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Estoque de Medicamentos — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <style>
+    body { background:#f8fafc;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif }
+    .topbar { display:flex;align-items:center;gap:10px;padding:14px 16px;background:#fff;border-bottom:1px solid #e2e8f0;position:sticky;top:0;z-index:100 }
+    .back-btn { background:none;border:none;font-size:1.3rem;cursor:pointer;padding:4px 8px;color:#475569;border-radius:8px }
+    .topbar-title { font-size:1rem;font-weight:700;color:#1e293b;flex:1 }
+
+    /* Resumo */
+    .resumo { display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:12px 16px 6px }
+    .res-item { background:#fff;border-radius:12px;padding:11px 10px;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,.06) }
+    .res-num  { font-size:1.5rem;font-weight:900 }
+    .res-lbl  { font-size:.63rem;color:#64748b;font-weight:600;margin-top:2px }
+
+    /* Card de medicamento */
+    .sec-title { font-size:.68rem;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.1em;padding:0 16px;margin:10px 0 6px }
+    .med-card { background:#fff;border-radius:14px;margin:0 16px 10px;box-shadow:0 1px 4px rgba(0,0,0,.06);overflow:hidden }
+    .med-header { padding:12px 14px 10px;border-bottom:1px solid #f1f5f9 }
+    .med-nome-row { display:flex;align-items:center;gap:8px;margin-bottom:3px }
+    .med-nome { font-size:.9rem;font-weight:800;color:#1e293b;flex:1 }
+    .med-dose { font-size:.72rem;color:#94a3b8 }
+    .status-pill { font-size:.62rem;font-weight:800;border-radius:5px;padding:2px 8px;flex-shrink:0 }
+    .ok     { background:#dcfce7;color:#166534 }
+    .warn   { background:#fef3c7;color:#92400e }
+    .crit   { background:#fee2e2;color:#991b1b }
+    .sem    { background:#f1f5f9;color:#64748b }
+    .dias-txt { font-size:.78rem;font-weight:700 }
+
+    /* Barra de progresso */
+    .progress-wrap { padding:0 14px 12px }
+    .progress-bg { background:#f1f5f9;border-radius:6px;height:8px;overflow:hidden;margin:6px 0 4px }
+    .progress-fill { height:100%;border-radius:6px;transition:width .4s ease }
+    .progress-sub  { display:flex;justify-content:space-between;font-size:.65rem;color:#94a3b8 }
+
+    /* Campos de edição */
+    .edit-wrap { padding:12px 14px 14px;border-top:1px solid #f1f5f9;background:#fafafa }
+    .edit-grid { display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px }
+    .edit-group label { display:block;font-size:.64rem;font-weight:700;color:#64748b;margin-bottom:4px }
+    .edit-input { width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:9px;padding:8px 11px;font-size:.88rem;font-weight:700;color:#1e293b }
+    .edit-input:focus { outline:none;border-color:#6366f1 }
+    .edit-btns { display:flex;gap:8px }
+    .btn-rep  { flex:1;background:#6366f1;color:#fff;border:none;border-radius:10px;padding:10px;font-size:.8rem;font-weight:800;cursor:pointer }
+    .btn-save { flex:1;background:#16a34a;color:#fff;border:none;border-radius:10px;padding:10px;font-size:.8rem;font-weight:800;cursor:pointer }
+    .btn-toggle { background:none;border:none;color:#6366f1;font-size:.72rem;font-weight:700;cursor:pointer;padding:4px 0;display:block;width:100%;text-align:right }
+
+    .empty { text-align:center;color:#94a3b8;padding:40px 20px;font-size:.85rem }
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <span class="topbar-title">💊 Estoque de Medicamentos</span>
+</div>
+
+<div id="app" style="padding-bottom:80px">
+  <p class="empty">Carregando...</p>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="js/db.js"></script>
+<script src="js/utils.js"></script>
+<script>
+
+/* ─── Calcula dias restantes ───────────────────────── */
+function diasRestantes(med) {
+  if (!med.estoqueQtd || med.estoqueQtd <= 0) return null;
+  const vezes = (med.horarios || []).length || 1;
+  const qtdPorTomada = parseFloat(med.estoqueQtdPorTomada) || 1;
+  const consumoDiario = vezes * qtdPorTomada;
+  return Math.floor(med.estoqueQtd / consumoDiario);
+}
+
+function statusEstoque(dias) {
+  if (dias === null) return 'sem';
+  if (dias <= 7)    return 'crit';
+  if (dias <= 30)   return 'warn';
+  return 'ok';
+}
+
+const _stLbl = { ok:'Estoque ok', warn:'Repor em breve', crit:'Estoque crítico', sem:'Sem dados' };
+const _stCor = { ok:'#16a34a', warn:'#d97706', crit:'#dc2626', sem:'#94a3b8' };
+
+/* ─── Init ─────────────────────────────────────────── */
+async function init() {
+  const pid = typeof getActivePacienteId === 'function' ? getActivePacienteId() : null;
+  if (!pid) { window.location.href = 'index.html'; return; }
+
+  const hj   = new Date().toISOString().slice(0,10);
+  const todos = await dbGetAll('medicamentos');
+  const meds  = todos.filter(m => m.pacienteId === pid && m.ativo !== false && (!m.dataFim || m.dataFim >= hj));
+  render(meds);
+}
+
+/* ─── Render ────────────────────────────────────────── */
+function render(meds) {
+  const app = document.getElementById('app');
+  if (!meds.length) {
+    app.innerHTML = `<p class="empty">Nenhum medicamento ativo cadastrado.</p>`;
+    return;
+  }
+
+  // Ordena: crítico → atenção → sem dados → ok
+  const ord = { crit:0, warn:1, sem:2, ok:3 };
+  meds.sort((a,b) => ord[statusEstoque(diasRestantes(a))] - ord[statusEstoque(diasRestantes(b))]);
+
+  const nOk   = meds.filter(m => statusEstoque(diasRestantes(m)) === 'ok').length;
+  const nWarn = meds.filter(m => statusEstoque(diasRestantes(m)) === 'warn').length;
+  const nCrit = meds.filter(m => statusEstoque(diasRestantes(m)) === 'crit').length;
+  const nSem  = meds.filter(m => statusEstoque(diasRestantes(m)) === 'sem').length;
+
+  let html = `
+    <div class="resumo">
+      <div class="res-item"><div class="res-num" style="color:#dc2626">${nCrit}</div><div class="res-lbl">Crítico (≤7d)</div></div>
+      <div class="res-item"><div class="res-num" style="color:#d97706">${nWarn}</div><div class="res-lbl">Atenção (≤30d)</div></div>
+      <div class="res-item"><div class="res-num" style="color:#16a34a">${nOk}</div><div class="res-lbl">Em dia</div></div>
+    </div>
+    <p class="sec-title">Medicamentos (${meds.length})</p>`;
+
+  for (const m of meds) {
+    const dias = diasRestantes(m);
+    const st   = statusEstoque(dias);
+    const cor  = _stCor[st];
+    const vezes = (m.horarios||[]).length || 1;
+    const estoqueMax = (m.estoqueQtdEmbalagem || 30) * (parseFloat(m.estoqueQtdPorTomada)||1) * vezes;
+    const pct = dias !== null ? Math.min(100, Math.round((m.estoqueQtd / (estoqueMax)) * 100)) : 0;
+
+    html += `
+    <div class="med-card" id="mc-${m.id}">
+      <div class="med-header">
+        <div class="med-nome-row">
+          <span class="med-nome">💊 ${m.nome}</span>
+          <span class="status-pill ${st}">${_stLbl[st]}</span>
+        </div>
+        <span class="med-dose">${m.dose||''} ${m.unidade||''} · ${vezes}× ao dia</span>
+      </div>
+
+      <div class="progress-wrap">
+        ${dias !== null ? `
+        <p class="dias-txt" style="color:${cor}">${dias} dias restantes</p>
+        <div class="progress-bg"><div class="progress-fill" style="width:${pct}%;background:${cor}"></div></div>
+        <div class="progress-sub">
+          <span>${m.estoqueQtd} ${m.estoqueUnidade||'comprimidos'} restantes</span>
+          <span>Término ~${dataTermino(dias)}</span>
+        </div>` : `<p style="font-size:.8rem;color:#94a3b8;margin:4px 0">Estoque não registrado</p>`}
+        <button class="btn-toggle" onclick="toggleEdit('${m.id}')">Editar estoque ▾</button>
+      </div>
+
+      <div class="edit-wrap" id="edit-${m.id}" style="display:none">
+        <div class="edit-grid">
+          <div class="edit-group">
+            <label>Qtd. atual (unidades)</label>
+            <input class="edit-input" id="eq-${m.id}" type="number" min="0" max="9999"
+              value="${m.estoqueQtd||''}" placeholder="Ex: 30">
+          </div>
+          <div class="edit-group">
+            <label>Unidade</label>
+            <select class="edit-input" id="eu-${m.id}" style="appearance:auto">
+              ${['comprimidos','cápsulas','ml','ampolas','unidades'].map(u =>
+                `<option${(m.estoqueUnidade||'comprimidos')===u?' selected':''}>${u}</option>`).join('')}
+            </select>
+          </div>
+          <div class="edit-group">
+            <label>Qtd. por tomada</label>
+            <input class="edit-input" id="ep-${m.id}" type="number" min="0.5" step="0.5" max="20"
+              value="${m.estoqueQtdPorTomada||1}" placeholder="1">
+          </div>
+          <div class="edit-group">
+            <label>Comprimidos/embalagem</label>
+            <input class="edit-input" id="ee-${m.id}" type="number" min="1" max="1000"
+              value="${m.estoqueQtdEmbalagem||30}" placeholder="30">
+          </div>
+        </div>
+        <div class="edit-btns">
+          <button class="btn-rep" onclick="reporEstoque('${m.id}')">+ Repor embalagem</button>
+          <button class="btn-save" onclick="salvarEstoque('${m.id}')">✓ Salvar</button>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  app.innerHTML = html;
+}
+
+function toggleEdit(id) {
+  const el  = document.getElementById('edit-' + id);
+  const btn = el.previousElementSibling;
+  const vis = el.style.display === 'none';
+  el.style.display = vis ? '' : 'none';
+  btn.textContent  = vis ? 'Fechar ▴' : 'Editar estoque ▾';
+}
+
+function dataTermino(dias) {
+  const d = new Date(); d.setDate(d.getDate() + dias);
+  return d.toLocaleDateString('pt-BR', { day:'2-digit', month:'short' });
+}
+
+async function salvarEstoque(id) {
+  const qtd  = parseFloat(document.getElementById('eq-'+id)?.value) || 0;
+  const un   = document.getElementById('eu-'+id)?.value || 'comprimidos';
+  const por  = parseFloat(document.getElementById('ep-'+id)?.value) || 1;
+  const emb  = parseInt(document.getElementById('ee-'+id)?.value) || 30;
+  const med  = await dbGet('medicamentos', parseInt(id));
+  if (!med) return;
+  Object.assign(med, { estoqueQtd: qtd, estoqueUnidade: un, estoqueQtdPorTomada: por, estoqueQtdEmbalagem: emb,
+    estoqueUltimaAtu: new Date().toISOString() });
+  await dbPut('medicamentos', med);
+  showToast('✓ Estoque salvo');
+  init();
+}
+
+async function reporEstoque(id) {
+  const emb = parseInt(document.getElementById('ee-'+id)?.value) || 30;
+  const med = await dbGet('medicamentos', parseInt(id));
+  if (!med) return;
+  const novaQtd = (med.estoqueQtd || 0) + emb;
+  const un   = document.getElementById('eu-'+id)?.value || med.estoqueUnidade || 'comprimidos';
+  const por  = parseFloat(document.getElementById('ep-'+id)?.value) || med.estoqueQtdPorTomada || 1;
+  Object.assign(med, { estoqueQtd: novaQtd, estoqueUnidade: un, estoqueQtdPorTomada: por, estoqueQtdEmbalagem: emb,
+    estoqueUltimaAtu: new Date().toISOString() });
+  await dbPut('medicamentos', med);
+  showToast(`✓ Reposto: ${novaQtd} ${un}`);
+  init();
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
