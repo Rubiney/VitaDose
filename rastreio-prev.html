@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Rastreio Preventivo — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <style>
+    body { background:#f8fafc;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif }
+    .topbar { display:flex;align-items:center;gap:10px;padding:14px 16px;background:#fff;border-bottom:1px solid #e2e8f0;position:sticky;top:0;z-index:100 }
+    .back-btn { background:none;border:none;font-size:1.3rem;cursor:pointer;padding:4px 8px;color:#475569;border-radius:8px }
+    .topbar-title { font-size:1rem;font-weight:700;color:#1e293b;flex:1 }
+    .sec-title { font-size:.68rem;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.1em;padding:0 16px;margin:14px 0 6px }
+
+    /* Cards de rastreio */
+    .rastreio-card { background:#fff;border-radius:14px;margin:0 16px 8px;box-shadow:0 1px 4px rgba(0,0,0,.06);overflow:hidden }
+    .rastreio-row  { display:flex;align-items:flex-start;gap:12px;padding:12px 14px;border-bottom:1px solid #f1f5f9 }
+    .rastreio-row:last-child { border-bottom:none }
+    .rst-icon  { font-size:1.3rem;flex-shrink:0;margin-top:1px }
+    .rst-body  { flex:1;min-width:0 }
+    .rst-nome  { font-size:.83rem;font-weight:800;color:#1e293b }
+    .rst-meta  { font-size:.67rem;color:#94a3b8;margin-top:1px }
+    .rst-ind   { font-size:.67rem;color:#64748b;margin-top:3px;line-height:1.4 }
+    .rst-badge { display:inline-block;border-radius:6px;padding:3px 8px;font-size:.65rem;font-weight:800;margin-top:5px }
+    .rst-data  { font-size:.65rem;font-weight:700;color:#6366f1;margin-top:3px }
+    .rst-btn   { background:none;border:1.5px solid #6366f1;border-radius:8px;padding:5px 10px;font-size:.68rem;font-weight:700;color:#6366f1;cursor:pointer;flex-shrink:0;margin-top:2px }
+    .rst-btn:hover { background:#ede9fe }
+
+    /* Status cores */
+    .s-dia     { background:#dcfce7;color:#16a34a }
+    .s-atencao { background:#fef3c7;color:#d97706 }
+    .s-vencido { background:#fee2e2;color:#dc2626 }
+    .s-nunca   { background:#f1f5f9;color:#94a3b8 }
+
+    /* Modal */
+    .modal-bg  { position:fixed;inset:0;background:rgba(15,52,96,.45);backdrop-filter:blur(3px);z-index:300;display:flex;align-items:flex-end;justify-content:center;padding:16px }
+    .modal-box { background:#fff;border-radius:20px;width:100%;max-width:480px;padding:22px 20px }
+    .modal-title { font-size:1rem;font-weight:800;color:#1e293b;margin-bottom:14px }
+    .modal-lbl   { font-size:.67rem;font-weight:700;color:#64748b;margin-bottom:4px }
+    .modal-inp   { width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:9px;padding:9px 12px;font-size:.82rem;color:#1e293b;margin-bottom:10px }
+    .modal-inp:focus { outline:none;border-color:#6366f1 }
+    .modal-btns  { display:flex;gap:8px;margin-top:4px }
+    .btn-cancel  { flex:1;background:#f1f5f9;border:none;border-radius:10px;padding:11px;font-size:.85rem;font-weight:700;cursor:pointer;color:#475569 }
+    .btn-confirm { flex:1;background:#6366f1;border:none;border-radius:10px;padding:11px;font-size:.85rem;font-weight:700;cursor:pointer;color:#fff }
+
+    /* Filtros */
+    .filtros { display:flex;gap:6px;padding:0 16px 4px;overflow-x:auto }
+    .filtro-btn { background:#f1f5f9;border:1.5px solid transparent;border-radius:16px;padding:5px 12px;font-size:.7rem;font-weight:700;color:#475569;cursor:pointer;white-space:nowrap }
+    .filtro-btn.sel { background:#ede9fe;border-color:#c4b5fd;color:#6366f1 }
+
+    .vazio { text-align:center;color:#94a3b8;padding:24px;font-size:.82rem }
+
+    @media print { .topbar,.back-btn,.rst-btn,.modal-bg,.filtros { display:none } }
+  </style>
+</head>
+<body>
+<div class="topbar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <span class="topbar-title">🔭 Rastreio Preventivo</span>
+</div>
+<div id="app" style="padding-bottom:60px">
+  <p style="text-align:center;color:#94a3b8;padding:40px;font-size:.85rem">Carregando...</p>
+</div>
+<div class="toast" id="toast"></div>
+<script src="js/db.js"></script>
+<script src="js/utils.js"></script>
+<script>
+
+/* ─── Banco de rastreios preventivos ────────────────── */
+/* sexo: 'M'=masculino, 'F'=feminino, null=ambos
+   intervalo: dias entre exames (null=único/indefinido)
+   idadeMin/Max: faixa de idade indicada */
+const _RASTREIOS = [
+  /* ── Cardiovascular ── */
+  { id:'pa',           icon:'🩺', cat:'Cardiovascular',
+    nome:'Pressão Arterial',
+    ind:'Todos os adultos ≥18 anos',
+    sexo:null, idadeMin:18, idadeMax:120, intervalo:365,
+    condicoes:[], condicoesTexto:[],
+    diretriz:'SBC 2020',
+    obs:'Aferir a cada 1-2 anos se normal; mais frequente em pacientes de risco ou HAS.' },
+  { id:'colesterol',   icon:'🫀', cat:'Cardiovascular',
+    nome:'Perfil Lipídico (colesterol total, LDL, HDL, TG)',
+    ind:'Adultos ≥20 anos; a partir de ≥35 (M) / ≥45 (F) se sem fatores de risco',
+    sexo:null, idadeMin:20, idadeMax:120, intervalo:1825,
+    condicoes:[], condicoesTexto:['diabetes','hipertens','tabagismo','obeso'],
+    diretriz:'SBC / SBD 2023' },
+  { id:'glicemia',     icon:'🩸', cat:'Cardiovascular',
+    nome:'Glicemia de Jejum / HbA1c',
+    ind:'≥35 anos com fatores de risco; ≥45 anos todos',
+    sexo:null, idadeMin:35, idadeMax:120, intervalo:1095,
+    condicoes:['dm'], condicoesTexto:['diabet','obeso','hipertens','familiar'],
+    diretriz:'SBD / USPSTF 2023' },
+  { id:'ecocardiograma',icon:'❤️', cat:'Cardiovascular',
+    nome:'Ecocardiograma (IC, cardiopatia)',
+    ind:'Indicado para pacientes sintomáticos ou de alto risco cardiovascular',
+    sexo:null, idadeMin:0, idadeMax:120, intervalo:null,
+    condicoes:['ic'], condicoesTexto:['insuf.*card','cardiopa'],
+    diretriz:'SBC 2023', prioritario:false },
+
+  /* ── Oncológico ── */
+  { id:'papanicolaou', icon:'🔬', cat:'Oncológico',
+    nome:'Papanicolaou (citologia cérvico-vaginal)',
+    ind:'Mulheres de 25 a 64 anos com vida sexual ativa',
+    sexo:'F', idadeMin:25, idadeMax:64, intervalo:1095,
+    condicoes:[], condicoesTexto:[],
+    diretriz:'MS / INCA 2022' },
+  { id:'mamografia',   icon:'🎗️', cat:'Oncológico',
+    nome:'Mamografia bilateral',
+    ind:'Mulheres a partir dos 40 anos (FEBRASGO: anual); 50-69 anos (MS: bienal)',
+    sexo:'F', idadeMin:40, idadeMax:75, intervalo:365,
+    condicoes:[], condicoesTexto:['familiar.*mama','brca'],
+    diretriz:'FEBRASGO 2023 / MS 2022' },
+  { id:'colonoscopia', icon:'🫁', cat:'Oncológico',
+    nome:'Colonoscopia (câncer colorretal)',
+    ind:'Todos ≥45 anos; ≥40 se histórico familiar de CCR',
+    sexo:null, idadeMin:45, idadeMax:85, intervalo:3650,
+    condicoes:[], condicoesTexto:['familiar.*colon','polipose','dii','crohn'],
+    diretriz:'SBE / ACG 2022' },
+  { id:'psa',          icon:'🔵', cat:'Oncológico',
+    nome:'PSA (câncer de próstata)',
+    ind:'Homens ≥50 anos (discussão compartilhada); ≥45 com alto risco',
+    sexo:'M', idadeMin:50, idadeMax:75, intervalo:365,
+    condicoes:[], condicoesTexto:['prostata','familiar.*prostata'],
+    diretriz:'SBU 2023' },
+  { id:'melanoma',     icon:'☀️', cat:'Oncológico',
+    nome:'Dermatoscopia / Exame da pele',
+    ind:'Anualmente ≥40 anos ou exposição solar intensa; histórico familiar de melanoma',
+    sexo:null, idadeMin:40, idadeMax:120, intervalo:365,
+    condicoes:[], condicoesTexto:['melanoma','familiar.*melanoma'],
+    diretriz:'SBD 2023' },
+  { id:'pulmao',       icon:'🫁', cat:'Oncológico',
+    nome:'TC Tórax baixa dose (câncer pulmão)',
+    ind:'Fumantes ativos ou ex-fumantes ≥20 maços/ano, de 50 a 80 anos',
+    sexo:null, idadeMin:50, idadeMax:80, intervalo:365,
+    condicoes:[], condicoesTexto:['tabag','fumante','dpoc'],
+    diretriz:'USPSTF 2021' },
+
+  /* ── Metabólico / Endócrino ── */
+  { id:'tsh',          icon:'🦋', cat:'Metabólico',
+    nome:'TSH (função tireoidiana)',
+    ind:'Mulheres ≥50 anos; qualquer adulto com sintomas; uso de amiodarona/lítio',
+    sexo:null, idadeMin:50, idadeMax:120, intervalo:730,
+    condicoes:[], condicoesTexto:['tireoide','hipotireo','hipertireo','amiodarona','litio'],
+    diretriz:'SBE 2022' },
+  { id:'densitometria',icon:'🦴', cat:'Metabólico',
+    nome:'Densitometria Óssea (DXA)',
+    ind:'Mulheres ≥65 anos; homens ≥70; ≥50 anos com fatores de risco (corticoide, ooforectomia)',
+    sexo:null, idadeMin:50, idadeMax:120, intervalo:730,
+    condicoes:['osteoporose'], condicoesTexto:['osteoporose','corticosteroide','ooforectomia','menopausa'],
+    diretriz:'IOF / SBEM 2023' },
+
+  /* ── Infeccioso ── */
+  { id:'hiv',          icon:'🔴', cat:'Infeccioso',
+    nome:'Teste HIV',
+    ind:'Pelo menos 1 vez entre 15-65 anos; repetir conforme risco',
+    sexo:null, idadeMin:15, idadeMax:65, intervalo:null,
+    condicoes:[], condicoesTexto:[],
+    diretriz:'USPSTF / MS 2022' },
+  { id:'hepatitec',    icon:'🟡', cat:'Infeccioso',
+    nome:'Hepatite C (anti-HCV)',
+    ind:'Pelo menos 1 vez em adultos ≥18 anos; repetir se risco',
+    sexo:null, idadeMin:18, idadeMax:120, intervalo:null,
+    condicoes:[], condicoesTexto:[],
+    diretriz:'USPSTF 2020' },
+  { id:'hepatiteb',    icon:'🟠', cat:'Infeccioso',
+    nome:'Hepatite B (HBsAg)',
+    ind:'Adultos não vacinados; situações de risco',
+    sexo:null, idadeMin:18, idadeMax:120, intervalo:null,
+    condicoes:[], condicoesTexto:['diabet','renal','imunossup'],
+    diretriz:'USPSTF 2020' },
+
+  /* ── Saúde bucal / visão ── */
+  { id:'visao',        icon:'👁️', cat:'Geral',
+    nome:'Exame Oftalmológico',
+    ind:'A cada 2 anos ≥40 anos; anualmente ≥65 anos ou diabéticos',
+    sexo:null, idadeMin:40, idadeMax:120, intervalo:730,
+    condicoes:['dm'], condicoesTexto:['diabet','glaucoma','retinop'],
+    diretriz:'CFO / AAO 2022' },
+  { id:'dental',       icon:'🦷', cat:'Geral',
+    nome:'Consulta Odontológica',
+    ind:'Anualmente para todos os adultos',
+    sexo:null, idadeMin:18, idadeMax:120, intervalo:365,
+    condicoes:[], condicoesTexto:[],
+    diretriz:'CFO 2022' },
+  { id:'aaa',          icon:'🩻', cat:'Cardiovascular',
+    nome:'USG Aorta Abdominal (aneurisma)',
+    ind:'Homens ≥65 anos com histórico de tabagismo ≥100 cigarros',
+    sexo:'M', idadeMin:65, idadeMax:85, intervalo:null,
+    condicoes:[], condicoesTexto:['tabag','fumante','aorta'],
+    diretriz:'USPSTF 2019' },
+];
+
+function fmtData(iso) {
+  if (!iso) return '';
+  const [y,m,d] = iso.split('-');
+  return `${d}/${m}/${y}`;
+}
+function addDias(iso, n) {
+  const d = new Date(iso+'T12:00:00');
+  d.setDate(d.getDate()+n);
+  return d.toISOString().slice(0,10);
+}
+
+function statusRastreio(r, registros) {
+  const hoje = new Date().toISOString().slice(0,10);
+  const regs  = registros.filter(x=>x.rastreioId===r.id).sort((a,b)=>b.data.localeCompare(a.data));
+  if (!regs.length) return { status:'nunca', lbl:'Não realizado', cls:'s-nunca', ultima:null };
+  const ultima = regs[0];
+  if (!r.intervalo) return { status:'dia', lbl:'Realizado em '+fmtData(ultima.data), cls:'s-dia', ultima:ultima.data };
+  const prox = addDias(ultima.data, r.intervalo);
+  const atencao = addDias(hoje, 60); // alerta 60 dias antes
+  if (prox < hoje)    return { status:'vencido',  lbl:'Vencido desde '+fmtData(prox),    cls:'s-vencido', ultima:ultima.data, prox };
+  if (prox < atencao) return { status:'atencao',  lbl:'Vence em '+fmtData(prox),         cls:'s-atencao', ultima:ultima.data, prox };
+  return                     { status:'dia',       lbl:'Em dia — próximo: '+fmtData(prox), cls:'s-dia',     ultima:ultima.data, prox };
+}
+
+function indicadoPara(r, pac) {
+  const idade  = pac.idadePac || 0;
+  const sexo   = pac.sexoPac  || '';
+  const conds  = pac.condicoes || [];
+  const texto  = (pac.condicoesClinicas||'').toLowerCase();
+
+  if (r.sexo && r.sexo !== sexo) return false;
+  if (idade < r.idadeMin || idade > r.idadeMax) {
+    /* Pode ser indicado por condição mesmo fora da faixa etária padrão */
+    const porCondicao = r.condicoes.some(c=>conds.includes(c))
+      || r.condicoesTexto.some(p => new RegExp(p,'i').test(texto));
+    if (!porCondicao) return false;
+  }
+  return true;
+}
+
+let _pid  = null;
+let _pac  = null;
+let _regs = [];    // registros de exames realizados
+let _filtro = 'todos';
+let _modalRastreio = null;
+
+async function init() {
+  _pid  = getActivePacienteId();
+  if (!_pid) { window.location.href='index.html'; return; }
+  _pac  = await dbGet('pacientes', _pid);
+  _regs = (await dbGetConfig('rastreio_prev_'+_pid)) || [];
+  render();
+}
+
+function render() {
+  const hoje = new Date().toISOString().slice(0,10);
+  const indicados = _RASTREIOS.filter(r => indicadoPara(r, _pac||{}));
+
+  /* Contadores por status */
+  const counts = { todos:indicados.length, vencido:0, atencao:0, dia:0, nunca:0 };
+  indicados.forEach(r => {
+    const st = statusRastreio(r, _regs);
+    counts[st.status]++;
+  });
+
+  /* Filtrar */
+  const lista = _filtro==='todos'
+    ? indicados
+    : indicados.filter(r => statusRastreio(r, _regs).status === _filtro);
+
+  /* Agrupar por categoria */
+  const cats = [...new Set(lista.map(r=>r.cat))];
+
+  const filtrosHTML = [
+    { id:'todos',   lbl:`Todos (${counts.todos})` },
+    { id:'vencido', lbl:`Vencido (${counts.vencido})`, cls:'#dc2626' },
+    { id:'atencao', lbl:`Atenção (${counts.atencao})`,  cls:'#d97706' },
+    { id:'dia',     lbl:`Em dia (${counts.dia})`,       cls:'#16a34a' },
+    { id:'nunca',   lbl:`Não realizado (${counts.nunca})` },
+  ].map(f => `<button class="filtro-btn${_filtro===f.id?' sel':''}" onclick="setFiltro('${f.id}')">${f.lbl}</button>`).join('');
+
+  const listaHTML = cats.map(cat => {
+    const items = lista.filter(r=>r.cat===cat);
+    return `<p class="sec-title">${cat}</p>
+    <div class="rastreio-card">
+      ${items.map(r => {
+        const st = statusRastreio(r, _regs);
+        return `<div class="rastreio-row">
+          <span class="rst-icon">${r.icon}</span>
+          <div class="rst-body">
+            <p class="rst-nome">${r.nome}</p>
+            <p class="rst-meta">${r.intervalo ? 'A cada '+(r.intervalo>=365?Math.round(r.intervalo/365)+(r.intervalo>=730?'anos':'ano'):(r.intervalo/30).toFixed(0)+' meses') : 'Dose única / sob indicação'} · ${r.diretriz}</p>
+            <p class="rst-ind">${r.ind}</p>
+            <span class="rst-badge ${st.cls}">${st.lbl}</span>
+            ${st.ultima ? `<p class="rst-data">Último: ${fmtData(st.ultima)}</p>` : ''}
+          </div>
+          <button class="rst-btn" onclick="abrirModal('${r.id}')">
+            ${st.status==='nunca'?'+ Registrar':'↺ Atualizar'}
+          </button>
+        </div>`;
+      }).join('')}
+    </div>`;
+  }).join('');
+
+  document.getElementById('app').innerHTML = `
+    <p class="sec-title" style="margin-top:10px">Rastreio — ${_pac?.nome||'Paciente'}${_pac?.idadePac?' ('+_pac.idadePac+' anos)':''}</p>
+    <div class="filtros">${filtrosHTML}</div>
+    ${lista.length ? listaHTML : '<p class="vazio">Nenhum rastreio nesta categoria para este perfil.</p>'}
+    <p style="font-size:.67rem;color:#94a3b8;padding:4px 16px 20px;line-height:1.5">
+      Rastreios sugeridos com base na idade, sexo e condições clínicas do paciente. Baseado em USPSTF, MS/INCA, SBC, FEBRASGO, SBE e outras diretrizes brasileiras 2022-2024. Complementa — não substitui — avaliação médica individualizada.
+    </p>
+  `;
+}
+
+function setFiltro(f) { _filtro=f; render(); }
+
+function abrirModal(id) {
+  const r = _RASTREIOS.find(x=>x.id===id);
+  if (!r) return;
+  _modalRastreio = id;
+  const hoje = new Date().toISOString().slice(0,10);
+  const regs = _regs.filter(x=>x.rastreioId===id).sort((a,b)=>b.data.localeCompare(a.data));
+  const ul   = regs[0];
+  let proxSug = '';
+  if (r.intervalo && ul) proxSug = addDias(ul.data, r.intervalo);
+
+  const div = document.createElement('div');
+  div.className = 'modal-bg';
+  div.id = 'modal-rst';
+  div.innerHTML = `<div class="modal-box" onclick="event.stopPropagation()">
+    <p class="modal-title">${r.icon} ${r.nome}</p>
+    <p class="modal-lbl">Data de realização</p>
+    <input class="modal-inp" id="m-data" type="date" value="${ul?.data||hoje}">
+    <p class="modal-lbl">Resultado / Observações (opcional)</p>
+    <input class="modal-inp" id="m-res" placeholder="Ex: Normal · LDL 98 mg/dL · Negativo" value="${ul?.resultado||''}">
+    ${r.intervalo ? `<p class="modal-lbl">Próxima data sugerida</p>
+    <input class="modal-inp" id="m-prox" type="date" value="${proxSug||''}">` : ''}
+    ${regs.length ? `<p style="font-size:.67rem;color:#94a3b8;margin-bottom:10px">Histórico: ${regs.slice(0,3).map(x=>fmtData(x.data)+(x.resultado?' ('+x.resultado.slice(0,20)+'…)':'')).join(' · ')}</p>` : ''}
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="document.getElementById('modal-rst').remove()">Cancelar</button>
+      <button class="btn-confirm" onclick="salvarRegistro()">Salvar</button>
+    </div>
+  </div>`;
+  div.addEventListener('click', () => div.remove());
+  document.body.appendChild(div);
+}
+
+async function salvarRegistro() {
+  const data = document.getElementById('m-data')?.value;
+  if (!data) { showToast('Informe a data'); return; }
+
+  const r = _RASTREIOS.find(x=>x.id===_modalRastreio);
+  const reg = {
+    id:         Date.now().toString(36),
+    rastreioId: _modalRastreio,
+    nome:       r?.nome||_modalRastreio,
+    data,
+    resultado:  document.getElementById('m-res')?.value.trim()||'',
+    proxData:   document.getElementById('m-prox')?.value||null,
+    criadoEm:  new Date().toISOString(),
+  };
+  _regs.push(reg);
+  await dbSetConfig('rastreio_prev_'+_pid, _regs);
+  document.getElementById('modal-rst')?.remove();
+  showToast('✓ Registrado');
+  render();
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>

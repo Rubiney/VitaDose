@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Diluição de Injetáveis — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <style>
+    body { background:#f8fafc;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif }
+    .topbar { display:flex;align-items:center;gap:10px;padding:14px 16px;background:#fff;border-bottom:1px solid #e2e8f0;position:sticky;top:0;z-index:100 }
+    .back-btn { background:none;border:none;font-size:1.3rem;cursor:pointer;padding:4px 8px;color:#475569;border-radius:8px }
+    .topbar-title { font-size:1rem;font-weight:700;color:#1e293b;flex:1 }
+    .sec-title { font-size:.68rem;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.1em;padding:0 16px;margin:14px 0 6px }
+
+    /* Presets chips */
+    .presets-wrap { display:flex;flex-wrap:wrap;gap:6px;padding:10px 16px }
+    .preset-chip  { background:#fff;border:1.5px solid #e2e8f0;border-radius:16px;padding:6px 12px;font-size:.72rem;font-weight:700;color:#475569;cursor:pointer }
+    .preset-chip:hover { background:#f1f5f9 }
+    .preset-chip.sel { background:#0f3460;border-color:#0f3460;color:#fff }
+
+    /* Formulário */
+    .form-card { background:#fff;border-radius:14px;margin:0 16px 10px;box-shadow:0 1px 4px rgba(0,0,0,.06);padding:14px }
+    .form-row  { margin-bottom:10px }
+    .form-lbl  { font-size:.67rem;font-weight:700;color:#64748b;margin-bottom:4px }
+    .form-inp  { width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:9px;padding:8px 12px;font-size:.82rem;color:#1e293b }
+    .form-inp:focus { outline:none;border-color:#0f3460 }
+    .form-sel  { width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:9px;padding:8px 12px;font-size:.82rem;color:#1e293b }
+    .form-grid2 { display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px }
+    .form-grid3 { display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:8px }
+    .unit-row   { display:flex;gap:6px }
+    .unit-inp   { flex:2;border:1.5px solid #e2e8f0;border-radius:9px;padding:8px 12px;font-size:.82rem;color:#1e293b }
+    .unit-sel   { flex:1;border:1.5px solid #e2e8f0;border-radius:9px;padding:8px 10px;font-size:.78rem;color:#1e293b }
+    .unit-inp:focus,.unit-sel:focus { outline:none;border-color:#0f3460 }
+    .btn-calc   { width:100%;background:#0f3460;color:#fff;border:none;border-radius:10px;padding:12px;font-size:.9rem;font-weight:800;cursor:pointer;margin-top:6px }
+    .btn-limpar { width:100%;background:#f1f5f9;color:#64748b;border:none;border-radius:10px;padding:10px;font-size:.8rem;font-weight:700;cursor:pointer;margin-top:6px }
+
+    /* Resultados */
+    .result-grid { display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 16px }
+    .result-card { background:#fff;border-radius:14px;padding:14px;box-shadow:0 1px 4px rgba(0,0,0,.06);text-align:center }
+    .result-val  { font-size:1.6rem;font-weight:900;color:#0f3460 }
+    .result-unit { font-size:.72rem;color:#94a3b8;font-weight:700 }
+    .result-lbl  { font-size:.62rem;font-weight:700;color:#94a3b8;text-transform:uppercase;margin-top:4px }
+
+    /* Destaque principal */
+    .result-main { background:#0f3460;color:#fff;border-radius:16px;margin:0 16px 10px;padding:18px;text-align:center }
+    .result-main-val { font-size:2.2rem;font-weight:900 }
+    .result-main-lbl { font-size:.78rem;opacity:.8;margin-top:4px }
+
+    /* Alerta */
+    .alerta-card { border-radius:12px;margin:0 16px 10px;padding:12px 14px;font-size:.75rem;line-height:1.6 }
+
+    /* Modo vasoativo */
+    .toggle-row { display:flex;gap:8px;padding:0 16px;margin-bottom:4px }
+    .toggle-btn { flex:1;background:#f1f5f9;border:1.5px solid transparent;border-radius:10px;padding:9px;font-size:.75rem;font-weight:700;color:#475569;cursor:pointer;text-align:center }
+    .toggle-btn.sel { background:#ede9fe;border-color:#c4b5fd;color:#7c3aed }
+
+    .vazio-result { background:#fff;border-radius:14px;margin:0 16px;padding:20px;text-align:center;color:#94a3b8;font-size:.82rem;box-shadow:0 1px 4px rgba(0,0,0,.06) }
+
+    @media print { .topbar,.back-btn,.presets-wrap,.btn-calc,.btn-limpar { display:none } }
+  </style>
+</head>
+<body>
+<div class="topbar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <span class="topbar-title">🧪 Diluição de Injetáveis</span>
+</div>
+
+<div id="app" style="padding-bottom:80px">
+  <p style="text-align:center;color:#94a3b8;padding:40px;font-size:.85rem">Carregando...</p>
+</div>
+<div class="toast" id="toast"></div>
+<script src="js/db.js"></script>
+<script src="js/utils.js"></script>
+<script>
+
+/* ─── Presets ────────────────────────────────────────── */
+const _PRESETS = [
+  { id:'vancomicina',  nome:'Vancomicina',   stock:10,  uStock:'mg/mL', dose:1000, uDose:'mg',        vol:250, diluente:'SF 0,9%', tempo:90, modo:'padrao', obs:'Infusão lenta ≥60 min/500mg. Monitorar vancocinemia.' },
+  { id:'amicacina',   nome:'Amicacina',     stock:250, uStock:'mg/mL', dose:500,  uDose:'mg',        vol:100, diluente:'SF 0,9%', tempo:30, modo:'padrao', obs:'Administrar em 30-60 min. Monitorar função renal.' },
+  { id:'oxacilina',   nome:'Oxacilina',     stock:500, uStock:'mg/vial',dose:500,  uDose:'mg',        vol:100, diluente:'SF 0,9%', tempo:30, modo:'padrao', obs:'Reconstruir com 10mL de AD (50mg/mL). Infundir em 30-60 min.' },
+  { id:'ceftriaxona', nome:'Ceftriaxona',   stock:1000,uStock:'mg/vial',dose:2000, uDose:'mg',        vol:100, diluente:'SF 0,9%', tempo:30, modo:'padrao', obs:'Reconstituir com 10mL AD (100mg/mL). Incompatível com Ca²⁺.' },
+  { id:'metronidazol',nome:'Metronidazol',  stock:5,   uStock:'mg/mL', dose:500,  uDose:'mg',        vol:100, diluente:'Pronto',  tempo:60, modo:'padrao', obs:'Já disponível pronto: 500mg/100mL. Infundir em 30-60 min.' },
+  { id:'morfina',     nome:'Morfina',       stock:10,  uStock:'mg/mL', dose:10,   uDose:'mg',        vol:100, diluente:'SF 0,9%', tempo:20, modo:'padrao', obs:'Monitorar sedação e SpO₂. Ter naloxona disponível.' },
+  { id:'tramadol',    nome:'Tramadol',      stock:50,  uStock:'mg/mL', dose:100,  uDose:'mg',        vol:100, diluente:'SF 0,9%', tempo:30, modo:'padrao', obs:'Diluir em 100mL SF ou SG5%. Infusão lenta.' },
+  { id:'ondansetrona',nome:'Ondansetrona',  stock:2,   uStock:'mg/mL', dose:8,    uDose:'mg',        vol:50,  diluente:'SF 0,9%', tempo:15, modo:'padrao', obs:'Diluir em 50mL SF ou SG5%. Infundir em 15-30 min.' },
+  { id:'heparina',    nome:'Heparina (bolus)',stock:5000,uStock:'UI/mL',dose:5000, uDose:'UI',        vol:10,  diluente:'SF 0,9%', tempo:3,  modo:'padrao', obs:'Bolus IV lento. Monitorar TTPA.' },
+  { id:'dipirona',    nome:'Dipirona',      stock:500, uStock:'mg/mL', dose:1000, uDose:'mg',        vol:100, diluente:'SF 0,9%', tempo:15, modo:'padrao', obs:'Infusão lenta (mínimo 15 min) para evitar hipotensão.' },
+  { id:'furosemida',  nome:'Furosemida',    stock:10,  uStock:'mg/mL', dose:40,   uDose:'mg',        vol:20,  diluente:'SF 0,9%', tempo:4,  modo:'padrao', obs:'Máx: 4mg/min. Em IRC: diluir mais e infundir mais lentamente.' },
+  { id:'fenitoina',   nome:'Fenitoína',     stock:50,  uStock:'mg/mL', dose:1000, uDose:'mg',        vol:100, diluente:'SF 0,9%', tempo:30, modo:'padrao', obs:'Máx 50mg/min. Monitorar ECG (risco QT). Incompatível com SG5%.' },
+  { id:'dopamina',    nome:'Dopamina',      stock:5,   uStock:'mg/mL', dose:5,    uDose:'mcg/kg/min',vol:250, diluente:'SG 5%',  tempo:0,  modo:'vasoativo', obs:'Dose 1-5mcg/kg/min=renal; 5-10=inotrópico; >10=vasopressor.' },
+  { id:'noradrenalina',nome:'Noradrenalina',stock:1,   uStock:'mg/mL', dose:0.1,  uDose:'mcg/kg/min',vol:250, diluente:'SG 5%',  tempo:0,  modo:'vasoativo', obs:'Acesso central preferencial. Monitorar PA invasiva.' },
+  { id:'dobutamina',  nome:'Dobutamina',    stock:12.5,uStock:'mg/mL', dose:5,    uDose:'mcg/kg/min',vol:250, diluente:'SG 5%',  tempo:0,  modo:'vasoativo', obs:'Dose 2-20 mcg/kg/min. Monitorar FC e ECG.' },
+];
+
+const _UNIDADES = ['mg','g','mcg','UI','mEq','mmol','mL'];
+const _UNSTOCK  = ['mg/mL','g/mL','mcg/mL','UI/mL','mg/vial','g/vial','mcg/vial','UI/vial','mEq/mL','mmol/mL'];
+const _DILUENTES = ['SF 0,9%','SG 5%','SG 10%','Água destilada (AD)','Ringer Lactato','Ringer','Pronto'];
+
+let _modo     = 'padrao';   // 'padrao' | 'vasoativo'
+let _peso     = 70;
+let _resultado= null;
+let _presetSel= null;
+
+async function init() {
+  const pid = getActivePacienteId ? getActivePacienteId() : 0;
+  if (pid) {
+    try {
+      const pac = await dbGet('pacientes', pid);
+      if (pac?.pesoPac) _peso = pac.pesoPac;
+    } catch(e){}
+  }
+  render();
+}
+
+function render() {
+  const presetChips = _PRESETS.map(p =>
+    `<span class="preset-chip${_presetSel===p.id?' sel':''}" onclick="aplicarPreset('${p.id}')">${p.nome}</span>`
+  ).join('');
+
+  const toggleHTML = `
+    <div class="toggle-row">
+      <button class="toggle-btn${_modo==='padrao'?' sel':''}" onclick="setModo('padrao')">💊 Dose Fixa</button>
+      <button class="toggle-btn${_modo==='vasoativo'?' sel':''}" onclick="setModo('vasoativo')">⚡ mcg/kg/min (vasoativo)</button>
+    </div>`;
+
+  const formPadrao = `
+    <div class="form-row">
+      <p class="form-lbl">Medicamento</p>
+      <input class="form-inp" id="f-med" placeholder="Ex: Vancomicina">
+    </div>
+    <div class="form-grid2">
+      <div>
+        <p class="form-lbl">Dose prescrita</p>
+        <div class="unit-row">
+          <input class="unit-inp" id="f-dose" type="number" step="any" placeholder="500">
+          <select class="unit-sel" id="f-udose">${_UNIDADES.map(u=>`<option value="${u}">${u}</option>`).join('')}</select>
+        </div>
+      </div>
+      <div>
+        <p class="form-lbl">Conc. stock (ampola/frasco)</p>
+        <div class="unit-row">
+          <input class="unit-inp" id="f-stock" type="number" step="any" placeholder="50">
+          <select class="unit-sel" id="f-ustock">${_UNSTOCK.map(u=>`<option value="${u}">${u}</option>`).join('')}</select>
+        </div>
+      </div>
+    </div>`;
+
+  const formVasoativo = `
+    <div class="form-row">
+      <p class="form-lbl">Medicamento vasoativo</p>
+      <input class="form-inp" id="f-med" placeholder="Ex: Dopamina">
+    </div>
+    <div class="form-grid3">
+      <div>
+        <p class="form-lbl">Dose prescrita (mcg/kg/min)</p>
+        <input class="form-inp" id="f-dose" type="number" step="0.1" placeholder="5">
+      </div>
+      <div>
+        <p class="form-lbl">Peso (kg)</p>
+        <input class="form-inp" id="f-peso" type="number" step="0.1" value="${_peso}" placeholder="70">
+      </div>
+      <div>
+        <p class="form-lbl">Conc. final (mcg/mL)</p>
+        <input class="form-inp" id="f-conc-final" type="number" step="any" placeholder="800">
+      </div>
+    </div>`;
+
+  const formComum = `
+    <div class="form-grid2">
+      <div>
+        <p class="form-lbl">Volume final (mL)</p>
+        <input class="form-inp" id="f-vol" type="number" step="1" placeholder="100">
+      </div>
+      <div>
+        <p class="form-lbl">Diluente</p>
+        <select class="form-sel" id="f-dil">${_DILUENTES.map(d=>`<option>${d}</option>`).join('')}</select>
+      </div>
+    </div>`;
+
+  const formTempo = _modo==='padrao' ? `
+    <div class="form-row">
+      <p class="form-lbl">Tempo de infusão</p>
+      <div class="form-grid2">
+        <div class="unit-row">
+          <input class="unit-inp" id="f-th" type="number" placeholder="1" step="1" min="0">
+          <span style="align-self:center;color:#64748b;font-size:.75rem;padding:0 4px">h</span>
+        </div>
+        <div class="unit-row">
+          <input class="unit-inp" id="f-tm" type="number" placeholder="30" step="1" min="0">
+          <span style="align-self:center;color:#64748b;font-size:.75rem;padding:0 4px">min</span>
+        </div>
+      </div>
+    </div>` : '';
+
+  const obsPreset = _presetSel ? (_PRESETS.find(p=>p.id===_presetSel)?.obs||'') : '';
+
+  document.getElementById('app').innerHTML = `
+    <p class="sec-title" style="margin-top:10px">Medicamentos Frequentes</p>
+    <div class="presets-wrap">${presetChips}</div>
+
+    ${obsPreset ? `<div class="alerta-card" style="background:#fef3c7;color:#7c2d12">${obsPreset}</div>` : ''}
+
+    <p class="sec-title">Calculadora</p>
+    ${toggleHTML}
+    <div class="form-card">
+      ${_modo==='padrao' ? formPadrao : formVasoativo}
+      ${formComum}
+      ${formTempo}
+      <button class="btn-calc" onclick="calcular()">Calcular</button>
+      <button class="btn-limpar" onclick="limpar()">↺ Limpar</button>
+    </div>
+
+    <div id="resultado">
+      <div class="vazio-result">Preencha os campos acima e clique em Calcular.</div>
+    </div>
+  `;
+}
+
+function setModo(m) { _modo=m; _presetSel=null; render(); }
+
+function aplicarPreset(id) {
+  const p = _PRESETS.find(x=>x.id===id);
+  if (!p) return;
+  _presetSel = id;
+  _modo = p.modo;
+  render();
+
+  /* Preenche campos */
+  setTimeout(() => {
+    const set = (sel, val) => { const el=document.querySelector(sel); if(el) el.value=val; };
+    set('#f-med', p.nome);
+    set('#f-dose', p.dose);
+    set('#f-vol', p.vol);
+
+    const dil = document.getElementById('f-dil');
+    if (dil) {
+      for (let o of dil.options) { if (o.value===p.diluente||o.text===p.diluente) { dil.value=o.value; break; } }
+    }
+
+    if (p.modo==='padrao') {
+      set('#f-stock', p.stock);
+      const uDose  = document.getElementById('f-udose');
+      const uStock = document.getElementById('f-ustock');
+      if (uDose)  for (let o of uDose.options)  { if (o.value===p.uDose)  { uDose.value=o.value; break; } }
+      if (uStock) for (let o of uStock.options) { if (o.value===p.uStock) { uStock.value=o.value; break; } }
+
+      const min = p.tempo;
+      set('#f-th', Math.floor(min/60));
+      set('#f-tm', min%60);
+    } else {
+      /* vasoativo: calcular conc final sugerida */
+      const concFinal = (p.stock * 1000) / p.vol; // mcg/mL
+      set('#f-conc-final', Math.round(concFinal));
+      set('#f-peso', _peso);
+    }
+  }, 50);
+}
+
+function limpar() { _presetSel=null; render(); }
+
+function calcular() {
+  const med = document.getElementById('f-med')?.value.trim()||'Medicamento';
+  const vol = parseFloat(document.getElementById('f-vol')?.value)||0;
+  const dil = document.getElementById('f-dil')?.value||'SF 0,9%';
+
+  if (_modo === 'padrao') {
+    calcPadrao(med, vol, dil);
+  } else {
+    calcVasoativo(med, vol, dil);
+  }
+}
+
+function calcPadrao(med, vol, dil) {
+  const dose      = parseFloat(document.getElementById('f-dose')?.value)||0;
+  const uDose     = document.getElementById('f-udose')?.value||'mg';
+  const stockVal  = parseFloat(document.getElementById('f-stock')?.value)||0;
+  const uStock    = document.getElementById('f-ustock')?.value||'mg/mL';
+  const th        = parseFloat(document.getElementById('f-th')?.value)||0;
+  const tm        = parseFloat(document.getElementById('f-tm')?.value)||0;
+  const tempoMin  = th*60+tm;
+  const tempoH    = tempoMin/60;
+
+  if (!dose||!stockVal||!vol) { showToast('Preencha: dose, concentração stock e volume.'); return; }
+
+  /* Normaliza: se stock é por vial, calcula concentração em mg/mL */
+  let concStockMgML = stockVal; // assume mg/mL
+  let volAspML;
+  if (uStock.includes('/vial')||uStock.includes('/frasco')) {
+    /* stock é total no vial — volume a aspirar = (dose/stockTotal)*volVial → simplificado: volAsp = dose/stockConc */
+    /* Neste caso precisamos saber o volume do vial — usamos a dose prescrita como fração */
+    concStockMgML = stockVal; // total no vial — tratar como se concentração = stockVal/1mL fictício
+    volAspML = dose / stockVal; // fração do vial = dose/conteudo_total_vial (resultado em "partes do vial")
+    renderResultados(med, dose, uDose, stockVal, uStock, vol, dil, volAspML, null, tempoH, tempoMin, true);
+    return;
+  }
+
+  /* Normal: stock em mg/mL (ou equivalente) */
+  volAspML = dose / concStockMgML;
+  const concFinal = dose / vol;
+  const taxaH     = tempoH > 0 ? vol / tempoH    : null;
+  const gotas     = tempoMin > 0 ? (vol/tempoMin)*20  : null;
+  const ugotas    = tempoMin > 0 ? (vol/tempoMin)*60  : null;
+
+  renderResultados(med, dose, uDose, concStockMgML, uStock, vol, dil, volAspML, concFinal, tempoH, tempoMin, false, taxaH, gotas, ugotas);
+}
+
+function calcVasoativo(med, vol, dil) {
+  const dose      = parseFloat(document.getElementById('f-dose')?.value)||0;     // mcg/kg/min
+  const pesoKg    = parseFloat(document.getElementById('f-peso')?.value)||_peso;
+  const concFinal = parseFloat(document.getElementById('f-conc-final')?.value)||0; // mcg/mL
+
+  if (!dose||!pesoKg||!concFinal||!vol) { showToast('Preencha: dose, peso, concentração final e volume.'); return; }
+
+  const doseTotalMcgMin = dose * pesoKg;               // mcg/min
+  const taxaMlMin       = doseTotalMcgMin / concFinal; // mL/min
+  const taxaMlH         = taxaMlMin * 60;              // mL/h
+
+  /* Volume de droga no bag */
+  const massaTotalMcg   = concFinal * vol;             // mcg no bag total
+  const massaTotalMg    = massaTotalMcg / 1000;        // mg no bag
+
+  document.getElementById('resultado').innerHTML = `
+    <p class="sec-title">Resultado — ${med} (vasoativo)</p>
+    <div class="result-main">
+      <div class="result-main-val">${taxaMlH.toFixed(1)} mL/h</div>
+      <div class="result-main-lbl">Taxa de infusão para ${dose} mcg/kg/min · ${pesoKg} kg</div>
+    </div>
+    <div class="result-grid">
+      <div class="result-card">
+        <div class="result-val">${doseTotalMcgMin.toFixed(1)}</div>
+        <div class="result-unit">mcg/min</div>
+        <div class="result-lbl">Dose total</div>
+      </div>
+      <div class="result-card">
+        <div class="result-val">${taxaMlMin.toFixed(2)}</div>
+        <div class="result-unit">mL/min</div>
+        <div class="result-lbl">Fluxo</div>
+      </div>
+      <div class="result-card">
+        <div class="result-val">${massaTotalMg.toFixed(0)}</div>
+        <div class="result-unit">mg no bag</div>
+        <div class="result-lbl">Massa total</div>
+      </div>
+      <div class="result-card">
+        <div class="result-val">${concFinal}</div>
+        <div class="result-unit">mcg/mL</div>
+        <div class="result-lbl">Conc. final</div>
+      </div>
+    </div>
+    <div style="background:#f1f5f9;border-radius:12px;margin:10px 16px;padding:12px 14px;font-size:.72rem;color:#475569;line-height:1.6">
+      Preparar: ${massaTotalMg.toFixed(0)} mg de ${med} em ${vol} mL de ${dil} → concentração final ${concFinal} mcg/mL<br>
+      Iniciar a <b>${taxaMlH.toFixed(1)} mL/h</b> na bomba de infusão.
+    </div>
+  `;
+}
+
+function renderResultados(med, dose, uDose, stock, uStock, vol, dil, volAsp, concFinal, tempoH, tempoMin, isVial=false, taxaH=null, gotas=null, ugotas=null) {
+  const asp = isVial
+    ? `${(volAsp*100).toFixed(0)}% do ${uStock.replace('/vial','').replace('/frasco','')} (${(volAsp).toFixed(2)} ampolas)`
+    : `${volAsp.toFixed(2)} mL`;
+
+  document.getElementById('resultado').innerHTML = `
+    <p class="sec-title">Resultado — ${med}</p>
+
+    <div class="result-main">
+      <div class="result-main-val">${isVial ? (volAsp*100).toFixed(0)+'%' : volAsp.toFixed(2)+' mL'}</div>
+      <div class="result-main-lbl">${isVial ? 'do frasco/vial a aspirar' : 'a aspirar da ampola/frasco'}</div>
+    </div>
+
+    <div class="result-grid">
+      ${!isVial&&concFinal!==null ? `<div class="result-card">
+        <div class="result-val">${concFinal.toFixed(2)}</div>
+        <div class="result-unit">${uDose}/mL</div>
+        <div class="result-lbl">Conc. final</div>
+      </div>` : ''}
+      ${taxaH!==null ? `<div class="result-card">
+        <div class="result-val">${taxaH.toFixed(1)}</div>
+        <div class="result-unit">mL/h</div>
+        <div class="result-lbl">Taxa de infusão</div>
+      </div>` : ''}
+      ${gotas!==null ? `<div class="result-card">
+        <div class="result-val">${gotas.toFixed(0)}</div>
+        <div class="result-unit">gts/min</div>
+        <div class="result-lbl">Gotas (macro)</div>
+      </div>
+      <div class="result-card">
+        <div class="result-val">${ugotas.toFixed(0)}</div>
+        <div class="result-unit">μgts/min</div>
+        <div class="result-lbl">Microgotas</div>
+      </div>` : ''}
+    </div>
+
+    <div style="background:#f1f5f9;border-radius:12px;margin:10px 16px 16px;padding:12px 14px;font-size:.72rem;color:#475569;line-height:1.7">
+      <b>Resumo:</b> Aspirar ${asp} de ${med} (${stock} ${uStock}) e adicionar ao bag de ${vol} mL de ${dil}.
+      ${tempoMin > 0 ? `Infundir em ${tempoH>=1?Math.floor(tempoH)+'h ':''} ${(tempoMin%60)>0?tempoMin%60+'min':''}.` : ''}
+      ${taxaH ? `<br>Programar bomba em <b>${taxaH.toFixed(1)} mL/h</b>.` : ''}
+    </div>
+  `;
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
