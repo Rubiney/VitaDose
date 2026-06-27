@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Diário de Sintomas — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <style>
+    body { background:#f8fafc;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif }
+    .topbar { display:flex;align-items:center;gap:10px;padding:14px 16px;background:#fff;border-bottom:1px solid #e2e8f0;position:sticky;top:0;z-index:100 }
+    .back-btn { background:none;border:none;font-size:1.3rem;cursor:pointer;padding:4px 8px;color:#475569;border-radius:8px }
+    .topbar-title { font-size:1rem;font-weight:700;color:#1e293b;flex:1 }
+
+    .sec-title { font-size:.68rem;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.1em;padding:0 16px;margin:14px 0 6px }
+    .card { background:#fff;border-radius:14px;margin:0 16px 10px;box-shadow:0 1px 4px rgba(0,0,0,.06);overflow:hidden }
+
+    /* Escala de intensidade */
+    .intensidade-label { font-size:.75rem;font-weight:700;color:#475569;padding:0 16px;margin-bottom:6px }
+    .escala-wrap { display:flex;gap:4px;padding:0 16px;margin-bottom:14px }
+    .esc-btn { flex:1;aspect-ratio:1;border:2px solid #e2e8f0;border-radius:8px;font-size:.8rem;font-weight:800;cursor:pointer;background:#fff;color:#94a3b8;transition:.12s }
+    .esc-btn.sel { color:#fff;border-color:transparent }
+
+    /* Categorias */
+    .cats-wrap { display:flex;flex-wrap:wrap;gap:8px;padding:0 16px;margin-bottom:14px }
+    .cat-chip  { background:#f1f5f9;border:1.5px solid transparent;border-radius:20px;padding:7px 12px;font-size:.76rem;font-weight:700;color:#475569;cursor:pointer;display:flex;align-items:center;gap:5px }
+    .cat-chip.sel { background:#ede9fe;border-color:#a5b4fc;color:#4f46e5 }
+
+    /* Campos de texto */
+    .form-wrap { padding:0 16px;margin-bottom:12px }
+    .form-grid { display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px }
+    .form-group label { display:block;font-size:.67rem;font-weight:700;color:#64748b;margin-bottom:4px }
+    .form-input { width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:10px;padding:9px 12px;font-size:.85rem;color:#1e293b }
+    .form-input:focus { outline:none;border-color:#6366f1 }
+    .obs-input  { width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:10px;padding:9px 12px;font-size:.82rem;color:#1e293b;resize:none }
+    .obs-input:focus { outline:none;border-color:#6366f1 }
+    .btn-salvar { width:100%;background:#6366f1;color:#fff;border:none;border-radius:12px;padding:13px;font-size:.9rem;font-weight:800;cursor:pointer }
+
+    /* Histórico */
+    .sint-item { padding:12px 14px;border-bottom:1px solid #f1f5f9 }
+    .sint-item:last-child { border-bottom:none }
+    .sint-top  { display:flex;align-items:flex-start;gap:8px;margin-bottom:5px }
+    .sint-data { font-size:.7rem;font-weight:700;color:#94a3b8;flex-shrink:0 }
+    .sint-body { flex:1 }
+    .sint-cats { display:flex;flex-wrap:wrap;gap:4px;margin-bottom:4px }
+    .sint-cat  { font-size:.65rem;font-weight:700;border-radius:4px;padding:2px 7px;background:#f1f5f9;color:#475569 }
+    .sint-obs  { font-size:.75rem;color:#64748b;line-height:1.4;margin-top:3px }
+    .sint-int  { font-size:.72rem;font-weight:800;border-radius:5px;padding:2px 8px;flex-shrink:0 }
+    .sint-del  { background:none;border:none;font-size:.9rem;cursor:pointer;color:#cbd5e1;padding:0 4px;flex-shrink:0 }
+    .sint-del:hover { color:#ef4444 }
+
+    /* Resumo frequência */
+    .freq-grid { display:grid;grid-template-columns:repeat(3,1fr);gap:6px;padding:0 16px;margin-bottom:4px }
+    .freq-item { background:#fff;border-radius:10px;padding:9px 8px;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,.05) }
+    .freq-num  { font-size:1.2rem;font-weight:900;color:#6366f1 }
+    .freq-lbl  { font-size:.62rem;color:#64748b;font-weight:600;margin-top:1px }
+
+    .empty { text-align:center;color:#94a3b8;padding:24px 16px;font-size:.82rem }
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <span class="topbar-title">🤒 Diário de Sintomas</span>
+</div>
+
+<div id="app" style="padding-bottom:80px">
+  <p style="text-align:center;color:#94a3b8;padding:40px 20px;font-size:.85rem">Carregando...</p>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="js/db.js"></script>
+<script src="js/utils.js"></script>
+<script>
+
+const _CATS = [
+  { id:'dor',        icon:'🔴', label:'Dor' },
+  { id:'cefaleia',   icon:'🤕', label:'Cefaleia' },
+  { id:'tontura',    icon:'💫', label:'Tontura' },
+  { id:'nausea',     icon:'🤢', label:'Náusea/Vômito' },
+  { id:'dispneia',   icon:'😮‍💨', label:'Falta de ar' },
+  { id:'palpitacao', icon:'💓', label:'Palpitação' },
+  { id:'edema',      icon:'🦵', label:'Edema' },
+  { id:'febre',      icon:'🌡️', label:'Febre' },
+  { id:'cansaco',    icon:'😩', label:'Cansaço' },
+  { id:'insonia',    icon:'🌙', label:'Insônia' },
+  { id:'ansiedade',  icon:'😰', label:'Ansiedade' },
+  { id:'tremor',     icon:'🖐️', label:'Tremor' },
+  { id:'prurido',    icon:'🤲', label:'Coceira/Rash' },
+  { id:'outro',      icon:'⚠️', label:'Outro' },
+];
+
+const _COR_INT = {
+  0:'#94a3b8', 1:'#6ee7b7', 2:'#4ade80', 3:'#86efac',
+  4:'#fde68a', 5:'#fbbf24', 6:'#f97316', 7:'#fb923c',
+  8:'#ef4444', 9:'#dc2626', 10:'#991b1b'
+};
+
+let _pid     = null;
+let _sint    = [];   // array de registros do paciente
+let _catsSel = new Set();
+let _intSel  = null;
+
+/* ─── Init ────────────────────────────────────────── */
+async function init() {
+  _pid = typeof getActivePacienteId === 'function' ? getActivePacienteId() : null;
+  if (!_pid) { window.location.href = 'index.html'; return; }
+  _sint = (await dbGetConfig('sintomas_' + _pid)) || [];
+  // Ordena decrescente por data+hora
+  _sint.sort((a,b) => (b.data+b.hora).localeCompare(a.data+a.hora));
+  render();
+}
+
+/* ─── Render ────────────────────────────────────────── */
+function render() {
+  const app  = document.getElementById('app');
+  const hoje = new Date().toISOString().slice(0,10);
+  const agora = new Date().toTimeString().slice(0,5);
+
+  /* Frequência últimos 7 dias */
+  const dt7 = new Date(); dt7.setDate(dt7.getDate()-6);
+  const s7  = _sint.filter(s => s.data >= dt7.toISOString().slice(0,10));
+  const topCats = {};
+  for (const s of s7) for (const c of (s.categorias||[])) topCats[c] = (topCats[c]||0)+1;
+  const top3 = Object.entries(topCats).sort((a,b)=>b[1]-a[1]).slice(0,3);
+
+  /* Escala de intensidade */
+  const escala = Array.from({length:11},(_,i) => {
+    const cor = _COR_INT[i];
+    const sel = _intSel === i;
+    return `<button class="esc-btn${sel?' sel':''}" style="${sel?'background:'+cor+';border-color:'+cor:''}"
+      onclick="selInt(${i})">${i}</button>`;
+  }).join('');
+
+  /* Chips de categoria */
+  const chips = _CATS.map(c => {
+    const sel = _catsSel.has(c.id);
+    return `<div class="cat-chip${sel?' sel':''}" onclick="toggleCat('${c.id}')">${c.icon} ${c.label}</div>`;
+  }).join('');
+
+  /* Histórico */
+  const hist = _sint.slice(0,50).map(s => {
+    const [y,m,d] = s.data.split('-');
+    const intCor = _COR_INT[s.intensidade] || '#94a3b8';
+    return `<div class="sint-item" id="si-${s.id}">
+      <div class="sint-top">
+        <span class="sint-data">${d}/${m} ${s.hora}</span>
+        <div class="sint-body">
+          <div class="sint-cats">
+            ${(s.categorias||[]).map(c => {
+              const cat = _CATS.find(x=>x.id===c);
+              return `<span class="sint-cat">${cat?cat.icon+' '+cat.label:c}</span>`;
+            }).join('')}
+          </div>
+          ${s.obs ? `<p class="sint-obs">${s.obs}</p>` : ''}
+        </div>
+        ${s.intensidade !== undefined && s.intensidade !== null
+          ? `<span class="sint-int" style="background:${intCor}20;color:${intCor}">${s.intensidade}/10</span>` : ''}
+        <button class="sint-del" onclick="excluir('${s.id}')" title="Excluir">×</button>
+      </div>
+    </div>`;
+  }).join('');
+
+  app.innerHTML = `
+    ${top3.length ? `
+    <p class="sec-title">Últimos 7 dias</p>
+    <div class="freq-grid">
+      ${top3.map(([id,n]) => {
+        const cat = _CATS.find(c=>c.id===id);
+        return `<div class="freq-item"><div class="freq-num">${n}</div><div class="freq-lbl">${cat?cat.icon+' '+cat.label:id}</div></div>`;
+      }).join('')}
+    </div>` : ''}
+
+    <p class="sec-title">Registrar Sintoma</p>
+    <div class="card" style="padding:14px 0 12px;margin-bottom:10px">
+      <!-- Intensidade -->
+      <p class="intensidade-label">Intensidade (0 = nenhum · 10 = máxima)</p>
+      <div class="escala-wrap">${escala}</div>
+      <!-- Categorias -->
+      <p class="intensidade-label">Sintomas</p>
+      <div class="cats-wrap">${chips}</div>
+    </div>
+
+    <!-- Campos complementares -->
+    <div class="form-wrap">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Data</label>
+          <input class="form-input" id="f-data" type="date" value="${hoje}">
+        </div>
+        <div class="form-group">
+          <label>Hora</label>
+          <input class="form-input" id="f-hora" type="time" value="${agora}">
+        </div>
+      </div>
+      <div class="form-group" style="margin-bottom:12px">
+        <label>Observação (localização da dor, contexto, medicamento suspeito...)</label>
+        <textarea class="obs-input" id="f-obs" rows="2" placeholder="Ex: Dor em queimação no epigástrio após tomar ibuprofeno..."></textarea>
+      </div>
+      <button class="btn-salvar" onclick="salvar()">✓ Salvar registro</button>
+    </div>
+
+    ${_sint.length ? `
+    <p class="sec-title">Histórico (${_sint.length} registros)</p>
+    <div class="card">${hist}</div>` :
+    `<p class="empty">Nenhum sintoma registrado ainda.</p>`}
+  `;
+}
+
+function selInt(v) {
+  _intSel = _intSel === v ? null : v;
+  render();
+}
+
+function toggleCat(id) {
+  if (_catsSel.has(id)) _catsSel.delete(id);
+  else _catsSel.add(id);
+  render();
+}
+
+async function salvar() {
+  if (_catsSel.size === 0 && _intSel === null) {
+    showToast('Selecione ao menos um sintoma ou intensidade');
+    return;
+  }
+  const data = document.getElementById('f-data').value;
+  const hora = document.getElementById('f-hora').value;
+  const obs  = document.getElementById('f-obs').value.trim();
+
+  const reg = {
+    id: Date.now().toString(36) + Math.random().toString(36).slice(2,5),
+    data, hora,
+    categorias:  [..._catsSel],
+    intensidade: _intSel,
+    obs,
+  };
+
+  _sint.unshift(reg);
+  await dbSetConfig('sintomas_' + _pid, _sint);
+
+  _catsSel.clear();
+  _intSel = null;
+  showToast('✓ Sintoma registrado');
+  render();
+}
+
+async function excluir(id) {
+  _sint = _sint.filter(s => s.id !== id);
+  await dbSetConfig('sintomas_' + _pid, _sint);
+  showToast('Registro removido');
+  render();
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>

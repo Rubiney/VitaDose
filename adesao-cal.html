@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Calendário de Adesão — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <style>
+    body { background:#f8fafc;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif }
+    .topbar { display:flex;align-items:center;gap:10px;padding:14px 16px;background:#fff;border-bottom:1px solid #e2e8f0;position:sticky;top:0;z-index:100 }
+    .back-btn { background:none;border:none;font-size:1.3rem;cursor:pointer;padding:4px 8px;color:#475569;border-radius:8px }
+    .topbar-title { font-size:1rem;font-weight:700;color:#1e293b;flex:1 }
+
+    /* Resumo global */
+    .resumo { display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:12px 16px 6px }
+    .res-item { background:#fff;border-radius:12px;padding:10px 8px;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,.06) }
+    .res-num  { font-size:1.4rem;font-weight:900 }
+    .res-lbl  { font-size:.62rem;color:#64748b;font-weight:600;margin-top:2px }
+
+    /* Filtro por medicamento */
+    .med-filter { display:flex;gap:6px;padding:4px 16px 8px;overflow-x:auto;scrollbar-width:none }
+    .med-chip   { background:#f1f5f9;border:1.5px solid transparent;border-radius:20px;padding:5px 12px;font-size:.72rem;font-weight:700;color:#64748b;cursor:pointer;white-space:nowrap;flex-shrink:0 }
+    .med-chip.active { background:#ede9fe;border-color:#a5b4fc;color:#4f46e5 }
+
+    /* Navegação de mês */
+    .mes-nav { display:flex;align-items:center;justify-content:space-between;padding:0 16px;margin-bottom:8px }
+    .mes-btn  { background:none;border:1.5px solid #e2e8f0;border-radius:8px;padding:6px 14px;font-size:.85rem;font-weight:700;color:#475569;cursor:pointer }
+    .mes-nome { font-size:.9rem;font-weight:800;color:#1e293b }
+
+    /* Grid calendário */
+    .cal-wrap { padding:0 16px;margin-bottom:12px }
+    .cal-grid { display:grid;grid-template-columns:repeat(7,1fr);gap:4px }
+    .cal-head { font-size:.6rem;font-weight:800;color:#94a3b8;text-align:center;padding:4px 0 6px;text-transform:uppercase }
+    .cal-day  { aspect-ratio:1;border-radius:8px;display:flex;align-items:center;justify-content:center;position:relative;cursor:default }
+    .cal-day.has-data { cursor:pointer }
+    .cal-day .day-num { font-size:.72rem;font-weight:700;color:#fff;line-height:1;position:relative;z-index:1 }
+    .cal-day.empty   { background:transparent }
+    .cal-day.future  { background:#f1f5f9 }
+    .cal-day.future .day-num { color:#cbd5e1 }
+    .cal-day.sem-dado { background:#f1f5f9 }
+    .cal-day.sem-dado .day-num { color:#94a3b8 }
+    .cal-day.hoje { outline:2px solid #6366f1;outline-offset:1px }
+    .cal-day.sel  { outline:3px solid #0f3460;outline-offset:2px }
+
+    /* Tooltip do dia */
+    .day-tooltip { display:none;position:fixed;z-index:200;background:#1e293b;color:#fff;border-radius:10px;padding:10px 14px;font-size:.75rem;min-width:160px;box-shadow:0 4px 16px rgba(0,0,0,.25) }
+    .day-tooltip.vis { display:block }
+    .dt-title { font-weight:800;margin-bottom:4px }
+    .dt-row   { display:flex;justify-content:space-between;gap:12px;margin-top:3px }
+
+    /* Legenda */
+    .legenda { display:flex;gap:10px;flex-wrap:wrap;padding:0 16px;margin-bottom:12px }
+    .leg-item { display:flex;align-items:center;gap:5px;font-size:.65rem;color:#64748b;font-weight:600 }
+    .leg-dot  { width:12px;height:12px;border-radius:3px;flex-shrink:0 }
+
+    /* Detalhe do dia selecionado */
+    .det-card { background:#fff;border-radius:14px;margin:0 16px 12px;padding:14px 16px;box-shadow:0 1px 4px rgba(0,0,0,.06) }
+    .det-title { font-size:.85rem;font-weight:800;color:#1e293b;margin-bottom:10px }
+    .det-med-row { display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid #f1f5f9 }
+    .det-med-row:last-child { border-bottom:none }
+    .det-med-nome { flex:1;font-size:.8rem;color:#1e293b;font-weight:600 }
+    .dose-pip { font-size:.65rem;font-weight:800;border-radius:4px;padding:2px 7px }
+    .pip-ok  { background:#dcfce7;color:#166534 }
+    .pip-err { background:#fee2e2;color:#991b1b }
+    .pip-nd  { background:#f1f5f9;color:#64748b }
+
+    /* Adesão por medicamento */
+    .med-ades-card { background:#fff;border-radius:14px;margin:0 16px 80px;padding:14px 16px;box-shadow:0 1px 4px rgba(0,0,0,.06) }
+    .sec-title { font-size:.68rem;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.1em;margin:0 0 10px }
+    .mad-row  { display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid #f1f5f9 }
+    .mad-row:last-child { border-bottom:none }
+    .mad-nome { flex:1;font-size:.8rem;color:#1e293b;font-weight:600 }
+    .mad-pct  { font-size:.8rem;font-weight:800 }
+    .mad-bar-bg { flex:1;background:#f1f5f9;border-radius:4px;height:6px;overflow:hidden;max-width:80px }
+    .mad-bar-fill { height:100%;border-radius:4px }
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <span class="topbar-title">📅 Calendário de Adesão</span>
+</div>
+
+<div id="app" style="padding-bottom:16px">
+  <p style="text-align:center;color:#94a3b8;padding:40px 20px;font-size:.85rem">Carregando...</p>
+</div>
+
+<!-- Tooltip flutuante -->
+<div class="day-tooltip" id="tooltip"></div>
+
+<script src="js/db.js"></script>
+<script src="js/utils.js"></script>
+<script>
+
+const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+const DIAS_CURTOS = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+
+let _meds    = [];
+let _dosesMap = {}; // { 'YYYY-MM-DD': { medId: {tomado:N, perdido:N} } }
+let _filtroMed = null;   // medId | null = todos
+let _mesRef = new Date(); // mês sendo exibido
+let _diaSel = null;
+let _hoje   = new Date().toISOString().slice(0,10);
+
+/* ─── Init ────────────────────────────────────────────── */
+async function init() {
+  const pid = typeof getActivePacienteId === 'function' ? getActivePacienteId() : null;
+  if (!pid) { window.location.href = 'index.html'; return; }
+
+  const todosMeds  = await dbGetAll('medicamentos');
+  _meds = todosMeds.filter(m => m.pacienteId === pid);
+  const medIds = new Set(_meds.map(m => m.id));
+
+  const todasDoses = await dbGetAll('doses');
+  // Filtra doses dos medicamentos deste paciente
+  for (const d of todasDoses) {
+    if (!medIds.has(d.medicamentoId)) continue;
+    if (!_dosesMap[d.data]) _dosesMap[d.data] = {};
+    if (!_dosesMap[d.data][d.medicamentoId]) _dosesMap[d.data][d.medicamentoId] = { tomado:0, perdido:0 };
+    if (d.status === 'tomado')  _dosesMap[d.data][d.medicamentoId].tomado++;
+    if (d.status === 'perdido') _dosesMap[d.data][d.medicamentoId].perdido++;
+  }
+
+  _mesRef = new Date();
+  render();
+}
+
+/* ─── Aderência de um dia para um conjunto de meds ─── */
+function aderenciaDia(dataStr, medIds) {
+  const dDia = _dosesMap[dataStr];
+  if (!dDia) return null;
+  let tom = 0, per = 0;
+  for (const mid of medIds) {
+    if (!dDia[mid]) continue;
+    tom += dDia[mid].tomado;
+    per += dDia[mid].perdido;
+  }
+  if (tom + per === 0) return null;
+  return Math.round((tom / (tom + per)) * 100);
+}
+
+function corAdesao(pct) {
+  if (pct === null) return null;
+  if (pct === 100)      return '#16a34a';
+  if (pct >= 75)        return '#4ade80';
+  if (pct >= 50)        return '#f59e0b';
+  if (pct >= 25)        return '#f97316';
+  return '#ef4444';
+}
+
+/* ─── Render ────────────────────────────────────────── */
+function render() {
+  const app   = document.getElementById('app');
+  const medsFiltro = _filtroMed ? _meds.filter(m => m.id === _filtroMed) : _meds;
+  const midsFiltro = new Set(medsFiltro.map(m => m.id));
+
+  /* ── Resumo global (últimos 30 dias) ── */
+  const hoje30 = new Date(); hoje30.setDate(hoje30.getDate() - 29);
+  let totalTom = 0, totalPer = 0, diasComDados = 0;
+  for (let d = new Date(hoje30); d <= new Date(_hoje); d.setDate(d.getDate()+1)) {
+    const ds = d.toISOString().slice(0,10);
+    const pct = aderenciaDia(ds, midsFiltro);
+    if (pct !== null) { diasComDados++; const t=0,p=0; }
+    const dd = _dosesMap[ds];
+    if (dd) for (const mid of midsFiltro) { if (dd[mid]) { totalTom+=dd[mid].tomado; totalPer+=dd[mid].perdido; } }
+  }
+  const pctGlobal = totalTom + totalPer > 0 ? Math.round(totalTom / (totalTom + totalPer) * 100) : null;
+  const corGlobal = corAdesao(pctGlobal);
+
+  /* ── Calendário do mês ── */
+  const ano = _mesRef.getFullYear();
+  const mes = _mesRef.getMonth();
+  const primeiroDia = new Date(ano, mes, 1).getDay(); // 0=dom
+  const diasNoMes   = new Date(ano, mes + 1, 0).getDate();
+  const mesStr = `${String(mes+1).padStart(2,'0')}`;
+  const anoStr = `${ano}`;
+  const ultDia = new Date();
+  const mesAtual = new Date(_hoje).getMonth() === mes && new Date(_hoje).getFullYear() === ano;
+
+  let calCells = '';
+  // Cabeçalho dos dias
+  DIAS_CURTOS.forEach(d => { calCells += `<div class="cal-head">${d}</div>`; });
+  // Células vazias antes do dia 1
+  for (let i = 0; i < primeiroDia; i++) calCells += `<div class="cal-day empty"></div>`;
+  // Dias do mês
+  for (let dia = 1; dia <= diasNoMes; dia++) {
+    const ds   = `${anoStr}-${mesStr}-${String(dia).padStart(2,'0')}`;
+    const fut  = ds > _hoje;
+    const hj   = ds === _hoje;
+    const sel  = ds === _diaSel;
+    const pct  = fut ? null : aderenciaDia(ds, midsFiltro);
+    const cor  = corAdesao(pct);
+    let cls = 'cal-day';
+    if (fut)        cls += ' future';
+    else if (!cor)  cls += ' sem-dado';
+    else            cls += ' has-data';
+    if (hj)  cls += ' hoje';
+    if (sel) cls += ' sel';
+    const bg = cor ? `background:${cor}` : '';
+    calCells += `<div class="${cls}" style="${bg}" onclick="selecionarDia('${ds}')" data-pct="${pct??''}" data-dia="${dia}">
+      <span class="day-num" style="${!cor?'color:#94a3b8':''}">${dia}</span>
+    </div>`;
+  }
+
+  /* ── Adesão por medicamento (últimos 30d) ── */
+  const adesMed = _meds.map(m => {
+    let tom=0, per=0;
+    for (const ds in _dosesMap) {
+      if (_dosesMap[ds][m.id]) { tom+=_dosesMap[ds][m.id].tomado; per+=_dosesMap[ds][m.id].perdido; }
+    }
+    const pct = tom+per > 0 ? Math.round(tom/(tom+per)*100) : null;
+    return { m, pct, tom, per };
+  }).sort((a,b) => (a.pct??101) - (b.pct??101));
+
+  /* ── Detalhe do dia selecionado ── */
+  let detHTML = '';
+  if (_diaSel) {
+    const [y,mo,d] = _diaSel.split('-');
+    const dd = _dosesMap[_diaSel] || {};
+    const linhas = _meds.map(m => {
+      const r = dd[m.id];
+      if (!r) return `<div class="det-med-row"><span class="det-med-nome">💊 ${m.nome}</span><span class="dose-pip pip-nd">sem dado</span></div>`;
+      return `<div class="det-med-row">
+        <span class="det-med-nome">💊 ${m.nome}</span>
+        ${r.tomado ? `<span class="dose-pip pip-ok">✓ ${r.tomado} tomada${r.tomado>1?'s':''}</span>` : ''}
+        ${r.perdido ? `<span class="dose-pip pip-err">✗ ${r.perdido} perdida${r.perdido>1?'s':''}</span>` : ''}
+      </div>`;
+    });
+    const pctD = aderenciaDia(_diaSel, midsFiltro);
+    detHTML = `<div class="det-card">
+      <p class="det-title">📅 ${+d}/${+mo}/${y}${pctD!==null?' — '+pctD+'% aderência':''}</p>
+      ${linhas.join('')}
+    </div>`;
+  }
+
+  app.innerHTML = `
+    <!-- Resumo -->
+    <div class="resumo">
+      <div class="res-item">
+        <div class="res-num" style="color:${corGlobal||'#94a3b8'}">${pctGlobal !== null ? pctGlobal+'%' : '—'}</div>
+        <div class="res-lbl">Aderência geral</div>
+      </div>
+      <div class="res-item">
+        <div class="res-num" style="color:#16a34a">${totalTom}</div>
+        <div class="res-lbl">Doses tomadas</div>
+      </div>
+      <div class="res-item">
+        <div class="res-num" style="color:#dc2626">${totalPer}</div>
+        <div class="res-lbl">Doses perdidas</div>
+      </div>
+    </div>
+
+    <!-- Filtro por medicamento -->
+    <div class="med-filter">
+      <button class="med-chip${!_filtroMed?' active':''}" onclick="filtrarMed(null)">Todos</button>
+      ${_meds.map(m => `<button class="med-chip${_filtroMed===m.id?' active':''}" onclick="filtrarMed(${m.id})">${m.nome}</button>`).join('')}
+    </div>
+
+    <!-- Navegação de mês -->
+    <div class="mes-nav">
+      <button class="mes-btn" onclick="navMes(-1)">←</button>
+      <span class="mes-nome">${MESES[mes]} ${ano}</span>
+      <button class="mes-btn" onclick="navMes(1)" ${mesAtual?'disabled':''}>→</button>
+    </div>
+
+    <!-- Calendário -->
+    <div class="cal-wrap">
+      <div class="cal-grid">${calCells}</div>
+    </div>
+
+    <!-- Legenda -->
+    <div class="legenda">
+      <div class="leg-item"><div class="leg-dot" style="background:#16a34a"></div>100%</div>
+      <div class="leg-item"><div class="leg-dot" style="background:#4ade80"></div>75–99%</div>
+      <div class="leg-item"><div class="leg-dot" style="background:#f59e0b"></div>50–74%</div>
+      <div class="leg-item"><div class="leg-dot" style="background:#f97316"></div>25–49%</div>
+      <div class="leg-item"><div class="leg-dot" style="background:#ef4444"></div><25%</div>
+      <div class="leg-item"><div class="leg-dot" style="background:#f1f5f9;border:1px solid #e2e8f0"></div>Sem dado</div>
+    </div>
+
+    ${detHTML}
+
+    <!-- Adesão por medicamento -->
+    ${adesMed.length ? `<div class="med-ades-card">
+      <p class="sec-title">Adesão por Medicamento (total registrado)</p>
+      ${adesMed.map(({m,pct,tom,per}) => {
+        const cor = corAdesao(pct) || '#94a3b8';
+        return `<div class="mad-row">
+          <span class="mad-nome">💊 ${m.nome}</span>
+          <div class="mad-bar-bg"><div class="mad-bar-fill" style="width:${pct||0}%;background:${cor}"></div></div>
+          <span class="mad-pct" style="color:${cor}">${pct!==null?pct+'%':'—'}</span>
+        </div>`;
+      }).join('')}
+    </div>` : ''}
+  `;
+}
+
+function filtrarMed(id) {
+  _filtroMed = id;
+  _diaSel = null;
+  render();
+}
+
+function navMes(delta) {
+  _mesRef = new Date(_mesRef.getFullYear(), _mesRef.getMonth() + delta, 1);
+  _diaSel = null;
+  render();
+}
+
+function selecionarDia(ds) {
+  _diaSel = _diaSel === ds ? null : ds;
+  render();
+  if (_diaSel) {
+    setTimeout(() => {
+      document.querySelector('.det-card')?.scrollIntoView({ behavior:'smooth', block:'nearest' });
+    }, 50);
+  }
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
