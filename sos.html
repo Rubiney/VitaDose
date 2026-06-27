@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#dc2626">
+  <title>SOS — Emergência Médica</title>
+  <style>
+    *, *::before, *::after { box-sizing:border-box;margin:0;padding:0 }
+    :root { --red:#dc2626;--red-dk:#991b1b;--red-lt:#fee2e2 }
+
+    body {
+      font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+      background:var(--red);
+      color:#fff;
+      min-height:100vh;
+      padding-bottom:60px;
+    }
+
+    /* ── Header SOS ── */
+    .sos-header {
+      background:var(--red-dk);
+      padding:18px 20px 14px;
+      display:flex;align-items:center;gap:14px;
+      border-bottom:3px solid rgba(255,255,255,.2);
+    }
+    .sos-logo { font-size:2.5rem;line-height:1 }
+    .sos-title { font-size:1.6rem;font-weight:900;letter-spacing:.05em }
+    .sos-sub   { font-size:.75rem;opacity:.8;margin-top:2px }
+    .sos-date  { margin-left:auto;font-size:.72rem;opacity:.7;text-align:right }
+
+    /* ── Paciente ── */
+    .pac-wrap { display:flex;align-items:center;gap:16px;padding:18px 20px;background:rgba(0,0,0,.15) }
+    .pac-foto { width:72px;height:72px;border-radius:50%;object-fit:cover;border:3px solid rgba(255,255,255,.4);flex-shrink:0 }
+    .pac-ini  { width:72px;height:72px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:1.8rem;font-weight:900;border:3px solid rgba(255,255,255,.4);flex-shrink:0 }
+    .pac-nome { font-size:1.4rem;font-weight:900 }
+    .pac-info { font-size:.82rem;opacity:.85;margin-top:3px;line-height:1.6 }
+
+    /* ── Seções ── */
+    .secao { margin:12px 16px 0 }
+    .sec-header { display:flex;align-items:center;gap:8px;margin-bottom:6px }
+    .sec-icon { font-size:1.2rem }
+    .sec-lbl  { font-size:.65rem;font-weight:900;text-transform:uppercase;letter-spacing:.12em;opacity:.75 }
+
+    /* ── Alergias ── */
+    .alergias-box {
+      background:#fff;color:var(--red-dk);
+      border-radius:14px;padding:14px 16px;
+      font-size:1rem;font-weight:800;line-height:1.5;
+      border:3px solid rgba(255,255,255,.4);
+    }
+    .alergias-none { background:rgba(255,255,255,.15);border-radius:14px;padding:12px 16px;font-size:.85rem;opacity:.75 }
+
+    /* ── Medicamentos ── */
+    .med-list { background:rgba(0,0,0,.2);border-radius:14px;overflow:hidden }
+    .med-row  { display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid rgba(255,255,255,.1) }
+    .med-row:last-child { border-bottom:none }
+    .med-icon { font-size:1.1rem;flex-shrink:0 }
+    .med-nome { font-size:.87rem;font-weight:700;flex:1 }
+    .med-dose { font-size:.72rem;opacity:.75 }
+
+    /* ── Contato emergência ── */
+    .contato-box { background:rgba(255,255,255,.15);border-radius:14px;padding:14px 16px }
+    .cont-nome { font-size:1rem;font-weight:800 }
+    .cont-tel  { font-size:1.1rem;font-weight:900;margin-top:4px }
+    .cont-tel a { color:#fff;text-decoration:none }
+
+    /* ── Sangue tipo ── */
+    .tipo-badge { display:inline-block;background:#fff;color:var(--red-dk);border-radius:10px;padding:6px 16px;font-size:1.4rem;font-weight:900;letter-spacing:.05em }
+
+    /* ── Rodapé ── */
+    .rodape { text-align:center;font-size:.7rem;opacity:.6;padding:16px 20px;margin-top:16px }
+
+    /* ── Barra de acesso rápido (apenas em ecrã, não impressa) ── */
+    .access-bar {
+      position:fixed;bottom:0;left:0;right:0;
+      background:var(--red-dk);border-top:2px solid rgba(255,255,255,.2);
+      display:flex;gap:0;
+    }
+    .ab-btn {
+      flex:1;background:none;border:none;color:#fff;padding:12px 8px;
+      font-size:.72rem;font-weight:700;cursor:pointer;
+      display:flex;flex-direction:column;align-items:center;gap:3px;
+      border-right:1px solid rgba(255,255,255,.15);
+    }
+    .ab-btn:last-child { border-right:none }
+    .ab-icon { font-size:1.2rem }
+
+    /* Tela de config (quando sem paciente) */
+    .config-wrap { padding:20px;text-align:center }
+    .config-title { font-size:1.1rem;font-weight:800;margin-bottom:10px }
+    .config-sub   { font-size:.82rem;opacity:.8;margin-bottom:20px;line-height:1.6 }
+    .config-btn   { background:#fff;color:var(--red-dk);border:none;border-radius:12px;padding:14px 24px;font-size:.9rem;font-weight:800;cursor:pointer;display:block;width:100%;margin-bottom:10px;text-decoration:none;text-align:center }
+
+    @media print {
+      .access-bar { display:none }
+      body { background:#fff;color:#000;padding-bottom:0 }
+      .sos-header { background:var(--red);print-color-adjust:exact;-webkit-print-color-adjust:exact }
+      .alergias-box { border:3px solid var(--red);print-color-adjust:exact }
+      .pac-ini { background:var(--red);print-color-adjust:exact }
+    }
+  </style>
+</head>
+<body>
+
+<div id="app">
+  <div class="sos-header">
+    <div class="sos-logo">🆘</div>
+    <div>
+      <p class="sos-title">EMERGÊNCIA MÉDICA</p>
+      <p class="sos-sub">Informações do paciente — VitaDose</p>
+    </div>
+    <div class="sos-date" id="data-agora"></div>
+  </div>
+  <p style="text-align:center;padding:40px 20px;opacity:.7;font-size:.9rem">Carregando...</p>
+</div>
+
+<script>
+/* Não usa o sw nem o db.js ainda — lê do IDB diretamente */
+const DB_NAME    = 'vitadose';
+const DB_VERSION = 1;
+
+function abrirDB() {
+  return new Promise((res, rej) => {
+    const r = indexedDB.open(DB_NAME, DB_VERSION);
+    r.onsuccess = e => res(e.target.result);
+    r.onerror   = e => rej(e.target.error);
+    r.onupgradeneeded = e => res(e.target.result);
+  });
+}
+
+async function lerTodos(store) {
+  const db = await abrirDB();
+  return new Promise((res,rej) => {
+    if (!db.objectStoreNames.contains(store)) { res([]); return; }
+    const r = db.transaction(store,'readonly').objectStore(store).getAll();
+    r.onsuccess = () => res(r.result||[]);
+    r.onerror   = () => rej(r.error);
+  });
+}
+
+async function lerConfig(key) {
+  const db = await abrirDB();
+  return new Promise((res,rej) => {
+    if (!db.objectStoreNames.contains('config')) { res(null); return; }
+    const r = db.transaction('config','readonly').objectStore('config').get(key);
+    r.onsuccess = () => res(r.result ? r.result.value : null);
+    r.onerror   = () => rej(r.error);
+  });
+}
+
+function iniciaisNome(nome) {
+  if (!nome) return '?';
+  return nome.trim().split(/\s+/).slice(0,2).map(p=>p[0].toUpperCase()).join('');
+}
+
+async function init() {
+  /* Data/hora */
+  document.getElementById('data-agora').textContent =
+    new Date().toLocaleDateString('pt-BR',{day:'2-digit',month:'short',year:'numeric'});
+
+  /* Paciente ativo */
+  const pidStr = localStorage.getItem('vd_active');
+  const pid    = pidStr ? parseInt(pidStr) : null;
+  const pacs   = await lerTodos('pacientes');
+  const pac    = pid ? pacs.find(p => p.id === pid) : pacs[0] || null;
+
+  if (!pac) {
+    renderSemPaciente();
+    return;
+  }
+
+  /* Medicamentos ativos */
+  const hoje  = new Date().toISOString().slice(0,10);
+  const todos  = await lerTodos('medicamentos');
+  const meds   = todos.filter(m => m.pacienteId === pac.id && m.ativo !== false && (!m.dataFim || m.dataFim >= hoje));
+
+  renderFicha(pac, meds);
+}
+
+function renderSemPaciente() {
+  document.getElementById('app').innerHTML = `
+    <div class="sos-header">
+      <div class="sos-logo">🆘</div>
+      <div><p class="sos-title">FICHA SOS</p><p class="sos-sub">VitaDose</p></div>
+    </div>
+    <div class="config-wrap">
+      <p class="config-title">Nenhum paciente configurado</p>
+      <p class="config-sub">Abra o VitaDose, cadastre um paciente e depois acesse esta tela novamente para ver a ficha de emergência.</p>
+      <a href="index.html" class="config-btn">Abrir VitaDose →</a>
+    </div>`;
+}
+
+function renderFicha(pac, meds) {
+  const doc = pac.documentos || {};
+  const ini = iniciaisNome(pac.nome);
+
+  /* Foto do paciente (se tiver nos documentos) */
+  let fotoHTML;
+  if (doc.fotos && doc.fotos[0]?.img) {
+    fotoHTML = `<img class="pac-foto" src="${doc.fotos[0].img}" alt="${pac.nome}">`;
+  } else {
+    fotoHTML = `<div class="pac-ini">${ini}</div>`;
+  }
+
+  /* Idade */
+  const idadeStr = pac.idadePac ? `${pac.idadePac} anos` : '';
+  const sexoStr  = { M:'Masc.',F:'Fem.'}[pac.sexoPac] || '';
+  const tipoStr  = pac.tipoSanguineo || '';
+
+  /* Alergias */
+  const alergias = pac.alergias || '';
+
+  /* Contato de emergência */
+  const contatoNome = doc.medicoNome || '';
+  const contatoTel  = doc.medicoTelefone || '';
+  const farmNome    = doc.farmaciaNome || '';
+  const farmTel     = doc.farmaciaTelefone || '';
+
+  const medItems = meds.length
+    ? meds.map(m => `<div class="med-row">
+        <span class="med-icon">💊</span>
+        <span class="med-nome">${m.nome}</span>
+        <span class="med-dose">${m.dose||''} ${m.unidade||''}</span>
+      </div>`).join('')
+    : `<div class="med-row"><span style="opacity:.6;font-size:.82rem">Nenhum medicamento cadastrado</span></div>`;
+
+  document.getElementById('app').innerHTML = `
+    <div class="sos-header">
+      <div class="sos-logo">🆘</div>
+      <div><p class="sos-title">EMERGÊNCIA MÉDICA</p><p class="sos-sub">Informações do paciente — VitaDose</p></div>
+      <div class="sos-date">${new Date().toLocaleDateString('pt-BR',{day:'2-digit',month:'short',year:'numeric'})}</div>
+    </div>
+
+    <!-- Paciente -->
+    <div class="pac-wrap">
+      ${fotoHTML}
+      <div>
+        <p class="pac-nome">${pac.nome}</p>
+        <p class="pac-info">${[idadeStr,sexoStr].filter(Boolean).join(' · ')}</p>
+        ${tipoStr ? `<div class="tipo-badge" style="margin-top:6px">🩸 ${tipoStr}</div>` : ''}
+      </div>
+    </div>
+
+    <!-- Alergias -->
+    <div class="secao">
+      <div class="sec-header"><span class="sec-icon">🚨</span><span class="sec-lbl">Alergias a Medicamentos e Alimentos</span></div>
+      ${alergias
+        ? `<div class="alergias-box">⚠️ ${alergias}</div>`
+        : `<div class="alergias-none">Nenhuma alergia registrada</div>`}
+    </div>
+
+    <!-- Medicamentos -->
+    <div class="secao" style="margin-top:14px">
+      <div class="sec-header"><span class="sec-icon">💊</span><span class="sec-lbl">Medicamentos em Uso (${meds.length})</span></div>
+      <div class="med-list">${medItems}</div>
+    </div>
+
+    <!-- Condições -->
+    ${pac.condicoesClinicas ? `
+    <div class="secao" style="margin-top:14px">
+      <div class="sec-header"><span class="sec-icon">🩺</span><span class="sec-lbl">Condições Clínicas</span></div>
+      <div class="contato-box" style="font-size:.85rem;line-height:1.6">${pac.condicoesClinicas}</div>
+    </div>` : ''}
+
+    <!-- Contato médico -->
+    ${(contatoNome || contatoTel) ? `
+    <div class="secao" style="margin-top:14px">
+      <div class="sec-header"><span class="sec-icon">👨‍⚕️</span><span class="sec-lbl">Médico Responsável</span></div>
+      <div class="contato-box">
+        ${contatoNome ? `<p class="cont-nome">${contatoNome}</p>` : ''}
+        ${contatoTel  ? `<p class="cont-tel"><a href="tel:${contatoTel.replace(/\D/g,'')}">📞 ${contatoTel}</a></p>` : ''}
+      </div>
+    </div>` : ''}
+
+    <!-- Farmácia -->
+    ${(farmNome || farmTel) ? `
+    <div class="secao" style="margin-top:14px">
+      <div class="sec-header"><span class="sec-icon">🏥</span><span class="sec-lbl">Farmácia de Referência</span></div>
+      <div class="contato-box">
+        ${farmNome ? `<p class="cont-nome">${farmNome}</p>` : ''}
+        ${farmTel  ? `<p class="cont-tel"><a href="tel:${farmTel.replace(/\D/g,'')}">📞 ${farmTel}</a></p>` : ''}
+      </div>
+    </div>` : ''}
+
+    <!-- SAMU -->
+    <div class="secao" style="margin-top:14px">
+      <div class="sec-header"><span class="sec-icon">🚑</span><span class="sec-lbl">Emergências</span></div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
+        <a href="tel:192" style="background:rgba(0,0,0,.2);border-radius:12px;padding:12px;text-align:center;text-decoration:none;color:#fff">
+          <div style="font-size:1.3rem">🚑</div>
+          <div style="font-size:.65rem;font-weight:800;margin-top:3px">SAMU</div>
+          <div style="font-size:1.1rem;font-weight:900">192</div>
+        </a>
+        <a href="tel:193" style="background:rgba(0,0,0,.2);border-radius:12px;padding:12px;text-align:center;text-decoration:none;color:#fff">
+          <div style="font-size:1.3rem">🚒</div>
+          <div style="font-size:.65rem;font-weight:800;margin-top:3px">Bombeiros</div>
+          <div style="font-size:1.1rem;font-weight:900">193</div>
+        </a>
+        <a href="tel:190" style="background:rgba(0,0,0,.2);border-radius:12px;padding:12px;text-align:center;text-decoration:none;color:#fff">
+          <div style="font-size:1.3rem">👮</div>
+          <div style="font-size:.65rem;font-weight:800;margin-top:3px">Polícia</div>
+          <div style="font-size:1.1rem;font-weight:900">190</div>
+        </a>
+      </div>
+    </div>
+
+    <p class="rodape">VitaDose · Informações atualizadas em ${new Date().toLocaleDateString('pt-BR')}<br>
+    Este documento não substitui avaliação médica profissional.</p>
+
+    <!-- Barra de ações -->
+    <div class="access-bar">
+      <button class="ab-btn" onclick="window.print()"><span class="ab-icon">🖨️</span>Imprimir</button>
+      <button class="ab-btn" onclick="compartilhar()"><span class="ab-icon">📤</span>Compartilhar</button>
+      <button class="ab-btn" onclick="window.location.href='index.html'"><span class="ab-icon">🏠</span>VitaDose</button>
+    </div>`;
+}
+
+async function compartilhar() {
+  if (!navigator.share) { showToast && showToast('Compartilhamento não disponível'); return; }
+  try {
+    await navigator.share({ title:'Ficha SOS — VitaDose', url: window.location.href });
+  } catch(e) {}
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>

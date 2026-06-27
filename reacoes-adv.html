@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Reações Adversas — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <style>
+    body { background:#f8fafc;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif }
+    .topbar { display:flex;align-items:center;gap:10px;padding:14px 16px;background:#fff;border-bottom:1px solid #e2e8f0;position:sticky;top:0;z-index:100 }
+    .back-btn { background:none;border:none;font-size:1.3rem;cursor:pointer;padding:4px 8px;color:#475569;border-radius:8px }
+    .topbar-title { font-size:1rem;font-weight:700;color:#1e293b;flex:1 }
+
+    .sec-title { font-size:.68rem;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.1em;padding:0 16px;margin:14px 0 6px }
+    .card { background:#fff;border-radius:14px;margin:0 16px 10px;box-shadow:0 1px 4px rgba(0,0,0,.06);overflow:hidden }
+    .form-wrap { padding:14px 16px }
+    .form-grid { display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px }
+    .form-full  { grid-column:1/-1 }
+    .f-group label { display:block;font-size:.67rem;font-weight:700;color:#64748b;margin-bottom:4px }
+    .f-input { width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:10px;padding:9px 12px;font-size:.85rem;color:#1e293b }
+    .f-input:focus { outline:none;border-color:#6366f1 }
+    .f-textarea { width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:10px;padding:9px 12px;font-size:.82rem;color:#1e293b;resize:none }
+    .f-textarea:focus { outline:none;border-color:#6366f1 }
+
+    /* Chips CTCAE */
+    .grade-row { display:flex;gap:6px;overflow-x:auto;scrollbar-width:none }
+    .grade-btn { flex-shrink:0;padding:7px 12px;border:2px solid #e2e8f0;border-radius:10px;font-size:.75rem;font-weight:800;cursor:pointer;background:#fff;white-space:nowrap }
+    .grade-btn.sel { color:#fff;border-color:transparent }
+
+    /* Naranjo toggle */
+    .naranjo-wrap { padding:0 16px;margin-bottom:10px }
+    .naranjo-toggle { background:#f1f5f9;border:none;border-radius:10px;padding:10px 14px;font-size:.78rem;font-weight:700;color:#475569;cursor:pointer;width:100%;text-align:left;display:flex;justify-content:space-between;align-items:center }
+    .naranjo-body { display:none;background:#fff;border-radius:0 0 12px 12px;border:1.5px solid #e2e8f0;overflow:hidden }
+    .naranjo-body.vis { display:block }
+    .nar-q { display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid #f1f5f9;font-size:.75rem;color:#475569 }
+    .nar-q:last-child { border-bottom:none }
+    .nar-q-txt { flex:1;line-height:1.4 }
+    .nar-opts { display:flex;gap:4px;flex-shrink:0 }
+    .nar-btn  { font-size:.65rem;font-weight:800;border:1.5px solid #e2e8f0;border-radius:6px;padding:3px 8px;cursor:pointer;background:#fff;color:#64748b }
+    .nar-btn.sel { background:#6366f1;color:#fff;border-color:#6366f1 }
+    .nar-score-row { display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:#f8fafc;font-size:.82rem;font-weight:700 }
+
+    /* Sintomas chips */
+    .sint-chips { display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px }
+    .sint-chip  { background:#f1f5f9;border:1.5px solid transparent;border-radius:16px;padding:5px 10px;font-size:.72rem;font-weight:700;color:#64748b;cursor:pointer }
+    .sint-chip.sel { background:#ede9fe;border-color:#a5b4fc;color:#4f46e5 }
+
+    .btn-salvar { width:100%;background:#6366f1;color:#fff;border:none;border-radius:12px;padding:13px;font-size:.9rem;font-weight:800;cursor:pointer;margin-top:4px }
+
+    /* Histórico RAM */
+    .ram-item { padding:12px 14px;border-bottom:1px solid #f1f5f9 }
+    .ram-item:last-child { border-bottom:none }
+    .ram-top  { display:flex;align-items:flex-start;gap:8px;margin-bottom:5px }
+    .ram-med  { font-size:.87rem;font-weight:800;color:#1e293b;flex:1 }
+    .ram-data { font-size:.7rem;color:#94a3b8;flex-shrink:0 }
+    .ram-badges { display:flex;flex-wrap:wrap;gap:5px;margin-bottom:4px }
+    .ram-badge  { font-size:.63rem;font-weight:800;border-radius:4px;padding:2px 7px }
+    .ram-sint { font-size:.75rem;color:#64748b;line-height:1.4 }
+    .ram-obs  { font-size:.72rem;color:#94a3b8;font-style:italic;margin-top:2px }
+    .ram-del  { background:none;border:none;font-size:.9rem;cursor:pointer;color:#cbd5e1;padding:0 4px }
+    .ram-del:hover { color:#ef4444 }
+
+    .vazio { text-align:center;color:#94a3b8;padding:24px;font-size:.82rem }
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <span class="topbar-title">⚠️ Reações Adversas (RAM)</span>
+</div>
+
+<div id="app" style="padding-bottom:80px">
+  <p style="text-align:center;color:#94a3b8;padding:40px 20px;font-size:.85rem">Carregando...</p>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="js/db.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/reacoes.js"></script>
+<script>
+
+/* ─── Constantes ─────────────────────────────────────── */
+const _CTCAE = [
+  { g:1, label:'Grau 1 — Leve',            desc:'Assintomático ou leve; sem intervenção',            cor:'#16a34a', bg:'#dcfce7' },
+  { g:2, label:'Grau 2 — Moderado',         desc:'Intervenção local; atividades diárias preservadas', cor:'#d97706', bg:'#fef3c7' },
+  { g:3, label:'Grau 3 — Grave',            desc:'Atividades severamente limitadas; hospitalização',  cor:'#ea580c', bg:'#ffedd5' },
+  { g:4, label:'Grau 4 — Ameaça à vida',    desc:'Requer intervenção urgente',                       cor:'#dc2626', bg:'#fee2e2' },
+  { g:5, label:'Grau 5 — Fatal',            desc:'Óbito relacionado à RAM',                          cor:'#991b1b', bg:'#fecaca' },
+];
+
+const _EVOLUCAO = ['Em curso','Resolvida','Melhorando','Piorando','Desconhecida'];
+const _CONDUTA  = ['Mantido','Suspenso','Dose reduzida','Substituído','Em investigação'];
+
+/* Naranjo: [pergunta, pontos_sim, pontos_nao] */
+const _NAR_Qs = [
+  ['Já existe relato desta RAM na literatura?',                            +1,  0],
+  ['A RAM ocorreu após a administração do medicamento suspeito?',          +2, -1],
+  ['A RAM melhorou após a suspensão do medicamento?',                      +1,  0],
+  ['A RAM reapareceu após a reintrodução do medicamento (rechallenge)?',   +2, -1],
+  ['Existem causas alternativas (além do medicamento) para a RAM?',        -1, +2],
+  ['A RAM reapareceu com uso de placebo?',                                 -1, +1],
+  ['O medicamento foi detectado no sangue ou fluidos em concentração tóxica?', +1, 0],
+  ['A RAM foi dose-dependente?',                                           +1,  0],
+  ['O paciente já apresentou RAM semelhante a este ou outro med. similar?',+1,  0],
+  ['A RAM foi confirmada por evidência objetiva?',                         +1,  0],
+];
+
+function narScore2Causal(score) {
+  if (score >= 9) return { label:'Definida',  cor:'#dc2626' };
+  if (score >= 5) return { label:'Provável',  cor:'#ea580c' };
+  if (score >= 1) return { label:'Possível',  cor:'#d97706' };
+  return            { label:'Duvidosa',  cor:'#94a3b8' };
+}
+
+/* ─── Estado ─────────────────────────────────────────── */
+let _pid     = null;
+let _meds    = [];
+let _rams    = [];
+let _gradeSel = null;
+let _sintSel  = new Set();
+let _narResp  = Array(10).fill(null); // null | 'S' | 'N' | 'NK'
+let _narVis   = false;
+
+/* ─── Init ──────────────────────────────────────────── */
+async function init() {
+  _pid = typeof getActivePacienteId === 'function' ? getActivePacienteId() : null;
+  if (!_pid) { window.location.href = 'index.html'; return; }
+  const hj  = new Date().toISOString().slice(0,10);
+  const tm  = await dbGetAll('medicamentos');
+  _meds = tm.filter(m => m.pacienteId === _pid && m.ativo !== false && (!m.dataFim || m.dataFim >= hj));
+  _rams = (await dbGetConfig('ram_' + _pid)) || [];
+  _rams.sort((a,b) => b.dataInicio.localeCompare(a.dataInicio));
+  render();
+}
+
+/* ─── Render ────────────────────────────────────────── */
+function render() {
+  const app  = document.getElementById('app');
+  const hoje = new Date().toISOString().slice(0,10);
+
+  /* Medicamentos suspeitos — dropdown com os ativos + opção livre */
+  const medOpts = _meds.map(m => `<option value="${m.nome}">${m.nome}${m.dose?' — '+m.dose+(m.unidade||''):''}</option>`).join('');
+
+  /* Sugestões de sintomas baseado no medicamento selecionado (estático por ora) */
+  const allSintSugs = ['Dor abdominal','Náusea','Vômito','Diarreia','Tontura','Cefaleia','Rash cutâneo',
+    'Prurido','Mialgia','Fraqueza','Bradicardia','Taquicardia','Tosse seca','Dispneia',
+    'Edema','Hipotensão','Hipoglicemia','Sangramento','Elevação de enzimas','Sonolência','Insônia','Outros'];
+
+  /* Chips sintomas */
+  const sintChips = allSintSugs.map(s => {
+    const sel = _sintSel.has(s);
+    return `<span class="sint-chip${sel?' sel':''}" onclick="toggleSint('${s}')">${s}</span>`;
+  }).join('');
+
+  /* CTCAE buttons */
+  const gradeHTML = _CTCAE.map(c => {
+    const sel = _gradeSel === c.g;
+    return `<button class="grade-btn${sel?' sel':''}"
+      style="${sel?'background:'+c.cor+';border-color:'+c.cor:''}"
+      onclick="selGrade(${c.g})">${c.g} · ${c.label.split('—')[1].trim()}</button>`;
+  }).join('');
+
+  /* Naranjo */
+  const narScore = _narResp.reduce((acc, r, i) => {
+    if (r === 'S')  acc += _NAR_Qs[i][1];
+    if (r === 'N')  acc += _NAR_Qs[i][2];
+    return acc;
+  }, 0);
+  const narDef = narScore2Causal(narScore);
+  const narQHTML = _NAR_Qs.map((q, i) => {
+    const opts = ['S','N','NK'].map(o =>
+      `<button class="nar-btn${_narResp[i]===o?' sel':''}" onclick="setNar(${i},'${o}')">${o==='NK'?'?':o}</button>`
+    ).join('');
+    return `<div class="nar-q"><span class="nar-q-txt">${i+1}. ${q[0]}<br><small style="color:#94a3b8">Sim: ${q[1]>0?'+':''}${q[1]} · Não: ${q[2]>0?'+':''}${q[2]}</small></span><div class="nar-opts">${opts}</div></div>`;
+  }).join('');
+
+  /* Histórico */
+  const histHTML = _rams.length ? _rams.map(r => {
+    const ctcae = _CTCAE.find(c => c.g === r.grau) || _CTCAE[0];
+    const [y,m,d] = r.dataInicio.split('-');
+    return `<div class="ram-item">
+      <div class="ram-top">
+        <span class="ram-med">💊 ${r.medicamento}</span>
+        <span class="ram-data">${d}/${m}/${y}</span>
+        <button class="ram-del" onclick="excluir('${r.id}')">×</button>
+      </div>
+      <div class="ram-badges">
+        <span class="ram-badge" style="background:${ctcae.bg};color:${ctcae.cor}">CTCAE ${r.grau} — ${ctcae.label.split('—')[1].trim()}</span>
+        ${r.causalidade ? `<span class="ram-badge" style="background:#f1f5f9;color:#475569">${r.causalidade}</span>` : ''}
+        ${r.evolucao ? `<span class="ram-badge" style="background:#f0fdf4;color:#15803d">${r.evolucao}</span>` : ''}
+        ${r.conduta ? `<span class="ram-badge" style="background:#eff6ff;color:#1d4ed8">${r.conduta}</span>` : ''}
+      </div>
+      ${r.sintomas?.length ? `<p class="ram-sint">${r.sintomas.join(' · ')}</p>` : ''}
+      ${r.obs ? `<p class="ram-obs">${r.obs}</p>` : ''}
+    </div>`;
+  }).join('') : `<p class="vazio">Nenhuma RAM registrada.</p>`;
+
+  app.innerHTML = `
+    <p class="sec-title">Registrar RAM</p>
+
+    <div class="form-wrap card" style="margin-bottom:10px;padding:14px 16px">
+      <div class="form-grid">
+        <div class="f-group form-full">
+          <label>Medicamento suspeito</label>
+          <select class="f-input" id="f-med" style="appearance:auto" onchange="atualizarSintSugs()">
+            <option value="">Selecione ou digite abaixo…</option>
+            ${medOpts}
+            <option value="__outro">Outro (digitar)</option>
+          </select>
+        </div>
+        <div class="f-group form-full" id="outro-med-wrap" style="display:none">
+          <label>Nome do medicamento</label>
+          <input class="f-input" id="f-med-outro" placeholder="Ex: Losartana 50mg">
+        </div>
+        <div class="f-group">
+          <label>Data de início da RAM</label>
+          <input class="f-input" id="f-data" type="date" value="${hoje}">
+        </div>
+        <div class="f-group">
+          <label>Evolução</label>
+          <select class="f-input" id="f-evolucao" style="appearance:auto">
+            ${_EVOLUCAO.map(e=>`<option>${e}</option>`).join('')}
+          </select>
+        </div>
+        <div class="f-group">
+          <label>Conduta tomada</label>
+          <select class="f-input" id="f-conduta" style="appearance:auto">
+            ${_CONDUTA.map(c=>`<option>${c}</option>`).join('')}
+          </select>
+        </div>
+      </div>
+
+      <!-- Gravidade CTCAE -->
+      <p style="font-size:.67rem;font-weight:700;color:#64748b;margin-bottom:6px">Gravidade (CTCAE)</p>
+      <div class="grade-row" style="margin-bottom:10px">${gradeHTML}</div>
+      ${_gradeSel ? `<p style="font-size:.7rem;color:${_CTCAE[_gradeSel-1].cor};margin-bottom:8px">${_CTCAE[_gradeSel-1].desc}</p>` : ''}
+
+      <!-- Sintomas -->
+      <p style="font-size:.67rem;font-weight:700;color:#64748b;margin-bottom:6px">Sintomas observados</p>
+      <div class="sint-chips" id="sint-chips-wrap">${sintChips}</div>
+
+      <!-- Observação -->
+      <div class="f-group" style="margin-bottom:10px">
+        <label>Observações clínicas</label>
+        <textarea class="f-textarea" id="f-obs" rows="2"
+          placeholder="Descreva a evolução, exames realizados, tratamento da RAM…"></textarea>
+      </div>
+
+      <button class="btn-salvar" onclick="salvar()">✓ Registrar RAM</button>
+    </div>
+
+    <!-- Naranjo -->
+    <div class="naranjo-wrap">
+      <button class="naranjo-toggle" onclick="toggleNaranjo()">
+        <span>🔢 Algoritmo de Naranjo (causalidade opcional)</span>
+        <span id="nar-chevron">▾</span>
+      </button>
+      <div class="naranjo-body${_narVis?' vis':''}" id="naranjo-body">
+        ${narQHTML}
+        <div class="nar-score-row">
+          <span>Escore: <strong>${narScore}</strong></span>
+          <span style="color:${narDef.cor};font-weight:800">${narDef.label}</span>
+        </div>
+      </div>
+    </div>
+
+    ${_rams.length ? `<p class="sec-title">Histórico (${_rams.length})</p>` : ''}
+    <div class="card" style="margin-bottom:80px">${histHTML}</div>
+  `;
+}
+
+function selGrade(g) { _gradeSel = _gradeSel === g ? null : g; render(); }
+function toggleSint(s) { _sintSel.has(s) ? _sintSel.delete(s) : _sintSel.add(s); render(); }
+function setNar(i, v) { _narResp[i] = _narResp[i]===v ? null : v; render(); }
+function toggleNaranjo() { _narVis = !_narVis; render(); }
+
+function atualizarSintSugs() {
+  const sel = document.getElementById('f-med')?.value || '';
+  const wrap = document.getElementById('outro-med-wrap');
+  if (wrap) wrap.style.display = sel === '__outro' ? '' : 'none';
+
+  /* Pré-seleciona sintomas comuns do medicamento */
+  const norm = s => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+  if (sel && sel !== '__outro' && typeof _REACOES !== 'undefined') {
+    const r = Object.entries(_REACOES).find(([k]) => norm(sel).includes(norm(k)));
+    if (r) {
+      _sintSel = new Set(r[1].slice(0,3));
+      render();
+    }
+  }
+}
+
+async function salvar() {
+  const medSel  = document.getElementById('f-med')?.value || '';
+  const medOutro= document.getElementById('f-med-outro')?.value.trim() || '';
+  const med     = medSel === '__outro' ? medOutro : medSel;
+  const data    = document.getElementById('f-data')?.value || '';
+  if (!med)  { showToast('Selecione o medicamento suspeito'); return; }
+  if (!data) { showToast('Informe a data de início');         return; }
+  if (!_gradeSel) { showToast('Selecione a gravidade (CTCAE)'); return; }
+
+  /* Naranjo score + causalidade */
+  const narScore = _narResp.reduce((acc,r,i) => {
+    if (r==='S') acc += _NAR_Qs[i][1];
+    if (r==='N') acc += _NAR_Qs[i][2];
+    return acc;
+  }, 0);
+  const narNaoRespondido = _narResp.every(r => r === null);
+  const causalidade = narNaoRespondido ? null : narScore2Causal(narScore).label;
+
+  const ram = {
+    id:          Date.now().toString(36) + Math.random().toString(36).slice(2,5),
+    medicamento: med,
+    dataInicio:  data,
+    grau:        _gradeSel,
+    sintomas:    [..._sintSel],
+    evolucao:    document.getElementById('f-evolucao')?.value || null,
+    conduta:     document.getElementById('f-conduta')?.value  || null,
+    obs:         document.getElementById('f-obs')?.value.trim() || null,
+    causalidade,
+    narScore:    narNaoRespondido ? null : narScore,
+    narResp:     [..._narResp],
+    criadoEm:    new Date().toISOString(),
+  };
+
+  _rams.unshift(ram);
+  await dbSetConfig('ram_' + _pid, _rams);
+
+  /* Reset */
+  _gradeSel = null; _sintSel.clear(); _narResp = Array(10).fill(null); _narVis = false;
+  showToast('✓ RAM registrada');
+  render();
+}
+
+async function excluir(id) {
+  _rams = _rams.filter(r => r.id !== id);
+  await dbSetConfig('ram_' + _pid, _rams);
+  showToast('Registro removido');
+  render();
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
