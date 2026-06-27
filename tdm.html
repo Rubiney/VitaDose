@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>TDM — Nível Sérico — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .tdm-hdr { background:linear-gradient(135deg,#1e3a5f,#0369a1);color:#fff;border-radius:14px;padding:18px;margin-bottom:14px }
+    .tdm-title{ font-size:1rem;font-weight:800;margin-bottom:4px }
+    .tdm-sub  { font-size:.73rem;opacity:.8 }
+
+    .tab-bar { display:flex;gap:5px;margin-bottom:14px;overflow-x:auto }
+    .tab-btn { flex:1;min-width:70px;padding:9px 4px;border-radius:10px;border:2px solid #e2e8f0;background:#fff;
+               font-size:.73rem;font-weight:700;cursor:pointer;color:#64748b;white-space:nowrap;text-align:center }
+    .tab-btn.active { border-color:#0369a1;background:#e0f2fe;color:#0369a1 }
+
+    label { font-size:.75rem;font-weight:700;color:#1e3a5f;display:block;margin-bottom:4px }
+    select, input[type=number] {
+      width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:10px;
+      padding:10px 12px;font-size:.85rem;background:#fff;outline:none;margin-bottom:10px }
+    select:focus,input:focus { border-color:#0369a1 }
+    .input-row { display:grid;grid-template-columns:1fr 1fr;gap:8px }
+
+    .btn-calc { width:100%;background:#0369a1;color:#fff;border:none;border-radius:12px;padding:13px;
+                font-size:.87rem;font-weight:700;cursor:pointer;margin:8px 0 }
+
+    .res-card { border-radius:14px;border:3px solid;padding:16px;margin-bottom:10px;display:none }
+    .res-title{ font-size:.75rem;font-weight:800;margin-bottom:10px }
+    .res-row  { display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(0,0,0,.06) }
+    .res-row:last-child { border-bottom:none }
+    .res-lbl  { font-size:.75rem;color:#374151 }
+    .res-val  { font-size:.88rem;font-weight:800 }
+
+    .interp { border-radius:10px;padding:10px 14px;font-size:.78rem;font-weight:600;margin-top:8px }
+    .interp.ok    { background:#d1fae5;color:#166534 }
+    .interp.warn  { background:#fef3c7;color:#92400e }
+    .interp.high  { background:#fee2e2;color:#7f1d1d }
+    .interp.low   { background:#f0f9ff;color:#0c4a6e }
+
+    .hint { font-size:.7rem;color:#64748b;margin-top:-6px;margin-bottom:10px }
+    .sec-lbl { font-size:.62rem;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.08em;margin:10px 0 6px }
+  </style>
+</head>
+<body>
+
+<header class="top-bar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <span class="top-title">TDM — Nível Sérico</span>
+  <div class="top-right"></div>
+</header>
+
+<main class="container" style="padding-bottom:90px">
+
+  <div class="tdm-hdr">
+    <div class="tdm-title">🔬 Monitoramento de Nível Sérico (TDM)</div>
+    <div class="tdm-sub">Vancomicina · Fenitoína · Digoxina · Lítio — Farmacocinética clínica aplicada</div>
+  </div>
+
+  <div class="tab-bar">
+    <button class="tab-btn active" id="tb0" onclick="showTab(0)">Vancomicina</button>
+    <button class="tab-btn"        id="tb1" onclick="showTab(1)">Fenitoína</button>
+    <button class="tab-btn"        id="tb2" onclick="showTab(2)">Digoxina</button>
+    <button class="tab-btn"        id="tb3" onclick="showTab(3)">Lítio</button>
+  </div>
+
+  <!-- ── TAB 0: VANCOMICINA ───────────────────────────────────────────── -->
+  <div id="tab0">
+    <div class="card" style="font-size:.73rem;color:#374151;padding:10px 14px;margin-bottom:8px">
+      Método: dois níveis com modelo 1-compartimento (ASHP/IDSA/SIDP 2020). <strong>Pico colhido 1h após FIM da infusão; vale 30 min antes da próxima dose.</strong>
+    </div>
+    <div class="card" style="padding:12px 14px">
+      <p class="sec-lbl">Infusão</p>
+      <div class="input-row">
+        <div>
+          <label>Dose (mg)</label>
+          <input type="number" id="vk_dose" placeholder="ex.: 1000" min="0">
+        </div>
+        <div>
+          <label>Intervalo τ (h)</label>
+          <select id="vk_tau">
+            <option value="6">6 h (Q6h)</option>
+            <option value="8">8 h (Q8h)</option>
+            <option value="12" selected>12 h (Q12h)</option>
+            <option value="24">24 h (Q24h)</option>
+            <option value="48">48 h (Q48h)</option>
+          </select>
+        </div>
+      </div>
+      <label>Duração da infusão (h)</label>
+      <select id="vk_tinf">
+        <option value="0.5">30 min</option>
+        <option value="1" selected>1 h</option>
+        <option value="1.5">1,5 h</option>
+        <option value="2">2 h</option>
+        <option value="3">3 h</option>
+      </select>
+
+      <p class="sec-lbl">Níveis séricos</p>
+      <div class="input-row">
+        <div>
+          <label>Pico Cp (mg/L)</label>
+          <input type="number" id="vk_peak" placeholder="ex.: 25" min="0" step="0.1">
+          <div class="hint">1h após FIM da infusão</div>
+        </div>
+        <div>
+          <label>Vale Ct (mg/L)</label>
+          <input type="number" id="vk_trough" placeholder="ex.: 10" min="0" step="0.1">
+          <div class="hint">30 min antes da próxima dose</div>
+        </div>
+      </div>
+      <label>MIC (mg/L)</label>
+      <select id="vk_mic">
+        <option value="0.5">0,5 mg/L (S. aureus sensível)</option>
+        <option value="1" selected>1,0 mg/L (padrão)</option>
+        <option value="1.5">1,5 mg/L</option>
+        <option value="2">2,0 mg/L (limítrofe)</option>
+      </select>
+    </div>
+    <button class="btn-calc" onclick="calcVanco()">📐 Calcular AUC/MIC</button>
+
+    <div class="res-card" id="vk_res" style="border-color:#0369a1;color:#0369a1">
+      <div class="res-title">Parâmetros Farmacocinéticos</div>
+      <div class="res-row"><span class="res-lbl">Ke (h⁻¹)</span><span class="res-val" id="vk_ke">—</span></div>
+      <div class="res-row"><span class="res-lbl">t½ (h)</span><span class="res-val" id="vk_t12">—</span></div>
+      <div class="res-row"><span class="res-lbl">AUC₀₋τ (mg·h/L)</span><span class="res-val" id="vk_auc_tau">—</span></div>
+      <div class="res-row"><span class="res-lbl">AUC₂₄ (mg·h/L)</span><span class="res-val" id="vk_auc24">—</span></div>
+      <div class="res-row"><span class="res-lbl" style="font-weight:800">AUC/MIC</span><span class="res-val" style="font-size:1.2rem" id="vk_aucmic">—</span></div>
+      <div id="vk_interp" class="interp ok" style="display:none"></div>
+      <div id="vk_newdose" style="display:none;margin-top:10px;font-size:.78rem;color:#0c4a6e;background:#e0f2fe;border-radius:8px;padding:10px"></div>
+    </div>
+
+    <div class="card" style="font-size:.72rem;color:#64748b;margin-top:4px">
+      <strong>Alvo:</strong> AUC/MIC 400–600 mg·h/L (MIC ≤1 mg/L). AUC/MIC &lt;400: subdosagem (falha terapêutica); &gt;600: risco de nefrotoxicidade.<br>
+      <em>Ref: Rybak MJ et al. Am J Health-Syst Pharm 2020;77(11):835-864.</em>
+    </div>
+  </div>
+
+  <!-- ── TAB 1: FENITOÍNA ─────────────────────────────────────────────── -->
+  <div id="tab1" style="display:none">
+    <div class="card" style="font-size:.73rem;color:#374151;padding:10px 14px;margin-bottom:8px">
+      Equação de Sheiner-Tozer para correção do nível total em hipoalbuminemia e/ou insuficiência renal.
+    </div>
+    <div class="card" style="padding:12px 14px">
+      <div class="input-row">
+        <div>
+          <label>Nível medido (mcg/mL)</label>
+          <input type="number" id="ft_nivel" placeholder="ex.: 8" min="0" step="0.1">
+        </div>
+        <div>
+          <label>Albumina (g/dL)</label>
+          <input type="number" id="ft_alb" placeholder="ex.: 2,5" min="0" step="0.1">
+          <div class="hint">Normal: 3,5–5,0 g/dL</div>
+        </div>
+      </div>
+      <label>Função renal</label>
+      <select id="ft_renal">
+        <option value="normal">Normal (TFG &gt; 10 mL/min)</option>
+        <option value="uremico">Uremia / TFG &lt; 10 mL/min / Diálise</option>
+      </select>
+      <div class="input-row" style="margin-top:4px">
+        <div>
+          <label>Nível livre medido (opcional)</label>
+          <input type="number" id="ft_livre" placeholder="ex.: 1,5" min="0" step="0.1">
+          <div class="hint">Alvo: 1–2 mcg/mL</div>
+        </div>
+        <div>
+          <label>Dose atual (mg/dia)</label>
+          <input type="number" id="ft_dose" placeholder="ex.: 300" min="0">
+        </div>
+      </div>
+    </div>
+    <button class="btn-calc" onclick="calcFenitoina()">📐 Calcular Nível Corrigido</button>
+
+    <div class="res-card" id="ft_res" style="border-color:#7c3aed;color:#7c3aed">
+      <div class="res-title">Correção do Nível de Fenitoína</div>
+      <div class="res-row"><span class="res-lbl">Nível medido</span><span class="res-val" id="ft_med">—</span></div>
+      <div class="res-row"><span class="res-lbl">Albumina</span><span class="res-val" id="ft_alb_r">—</span></div>
+      <div class="res-row"><span class="res-lbl">Fator de correção</span><span class="res-val" id="ft_fator">—</span></div>
+      <div class="res-row"><span class="res-lbl" style="font-weight:800">Nível corrigido</span><span class="res-val" style="font-size:1.2rem" id="ft_corr">—</span></div>
+      <div class="res-row" id="ft_livre_row" style="display:none"><span class="res-lbl">Nível livre</span><span class="res-val" id="ft_livre_r">—</span></div>
+      <div id="ft_interp" class="interp ok" style="display:none"></div>
+      <div id="ft_doseadj" style="display:none;margin-top:10px;font-size:.78rem;color:#4c1d95;background:#f5f3ff;border-radius:8px;padding:10px"></div>
+    </div>
+
+    <div class="card" style="font-size:.72rem;color:#64748b;margin-top:4px">
+      <strong>Alvo total:</strong> 10–20 mcg/mL. <strong>Alvo livre:</strong> 1–2 mcg/mL. Hipoalbuminemia e uremia diminuem ligação proteica → nível total subestima nível livre.<br>
+      <em>Ref: Sheiner LB, Tozer TN. Drug Intell Clin Pharm 1978;12:479-84.</em>
+    </div>
+  </div>
+
+  <!-- ── TAB 2: DIGOXINA ─────────────────────────────────────────────── -->
+  <div id="tab2" style="display:none">
+    <div class="card" style="font-size:.73rem;color:#374151;padding:10px 14px;margin-bottom:8px">
+      Cálculo baseado no clearance de digoxina estimado (Koup-Jusko). Nível colhido ≥6h após última dose oral.
+    </div>
+    <div class="card" style="padding:12px 14px">
+      <p class="sec-lbl">Parâmetros do paciente</p>
+      <div class="input-row">
+        <div>
+          <label>Peso (kg)</label>
+          <input type="number" id="dg_peso" placeholder="ex.: 70" min="0">
+        </div>
+        <div>
+          <label>CrCl (mL/min)</label>
+          <input type="number" id="dg_crcl" placeholder="ex.: 60" min="0">
+        </div>
+      </div>
+      <label>Insuficiência cardíaca (IC) grave</label>
+      <select id="dg_ic">
+        <option value="no">Não (Cl_NR = 40 mL/min)</option>
+        <option value="yes">Sim (Cl_NR = 20 mL/min)</option>
+      </select>
+
+      <p class="sec-lbl">Dose atual</p>
+      <div class="input-row">
+        <div>
+          <label>Dose (mcg/dia)</label>
+          <input type="number" id="dg_dose" placeholder="ex.: 125" min="0">
+          <div class="hint">0,125 mg = 125 mcg</div>
+        </div>
+        <div>
+          <label>Via</label>
+          <select id="dg_via">
+            <option value="0.7">Oral (F=70%)</option>
+            <option value="1.0">IV (F=100%)</option>
+          </select>
+        </div>
+      </div>
+      <label>Nível sérico medido (ng/mL) — opcional</label>
+      <input type="number" id="dg_nivel" placeholder="ex.: 1,2 (colher ≥6h após dose)" min="0" step="0.1">
+      <label>Indicação / alvo</label>
+      <select id="dg_alvo">
+        <option value="0.7">IC sistólica — alvo 0,5–0,9 ng/mL (usar 0,7)</option>
+        <option value="1.2">FA — controle de FC — alvo 0,8–2,0 ng/mL (usar 1,2)</option>
+      </select>
+    </div>
+    <button class="btn-calc" onclick="calcDigoxina()">📐 Calcular Nível Esperado / Dose</button>
+
+    <div class="res-card" id="dg_res" style="border-color:#16a34a;color:#16a34a">
+      <div class="res-title">Parâmetros de Digoxina</div>
+      <div class="res-row"><span class="res-lbl">Cl digoxina (mL/min)</span><span class="res-val" id="dg_cl">—</span></div>
+      <div class="res-row"><span class="res-lbl">Nível esperado (ng/mL)</span><span class="res-val" id="dg_css">—</span></div>
+      <div class="res-row" id="dg_meas_row" style="display:none"><span class="res-lbl">Nível medido (ng/mL)</span><span class="res-val" id="dg_meas">—</span></div>
+      <div class="res-row"><span class="res-lbl" style="font-weight:800">Dose sugerida (mcg/dia)</span><span class="res-val" style="font-size:1.2rem" id="dg_newdose">—</span></div>
+      <div id="dg_interp" class="interp ok" style="display:none"></div>
+    </div>
+
+    <div class="card" style="font-size:.72rem;color:#64748b;margin-top:4px">
+      <strong>Alvo IC sistólica:</strong> 0,5–0,9 ng/mL (RALES/DIG trial). <strong>Alvo FA:</strong> 0,8–2,0 ng/mL. Toxicidade em níveis &gt;2,0 ng/mL (náusea, xantopsia, arritmia).<br>
+      Hipocalemia, hipomagnesemia e hipotireoidismo aumentam sensibilidade à digoxina.<br>
+      <em>Ref: Koup JR, Jusko WJ et al. J Pharm Sci 1975;64(10):1645-50.</em>
+    </div>
+  </div>
+
+  <!-- ── TAB 3: LÍTIO ────────────────────────────────────────────────── -->
+  <div id="tab3" style="display:none">
+    <div class="card" style="font-size:.73rem;color:#374151;padding:10px 14px;margin-bottom:8px">
+      Nível sérico colhido <strong>12h após a última dose</strong> (nível de equilíbrio padronizado). Farmacocinética linear — ajuste proporcional à dose.
+    </div>
+    <div class="card" style="padding:12px 14px">
+      <p class="sec-lbl">Parâmetros do paciente</p>
+      <div class="input-row">
+        <div>
+          <label>CrCl (mL/min)</label>
+          <input type="number" id="li_crcl" placeholder="ex.: 80" min="0">
+        </div>
+        <div>
+          <label>Indicação</label>
+          <select id="li_indicacao">
+            <option value="0.6_0.8">Manutenção — 0,6–0,8 mEq/L</option>
+            <option value="0.8_1.2">Mania aguda — 0,8–1,2 mEq/L</option>
+          </select>
+        </div>
+      </div>
+
+      <p class="sec-lbl">Dose e nível atual (se disponível)</p>
+      <div class="input-row">
+        <div>
+          <label>Dose atual (mg/dia)</label>
+          <input type="number" id="li_dose" placeholder="ex.: 900" min="0">
+        </div>
+        <div>
+          <label>Nível medido (mEq/L)</label>
+          <input type="number" id="li_nivel" placeholder="ex.: 0,5" min="0" step="0.01">
+          <div class="hint">12h pós-dose</div>
+        </div>
+      </div>
+    </div>
+    <button class="btn-calc" onclick="calcLitio()">📐 Calcular / Ajustar Dose</button>
+
+    <div class="res-card" id="li_res" style="border-color:#d97706;color:#b45309">
+      <div class="res-title">Avaliação de Lítio</div>
+      <div class="res-row" id="li_adj_row" style="display:none">
+        <span class="res-lbl" style="font-weight:800">Dose ajustada (mg/dia)</span>
+        <span class="res-val" style="font-size:1.2rem" id="li_newdose">—</span>
+      </div>
+      <div class="res-row"><span class="res-lbl">Dose inicial sugerida (CrCl)</span><span class="res-val" id="li_init">—</span></div>
+      <div class="res-row"><span class="res-lbl">t½ estimada</span><span class="res-val" id="li_t12">—</span></div>
+      <div id="li_interp" class="interp ok" style="display:none"></div>
+    </div>
+
+    <div class="card" style="font-size:.72rem;color:#64748b;margin-top:4px">
+      <strong>Toxicidade:</strong> &gt;1,5 mEq/L (leve-moderada: tremor, náusea, diarreia); &gt;2,0 mEq/L (grave: ataxia, confusão, arritmia). Fatores de risco: desidratação, AINEs, diuréticos tiazídicos, IECAs.<br>
+      Monitorar: função renal, tireoidiana e paratiroidiana a cada 6 meses.<br>
+      <em>Ref: Gitlin M. Lithium toxicity revisited. Drug Safety 2016;39:849-63. Perry PJ et al. J Clin Psychopharmacol 1982.</em>
+    </div>
+  </div>
+
+</main>
+
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+
+<script>
+function showTab(n) {
+  [0,1,2,3].forEach(i=>{
+    document.getElementById('tab'+i).style.display = i===n?'block':'none';
+    document.getElementById('tb'+i).classList.toggle('active', i===n);
+  });
+}
+
+/* ── Vancomicina ─────────────────────────────────────────────────────── */
+function calcVanco() {
+  const dose   = parseFloat(document.getElementById('vk_dose').value);
+  const tau    = parseFloat(document.getElementById('vk_tau').value);
+  const t_inf  = parseFloat(document.getElementById('vk_tinf').value);
+  const Cpeak  = parseFloat(document.getElementById('vk_peak').value);
+  const Ctrough= parseFloat(document.getElementById('vk_trough').value);
+  const MIC    = parseFloat(document.getElementById('vk_mic').value);
+
+  if ([dose,tau,t_inf,Cpeak,Ctrough,MIC].some(v=>!v||isNaN(v))) {
+    alert('Preencha todos os campos.'); return;
+  }
+  if (Cpeak <= Ctrough) { alert('Pico deve ser maior que o vale.'); return; }
+
+  // Sampling times from START of infusion
+  const t_peak   = t_inf + 1;        // 1h after end of infusion
+  const t_trough = tau - 0.5;        // 30 min before next dose
+
+  if (t_trough <= t_peak) { alert('Intervalo muito curto para amostragem adequada.'); return; }
+
+  const Ke   = Math.log(Cpeak / Ctrough) / (t_trough - t_peak);
+  const t12  = 0.693 / Ke;
+
+  // C at END of infusion (extrapolate back from peak)
+  const C_end_inf = Cpeak * Math.exp(Ke * (t_peak - t_inf));  // back-extrapolate 1h
+
+  // AUC: linear trapezoidal for infusion phase + log-linear for decay phase
+  const AUC_inf   = (Ctrough + C_end_inf) / 2 * t_inf;
+  const AUC_decay = (C_end_inf - Ctrough) / Ke;
+  const AUC_tau   = AUC_inf + AUC_decay;
+  const AUC_24    = AUC_tau * (24 / tau);
+  const AUC_MIC   = AUC_24 / MIC;
+
+  document.getElementById('vk_ke').textContent    = Ke.toFixed(4);
+  document.getElementById('vk_t12').textContent   = t12.toFixed(1);
+  document.getElementById('vk_auc_tau').textContent = AUC_tau.toFixed(1);
+  document.getElementById('vk_auc24').textContent = AUC_24.toFixed(1);
+  document.getElementById('vk_aucmic').textContent= Math.round(AUC_MIC);
+  document.getElementById('vk_res').style.display = 'block';
+
+  const interpEl = document.getElementById('vk_interp');
+  const ndEl     = document.getElementById('vk_newdose');
+  interpEl.style.display = 'block';
+
+  if (AUC_MIC < 400) {
+    interpEl.className='interp low';
+    interpEl.textContent='AUC/MIC <400: subdosagem — risco de falha terapêutica e resistência.';
+  } else if (AUC_MIC <= 600) {
+    interpEl.className='interp ok';
+    interpEl.textContent='✅ AUC/MIC dentro do alvo (400–600). Manter esquema atual.';
+    ndEl.style.display='none'; return;
+  } else {
+    interpEl.className='interp high';
+    interpEl.textContent='AUC/MIC >600: risco aumentado de nefrotoxicidade — considerar redução.';
+  }
+
+  // Suggest dose adjustment
+  const target_AUC24 = 500;
+  const daily_dose_current = dose * (24/tau);
+  const new_daily = daily_dose_current * (target_AUC24 / AUC_24);
+  const new_dose  = new_daily / (24/tau);
+  ndEl.style.display='block';
+  ndEl.innerHTML = `💡 <strong>Dose sugerida:</strong> ${Math.round(new_dose/50)*50} mg a cada ${tau}h (total ~${Math.round(new_daily/50)*50} mg/dia) para alvo AUC/MIC ≈ 500. Confirmar com Bayesian TDM software sempre que disponível.`;
+}
+
+/* ── Fenitoína (Sheiner-Tozer) ─────────────────────────────────────── */
+function calcFenitoina() {
+  const Cp_med = parseFloat(document.getElementById('ft_nivel').value);
+  const alb    = parseFloat(document.getElementById('ft_alb').value);
+  const renal  = document.getElementById('ft_renal').value;
+  const livre  = parseFloat(document.getElementById('ft_livre').value) || null;
+  const dose   = parseFloat(document.getElementById('ft_dose').value) || null;
+
+  if (!Cp_med || isNaN(Cp_med) || !alb || isNaN(alb)) {
+    alert('Informe o nível medido e a albumina.'); return;
+  }
+
+  // Sheiner-Tozer
+  const alpha = renal === 'uremico' ? 0.1 : 0.2;
+  const beta  = 0.1;
+  const denom = alpha * alb + beta;
+  const Cp_corr = Cp_med / denom;
+  const fator   = (1 / denom).toFixed(2);
+
+  document.getElementById('ft_med').textContent    = Cp_med.toFixed(1) + ' mcg/mL';
+  document.getElementById('ft_alb_r').textContent  = alb.toFixed(1) + ' g/dL';
+  document.getElementById('ft_fator').textContent  = fator + 'x';
+  document.getElementById('ft_corr').textContent   = Cp_corr.toFixed(1) + ' mcg/mL';
+  document.getElementById('ft_res').style.display  = 'block';
+
+  if (livre) {
+    document.getElementById('ft_livre_row').style.display='flex';
+    document.getElementById('ft_livre_r').textContent = livre.toFixed(1) + ' mcg/mL (alvo 1–2)';
+  }
+
+  const interp = document.getElementById('ft_interp');
+  interp.style.display='block';
+  const dadj   = document.getElementById('ft_doseadj');
+
+  if (Cp_corr < 10) {
+    interp.className='interp low';
+    interp.textContent=`Nível corrigido ${Cp_corr.toFixed(1)} mcg/mL — ABAIXO do alvo (10–20 mcg/mL).`;
+    if (dose) {
+      const ratio = 15/Cp_corr;
+      const new_dose = Math.round(dose * ratio / 25) * 25;
+      dadj.style.display='block';
+      dadj.innerHTML=`💡 Para atingir ~15 mcg/mL, dose sugerida: ~<strong>${new_dose} mg/dia</strong>. Reavalie nível em 7–10 dias.`;
+    }
+  } else if (Cp_corr <= 20) {
+    interp.className='interp ok';
+    interp.textContent=`✅ Nível corrigido ${Cp_corr.toFixed(1)} mcg/mL — dentro do alvo (10–20 mcg/mL).`;
+    dadj.style.display='none';
+  } else {
+    interp.className='interp high';
+    interp.textContent=`Nível corrigido ${Cp_corr.toFixed(1)} mcg/mL — ACIMA do alvo. Risco de toxicidade (nistagmo >20, ataxia >30, confusão >40 mcg/mL).`;
+    if (dose) {
+      const ratio = 15/Cp_corr;
+      const new_dose = Math.round(dose * ratio / 25) * 25;
+      dadj.style.display='block';
+      dadj.innerHTML=`💡 Para reduzir a ~15 mcg/mL, dose sugerida: ~<strong>${new_dose} mg/dia</strong>.`;
+    }
+  }
+}
+
+/* ── Digoxina (Koup-Jusko) ──────────────────────────────────────────── */
+function calcDigoxina() {
+  const peso  = parseFloat(document.getElementById('dg_peso').value);
+  const crcl  = parseFloat(document.getElementById('dg_crcl').value);
+  const ic    = document.getElementById('dg_ic').value === 'yes';
+  const dose  = parseFloat(document.getElementById('dg_dose').value);
+  const F     = parseFloat(document.getElementById('dg_via').value);
+  const nivel = parseFloat(document.getElementById('dg_nivel').value) || null;
+  const alvo  = parseFloat(document.getElementById('dg_alvo').value);
+
+  if (!peso||!crcl||!dose) { alert('Preencha peso, CrCl e dose.'); return; }
+
+  const Cl_NR  = ic ? 20 : 40;                          // mL/min
+  const Cl_dig = 1.303 * crcl + Cl_NR;                  // mL/min (Koup-Jusko)
+  const Css    = (F * dose * 1000) / (Cl_dig * 1440);   // ng/mL (dose in mcg, Cl in mL/min→min/day=1440)
+  const new_dose_mcg = alvo * Cl_dig * 1440 / (F * 1000);
+  const new_dose_rnd = Math.round(new_dose_mcg / 62.5) * 62.5; // round to 62.5 mcg increment
+
+  document.getElementById('dg_cl').textContent      = Cl_dig.toFixed(0) + ' mL/min';
+  document.getElementById('dg_css').textContent     = Css.toFixed(2) + ' ng/mL';
+  document.getElementById('dg_newdose').textContent = new_dose_rnd.toFixed(0) + ' mcg/dia (' + (new_dose_rnd/1000).toFixed(3) + ' mg)';
+  document.getElementById('dg_res').style.display   = 'block';
+
+  if (nivel) {
+    document.getElementById('dg_meas_row').style.display='flex';
+    document.getElementById('dg_meas').textContent = nivel.toFixed(2) + ' ng/mL';
+  }
+
+  const interp = document.getElementById('dg_interp');
+  interp.style.display='block';
+  const tgt_min = ic ? 0.5 : 0.8;
+  const tgt_max = ic ? 0.9 : 2.0;
+  const ref_level = nivel || Css;
+  if (ref_level < tgt_min) {
+    interp.className='interp low';
+    interp.textContent=`Nível ${ref_level.toFixed(2)} ng/mL — ABAIXO do alvo (${tgt_min}–${tgt_max} ng/mL). Verificar adesão; considerar aumento de dose.`;
+  } else if (ref_level <= tgt_max) {
+    interp.className='interp ok';
+    interp.textContent=`✅ Nível ${ref_level.toFixed(2)} ng/mL — dentro do alvo. Manter dose.`;
+  } else if (ref_level <= 2.0) {
+    interp.className='interp warn';
+    interp.textContent=`Nível ${ref_level.toFixed(2)} ng/mL — ELEVADO. Monitorar sinais de toxicidade. Verificar eletrólitos (K⁺, Mg²⁺).`;
+  } else {
+    interp.className='interp high';
+    interp.textContent=`⚠️ Nível ${ref_level.toFixed(2)} ng/mL — TÓXICO. Suspender dose; monitorar ECG; corrigir eletrólitos. Anticorpo anti-digoxina em casos graves.`;
+  }
+}
+
+/* ── Lítio ──────────────────────────────────────────────────────────── */
+function calcLitio() {
+  const crcl   = parseFloat(document.getElementById('li_crcl').value);
+  const indica = document.getElementById('li_indicacao').value;
+  const dose   = parseFloat(document.getElementById('li_dose').value) || null;
+  const nivel  = parseFloat(document.getElementById('li_nivel').value) || null;
+  const [tgt_min_s, tgt_max_s] = indica.split('_');
+  const tgt_min = parseFloat(tgt_min_s);
+  const tgt_max = parseFloat(tgt_max_s);
+  const tgt_mid = (tgt_min + tgt_max) / 2;
+
+  if (!crcl) { alert('Informe o CrCl.'); return; }
+
+  // Estimated Li t½ and clearance
+  const Cl_Li_ml_min = 0.25 * crcl;  // rough estimate (Li Cl ≈ 20-25% of CrCl)
+  const Vd_L   = 0.7 * 70;           // Vd ~0.7 L/kg, 70kg reference
+  const t12_h  = (Vd_L * 0.693) / (Cl_Li_ml_min * 60 / 1000);  // hours
+
+  // Initial dose suggestion based on CrCl
+  let init_dose;
+  if (crcl >= 60)      init_dose = '900–1200 mg/dia (divido em 2–3 tomadas)';
+  else if (crcl >= 30) init_dose = '600–900 mg/dia (divido em 2 tomadas)';
+  else if (crcl >= 10) init_dose = '300–600 mg/dia (monitorar de perto)';
+  else                 init_dose = 'Evitar ou dose muito reduzida — especialista';
+
+  document.getElementById('li_init').textContent = init_dose;
+  document.getElementById('li_t12').textContent  = t12_h.toFixed(1) + ' h';
+  document.getElementById('li_res').style.display='block';
+
+  const adjRow = document.getElementById('li_adj_row');
+  const interp = document.getElementById('li_interp');
+  interp.style.display='block';
+
+  if (nivel) {
+    const new_dose = dose ? Math.round(dose * (tgt_mid / nivel) / 150) * 150 : null;
+    adjRow.style.display='flex';
+    document.getElementById('li_newdose').textContent = new_dose ? new_dose + ' mg/dia' : '—';
+
+    if (nivel < tgt_min) {
+      interp.className='interp low';
+      interp.textContent=`Nível ${nivel.toFixed(2)} mEq/L — ABAIXO do alvo (${tgt_min}–${tgt_max}). ${new_dose?'Sugestão: '+new_dose+' mg/dia.':'Aumentar dose.'}`;
+    } else if (nivel <= tgt_max) {
+      interp.className='interp ok';
+      interp.textContent=`✅ Nível ${nivel.toFixed(2)} mEq/L — dentro do alvo (${tgt_min}–${tgt_max}). Manter dose.`;
+    } else if (nivel <= 1.5) {
+      interp.className='interp warn';
+      interp.textContent=`⚠️ Nível ${nivel.toFixed(2)} mEq/L — ACIMA do alvo. Sintomas leves possíveis (tremor fino, poliúria). Reduzir dose.`;
+    } else {
+      interp.className='interp high';
+      interp.textContent=`⛔ Nível ${nivel.toFixed(2)} mEq/L — TOXICIDADE. Suspender; hidratação IV; monitorar ECG e função renal. Diálise se > 2,5 mEq/L ou sintomas graves.`;
+    }
+  } else {
+    adjRow.style.display='none';
+    interp.className='interp ok';
+    interp.textContent=`t½ estimada ${t12_h.toFixed(0)}h. Estado de equilíbrio em ~5 meias-vidas (~${Math.round(t12_h*5/24)} dias). Colher primeiro nível após 5–7 dias de dose estável.`;
+  }
+}
+</script>
+</body>
+</html>

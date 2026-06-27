@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Conversor de Opioides — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .op-hdr { background:linear-gradient(135deg,#7c2d12,#c2410c);color:#fff;border-radius:14px;padding:18px;margin-bottom:14px }
+    .op-title{ font-size:1rem;font-weight:800;margin-bottom:4px }
+    .op-sub  { font-size:.73rem;opacity:.8 }
+
+    .sec-lbl { font-size:.62rem;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.08em;margin:14px 0 6px }
+
+    select, input[type=number] {
+      width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:10px;
+      padding:10px 12px;font-size:.85rem;background:#fff;outline:none;margin-bottom:10px }
+    select:focus,input:focus { border-color:#c2410c }
+
+    .ome-badge { background:#fef3c7;border:2px solid #d97706;border-radius:12px;padding:12px 16px;
+                 margin-bottom:14px;text-align:center;display:none }
+    .ome-num  { font-size:2rem;font-weight:900;color:#b45309 }
+    .ome-lbl  { font-size:.72rem;color:#92400e;font-weight:700;margin-top:2px }
+
+    .red-opts { display:flex;gap:6px;margin-bottom:10px }
+    .red-btn  { flex:1;padding:9px;border-radius:9px;border:2px solid #e2e8f0;background:#fff;
+                font-size:.75rem;font-weight:700;cursor:pointer;color:#64748b;text-align:center }
+    .red-btn.sel { border-color:#c2410c;background:#fff7ed;color:#c2410c }
+
+    .result-box { border-radius:14px;padding:20px;text-align:center;margin:14px 0;display:none;border:3px solid #c2410c }
+    .res-num    { font-size:3rem;font-weight:900;color:#c2410c;line-height:1 }
+    .res-unit   { font-size:.85rem;font-weight:700;color:#92400e }
+    .res-sub    { font-size:.75rem;color:#64748b;margin-top:8px }
+
+    .nota-card { background:#fff7ed;border-left:4px solid #d97706;border-radius:8px;padding:10px 12px;
+                 font-size:.75rem;color:#92400e;margin-bottom:10px;display:none }
+
+    .warn-card { background:#fef2f2;border-left:4px solid #dc2626;border-radius:8px;padding:10px 12px;
+                 font-size:.75rem;color:#7f1d1d;margin-bottom:10px }
+
+    .equiv-table { width:100%;border-collapse:collapse;font-size:.72rem }
+    .equiv-table th { background:#f8fafc;padding:7px 10px;text-align:left;font-weight:800;color:#1e3a5f;border-bottom:2px solid #e2e8f0 }
+    .equiv-table td { padding:7px 10px;border-bottom:1px solid #f1f5f9 }
+    .equiv-table tr:last-child td { border-bottom:none }
+  </style>
+</head>
+<body>
+
+<header class="top-bar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <span class="top-title">Conversor de Opioides</span>
+  <div class="top-right"></div>
+</header>
+
+<main class="container" style="padding-bottom:90px">
+
+  <div class="op-hdr">
+    <div class="op-title">🔄 Equianalgesia / Rotação de Opioides</div>
+    <div class="op-sub">Dose diária total · Tolerância cruzada · Referência: Equianalgesic Dose Table (Palliative Care Network of WI)</div>
+  </div>
+
+  <div class="warn-card">
+    ⚠️ <strong>Uso exclusivo para profissional de saúde.</strong> Cálculos são estimativas — ajuste clínico individualizado é obrigatório. Metadona não incluída (conversão variável; exige especialista). Reduza a dose calculada em 25–50% ao iniciar novo opioide (tolerância cruzada incompleta).
+  </div>
+
+  <!-- ORIGEM -->
+  <p class="sec-lbl">1 — Opioide atual</p>
+  <select id="srcDrug" onchange="calcular()">
+    <option value="">— Selecione o opioide —</option>
+  </select>
+  <input type="number" id="srcDose" placeholder="Dose diária total (veja unidade acima)" min="0" step="0.1" oninput="calcular()">
+  <div id="srcUnit" style="font-size:.72rem;color:#64748b;margin-top:-6px;margin-bottom:10px"></div>
+
+  <!-- OME -->
+  <div class="ome-badge" id="omeBadge">
+    <div class="ome-num" id="omeNum">0</div>
+    <div class="ome-lbl">mg OME / dia (Equivalente em Morfina Oral)</div>
+  </div>
+
+  <!-- ALVO -->
+  <p class="sec-lbl">2 — Opioide alvo</p>
+  <select id="tgtDrug" onchange="calcular()">
+    <option value="">— Selecione o opioide —</option>
+  </select>
+  <div id="tgtUnit" style="font-size:.72rem;color:#64748b;margin-top:-6px;margin-bottom:10px"></div>
+
+  <!-- REDUÇÃO -->
+  <p class="sec-lbl">3 — Redução por tolerância cruzada incompleta</p>
+  <div class="red-opts">
+    <div class="red-btn"     id="rb0" onclick="setRed(0)">0%<br><span style="font-size:.6rem">Dor intensa</span></div>
+    <div class="red-btn sel" id="rb25" onclick="setRed(25)">25%<br><span style="font-size:.6rem">Padrão</span></div>
+    <div class="red-btn"     id="rb33" onclick="setRed(33)">33%<br><span style="font-size:.6rem">Moderada</span></div>
+    <div class="red-btn"     id="rb50" onclick="setRed(50)">50%<br><span style="font-size:.6rem">Idoso/fragilizado</span></div>
+  </div>
+
+  <!-- RESULTADO -->
+  <div class="result-box" id="resultBox">
+    <div class="res-num" id="resNum">0</div>
+    <div class="res-unit" id="resUnit"></div>
+    <div class="res-sub"  id="resSub"></div>
+  </div>
+
+  <!-- NOTA DO FÁRMACO -->
+  <div class="nota-card" id="srcNota"></div>
+  <div class="nota-card" id="tgtNota"></div>
+
+  <!-- TABELA DE REFERÊNCIA -->
+  <div class="card" style="margin-top:6px">
+    <div class="card-title">📊 Tabela de Equivalência</div>
+    <div style="overflow-x:auto">
+      <table class="equiv-table">
+        <thead><tr>
+          <th>Opioide</th><th>Via</th><th>Unidade</th><th>Eq. a 30mg morfina oral</th>
+        </tr></thead>
+        <tbody id="equivTbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card" style="font-size:.72rem;color:#64748b;margin-top:6px">
+    <strong style="color:#1e3a5f;display:block;margin-bottom:4px">📌 Referências</strong>
+    Palliative Care Network of Wisconsin. Equianalgesic Dosing Chart, 2023.<br>
+    Dowell D et al. CDC Clinical Practice Guideline for Prescribing Opioids (2022).<br>
+    Shaheen PE et al. Opioid equianalgesic tables: are they all equally dangerous? J Pain Symptom Manage 2009.
+  </div>
+
+</main>
+
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+
+<script>
+/* ── Opioid database ───────────────────────────────────────────────────
+   ome: mg OME per unit (mg/dia or mcg/h or mcg/dia)
+   eq30: dose equivalent to 30mg oral morphine (for table)  */
+const DRUGS = [
+  { id:'tramadol',      name:'Tramadol',           route:'Oral',     unit:'mg/dia',   ome:0.1,
+    eq30:'300 mg',    nota:'Razão tramadol:morfina estimada (5–10:1). Inibidor fraco de CYP2D6. Teto de 400 mg/dia.' },
+  { id:'codeina',       name:'Codeína',             route:'Oral',     unit:'mg/dia',   ome:0.15,
+    eq30:'200 mg',    nota:'Pró-fármaco (CYP2D6). Metabolizadores ultra-rápidos: risco de toxicidade; metabolizadores lentos: efeito reduzido.' },
+  { id:'tapentadol',    name:'Tapentadol',           route:'Oral',     unit:'mg/dia',   ome:0.4,
+    eq30:'75 mg',     nota:'Mecanismo dual (opioide + NRI). Menor obstipação e náusea que morfina em equidoses.' },
+  { id:'morfina_o',     name:'Morfina',              route:'Oral',     unit:'mg/dia',   ome:1,
+    eq30:'30 mg',     nota:'Referência padrão para todos os cálculos. Metabólito M6G ativo — cuidado em IRC.' },
+  { id:'morfina_iv',    name:'Morfina',              route:'IV / SC',  unit:'mg/dia',   ome:3,
+    eq30:'10 mg',     nota:'Conversão oral:IV = 3:1. Via SC tem biodisponibilidade similar à IV (90–100%).' },
+  { id:'oxicodona_o',   name:'Oxicodona',            route:'Oral',     unit:'mg/dia',   ome:1.5,
+    eq30:'20 mg',     nota:'Oxicodona 10 mg ≈ morfina 15 mg oral. Biodisp. oral 60–87%. Menor efeito imunossupressor.' },
+  { id:'hidromorfona_o',name:'Hidromorfona',          route:'Oral',     unit:'mg/dia',   ome:5,
+    eq30:'6 mg',      nota:'Alta potência. Metabólito H3G neuroexcitatório — evitar em IRC avançada.' },
+  { id:'hidromorfona_iv',name:'Hidromorfona',         route:'IV / SC',  unit:'mg/dia',   ome:20,
+    eq30:'1,5 mg',    nota:'≈7× mais potente que morfina IV. Escolha preferencial em cuidados paliativos por via SC.' },
+  { id:'fentanil_td',   name:'Fentanil',              route:'TD (patch)',unit:'mcg/h',   ome:2.4,
+    eq30:'~12,5 mcg/h',nota:'Patch 25 mcg/h ≈ 60 mg morfina oral/24h. Latência de 12–24h para início e fim de efeito. Febre e calor aumentam absorção.' },
+  { id:'fentanil_iv',   name:'Fentanil',              route:'IV / SC',  unit:'mcg/dia',  ome:0.3,
+    eq30:'100 mcg',   nota:'100 mcg IV ≈ 30 mg morfina oral. Uso típico em infusão contínua; curta duração (30–60 min bolus).' },
+  { id:'buprenorfina_td',name:'Buprenorfina',         route:'TD (patch)',unit:'mcg/h',   ome:2.4,
+    eq30:'~12,5 mcg/h',nota:'Agonista parcial — teto analgésico em doses altas. Patch 5 mcg/h ≈ 12 mg morfina oral/24h. Boa opção em IRC (sem ajuste de dose).' },
+  { id:'buprenorfina_sl',name:'Buprenorfina',         route:'Sublingual',unit:'mg/dia',  ome:75,
+    eq30:'0,4 mg',    nota:'0,4 mg SL ≈ 10 mg morfina IM ≈ 30 mg morfina oral. Agonista parcial — máx. efeito analgésico ~16–32 mg/dia SL.' },
+];
+
+let _red = 25;  // default 25% reduction
+
+/* ── Populate selects ─────────────────────────────────────────────────── */
+function populateSelects() {
+  const opts = DRUGS.map(d => `<option value="${d.id}">${d.name} (${d.route})</option>`).join('');
+  document.getElementById('srcDrug').innerHTML = '<option value="">— Selecione —</option>' + opts;
+  document.getElementById('tgtDrug').innerHTML = '<option value="">— Selecione —</option>' + opts;
+}
+
+function populateTable() {
+  document.getElementById('equivTbody').innerHTML = DRUGS.map(d => `<tr>
+    <td><strong>${d.name}</strong></td>
+    <td>${d.route}</td>
+    <td>${d.unit}</td>
+    <td>${d.eq30}</td>
+  </tr>`).join('');
+}
+
+function setRed(pct) {
+  _red = pct;
+  ['rb0','rb25','rb33','rb50'].forEach(id => document.getElementById(id).classList.remove('sel'));
+  document.getElementById('rb'+pct).classList.add('sel');
+  calcular();
+}
+
+function calcular() {
+  const srcId = document.getElementById('srcDrug').value;
+  const tgtId = document.getElementById('tgtDrug').value;
+  const dose  = parseFloat(document.getElementById('srcDose').value) || 0;
+
+  const src = DRUGS.find(d=>d.id===srcId);
+  const tgt = DRUGS.find(d=>d.id===tgtId);
+
+  document.getElementById('srcUnit').textContent = src ? 'Unidade: '+src.unit : '';
+  document.getElementById('tgtUnit').textContent = tgt ? 'Unidade: '+tgt.unit : '';
+
+  // Source nota
+  const srcNEl = document.getElementById('srcNota');
+  if (src && src.nota) { srcNEl.textContent = '💡 '+src.nota; srcNEl.style.display='block'; }
+  else srcNEl.style.display='none';
+
+  if (!src || dose <= 0) {
+    document.getElementById('omeBadge').style.display='none';
+    document.getElementById('resultBox').style.display='none';
+    document.getElementById('tgtNota').style.display='none';
+    return;
+  }
+
+  const ome = dose * src.ome;
+  document.getElementById('omeNum').textContent = ome.toFixed(1);
+  document.getElementById('omeBadge').style.display='block';
+
+  if (!tgt) { document.getElementById('resultBox').style.display='none'; return; }
+
+  const adj_ome = ome * (1 - _red/100);
+  const tgt_dose = adj_ome / tgt.ome;
+
+  // Round to clinically sensible precision
+  let displayDose;
+  if (tgt.unit === 'mcg/h') {
+    displayDose = tgt_dose.toFixed(1);
+  } else if (tgt_dose < 2) {
+    displayDose = tgt_dose.toFixed(2);
+  } else if (tgt_dose < 10) {
+    displayDose = tgt_dose.toFixed(1);
+  } else {
+    displayDose = Math.round(tgt_dose).toString();
+  }
+
+  const box = document.getElementById('resultBox');
+  box.style.display='block';
+  document.getElementById('resNum').textContent  = displayDose;
+  document.getElementById('resUnit').textContent = tgt.unit;
+
+  let sub = `OME original: ${ome.toFixed(1)} mg/dia`;
+  if (_red > 0) sub += ` → com redução de ${_red}%: ${adj_ome.toFixed(1)} mg/dia`;
+  document.getElementById('resSub').textContent = sub;
+
+  // Target nota
+  const tgtNEl = document.getElementById('tgtNota');
+  if (tgt && tgt.nota) { tgtNEl.textContent = '💡 '+tgt.nota; tgtNEl.style.display='block'; }
+  else tgtNEl.style.display='none';
+}
+
+populateSelects();
+populateTable();
+</script>
+</body>
+</html>
