@@ -86,6 +86,7 @@
 <script src="js/db.js"></script>
 <script src="js/utils.js"></script>
 <script src="js/ajusterenal.js"></script>
+<script src="js/tfg.js"></script>
 <script src="js/laboratorio.js"></script>
 <script src="js/lab_farma.js"></script>
 <script>
@@ -175,16 +176,21 @@ async function salvarRegistro() {
   // Auto-recalcula TFG se novo valor de creatinina
   if (tipoAtivo === 'creatinina' && paciente) {
     const tfgDiv = document.getElementById('tfg-auto');
-    if (paciente.idadePac && paciente.pesoPac && paciente.sexoPac && typeof calcularTFG === 'function') {
-      const novoTFG = calcularTFG(paciente.idadePac, paciente.pesoPac, paciente.sexoPac, val);
-      const est     = estagioRenal(novoTFG);
-      // Salva no paciente
-      paciente.tfg        = novoTFG;
-      paciente.creatinina = val;
-      await dbPut('pacientes', paciente);
-      tfgDiv.style.display = 'block';
-      tfgDiv.innerHTML = `🫘 <strong>TFG recalculada:</strong> ${novoTFG} mL/min — <strong style="color:${est.cor}">${est.estadio} (${est.descricao})</strong><br>
-        <span style="font-size:.72rem;color:#78350f">Cockcroft-Gault · Perfil do paciente atualizado automaticamente</span>`;
+    if (paciente.idadePac && paciente.sexoPac) {
+      const tfgCKD = (typeof calcularCKDEPI2021 === 'function') ? calcularCKDEPI2021(val, paciente.idadePac, paciente.sexoPac) : null;
+      const tfgCG  = (paciente.pesoPac && typeof calcularTFG === 'function') ? calcularTFG(paciente.idadePac, paciente.pesoPac, paciente.sexoPac, val) : null;
+      const tfgSalvo = tfgCKD || tfgCG;
+      if (tfgSalvo) {
+        const est = estagioRenal(tfgSalvo);
+        paciente.tfg        = tfgSalvo;
+        paciente.creatinina = val;
+        await dbPut('pacientes', paciente);
+        tfgDiv.style.display = 'block';
+        tfgDiv.innerHTML = `🫘 <strong>TFG recalculada:</strong>
+          ${tfgCKD ? `CKD-EPI ${tfgCKD} mL/min` : ''}${tfgCKD && tfgCG ? ' · ' : ''}${tfgCG ? `CG ${tfgCG} mL/min` : ''} —
+          <strong style="color:${est.cor}">${est.estadio} (${est.descricao})</strong><br>
+          <span style="font-size:.72rem;color:#78350f">Perfil atualizado · <a href="tfg.html" style="color:#92400e;font-weight:700">Ver calculadora completa →</a></span>`;
+      }
     }
   }
 

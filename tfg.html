@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Calculadora TFG — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <style>
+    body { background:#f8fafc;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif }
+
+    .topbar { display:flex;align-items:center;gap:10px;padding:14px 16px;background:#fff;border-bottom:1px solid #e2e8f0;position:sticky;top:0;z-index:100 }
+    .back-btn { background:none;border:none;font-size:1.3rem;cursor:pointer;padding:4px 8px;color:#475569;border-radius:8px }
+    .back-btn:hover { background:#f1f5f9 }
+    .topbar-title { font-size:1rem;font-weight:700;color:#1e293b }
+
+    .card { background:#fff;border-radius:14px;padding:16px;margin:0 16px 12px;box-shadow:0 1px 4px rgba(0,0,0,.06) }
+    .label-sm { font-size:.7rem;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px;display:block }
+    .input-grid { display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px }
+    .input-wrap label { display:block;font-size:.75rem;font-weight:600;color:#64748b;margin-bottom:5px }
+    .inp { width:100%;border:2px solid #e2e8f0;border-radius:10px;padding:11px 13px;font-size:.95rem;color:#1e293b;outline:none;box-sizing:border-box;transition:border-color .2s;background:#fff }
+    .inp:focus { border-color:#6366f1 }
+    select.inp { appearance:auto;cursor:pointer }
+    .btn-calc { width:100%;background:#6366f1;color:#fff;border:none;border-radius:12px;padding:14px;font-size:.95rem;font-weight:700;cursor:pointer;transition:opacity .2s }
+    .btn-calc:hover { opacity:.9 }
+
+    /* Gauge de estágio */
+    .stage-gauge { display:flex;height:10px;border-radius:6px;overflow:hidden;margin:14px 0 6px;gap:2px }
+    .stage-seg { flex:1;border-radius:3px;transition:transform .2s }
+    .stage-seg.ativo { transform:scaleY(1.6);transform-origin:center }
+    .stage-labels { display:flex;justify-content:space-between;font-size:.62rem;color:#94a3b8;margin-bottom:12px }
+
+    /* Cards de resultado */
+    .res-grid { display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px }
+    .res-box { border-radius:12px;padding:14px;text-align:center }
+    .res-box.primary { grid-column:span 2;text-align:left;border-radius:14px;padding:18px }
+    .res-formula { font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;opacity:.75;margin-bottom:2px }
+    .res-valor { font-size:2.4rem;font-weight:800;line-height:1;margin-bottom:2px }
+    .res-valor.small { font-size:1.6rem }
+    .res-unit { font-size:.72rem;opacity:.75 }
+    .res-estadio { font-size:.85rem;font-weight:700;margin-top:4px }
+    .res-detail { font-size:.72rem;opacity:.7;margin-top:6px;line-height:1.5 }
+
+    /* Ajuste de medicamentos */
+    .ajuste-row { display:flex;align-items:flex-start;gap:10px;padding:10px 14px;border-bottom:1px solid #f1f5f9 }
+    .ajuste-row:last-child { border-bottom:none }
+    .ajuste-badge { white-space:nowrap;font-size:.68rem;font-weight:700;border-radius:6px;padding:3px 8px }
+    .badge-ci  { background:#fee2e2;color:#b91c1c }
+    .badge-red { background:#fff7ed;color:#c2410c }
+    .badge-cau { background:#fefce8;color:#854d0e }
+    .ajuste-nome { font-size:.82rem;font-weight:700;color:#1e293b;margin-bottom:2px }
+    .ajuste-txt  { font-size:.74rem;color:#64748b;line-height:1.45 }
+    .empty-ajuste { text-align:center;padding:20px;color:#94a3b8;font-size:.82rem }
+
+    .save-btn { width:100%;background:#059669;color:#fff;border:none;border-radius:12px;padding:13px;font-size:.92rem;font-weight:700;cursor:pointer;margin-top:4px;transition:opacity .2s }
+    .save-btn:hover { opacity:.9 }
+    .save-btn:disabled { opacity:.45;cursor:default }
+
+    .disclaimer { background:#fef9c3;border-left:3px solid #f59e0b;border-radius:8px;padding:10px 14px;font-size:.73rem;color:#78350f;margin:0 16px 24px;line-height:1.5 }
+    .info-note { font-size:.72rem;color:#94a3b8;line-height:1.5;margin-top:10px }
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <span class="topbar-title">🫘 Calculadora de TFG</span>
+</div>
+
+<div style="height:14px"></div>
+
+<!-- Entradas -->
+<div class="card">
+  <span class="label-sm">Dados do Paciente</span>
+
+  <div class="input-grid">
+    <div class="input-wrap">
+      <label>Creatinina sérica (mg/dL)</label>
+      <input type="number" id="inp-creat" class="inp" placeholder="ex: 1.2" step="0.01" min="0.1" inputmode="decimal">
+    </div>
+    <div class="input-wrap">
+      <label>Idade (anos)</label>
+      <input type="number" id="inp-idade" class="inp" placeholder="ex: 65" min="1" max="120" inputmode="numeric">
+    </div>
+    <div class="input-wrap">
+      <label>Sexo biológico</label>
+      <select id="inp-sexo" class="inp">
+        <option value="M">Masculino</option>
+        <option value="F">Feminino</option>
+      </select>
+    </div>
+    <div class="input-wrap">
+      <label>Peso (kg) — para CG</label>
+      <input type="number" id="inp-peso" class="inp" placeholder="ex: 70" min="1" inputmode="decimal" step="0.1">
+    </div>
+  </div>
+
+  <button class="btn-calc" onclick="calcular()">🔢 Calcular TFG</button>
+  <p class="info-note" id="fonte-info" style="display:none">
+    ✓ Dados pré-preenchidos do perfil do paciente.
+  </p>
+</div>
+
+<!-- Resultado -->
+<div id="resultado" style="display:none">
+
+  <!-- Gauge de estágio -->
+  <div class="card" style="padding-bottom:10px">
+    <span class="label-sm">Estágio CKD (KDIGO 2022)</span>
+    <div class="stage-gauge" id="gauge">
+      <div class="stage-seg" style="background:#16a34a" data-est="G1"></div>
+      <div class="stage-seg" style="background:#65a30d" data-est="G2"></div>
+      <div class="stage-seg" style="background:#ca8a04" data-est="G3a"></div>
+      <div class="stage-seg" style="background:#d97706" data-est="G3b"></div>
+      <div class="stage-seg" style="background:#ea580c" data-est="G4"></div>
+      <div class="stage-seg" style="background:#dc2626" data-est="G5"></div>
+    </div>
+    <div class="stage-labels">
+      <span>G1 ≥90</span><span>G2 60</span><span>G3a 45</span><span>G3b 30</span><span>G4 15</span><span>G5 &lt;15</span>
+    </div>
+
+    <!-- CKD-EPI (primária) -->
+    <div class="res-grid">
+      <div class="res-box primary" id="box-ckdepi"></div>
+      <div class="res-box" id="box-cg" style="background:#f8fafc"></div>
+      <div class="res-box" id="box-stage" style="background:#f8fafc"></div>
+    </div>
+
+    <button class="save-btn" id="btn-salvar" onclick="salvarTFG()" disabled>
+      ✓ Usar CKD-EPI no perfil do paciente
+    </button>
+    <p style="font-size:.7rem;color:#94a3b8;margin-top:8px;text-align:center">
+      O valor salvo ativa os alertas de ajuste renal nos medicamentos.
+    </p>
+  </div>
+
+  <!-- Medicamentos com ajuste renal -->
+  <div class="card" id="card-ajuste" style="display:none">
+    <span class="label-sm">Medicamentos com Ajuste Renal Indicado</span>
+    <div id="lista-ajuste"></div>
+  </div>
+
+</div>
+
+<!-- Disclaimer -->
+<div class="disclaimer">
+  <strong>CKD-EPI 2021 (race-free)</strong> — recomendada pela ASN/NKF desde nov. 2021 para estimativa de TFG em adultos.
+  <br><strong>Cockcroft-Gault</strong> — padrão para cálculo de dose de medicamentos (bulas e UpToDate).
+  <br>Ferramenta de apoio clínico. Confirmar com o médico responsável.
+</div>
+
+<script src="js/db.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/ajusterenal.js"></script>
+<script src="js/tfg.js"></script>
+<script>
+
+let _paciente = null;
+let _meds     = [];
+let _tfgCKDEPI = null;
+
+const STAGE_CORES = {
+  G1:'#16a34a', G2:'#65a30d', G3a:'#ca8a04', G3b:'#d97706', G4:'#ea580c', G5:'#dc2626'
+};
+
+/* ─── Init ─────────────────────────────────────────────── */
+async function init() {
+  const pid = typeof getActivePacienteId === 'function' ? getActivePacienteId() : null;
+  if (!pid) return;
+
+  try {
+    _paciente = await dbGet('pacientes', pid);
+    if (!_paciente) return;
+
+    let preenchido = false;
+    if (_paciente.creatinina) { document.getElementById('inp-creat').value = _paciente.creatinina; preenchido = true; }
+    if (_paciente.idadePac)   { document.getElementById('inp-idade').value = _paciente.idadePac;   preenchido = true; }
+    if (_paciente.sexoPac)    { document.getElementById('inp-sexo').value  = _paciente.sexoPac;    preenchido = true; }
+    if (_paciente.pesoPac)    { document.getElementById('inp-peso').value  = _paciente.pesoPac;    preenchido = true; }
+
+    if (preenchido) {
+      document.getElementById('fonte-info').style.display = 'block';
+      calcular();
+    }
+
+    const todos = await dbGetByIndex('medicamentos', 'pacienteId', pid);
+    const hj    = new Date().toISOString().slice(0,10);
+    _meds = todos.filter(m => m.ativo !== false && (!m.dataFim || m.dataFim >= hj));
+  } catch(e) {}
+}
+
+/* ─── Cálculo ───────────────────────────────────────────── */
+function calcular() {
+  const creat = parseFloat(document.getElementById('inp-creat').value);
+  const idade = parseInt(document.getElementById('inp-idade').value);
+  const sexo  = document.getElementById('inp-sexo').value;
+  const peso  = parseFloat(document.getElementById('inp-peso').value);
+
+  if (!creat || creat <= 0 || !idade || idade <= 0) {
+    document.getElementById('resultado').style.display = 'none';
+    return;
+  }
+
+  const ckdepi = calcularCKDEPI2021(creat, idade, sexo);
+  const cg     = calcularCG(creat, idade, sexo, peso);
+  _tfgCKDEPI   = ckdepi;
+
+  renderResultado(ckdepi, cg, creat, idade, sexo, peso);
+  renderAjusteMeds(ckdepi);
+
+  document.getElementById('resultado').style.display = 'block';
+  document.getElementById('btn-salvar').disabled = !ckdepi;
+}
+
+/* ─── Gauge ─────────────────────────────────────────────── */
+function atualizarGauge(estadio) {
+  document.querySelectorAll('.stage-seg').forEach(el => {
+    el.classList.toggle('ativo', el.dataset.est === estadio);
+  });
+}
+
+/* ─── Renderização dos resultados ────────────────────────── */
+function renderResultado(ckdepi, cg, creat, idade, sexo, peso) {
+  const estCKD = ckdepi ? estagioRenal(ckdepi) : null;
+  const estCG  = cg     ? estagioRenal(cg)     : null;
+  const est    = estCKD || estCG;
+
+  if (est) atualizarGauge(est.estadio);
+
+  // Box primária — CKD-EPI
+  const corCKD = estCKD ? estCKD.cor : '#6366f1';
+  document.getElementById('box-ckdepi').style.background = corCKD + '14';
+  document.getElementById('box-ckdepi').style.border = `1.5px solid ${corCKD}`;
+  document.getElementById('box-ckdepi').innerHTML = ckdepi ? `
+    <p class="res-formula" style="color:${corCKD}">CKD-EPI 2021 · Recomendada ★</p>
+    <p class="res-valor" style="color:${corCKD}">${ckdepi}</p>
+    <p class="res-unit" style="color:${corCKD}">mL/min/1,73 m²</p>
+    ${estCKD ? `<p class="res-estadio" style="color:${corCKD}">Estágio ${estCKD.estadio} — ${estCKD.descricao}</p>` : ''}
+    <p class="res-detail">Cr ${creat} · ${sexo==='F'?'♀ Feminino':'♂ Masculino'} · ${idade} anos<br>Não requer peso corporal</p>
+  ` : `<p style="color:#94a3b8;font-size:.82rem;padding:10px 0">Creatinina ou idade inválidos</p>`;
+
+  // Box CG
+  const corCG = estCG ? estCG.cor : '#94a3b8';
+  document.getElementById('box-cg').innerHTML = cg ? `
+    <p class="res-formula" style="color:${corCG}">Cockcroft-Gault</p>
+    <p class="res-valor small" style="color:${corCG}">${cg}</p>
+    <p class="res-unit" style="color:${corCG}">mL/min</p>
+    ${estCG ? `<p class="res-estadio" style="color:${corCG};font-size:.75rem">${estCG.estadio} — ${estCG.descricao}</p>` : ''}
+    <p class="res-detail">Peso ${peso||'—'} kg<br>Bulas / ajuste de dose</p>
+  ` : `<p style="color:#94a3b8;font-size:.74rem;padding:6px 0">Informe o peso<br>para calcular CG</p>`;
+
+  // Box diferença
+  const diff = (ckdepi !== null && cg !== null) ? Math.abs(ckdepi - cg) : null;
+  const box3 = document.getElementById('box-stage');
+  if (diff !== null) {
+    const difCor = diff <= 10 ? '#16a34a' : diff <= 25 ? '#d97706' : '#dc2626';
+    box3.innerHTML = `
+      <p class="res-formula" style="color:#64748b">Diferença</p>
+      <p class="res-valor small" style="color:${difCor}">${diff}</p>
+      <p class="res-unit" style="color:#64748b">mL/min</p>
+      <p class="res-detail">${diff <= 10 ? 'Concordância boa' : diff <= 25 ? 'Divergência moderada' : 'Divergência alta'}<br>Use CKD-EPI para diagnóstico</p>
+    `;
+  } else {
+    box3.innerHTML = `<p style="color:#94a3b8;font-size:.74rem;padding:6px 0">—<br>Sem comparação</p>`;
+  }
+}
+
+/* ─── Ajuste de medicamentos ─────────────────────────────── */
+function renderAjusteMeds(tfg) {
+  const card  = document.getElementById('card-ajuste');
+  const lista = document.getElementById('lista-ajuste');
+  if (!_meds.length || !tfg) { card.style.display = 'none'; return; }
+
+  const rows = [];
+  for (const med of _meds) {
+    const nome = med.generico || med.nome || '';
+    if (!nome) continue;
+    const aj = (typeof buscarAjusteRenal === 'function') ? buscarAjusteRenal(nome, tfg) : null;
+    if (aj) rows.push({ nome, aj });
+  }
+
+  if (!rows.length) {
+    card.style.display = 'block';
+    lista.innerHTML = `<p class="empty-ajuste">✓ Nenhum medicamento ativo requer ajuste para TFG = ${tfg} mL/min.</p>`;
+    return;
+  }
+
+  const ordem = { contraindicado: 0, reduzir: 1, cautela: 2 };
+  rows.sort((a, b) => (ordem[a.aj.nivel] ?? 9) - (ordem[b.aj.nivel] ?? 9));
+
+  const badgeClass = { contraindicado:'badge-ci', reduzir:'badge-red', cautela:'badge-cau' };
+  const badgeTxt   = { contraindicado:'CONTRAINDICADO', reduzir:'REDUZIR DOSE', cautela:'CAUTELA' };
+
+  lista.innerHTML = rows.map(({ nome, aj }) => `
+    <div class="ajuste-row">
+      <span class="ajuste-badge ${badgeClass[aj.nivel] || 'badge-cau'}">${badgeTxt[aj.nivel] || aj.nivel.toUpperCase()}</span>
+      <div>
+        <p class="ajuste-nome">${nome}</p>
+        <p class="ajuste-txt">${aj.texto}</p>
+      </div>
+    </div>`).join('');
+
+  card.style.display = 'block';
+}
+
+/* ─── Salvar TFG no perfil ───────────────────────────────── */
+async function salvarTFG() {
+  if (!_tfgCKDEPI || !_paciente) return;
+  const pid = typeof getActivePacienteId === 'function' ? getActivePacienteId() : null;
+  if (!pid) return;
+
+  const creat = parseFloat(document.getElementById('inp-creat').value);
+  const idade = parseInt(document.getElementById('inp-idade').value);
+  const sexo  = document.getElementById('inp-sexo').value;
+  const peso  = parseFloat(document.getElementById('inp-peso').value);
+
+  _paciente.tfg        = _tfgCKDEPI;
+  _paciente.creatinina = creat   || _paciente.creatinina;
+  _paciente.idadePac   = idade   || _paciente.idadePac;
+  _paciente.sexoPac    = sexo    || _paciente.sexoPac;
+  if (peso) _paciente.pesoPac = peso;
+
+  await dbPut('pacientes', _paciente);
+
+  const btn = document.getElementById('btn-salvar');
+  btn.textContent = `✓ TFG ${_tfgCKDEPI} mL/min salvo — alertas de ajuste renal ativados`;
+  btn.disabled    = true;
+  btn.style.background = '#059669';
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>

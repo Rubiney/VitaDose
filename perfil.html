@@ -84,11 +84,14 @@
       </div>
     </div>
     <button class="btn btn-full" style="background:var(--navy);color:#fff;border:none"
-      onclick="calcularESalvarTFG()">🔢 Calcular TFG (Cockcroft-Gault)</button>
+      onclick="calcularESalvarTFG()">🔢 Calcular TFG</button>
     <div id="fr-resultado" style="margin-top:12px"></div>
     <p style="font-size:.7rem;color:var(--text-2);margin-top:10px;line-height:1.4">
       Estágios CKD (KDIGO): G1 ≥90 · G2 60–89 · G3a 45–59 · G3b 30–44 · G4 15–29 · G5 &lt;15 mL/min
     </p>
+    <a href="tfg.html" style="display:block;text-align:center;font-size:.8rem;color:#6366f1;margin-top:10px;font-weight:600;text-decoration:none">
+      Ver calculadora completa (CKD-EPI 2021 + ajuste de medicamentos) →
+    </a>
   </div>
 
   <!-- Doenças Sazonais -->
@@ -295,6 +298,9 @@
     <a href="laboratorio.html" class="btn btn-full" style="display:block;text-align:center;background:#0f766e;color:#fff;border:none;text-decoration:none;margin-bottom:10px">
       🧪 Histórico Laboratorial
     </a>
+    <a href="tfg.html" class="btn btn-full" style="display:block;text-align:center;background:#6366f1;color:#fff;border:none;text-decoration:none;margin-bottom:10px">
+      🫘 Calculadora de TFG (CKD-EPI 2021)
+    </a>
     <a href="pedidose.html" class="btn btn-full" style="display:block;text-align:center;background:#0369a1;color:#fff;border:none;text-decoration:none;margin-bottom:10px">
       👶 Calculadora de Dose Pediátrica
     </a>
@@ -360,6 +366,7 @@
   <script src="js/db.js"></script>
   <script src="js/utils.js"></script>
   <script src="js/ajusterenal.js"></script>
+  <script src="js/tfg.js"></script>
   <script>
     const PERFIS = { adulto:'Adulto', idoso:'Idoso (60+)', pediatrico:'Pediátrico', renal:'Insuf. Renal', hepatico:'Insuf. Hepática', gestante:'Gestante' };
 
@@ -854,27 +861,32 @@
       const creatinina = parseFloat(document.getElementById('fr-creatinina').value);
       const resultado  = document.getElementById('fr-resultado');
 
-      if (!idade || !peso || !creatinina) {
-        resultado.innerHTML = `<p style="color:#c53030;font-size:.82rem">⚠ Preencha idade, peso e creatinina.</p>`;
+      if (!idade || !creatinina) {
+        resultado.innerHTML = `<p style="color:#c53030;font-size:.82rem">⚠ Preencha ao menos idade e creatinina.</p>`;
         return;
       }
-      const tfg    = calcularTFG(idade, peso, sexo, creatinina);
-      const estagio = estagioRenal(tfg);
+
+      const tfgCKD = (typeof calcularCKDEPI2021 === 'function') ? calcularCKDEPI2021(creatinina, idade, sexo) : null;
+      const tfgCG  = peso ? calcularTFG(idade, peso, sexo, creatinina) : null;
+      const tfgPrincipal = tfgCKD || tfgCG;
+      const est    = tfgPrincipal ? estagioRenal(tfgPrincipal) : null;
+
+      if (!est) { resultado.innerHTML = `<p style="color:#c53030;font-size:.82rem">⚠ Dados inválidos.</p>`; return; }
 
       resultado.innerHTML = `
-        <div style="background:${estagio.cor}18;border:1.5px solid ${estagio.cor};border-radius:12px;padding:14px 16px">
-          <p style="font-size:1.4rem;font-weight:800;color:${estagio.cor};margin:0 0 4px">
-            TFG = ${tfg} mL/min
-          </p>
-          <p style="font-size:.9rem;font-weight:700;color:${estagio.cor};margin:0 0 4px">
-            Estágio ${estagio.estadio} — ${estagio.descricao}
-          </p>
-          <p style="font-size:.76rem;color:var(--text-2);margin:0">
-            Fórmula: Cockcroft-Gault · Creatinina ${creatinina} mg/dL · Peso ${peso} kg · ${sexo === 'F' ? 'Feminino' : 'Masculino'} · ${idade} anos
-          </p>
+        <div style="background:${est.cor}14;border:1.5px solid ${est.cor};border-radius:12px;padding:14px 16px;margin-bottom:10px">
+          ${tfgCKD ? `
+          <p style="font-size:.67rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:${est.cor};margin:0 0 2px">CKD-EPI 2021 ★ Recomendada</p>
+          <p style="font-size:1.6rem;font-weight:800;color:${est.cor};margin:0 0 2px">${tfgCKD} mL/min/1,73 m²</p>
+          ` : ''}
+          ${tfgCG ? `
+          <p style="font-size:.67rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:${est.cor};margin:${tfgCKD?'8px':0} 0 2px">Cockcroft-Gault (ajuste de dose)</p>
+          <p style="font-size:${tfgCKD?'1.1rem':'1.6rem'};font-weight:${tfgCKD?'700':'800'};color:${est.cor};margin:0 0 2px">${tfgCG} mL/min</p>
+          ` : ''}
+          <p style="font-size:.85rem;font-weight:700;color:${est.cor};margin:6px 0 0">Estágio ${est.estadio} — ${est.descricao}</p>
         </div>
-        <button class="btn btn-primary btn-full" style="margin-top:10px"
-          onclick="salvarFuncaoRenal(${tfg},${creatinina},${idade},${peso},'${sexo}')">
+        <button class="btn btn-primary btn-full"
+          onclick="salvarFuncaoRenal(${tfgCKD||tfgCG},${creatinina},${idade},${peso||0},'${sexo}')">
           ✓ Salvar TFG no perfil
         </button>`;
     }
