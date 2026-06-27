@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Relatório SFT — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    @media print {
+      .no-print { display:none!important }
+      .print-only { display:block!important }
+      body { background:#fff;color:#000;font-size:10.5pt }
+      .card { box-shadow:none!important;border:1px solid #ccc;page-break-inside:avoid;margin-bottom:10pt }
+      .bottom-nav,.top-bar { display:none!important }
+    }
+    .print-only { display:none }
+    .report-hdr {
+      background:linear-gradient(135deg,#1e3a5f,#0f766e);
+      color:#fff;border-radius:14px;padding:18px;margin-bottom:14px;
+    }
+    .report-title { font-size:1rem;font-weight:800;letter-spacing:.04em;margin-bottom:4px }
+    .report-sub   { font-size:.73rem;opacity:.8 }
+    .sec-lbl { font-size:.62rem;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.08em;margin:0 0 10px }
+    table.rt { width:100%;border-collapse:collapse;font-size:.78rem }
+    table.rt th { background:#f1f5f9;padding:7px 9px;text-align:left;font-size:.64rem;color:#64748b;border-bottom:1px solid #e2e8f0 }
+    table.rt td { padding:7px 9px;border-bottom:1px solid #f8fafc;vertical-align:top }
+    .badge { display:inline-block;padding:2px 9px;border-radius:999px;font-size:.65rem;font-weight:700 }
+    .badge-ok  { background:#d1fae5;color:#065f46 }
+    .badge-alt { background:#fef9c3;color:#713f12 }
+    .badge-bad { background:#fee2e2;color:#991b1b }
+    .soap-blk  { background:#f8fafc;border-radius:10px;padding:12px;font-size:.8rem;line-height:1.7 }
+    .soap-k    { font-weight:700;color:#1e3a5f;margin-right:4px }
+    .vg { display:grid;grid-template-columns:repeat(4,1fr);gap:8px }
+    .vb { background:#f0f9ff;border-radius:10px;padding:10px;text-align:center }
+    .vv { font-size:1rem;font-weight:800;color:#0369a1 }
+    .vl { font-size:.6rem;color:#64748b;margin-top:2px }
+    .inp-rpt { width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:9px;padding:8px 11px;font-size:.82rem;background:#fff }
+    .sig-line { border-top:1.5px solid #334155;margin-top:38px;padding-top:6px;font-size:.7rem;color:#64748b;text-align:center }
+    @media print {
+      .vb { border:1px solid #ddd }
+      .soap-blk { border:1px solid #e5e7eb }
+      .rt td,.rt th { border:1px solid #ddd }
+      .sig-line { border-color:#000;color:#000 }
+    }
+  </style>
+</head>
+<body>
+
+<header class="top-bar no-print">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <span class="top-title">Relatório SFT</span>
+  <div class="top-right"></div>
+</header>
+
+<main class="container" style="padding-bottom:90px">
+
+  <div class="report-hdr no-print">
+    <div class="report-title">📋 Relatório de Seguimento Farmacoterapêutico</div>
+    <div class="report-sub">Documento gerado automaticamente pelo VitaDose</div>
+  </div>
+
+  <!-- Print-only header -->
+  <div class="print-only" style="border-bottom:2pt solid #000;padding-bottom:10pt;margin-bottom:12pt">
+    <table style="width:100%"><tr>
+      <td><strong style="font-size:13pt">RELATÓRIO DE SEGUIMENTO FARMACOTERAPÊUTICO</strong><br>
+          <span style="font-size:9pt;color:#555">Farmácia Clínica · VitaDose</span></td>
+      <td style="text-align:right;font-size:9pt" id="printMeta"></td>
+    </tr></table>
+  </div>
+
+  <!-- Farmacêutico -->
+  <div class="card no-print" style="margin-bottom:12px">
+    <p class="sec-lbl" style="margin-bottom:10px">Farmacêutico responsável</p>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
+      <div style="flex:1;min-width:150px">
+        <label style="font-size:.7rem;font-weight:600;color:#64748b;display:block;margin-bottom:4px">Nome</label>
+        <input id="farmNome" type="text" placeholder="Nome completo" class="inp-rpt">
+      </div>
+      <div style="flex:0 0 150px">
+        <label style="font-size:.7rem;font-weight:600;color:#64748b;display:block;margin-bottom:4px">CRF</label>
+        <input id="farmCRF" type="text" placeholder="CRF-SP 000000" class="inp-rpt">
+      </div>
+      <button class="btn" style="padding:8px 14px;font-size:.8rem" onclick="salvarFarm()">💾 Salvar</button>
+    </div>
+  </div>
+
+  <!-- Paciente -->
+  <div class="card">
+    <p class="sec-lbl">Identificação do Paciente</p>
+    <div id="secPac" style="font-size:.82rem">Carregando…</div>
+  </div>
+
+  <!-- Medicamentos -->
+  <div class="card">
+    <p class="sec-lbl">Medicamentos em Uso <span id="nMeds" style="font-size:.7rem;color:#64748b"></span></p>
+    <div id="secMeds">Carregando…</div>
+  </div>
+
+  <!-- Aderência -->
+  <div class="card">
+    <p class="sec-lbl">Aderência Terapêutica — últimos 30 dias</p>
+    <div id="secAdesao">Calculando…</div>
+  </div>
+
+  <!-- SOAP -->
+  <div class="card">
+    <p class="sec-lbl">Última Anotação Farmacêutica (SOAP)</p>
+    <div id="secSOAP">Carregando…</div>
+  </div>
+
+  <!-- Sinais vitais -->
+  <div class="card">
+    <p class="sec-lbl">Sinais Vitais — Último Registro</p>
+    <div id="secVitais">Carregando…</div>
+  </div>
+
+  <!-- MRPA -->
+  <div class="card">
+    <p class="sec-lbl">MRPA — Monitorização Residencial da PA</p>
+    <div id="secMRPA">Sem dados de MRPA.</div>
+  </div>
+
+  <!-- RAM -->
+  <div class="card">
+    <p class="sec-lbl">Reações Adversas Registradas (RAM)</p>
+    <div id="secRAM">Nenhuma RAM registrada.</div>
+  </div>
+
+  <!-- Labs -->
+  <div class="card">
+    <p class="sec-lbl">Últimos Exames Laboratoriais</p>
+    <div id="secLabs">Carregando…</div>
+  </div>
+
+  <!-- Assinatura -->
+  <div class="card">
+    <p class="sec-lbl">Responsável Técnico</p>
+    <div style="padding:8px 0">
+      <div id="farmDisp" style="font-size:.85rem;font-weight:600;color:#1e3a5f">—</div>
+      <div class="sig-line">Assinatura do Farmacêutico</div>
+    </div>
+    <p style="font-size:.68rem;color:#94a3b8;margin-top:10px;text-align:center">Documento gerado em <span id="dataGerado"></span> · VitaDose PWA</p>
+  </div>
+
+  <!-- Botões de ação -->
+  <div class="no-print" style="display:flex;gap:8px;margin-top:4px;padding-bottom:20px">
+    <button class="btn btn-outline" style="flex:1" onclick="window.print()">🖨️ Imprimir / PDF</button>
+    <button class="btn" style="flex:1;background:#0f766e;color:#fff" onclick="compartilhar()">📤 Compartilhar</button>
+  </div>
+
+</main>
+
+<nav class="bottom-nav no-print">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+
+<script src="js/db.js"></script>
+<script>
+const pid = localStorage.getItem('vd_active');
+
+async function init() {
+  const agora = new Date();
+  const dataStr = agora.toLocaleDateString('pt-BR') + ' às ' + agora.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+  document.getElementById('dataGerado').textContent = dataStr;
+  document.getElementById('printMeta').textContent = 'Data: ' + agora.toLocaleDateString('pt-BR');
+
+  if (!pid) {
+    ['secPac','secMeds','secAdesao','secSOAP','secVitais'].forEach(id => {
+      document.getElementById(id).textContent = 'Nenhum paciente ativo.';
+    });
+    return;
+  }
+
+  const farmCfg = await dbGetConfig('farmaceutico_cfg') || {};
+  document.getElementById('farmNome').value = farmCfg.nome || '';
+  document.getElementById('farmCRF').value  = farmCfg.crf  || '';
+  renderFarmDisp(farmCfg);
+
+  const [pac, allMeds, allDoses, allDiario, soapHist, mrpaSess, mrpaCons, ramHist, allLabs] = await Promise.all([
+    dbGet('pacientes', isNaN(pid) ? pid : parseInt(pid)),
+    dbGetAll('medicamentos'),
+    dbGetAll('doses'),
+    dbGetAll('diario'),
+    dbGetConfig('soap_' + pid),
+    dbGetConfig('mrpa_sess_' + pid),
+    dbGetConfig('mrpa_cons_' + pid),
+    dbGetConfig('ram_' + pid),
+    dbGetAll('laboratorio'),
+  ]);
+
+  renderPac(pac);
+  renderMeds(allMeds);
+  renderAdesao(allDoses);
+  renderSOAP(soapHist);
+  renderVitais(allDiario);
+  renderMRPA(mrpaSess);
+  renderRAM(ramHist);
+  renderLabs(allLabs);
+}
+
+function renderPac(pac) {
+  const el = document.getElementById('secPac');
+  if (!pac) { el.textContent = 'Paciente não encontrado.'; return; }
+  const sexo = pac.sexoPac === 'M' ? 'Masculino' : pac.sexoPac === 'F' ? 'Feminino' : '—';
+  const alrg = (pac.alergias||'').trim() || 'Sem alergias conhecidas';
+  const conds = (pac.condicoesClinicas||'').trim() || '—';
+  el.innerHTML = `<table class="rt">
+    <tr><td style="width:130px;color:#64748b;font-weight:600">Nome:</td><td><strong>${x(pac.nome||'—')}</strong></td></tr>
+    <tr><td style="color:#64748b;font-weight:600">Idade:</td><td>${x(String(pac.idadePac||'—'))} anos</td></tr>
+    <tr><td style="color:#64748b;font-weight:600">Sexo:</td><td>${x(sexo)}</td></tr>
+    <tr><td style="color:#64748b;font-weight:600">Peso:</td><td>${pac.pesoPac ? x(String(pac.pesoPac)) + ' kg' : '—'}</td></tr>
+    <tr><td style="color:#64748b;font-weight:600">Tipo Sanguíneo:</td><td>${x(pac.tipoSanguineo||'—')}</td></tr>
+    <tr><td style="color:#64748b;font-weight:600">Condições:</td><td>${x(conds)}</td></tr>
+    <tr><td style="color:#dc2626;font-weight:700">⚠️ Alergias:</td><td style="color:#dc2626;font-weight:600">${x(alrg)}</td></tr>
+  </table>`;
+}
+
+function renderMeds(all) {
+  const meds = all.filter(m => m.status === 'ativo' && (!m.pacienteId || String(m.pacienteId) === String(pid)));
+  document.getElementById('nMeds').textContent = `(${meds.length})`;
+  const el = document.getElementById('secMeds');
+  if (!meds.length) { el.innerHTML = '<p style="color:#94a3b8;font-size:.8rem">Nenhum medicamento ativo.</p>'; return; }
+  el.innerHTML = `<table class="rt">
+    <thead><tr><th>Medicamento</th><th>Dose</th><th>Horários</th><th>Via</th></tr></thead>
+    <tbody>${meds.map(m => `<tr>
+      <td><strong>${x(m.nome||'—')}</strong></td>
+      <td>${x(m.dose||'—')}</td>
+      <td>${x(Array.isArray(m.horarios) ? m.horarios.join(', ') : (m.frequencia||'—'))}</td>
+      <td>${x(m.via||'—')}</td>
+    </tr>`).join('')}</tbody>
+  </table>`;
+}
+
+function renderAdesao(all) {
+  const el = document.getElementById('secAdesao');
+  const ini = new Date(); ini.setDate(ini.getDate() - 30);
+  const iniStr = ini.toISOString().slice(0,10);
+  const d30 = all.filter(d => d.data >= iniStr);
+  const tot = d30.length;
+  const tom = d30.filter(d => d.status === 'tomado').length;
+  if (!tot) { el.innerHTML = '<p style="color:#94a3b8;font-size:.8rem">Sem registros de doses nos últimos 30 dias.</p>'; return; }
+  const pct = Math.round(tom / tot * 100);
+  const cor = pct >= 80 ? '#16a34a' : pct >= 60 ? '#d97706' : '#dc2626';
+  const cls = pct >= 80 ? 'badge-ok' : pct >= 60 ? 'badge-alt' : 'badge-bad';
+  const txt = pct >= 80 ? 'Boa aderência' : pct >= 60 ? 'Aderência parcial' : 'Baixa aderência';
+  el.innerHTML = `<div style="display:flex;align-items:center;gap:14px">
+    <div style="font-size:2.2rem;font-weight:800;color:${cor}">${pct}%</div>
+    <div><span class="badge ${cls}">${txt}</span><br>
+    <span style="font-size:.72rem;color:#64748b">${tom} de ${tot} doses registradas</span></div>
+  </div>
+  <div style="background:#f1f5f9;border-radius:999px;height:8px;margin-top:12px;overflow:hidden">
+    <div style="width:${pct}%;background:${cor};height:100%;border-radius:999px"></div>
+  </div>`;
+}
+
+function renderSOAP(hist) {
+  const el = document.getElementById('secSOAP');
+  if (!hist || !hist.length) { el.innerHTML = '<p style="color:#94a3b8;font-size:.8rem">Nenhuma anotação registrada.</p>'; return; }
+  const n = hist[hist.length - 1];
+  const dt = n.data ? new Date(n.data + 'T12:00').toLocaleDateString('pt-BR') : '—';
+  const fn = n.farmaceutico ? ' · ' + n.farmaceutico : '';
+  el.innerHTML = `<p style="font-size:.72rem;color:#64748b;margin-bottom:8px">${dt}${fn}</p>
+  <div class="soap-blk">
+    ${n.s ? `<div><span class="soap-k">S:</span>${x(n.s)}</div>` : ''}
+    ${n.o ? `<div><span class="soap-k">O:</span>${x(n.o)}</div>` : ''}
+    ${n.a ? `<div><span class="soap-k">A:</span>${x(n.a)}</div>` : ''}
+    ${n.p ? `<div><span class="soap-k">P:</span>${x(n.p)}</div>` : ''}
+    ${n.retorno ? `<div><span class="soap-k">Retorno:</span>${x(n.retorno)}</div>` : ''}
+  </div>
+  ${n.drps && n.drps.length ? `<p style="font-size:.73rem;color:#ea580c;margin-top:8px">⚠️ PRMs: ${n.drps.map(d=>x(d)).join(', ')}</p>` : ''}`;
+}
+
+function renderVitais(all) {
+  const el = document.getElementById('secVitais');
+  if (!all.length) { el.innerHTML = '<p style="color:#94a3b8;font-size:.8rem">Nenhum registro no diário.</p>'; return; }
+  const latest = [...all].sort((a,b) => (b.data||'') < (a.data||'') ? -1 : 1)[0];
+  const dt = latest.data ? new Date(latest.data+'T12:00').toLocaleDateString('pt-BR') : '—';
+  const pa  = (latest.paSis && latest.paDia) ? `${latest.paSis}/${latest.paDia}` : '—';
+  const glc = latest.glicemia ? String(latest.glicemia) + ' mg/dL' : '—';
+  const fc  = latest.fc ? String(latest.fc) + ' bpm' : '—';
+  const spo = latest.spo2 ? String(latest.spo2) + '%' : '—';
+  el.innerHTML = `<p style="font-size:.7rem;color:#64748b;margin-bottom:10px">Último registro: ${dt}</p>
+  <div class="vg">
+    <div class="vb"><div class="vv">${x(pa)}</div><div class="vl">PA (mmHg)</div></div>
+    <div class="vb"><div class="vv">${x(glc)}</div><div class="vl">Glicemia</div></div>
+    <div class="vb"><div class="vv">${x(fc)}</div><div class="vl">Freq. Cardíaca</div></div>
+    <div class="vb"><div class="vv">${x(spo)}</div><div class="vl">SpO2</div></div>
+  </div>`;
+}
+
+function renderMRPA(sess) {
+  const el = document.getElementById('secMRPA');
+  if (!sess || !sess.length) return;
+  const sorted = [...sess].sort((a,b) => (a.data||'') < (b.data||'') ? -1 : 1);
+  const dias = [...new Set(sorted.map(s => s.data))];
+  const validas = sorted.filter(s => s.data !== dias[0]);
+  if (!validas.length) { el.textContent = 'Dados insuficientes (mínimo 2 dias).'; return; }
+  const pas = validas.flatMap(s => [s.pas1, s.pas2].filter(Boolean));
+  const pad = validas.flatMap(s => [s.pad1, s.pad2].filter(Boolean));
+  const mPas = Math.round(pas.reduce((a,b)=>a+b,0)/pas.length);
+  const mPad = Math.round(pad.reduce((a,b)=>a+b,0)/pad.length);
+  let clas, cor;
+  if (mPas < 130 && mPad < 80) { clas = 'Controlada'; cor = '#16a34a'; }
+  else if (mPas < 135 && mPad < 85) { clas = 'Limítrofe'; cor = '#d97706'; }
+  else { clas = 'Não Controlada'; cor = '#dc2626'; }
+  const ult = dias[dias.length-1] ? new Date(dias[dias.length-1]+'T12:00').toLocaleDateString('pt-BR') : '—';
+  el.innerHTML = `<div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+    <div style="font-size:1.4rem;font-weight:800;color:#0369a1">${mPas}/<span style="font-size:1.1rem">${mPad}</span> <span style="font-size:.7rem;font-weight:500">mmHg</span></div>
+    <div><span class="badge" style="background:${cor}22;color:${cor}">${clas}</span><br>
+    <span style="font-size:.7rem;color:#64748b">${validas.length} leituras · ${dias.length} dias · último: ${ult}</span></div>
+  </div>`;
+}
+
+function renderRAM(rams) {
+  const el = document.getElementById('secRAM');
+  if (!rams || !rams.length) return;
+  el.innerHTML = `<table class="rt">
+    <thead><tr><th>Data</th><th>Medicamento</th><th>Reação</th><th>Grau</th><th>Conduta</th></tr></thead>
+    <tbody>${rams.map(r=>`<tr>
+      <td>${r.data ? new Date(r.data+'T12:00').toLocaleDateString('pt-BR') : '—'}</td>
+      <td>${x(r.med||r.medicamento||'—')}</td>
+      <td>${x(r.reacao||'—')}</td>
+      <td>${x(r.grau||'—')}</td>
+      <td>${x(r.conduta||'—')}</td>
+    </tr>`).join('')}</tbody>
+  </table>`;
+}
+
+function renderLabs(all) {
+  const el = document.getElementById('secLabs');
+  if (!all || !all.length) { el.innerHTML = '<p style="color:#94a3b8;font-size:.8rem">Nenhum exame laboratorial registrado.</p>'; return; }
+  const filtered = all.filter(l => !l.pacienteId || String(l.pacienteId) === String(pid));
+  const byNome = {};
+  filtered.forEach(l => {
+    const k = l.nome || l.exame || l.categoria || 'Exame';
+    if (!byNome[k] || (l.data||'') > (byNome[k].data||'')) byNome[k] = l;
+  });
+  const rows = Object.entries(byNome).slice(0,20);
+  if (!rows.length) { el.innerHTML = '<p style="color:#94a3b8;font-size:.8rem">Nenhum exame para este paciente.</p>'; return; }
+  el.innerHTML = `<table class="rt">
+    <thead><tr><th>Exame</th><th>Resultado</th><th>Unidade</th><th>Data</th></tr></thead>
+    <tbody>${rows.map(([k,l])=>`<tr>
+      <td>${x(k)}</td>
+      <td>${x(String(l.valor||l.resultado||'—'))}</td>
+      <td>${x(l.unidade||'')}</td>
+      <td>${l.data ? new Date(l.data+'T12:00').toLocaleDateString('pt-BR') : '—'}</td>
+    </tr>`).join('')}</tbody>
+  </table>`;
+}
+
+function renderFarmDisp(cfg) {
+  const el = document.getElementById('farmDisp');
+  if (!cfg || (!cfg.nome && !cfg.crf)) { el.textContent = 'Farmacêutico não identificado'; return; }
+  el.innerHTML = (cfg.nome ? `<strong>${x(cfg.nome)}</strong>` : '') + (cfg.crf ? ` · ${x(cfg.crf)}` : '');
+}
+
+async function salvarFarm() {
+  const cfg = { nome: document.getElementById('farmNome').value.trim(), crf: document.getElementById('farmCRF').value.trim() };
+  await dbSetConfig('farmaceutico_cfg', cfg);
+  renderFarmDisp(cfg);
+  alert('Dados salvos!');
+}
+
+async function compartilhar() {
+  if (navigator.share) {
+    try { await navigator.share({ title: 'Relatório SFT — VitaDose', text: 'Relatório de Seguimento Farmacoterapêutico gerado pelo VitaDose.' }); } catch {}
+  } else {
+    window.print();
+  }
+}
+
+function x(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+init();
+</script>
+</body>
+</html>

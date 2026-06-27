@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Calculadoras Clínicas — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .tabs { display:flex;gap:6px;margin-bottom:14px;overflow-x:auto;-webkit-overflow-scrolling:touch }
+    .tab-btn { flex:0 0 auto;padding:9px 16px;border-radius:10px;border:1.5px solid #e2e8f0;background:#f8fafc;font-size:.78rem;font-weight:700;color:#64748b;cursor:pointer;white-space:nowrap }
+    .tab-btn.active { background:#1e3a5f;color:#fff;border-color:#1e3a5f }
+    .tab-panel { display:none }
+    .tab-panel.active { display:block }
+
+    .crit-row { display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid #f1f5f9 }
+    .crit-row:last-child { border-bottom:none }
+    .crit-check { width:20px;height:20px;accent-color:#1e3a5f;flex-shrink:0;margin-top:2px;cursor:pointer }
+    .crit-lbl { font-size:.82rem;line-height:1.4;cursor:pointer;flex:1 }
+    .crit-pts { font-size:.75rem;font-weight:700;color:#64748b;flex-shrink:0;min-width:30px;text-align:right }
+
+    .result-box { border-radius:14px;padding:16px;margin-top:14px;text-align:center }
+    .score-big  { font-size:2.8rem;font-weight:900;line-height:1 }
+    .score-lbl  { font-size:.75rem;margin-top:4px;opacity:.85 }
+    .interp     { font-size:.82rem;margin-top:10px;padding:10px;border-radius:10px;line-height:1.5 }
+
+    .sel-row { display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid #f1f5f9 }
+    .sel-row:last-child { border-bottom:none }
+    .sel-lbl { font-size:.82rem;flex:1;padding-right:10px }
+    .sel-inp { border:1.5px solid #e2e8f0;border-radius:8px;padding:5px 8px;font-size:.8rem;background:#f8fafc;cursor:pointer }
+
+    .num-row { display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid #f1f5f9 }
+    .num-row:last-child { border-bottom:none }
+    .num-lbl { font-size:.82rem;flex:1 }
+    .num-sub { font-size:.68rem;color:#94a3b8;display:block }
+    .num-inp { border:1.5px solid #e2e8f0;border-radius:8px;padding:5px 8px;font-size:.85rem;width:90px;text-align:right }
+
+    .chip-auto { display:inline-block;background:#e0f2fe;color:#0369a1;border-radius:999px;padding:2px 8px;font-size:.62rem;font-weight:700;margin-left:6px }
+    .btn-auto { background:#f0fdf4;border:1.5px solid #bbf7d0;color:#16a34a;border-radius:8px;padding:6px 12px;font-size:.75rem;font-weight:700;cursor:pointer;margin-bottom:12px }
+  </style>
+</head>
+<body>
+
+<header class="top-bar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <span class="top-title">Calculadoras Clínicas</span>
+  <div class="top-right"></div>
+</header>
+
+<main class="container" style="padding-bottom:90px">
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab-btn active" onclick="showTab('chads')">CHA₂DS₂-VASc</button>
+    <button class="tab-btn"       onclick="showTab('wells')">Wells DVT</button>
+    <button class="tab-btn"       onclick="showTab('hepat')">Child-Pugh / MELD</button>
+  </div>
+
+  <!-- ===================== CHA2DS2-VASc ===================== -->
+  <div id="tab-chads" class="tab-panel active">
+    <div class="card">
+      <div class="card-title">CHA₂DS₂-VASc — Risco de AVC na FA</div>
+      <p style="font-size:.73rem;color:#64748b;margin-bottom:12px">Escore de estratificação de risco tromboembólico em fibrilação atrial (FA não valvar)</p>
+
+      <button class="btn-auto" onclick="autoFillChads()">⚡ Auto-preencher do paciente</button>
+
+      <div id="chads-items">
+        <div class="crit-row">
+          <input type="checkbox" class="crit-check" id="cC" onchange="calcChads()">
+          <label class="crit-lbl" for="cC"><strong>C</strong> — Insuficiência Cardíaca Congestiva (ICC)</label>
+          <span class="crit-pts">+1</span>
+        </div>
+        <div class="crit-row">
+          <input type="checkbox" class="crit-check" id="cH" onchange="calcChads()">
+          <label class="crit-lbl" for="cH"><strong>H</strong> — Hipertensão Arterial (HAS)</label>
+          <span class="crit-pts">+1</span>
+        </div>
+        <div class="crit-row">
+          <input type="checkbox" class="crit-check" id="cA2" onchange="calcChads()">
+          <label class="crit-lbl" for="cA2"><strong>A₂</strong> — Idade ≥ 75 anos<span class="chip-auto" id="chipA2" style="display:none">Auto</span></label>
+          <span class="crit-pts">+2</span>
+        </div>
+        <div class="crit-row">
+          <input type="checkbox" class="crit-check" id="cD" onchange="calcChads()">
+          <label class="crit-lbl" for="cD"><strong>D</strong> — Diabetes Mellitus</label>
+          <span class="crit-pts">+1</span>
+        </div>
+        <div class="crit-row">
+          <input type="checkbox" class="crit-check" id="cS2" onchange="calcChads()">
+          <label class="crit-lbl" for="cS2"><strong>S₂</strong> — AVC / AIT / Embolia Prévia</label>
+          <span class="crit-pts">+2</span>
+        </div>
+        <div class="crit-row">
+          <input type="checkbox" class="crit-check" id="cV" onchange="calcChads()">
+          <label class="crit-lbl" for="cV"><strong>V</strong> — Doença Vascular (IAM prévio, DAP, placa aórtica)</label>
+          <span class="crit-pts">+1</span>
+        </div>
+        <div class="crit-row">
+          <input type="checkbox" class="crit-check" id="cA1" onchange="calcChads()">
+          <label class="crit-lbl" for="cA1"><strong>A</strong> — Idade 65–74 anos<span class="chip-auto" id="chipA1" style="display:none">Auto</span></label>
+          <span class="crit-pts">+1</span>
+        </div>
+        <div class="crit-row">
+          <input type="checkbox" class="crit-check" id="cSc" onchange="calcChads()">
+          <label class="crit-lbl" for="cSc"><strong>Sc</strong> — Sexo feminino<span class="chip-auto" id="chipSc" style="display:none">Auto</span></label>
+          <span class="crit-pts">+1</span>
+        </div>
+      </div>
+
+      <div id="chads-result"></div>
+    </div>
+
+    <div class="card" style="font-size:.73rem;color:#64748b">
+      <strong style="color:#1e3a5f;display:block;margin-bottom:6px">📌 Como usar</strong>
+      Score ≥2 (homem) ou ≥3 (mulher): anticoagulação recomendada (DOAC preferencial sobre warfarina).<br>
+      Score 1 (homem) ou 2 (mulher): considerar anticoagulação, avaliar risco de sangramento (HAS-BLED).<br>
+      Score 0 (homem) ou 1 (mulher): não anticoagular.<br>
+      <strong style="color:#1e3a5f;display:block;margin-top:8px">Referência:</strong> ESC 2020 Guidelines for AF. Kirley et al., 2016.
+    </div>
+  </div>
+
+  <!-- ===================== WELLS DVT ===================== -->
+  <div id="tab-wells" class="tab-panel">
+    <div class="card">
+      <div class="card-title">Wells DVT — Probabilidade de Trombose Venosa Profunda</div>
+      <p style="font-size:.73rem;color:#64748b;margin-bottom:12px">Escore de probabilidade pré-teste para TVP de membros inferiores (Wells, 2003)</p>
+
+      <div id="wells-items">
+        <div class="crit-row">
+          <input type="checkbox" class="crit-check" id="w1" onchange="calcWells()">
+          <label class="crit-lbl" for="w1">Neoplasia ativa (tratamento em curso, nos últimos 6 meses ou paliativa)</label>
+          <span class="crit-pts">+1</span>
+        </div>
+        <div class="crit-row">
+          <input type="checkbox" class="crit-check" id="w2" onchange="calcWells()">
+          <label class="crit-lbl" for="w2">Paralisia, paresia ou imobilização recente com gesso dos membros inferiores</label>
+          <span class="crit-pts">+1</span>
+        </div>
+        <div class="crit-row">
+          <input type="checkbox" class="crit-check" id="w3" onchange="calcWells()">
+          <label class="crit-lbl" for="w3">Repouso recente ≥3 dias OU cirurgia de grande porte nas últimas 12 semanas (com anestesia geral ou epidural)</label>
+          <span class="crit-pts">+1</span>
+        </div>
+        <div class="crit-row">
+          <input type="checkbox" class="crit-check" id="w4" onchange="calcWells()">
+          <label class="crit-lbl" for="w4">Dor localizada ao longo do trajeto do sistema venoso profundo</label>
+          <span class="crit-pts">+1</span>
+        </div>
+        <div class="crit-row">
+          <input type="checkbox" class="crit-check" id="w5" onchange="calcWells()">
+          <label class="crit-lbl" for="w5">Edema de membro inteiro</label>
+          <span class="crit-pts">+1</span>
+        </div>
+        <div class="crit-row">
+          <input type="checkbox" class="crit-check" id="w6" onchange="calcWells()">
+          <label class="crit-lbl" for="w6">Panturrilha com edema ≥3 cm maior que o lado assintomático (medido 10 cm abaixo da tuberosidade tibial)</label>
+          <span class="crit-pts">+1</span>
+        </div>
+        <div class="crit-row">
+          <input type="checkbox" class="crit-check" id="w7" onchange="calcWells()">
+          <label class="crit-lbl" for="w7">Edema depressível (cacifo) limitado ao membro sintomático</label>
+          <span class="crit-pts">+1</span>
+        </div>
+        <div class="crit-row">
+          <input type="checkbox" class="crit-check" id="w8" onchange="calcWells()">
+          <label class="crit-lbl" for="w8">Veias colaterais superficiais visíveis (não varicosas)</label>
+          <span class="crit-pts">+1</span>
+        </div>
+        <div class="crit-row">
+          <input type="checkbox" class="crit-check" id="w9" onchange="calcWells()">
+          <label class="crit-lbl" for="w9">TVP previamente documentada</label>
+          <span class="crit-pts">+1</span>
+        </div>
+        <div class="crit-row" style="background:#fef2f2;border-radius:10px;margin-top:4px;padding:10px">
+          <input type="checkbox" class="crit-check" id="w10" onchange="calcWells()">
+          <label class="crit-lbl" for="w10" style="color:#991b1b"><strong>Diagnóstico alternativo ao menos tão provável quanto TVP</strong></label>
+          <span class="crit-pts" style="color:#dc2626">−2</span>
+        </div>
+      </div>
+
+      <div id="wells-result"></div>
+    </div>
+
+    <div class="card" style="font-size:.73rem;color:#64748b">
+      <strong style="color:#1e3a5f;display:block;margin-bottom:6px">📌 Conduta por probabilidade</strong>
+      <strong>Baixa (≤0):</strong> D-dímero. Se negativo → descarta TVP. Se positivo → eco-Doppler.<br>
+      <strong>Moderada (1–2):</strong> D-dímero + eco-Doppler. D-dímero negativo exclui TVP.<br>
+      <strong>Alta (≥3):</strong> Eco-Doppler venoso imediato. Iniciar anticoagulação empírica se demora no exame.<br>
+      <strong style="color:#1e3a5f;display:block;margin-top:8px">Referência:</strong> Wells et al. Lancet. 2003;362(9400):1914-1921.
+    </div>
+  </div>
+
+  <!-- ===================== CHILD-PUGH / MELD ===================== -->
+  <div id="tab-hepat" class="tab-panel">
+    <!-- Child-Pugh -->
+    <div class="card">
+      <div class="card-title">Child-Pugh — Gravidade da Hepatopatia</div>
+      <p style="font-size:.73rem;color:#64748b;margin-bottom:12px">Avalia reserva funcional hepática. 5 critérios, 1–3 pontos cada.</p>
+
+      <div id="cp-items">
+        <div class="sel-row">
+          <span class="sel-lbl"><strong>Bilirrubina total</strong></span>
+          <select class="sel-inp" id="cpBili" onchange="calcCP()">
+            <option value="1">&lt; 2 mg/dL</option>
+            <option value="2">2 – 3 mg/dL</option>
+            <option value="3">&gt; 3 mg/dL</option>
+          </select>
+        </div>
+        <div class="sel-row">
+          <span class="sel-lbl"><strong>Albumina sérica</strong></span>
+          <select class="sel-inp" id="cpAlb" onchange="calcCP()">
+            <option value="1">&gt; 3,5 g/dL</option>
+            <option value="2">2,8 – 3,5 g/dL</option>
+            <option value="3">&lt; 2,8 g/dL</option>
+          </select>
+        </div>
+        <div class="sel-row">
+          <span class="sel-lbl"><strong>TP / INR</strong></span>
+          <select class="sel-inp" id="cpINR" onchange="calcCP()">
+            <option value="1">INR &lt; 1,7</option>
+            <option value="2">INR 1,7 – 2,3</option>
+            <option value="3">INR &gt; 2,3</option>
+          </select>
+        </div>
+        <div class="sel-row">
+          <span class="sel-lbl"><strong>Ascite</strong></span>
+          <select class="sel-inp" id="cpAsc" onchange="calcCP()">
+            <option value="1">Ausente</option>
+            <option value="2">Leve / controlada</option>
+            <option value="3">Moderada / grave</option>
+          </select>
+        </div>
+        <div class="sel-row">
+          <span class="sel-lbl"><strong>Encefalopatia hepática</strong></span>
+          <select class="sel-inp" id="cpEnc" onchange="calcCP()">
+            <option value="1">Ausente</option>
+            <option value="2">Grau I – II</option>
+            <option value="3">Grau III – IV</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="cp-result"></div>
+    </div>
+
+    <!-- MELD -->
+    <div class="card">
+      <div class="card-title">MELD / MELD-Na — Prioridade em Transplante</div>
+      <p style="font-size:.73rem;color:#64748b;margin-bottom:12px">Model for End-Stage Liver Disease. MELD-Na usado na lista de transplante (Brasil desde 2019).</p>
+
+      <div id="meld-items">
+        <div class="num-row">
+          <div class="num-lbl"><strong>Bilirrubina total</strong><span class="num-sub">mg/dL · mín 1,0</span></div>
+          <input type="number" class="num-inp" id="mBili" value="1.0" min="0.1" step="0.1" oninput="calcMELD()">
+        </div>
+        <div class="num-row">
+          <div class="num-lbl"><strong>INR</strong><span class="num-sub">mín 1,0</span></div>
+          <input type="number" class="num-inp" id="mINR" value="1.0" min="0.1" step="0.01" oninput="calcMELD()">
+        </div>
+        <div class="num-row">
+          <div class="num-lbl"><strong>Creatinina</strong><span class="num-sub">mg/dL · mín 1,0 · máx 4,0</span></div>
+          <input type="number" class="num-inp" id="mCr" value="1.0" min="0.1" step="0.1" oninput="calcMELD()">
+        </div>
+        <div class="num-row">
+          <div class="num-lbl"><strong>Sódio (Na)</strong><span class="num-sub">mEq/L · faixa 125–137 para MELD-Na</span></div>
+          <input type="number" class="num-inp" id="mNa" value="137" min="100" max="145" step="1" oninput="calcMELD()">
+        </div>
+      </div>
+
+      <div id="meld-result"></div>
+    </div>
+
+    <div class="card" style="font-size:.73rem;color:#64748b">
+      <strong style="color:#1e3a5f;display:block;margin-bottom:6px">📌 Referências</strong>
+      <strong>Child-Pugh:</strong> Child & Turcotte (1964); Pugh et al. (1973).<br>
+      <strong>MELD:</strong> Malinchoc et al. Hepatology. 2000; atualizado Kamath et al. 2001.<br>
+      <strong>MELD-Na:</strong> UNOS Policy 2016; implementado no Brasil pela ABTO (2019).
+    </div>
+  </div>
+
+</main>
+
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+
+<script src="js/db.js"></script>
+<script>
+
+// ── Tabs ────────────────────────────────────────────────────────────────
+function showTab(id) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  event.currentTarget.classList.add('active');
+}
+
+// ── CHA2DS2-VASc ────────────────────────────────────────────────────────
+const CHADS_MAP = [
+  { id:'cC',  pts:1 }, { id:'cH',  pts:1 }, { id:'cA2', pts:2 },
+  { id:'cD',  pts:1 }, { id:'cS2', pts:2 }, { id:'cV',  pts:1 },
+  { id:'cA1', pts:1 }, { id:'cSc', pts:1 },
+];
+
+let _pac = null;
+const pid = localStorage.getItem('vd_active');
+
+async function autoFillChads() {
+  if (!pid) { alert('Nenhum paciente ativo.'); return; }
+  if (!_pac) _pac = await dbGet('pacientes', isNaN(pid) ? pid : parseInt(pid));
+  if (!_pac) { alert('Paciente não encontrado.'); return; }
+
+  const idade = parseInt(_pac.idadePac) || 0;
+  const sexo  = _pac.sexoPac || '';
+  const conds = (Array.isArray(_pac.condicoes) ? _pac.condicoes : []);
+  const texto = (_pac.condicoesClinicas||'').toLowerCase();
+
+  if (idade >= 75) {
+    document.getElementById('cA2').checked = true;
+    document.getElementById('chipA2').style.display = 'inline-block';
+    document.getElementById('cA1').checked = false;
+    document.getElementById('chipA1').style.display = 'none';
+  } else if (idade >= 65) {
+    document.getElementById('cA1').checked = true;
+    document.getElementById('chipA1').style.display = 'inline-block';
+    document.getElementById('cA2').checked = false;
+    document.getElementById('chipA2').style.display = 'none';
+  }
+
+  if (sexo === 'F') {
+    document.getElementById('cSc').checked = true;
+    document.getElementById('chipSc').style.display = 'inline-block';
+  }
+
+  const temIC  = conds.includes('ic')  || /insufici[eê]ncia card/i.test(texto);
+  const temHAS = conds.includes('has') || /hipertens/i.test(texto);
+  const temDM  = conds.includes('dm')  || /diabet/i.test(texto);
+  if (temIC)  document.getElementById('cC').checked = true;
+  if (temHAS) document.getElementById('cH').checked = true;
+  if (temDM)  document.getElementById('cD').checked = true;
+
+  calcChads();
+}
+
+function calcChads() {
+  const score = CHADS_MAP.reduce((s, c) => s + (document.getElementById(c.id).checked ? c.pts : 0), 0);
+  const isFem = document.getElementById('cSc').checked;
+
+  let cor, titulo, texto, anticoag;
+  if (isFem) {
+    if (score <= 1)      { cor='#16a34a'; titulo='Baixo risco'; texto='Score 1 (sexo feminino apenas) — não anticoagular.'; anticoag='Não indicada' }
+    else if (score === 2){ cor='#d97706'; titulo='Risco intermediário'; texto='Considerar anticoagulação; avaliar HAS-BLED.'; anticoag='Considerar DOAC' }
+    else                 { cor='#dc2626'; titulo='Alto risco'; texto='Anticoagulação oral recomendada (DOAC preferencial).'; anticoag='DOAC indicado' }
+  } else {
+    if (score === 0)     { cor='#16a34a'; titulo='Baixo risco'; texto='Score 0 (homem) — não anticoagular.'; anticoag='Não indicada' }
+    else if (score === 1){ cor='#d97706'; titulo='Risco intermediário'; texto='Considerar anticoagulação; avaliar HAS-BLED.'; anticoag='Considerar DOAC' }
+    else                 { cor='#dc2626'; titulo='Alto risco'; texto='Anticoagulação oral recomendada (DOAC preferencial).'; anticoag='DOAC indicado' }
+  }
+
+  const riscoAnual = [0,1.3,2.2,3.2,4.0,6.7,9.8,9.6,12.5,15.2];
+  const raText = riscoAnual[Math.min(score, riscoAnual.length-1)];
+
+  document.getElementById('chads-result').innerHTML = `
+    <div class="result-box" style="background:${cor}18;border:2px solid ${cor}">
+      <div class="score-big" style="color:${cor}">${score}</div>
+      <div class="score-lbl" style="color:${cor}">${titulo}</div>
+      <div class="interp" style="background:${cor}12;color:#1e293b;text-align:left">
+        ${texto}<br>
+        <strong>Risco anual de AVC:</strong> ≈${raText}%<br>
+        <strong>Anticoagulação:</strong> ${anticoag}
+      </div>
+    </div>`;
+}
+
+// ── Wells DVT ────────────────────────────────────────────────────────────
+function calcWells() {
+  let score = 0;
+  for (let i = 1; i <= 9; i++) {
+    if (document.getElementById('w' + i).checked) score += 1;
+  }
+  if (document.getElementById('w10').checked) score -= 2;
+
+  let cor, titulo, prob, conduta;
+  if (score <= 0)      { cor='#16a34a'; titulo='Baixa probabilidade'; prob='~5%'; conduta='D-dímero: se negativo, descarta TVP.' }
+  else if (score <= 2) { cor='#d97706'; titulo='Moderada probabilidade'; prob='~17%'; conduta='D-dímero + eco-Doppler. D-dímero negativo pode excluir TVP.' }
+  else                 { cor='#dc2626'; titulo='Alta probabilidade'; prob='~53%'; conduta='Eco-Doppler venoso imediato. Considerar anticoagulação empírica.' }
+
+  document.getElementById('wells-result').innerHTML = `
+    <div class="result-box" style="background:${cor}18;border:2px solid ${cor}">
+      <div class="score-big" style="color:${cor}">${score}</div>
+      <div class="score-lbl" style="color:${cor}">${titulo}</div>
+      <div class="interp" style="background:${cor}12;color:#1e293b;text-align:left">
+        <strong>Probabilidade de TVP:</strong> ${prob}<br>
+        <strong>Conduta:</strong> ${conduta}
+      </div>
+    </div>`;
+}
+
+// ── Child-Pugh ──────────────────────────────────────────────────────────
+function calcCP() {
+  const score = ['cpBili','cpAlb','cpINR','cpAsc','cpEnc']
+    .reduce((s, id) => s + parseInt(document.getElementById(id).value), 0);
+
+  let classe, cor, sobrev1, sobrev2, obs;
+  if (score <= 6) {
+    classe = 'A'; cor = '#16a34a';
+    sobrev1 = '100%'; sobrev2 = '85%';
+    obs = 'Hepatopatia bem compensada. Mortalidade cirúrgica ~10%.';
+  } else if (score <= 9) {
+    classe = 'B'; cor = '#d97706';
+    sobrev1 = '81%'; sobrev2 = '57%';
+    obs = 'Comprometimento funcional significativo. Mortalidade cirúrgica ~30%.';
+  } else {
+    classe = 'C'; cor = '#dc2626';
+    sobrev1 = '45%'; sobrev2 = '35%';
+    obs = 'Hepatopatia descompensada. Mortalidade cirúrgica >82%.';
+  }
+
+  document.getElementById('cp-result').innerHTML = `
+    <div class="result-box" style="background:${cor}18;border:2px solid ${cor}">
+      <div class="score-big" style="color:${cor}">${score} pts</div>
+      <div class="score-lbl" style="color:${cor}">Child-Pugh Classe ${classe}</div>
+      <div class="interp" style="background:${cor}12;color:#1e293b;text-align:left">
+        ${obs}<br>
+        <strong>Sobrevida 1 ano:</strong> ${sobrev1} · <strong>2 anos:</strong> ${sobrev2}
+      </div>
+    </div>`;
+}
+
+// ── MELD / MELD-Na ─────────────────────────────────────────────────────
+function calcMELD() {
+  let bili = parseFloat(document.getElementById('mBili').value) || 1;
+  let inr  = parseFloat(document.getElementById('mINR').value)  || 1;
+  let cr   = parseFloat(document.getElementById('mCr').value)   || 1;
+  let na   = parseFloat(document.getElementById('mNa').value)   || 137;
+
+  bili = Math.max(bili, 1);
+  inr  = Math.max(inr,  1);
+  cr   = Math.max(Math.min(cr, 4), 1);
+  na   = Math.max(Math.min(na, 137), 125);
+
+  const meld = Math.round(3.78 * Math.log(bili) + 11.2 * Math.log(inr) + 9.57 * Math.log(cr) + 6.43);
+  const meldNa = Math.round(meld + 1.32 * (137 - na) - 0.033 * meld * (137 - na));
+
+  let cor, titulo, mort90;
+  if (meld < 10)       { cor='#16a34a'; titulo='Baixa mortalidade'; mort90='~1,9%' }
+  else if (meld < 20)  { cor='#65a30d'; titulo='Mortalidade moderada'; mort90='~6,0%' }
+  else if (meld < 30)  { cor='#d97706'; titulo='Mortalidade elevada'; mort90='~19,6%' }
+  else if (meld < 40)  { cor='#ea580c'; titulo='Mortalidade muito elevada'; mort90='~52,6%' }
+  else                 { cor='#dc2626'; titulo='Mortalidade crítica'; mort90='~71,3%' }
+
+  document.getElementById('meld-result').innerHTML = `
+    <div style="display:flex;gap:12px;margin-top:14px">
+      <div class="result-box" style="flex:1;background:${cor}18;border:2px solid ${cor};padding:14px">
+        <div style="font-size:.65rem;font-weight:700;color:#64748b;margin-bottom:4px">MELD</div>
+        <div class="score-big" style="color:${cor};font-size:2.2rem">${meld}</div>
+        <div style="font-size:.68rem;color:${cor};margin-top:2px">${titulo}</div>
+      </div>
+      <div class="result-box" style="flex:1;background:#1e3a5f18;border:2px solid #1e3a5f;padding:14px">
+        <div style="font-size:.65rem;font-weight:700;color:#64748b;margin-bottom:4px">MELD-Na</div>
+        <div class="score-big" style="color:#1e3a5f;font-size:2.2rem">${meldNa}</div>
+        <div style="font-size:.68rem;color:#1e3a5f;margin-top:2px">Lista de transplante</div>
+      </div>
+    </div>
+    <div class="interp" style="background:#f8fafc;color:#1e293b;text-align:left;margin-top:10px;border-radius:10px;border:1px solid #e2e8f0">
+      <strong>Mortalidade em 90 dias:</strong> ${mort90}<br>
+      <strong>Interpretação MELD-Na:</strong> ${meldNa < 15 ? 'Baixa prioridade' : meldNa < 25 ? 'Prioridade moderada' : meldNa < 35 ? 'Alta prioridade' : 'Prioridade crítica'} para transplante hepático.
+    </div>`;
+}
+
+// Init
+calcChads();
+calcWells();
+calcCP();
+calcMELD();
+</script>
+</body>
+</html>
