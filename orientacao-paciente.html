@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Orientação ao Paciente — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .btn-row { display:flex;gap:8px;margin-bottom:14px }
+    .btn-gen  { flex:1;background:#1e3a5f;color:#fff;border:none;border-radius:12px;padding:13px;font-size:.87rem;font-weight:700;cursor:pointer }
+    .btn-print{ flex:1;background:#374151;color:#fff;border:none;border-radius:12px;padding:13px;font-size:.87rem;font-weight:700;cursor:pointer }
+    .btn-share{ flex:1;background:#16a34a;color:#fff;border:none;border-radius:12px;padding:13px;font-size:.87rem;font-weight:700;cursor:pointer }
+
+    /* FOP document */
+    #fopDoc { display:none }
+    .fop-wrap { background:#fff;border-radius:14px;border:2px solid #e2e8f0;overflow:hidden;margin-bottom:14px }
+    .fop-head { background:#1e3a5f;color:#fff;padding:16px 18px }
+    .fop-logo { font-size:1.1rem;font-weight:900;margin-bottom:2px }
+    .fop-sub  { font-size:.72rem;opacity:.8 }
+    .fop-pac  { background:#f0f4f8;padding:12px 18px;border-bottom:2px solid #e2e8f0 }
+    .fop-pac-name { font-size:.95rem;font-weight:800;color:#1e3a5f }
+    .fop-pac-meta { font-size:.72rem;color:#64748b;margin-top:2px }
+    .fop-date { font-size:.72rem;color:#64748b;margin-top:2px }
+
+    .fop-sec-hdr { font-size:.65rem;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.08em;padding:10px 18px 6px;border-bottom:1px solid #f1f5f9 }
+
+    .med-card { padding:14px 18px;border-bottom:1px solid #f1f5f9 }
+    .med-card:last-child { border-bottom:none }
+    .med-nome { font-size:.92rem;font-weight:800;color:#1e3a5f }
+    .med-dose { font-size:.75rem;color:#4b5563;font-weight:600 }
+    .med-grid { display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px }
+    .med-field { background:#f8fafc;border-radius:8px;padding:8px 10px }
+    .med-field-lbl { font-size:.58rem;font-weight:800;color:#94a3b8;text-transform:uppercase;margin-bottom:2px }
+    .med-field-val { font-size:.78rem;color:#1e3a5f;font-weight:600 }
+    .med-tag { display:inline-block;padding:2px 8px;border-radius:6px;font-size:.62rem;font-weight:700;margin-right:4px;margin-top:6px }
+    .med-tag.green { background:#d1fae5;color:#15803d }
+    .med-tag.red   { background:#fee2e2;color:#b91c1c }
+    .med-tag.amber { background:#fef3c7;color:#b45309 }
+
+    .horario-chips { display:flex;flex-wrap:wrap;gap:6px;margin-top:6px }
+    .hor-chip { background:#e0f2fe;color:#0369a1;border-radius:8px;padding:4px 10px;font-size:.78rem;font-weight:700 }
+
+    .gen-row { padding:10px 18px;border-bottom:1px solid #f1f5f9;font-size:.8rem;color:#374151;line-height:1.5 }
+    .gen-row:last-child { border-bottom:none }
+
+    .sign-block { padding:14px 18px }
+    .sign-line  { border-top:2px dashed #cbd5e1;margin-top:14px;padding-top:8px;font-size:.72rem;color:#64748b }
+    .sign-input { border:none;border-bottom:1.5px solid #cbd5e1;width:100%;font-size:.85rem;padding:6px 0;margin-bottom:6px;background:none;outline:none }
+
+    .empty-state { text-align:center;padding:32px 0;color:#94a3b8 }
+
+    @media print {
+      header, nav, .btn-row, .empty-state { display:none !important }
+      #fopDoc { display:block !important }
+      .fop-wrap { border:1.5px solid #94a3b8 }
+      body { background:#fff }
+      main { padding:0 !important }
+      .container { padding:0 !important }
+    }
+  </style>
+</head>
+<body>
+
+<header class="top-bar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <span class="top-title">Ficha de Orientação</span>
+  <div class="top-right"></div>
+</header>
+
+<main class="container" style="padding-bottom:90px">
+
+  <div class="btn-row">
+    <button class="btn-gen"   onclick="gerar()">📋 Gerar Ficha</button>
+    <button class="btn-print" onclick="imprimir()">🖨️ Imprimir</button>
+    <button class="btn-share" onclick="compartilhar()">📤 Compartilhar</button>
+  </div>
+
+  <div id="emptyState" class="empty-state">
+    <div style="font-size:2.5rem;margin-bottom:8px">📋</div>
+    <strong style="display:block;margin-bottom:4px;color:#374151">Ficha de Orientação ao Paciente</strong>
+    <span style="font-size:.8rem">Toque em "Gerar Ficha" para criar o documento personalizado com todos os medicamentos ativos do paciente.</span>
+  </div>
+
+  <!-- FOP Document -->
+  <div id="fopDoc">
+    <div class="fop-wrap">
+
+      <div class="fop-head">
+        <div class="fop-logo">💊 Ficha de Orientação ao Paciente</div>
+        <div class="fop-sub">Serviço de Farmácia Clínica · VitaDose</div>
+      </div>
+
+      <div class="fop-pac">
+        <div class="fop-pac-name" id="fopPacNome">—</div>
+        <div class="fop-pac-meta" id="fopPacMeta"></div>
+        <div class="fop-date" id="fopData"></div>
+      </div>
+
+      <div class="fop-sec-hdr">💊 Seus medicamentos</div>
+      <div id="fopMeds"></div>
+
+      <div class="fop-sec-hdr">📌 Orientações gerais</div>
+      <div id="fopOrientacoes">
+        <div class="gen-row">💧 <strong>Hidratação:</strong> Tome os medicamentos com um copo cheio de água (exceto quando indicado de forma diferente).</div>
+        <div class="gen-row">🕐 <strong>Horários:</strong> Siga os horários indicados nesta ficha. Use o aplicativo VitaDose para receber alertas.</div>
+        <div class="gen-row">❌ <strong>Não interrompa</strong> os medicamentos por conta própria, mesmo que se sinta melhor.</div>
+        <div class="gen-row">🍊 <strong>Evite grapefruit (toranja)</strong> se estiver tomando sinvastatina, atorvastatina, anlodipino ou outros medicamentos conforme orientado.</div>
+        <div class="gen-row">🥃 <strong>Evite álcool</strong> durante o tratamento — pode interagir com vários medicamentos.</div>
+        <div class="gen-row">⚠️ Em caso de <strong>efeito adverso grave</strong> (reação alérgica, falta de ar, inchaço), procure atendimento de emergência.</div>
+        <div class="gen-row">📞 <strong>Dúvidas?</strong> Entre em contato com o farmacêutico responsável.</div>
+      </div>
+
+      <!-- Condições do paciente -->
+      <div id="fopCondsBlock" style="display:none">
+        <div class="fop-sec-hdr">🏥 Condições clínicas</div>
+        <div class="gen-row" id="fopConds"></div>
+      </div>
+
+      <!-- Assinatura do farmacêutico -->
+      <div class="sign-block">
+        <label style="font-size:.72rem;font-weight:700;color:#64748b;display:block;margin-bottom:4px">Farmacêutico responsável</label>
+        <input class="sign-input" id="farmNome" type="text" placeholder="Nome do farmacêutico" oninput="salvarFarm()">
+        <input class="sign-input" id="farmCRF"  type="text" placeholder="CRF/UF" oninput="salvarFarm()">
+        <div class="sign-line">
+          <div style="border-top:1.5px solid #374151;width:60%;margin-top:30px"></div>
+          <span>Assinatura e Carimbo</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</main>
+
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+
+<script src="js/db.js"></script>
+<script>
+const pid = localStorage.getItem('vd_active');
+
+/* ── Indicações simplificadas (lookup) ───────────────────────────────── */
+const INDICACOES = {
+  losartan:'hipertensão arterial', captopril:'hipertensão', enalapril:'hipertensão',
+  amlodipino:'hipertensão / angina', anlodipino:'hipertensão / angina',
+  atenolol:'hipertensão / arritmia', propranolol:'hipertensão / arritmia',
+  metoprolol:'hipertensão / arritmia', carvedilol:'hipertensão / insuficiência cardíaca',
+  hidroclorotiazida:'hipertensão', espironolactona:'insuficiência cardíaca / hipertensão',
+  furosemida:'retenção de líquidos / insuficiência cardíaca',
+  metformina:'diabetes tipo 2', glibenclamida:'diabetes tipo 2',
+  'insulina nph':'diabetes — controle da glicemia', 'insulina regular':'diabetes',
+  sinvastatina:'colesterol elevado (dislipidemia)', atorvastatina:'colesterol / risco cardiovascular',
+  rosuvastatina:'colesterol elevado', bezafibrato:'triglicerídeos elevados',
+  omeprazol:'proteção gástrica / refluxo', pantoprazol:'proteção gástrica / refluxo',
+  ranitidina:'azia / proteção gástrica', domperidona:'náuseas e vômitos',
+  metoclopramida:'náuseas, vômitos e refluxo',
+  amoxicilina:'infecção bacteriana', azitromicina:'infecção bacteriana / respiratória',
+  ciprofloxacino:'infecção bacteriana', cefalexina:'infecção bacteriana',
+  doxiciclina:'infecção bacteriana',
+  salbutamol:'broncoespasmo / asma (resgate)', formoterol:'asma / DPOC (manutenção)',
+  beclometasona:'asma — controle da inflamação', budesonida:'asma / DPOC',
+  montelucaste:'asma / rinite alérgica',
+  loratadina:'alergia / rinite', cetirizina:'alergia / rinite', fexofenadina:'alergia',
+  dipirona:'dor e febre', paracetamol:'dor e febre', ibuprofeno:'dor e inflamação',
+  tramadol:'dor moderada a grave', morfina:'dor grave',
+  levotiroxina:'reposição do hormônio tireoidiano', propiltiouracil:'hipertireoidismo',
+  'ácido fólico':'prevenção de malformações / anemia', ferro:'anemia por deficiência de ferro',
+  varfarina:'prevenção de coágulos (anticoagulante)', rivaroxabana:'prevenção de coágulos',
+  apixabana:'prevenção de coágulos', dabigatrana:'prevenção de coágulos',
+  aas:'prevenção cardiovascular / dor',
+  clopidogrel:'prevenção de coágulos (antiplaquetário)',
+  alprazolam:'ansiedade (uso controlado)', clonazepam:'ansiedade / convulsão',
+  sertralina:'depressão / ansiedade', fluoxetina:'depressão / ansiedade',
+  escitalopram:'depressão / ansiedade', venlafaxina:'depressão / ansiedade',
+  amitriptilina:'dor neuropática / depressão', nortriptilina:'dor / depressão',
+  quetiapina:'transtorno do humor / psicose', risperidona:'psicose',
+  haloperidol:'psicose / agitação',
+  levodopa:'doença de Parkinson', alendronato:'osteoporose',
+  colecalciferol:'vitamina D (saúde óssea)', carbonato:'cálcio / saúde óssea',
+  prednisona:'inflamação / imunossupressão', dexametasona:'inflamação grave',
+  digoxina:'insuficiência cardíaca / arritmia',
+};
+
+function getIndicacao(nomeRaw) {
+  const n = nomeRaw.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+  const found = Object.keys(INDICACOES).find(k => n.includes(k.normalize('NFD').replace(/[̀-ͯ]/g,'')));
+  return found ? INDICACOES[found] : '';
+}
+
+/* ── Precauções rápidas ───────────────────────────────────────────────── */
+const PREC = {
+  levotiroxina:  { tipo:'amber', txt:'Tomar em jejum, 30–60 min antes do café' },
+  alendronto:    { tipo:'amber', txt:'Tomar em jejum, ficar ereto por 30 min' },
+  alendronato:   { tipo:'amber', txt:'Tomar em jejum, ficar ereto por 30 min após' },
+  varfarina:     { tipo:'red',   txt:'Controle regular do INR; evitar variações na dieta com vitamina K' },
+  metformina:    { tipo:'amber', txt:'Tomar com refeições para reduzir desconforto gástrico' },
+  'insulina nph':{ tipo:'red',   txt:'Aplicar subcutâneo; não misturar com outras insulinas sem orientação' },
+  omeprazol:     { tipo:'amber', txt:'Tomar 30 min antes do café da manhã' },
+  pantoprazol:   { tipo:'amber', txt:'Tomar 30–60 min antes da primeira refeição' },
+  prednisona:    { tipo:'amber', txt:'Tomar pela manhã com alimento; não interromper bruscamente' },
+  dexametasona:  { tipo:'amber', txt:'Tomar com alimento; não interromper abruptamente' },
+  digoxina:      { tipo:'red',   txt:'Controle de frequência cardíaca; sinais de toxicidade: náusea, visão amarelada' },
+  clonazepam:    { tipo:'red',   txt:'Risco de dependência; não interromper abruptamente' },
+  alprazolam:    { tipo:'red',   txt:'Risco de dependência; uso por curto prazo' },
+  amiodarona:    { tipo:'red',   txt:'Monitorar função tireoidiana e hepática regularmente; fotossensibilidade' },
+  sinvastatina:  { tipo:'amber', txt:'Tomar à noite; evitar grapefruit; relatar dores musculares' },
+  atorvastatina: { tipo:'amber', txt:'Evitar grapefruit; relatar dores musculares' },
+  rivaroxabana:  { tipo:'amber', txt:'Tomar com alimento' },
+};
+
+function getPrec(nomeRaw) {
+  const n = nomeRaw.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+  const k = Object.keys(PREC).find(k=>n.includes(k.normalize('NFD').replace(/[̀-ͯ]/g,'')));
+  return k ? PREC[k] : null;
+}
+
+const CONDS_LABEL = {
+  has:'Hipertensão Arterial',dm:'Diabetes Mellitus',asma:'Asma / DPOC',
+  ic:'Insuficiência Cardíaca',hepatica:'Hepatopatia',epilepsia:'Epilepsia',
+  glaucoma:'Glaucoma',hpb:'Hiperplasia Prostática',gota:'Gota',
+  gastrite:'Gastrite / DRGE',gestacao:'Gestação',osteoporose:'Osteoporose',
+  miastenia:'Miastenia Gravis',parkinson:'Doença de Parkinson',
+};
+
+async function gerar() {
+  if (!pid) { alert('Nenhum paciente ativo.'); return; }
+
+  const [pac, allMeds, agenda] = await Promise.all([
+    dbGet('pacientes', parseInt(pid)),
+    dbGetAll('medicamentos'),
+    dbGetConfig('agenda'),
+  ]);
+
+  if (!pac) { alert('Paciente não encontrado.'); return; }
+
+  const meds = allMeds.filter(m => m.status==='ativo' && (!m.pacienteId || String(m.pacienteId)===String(pid)));
+  if (!meds.length) { alert('Nenhum medicamento ativo para este paciente.'); return; }
+
+  // Build horário map from agenda
+  const horMap = {};
+  (agenda||[]).forEach(a => {
+    if (!horMap[a.medId]) horMap[a.medId] = [];
+    if (!horMap[a.medId].includes(a.horario)) horMap[a.medId].push(a.horario);
+  });
+
+  // Patient header
+  document.getElementById('fopPacNome').textContent = pac.nome || 'Paciente';
+  const meta = [pac.idadePac ? pac.idadePac+' anos' : '',
+                 pac.sexoPac==='M'?'Masculino': pac.sexoPac==='F'?'Feminino':'',
+                 pac.pesoPac ? pac.pesoPac+' kg' : ''].filter(Boolean).join(' · ');
+  document.getElementById('fopPacMeta').textContent = meta;
+  document.getElementById('fopData').textContent    = 'Data: '+new Date().toLocaleDateString('pt-BR');
+
+  // Conditions
+  const conds = (pac.condicoes||[]).map(c=>CONDS_LABEL[c]||c).filter(Boolean);
+  if (conds.length || pac.condicoesClinicas) {
+    document.getElementById('fopCondsBlock').style.display='block';
+    document.getElementById('fopConds').innerHTML = [...conds, pac.condicoesClinicas||''].filter(Boolean).join(' · ');
+  }
+
+  // Meds
+  document.getElementById('fopMeds').innerHTML = meds.map(m => {
+    const hors = horMap[m.id] || [];
+    const indic = m.indicacao || getIndicacao(m.nome||'');
+    const prec  = getPrec(m.nome||'');
+    const hChips = hors.length
+      ? `<div class="horario-chips">${hors.map(h=>`<span class="hor-chip">⏰ ${h}</span>`).join('')}</div>`
+      : '<div class="med-field-val" style="color:#94a3b8">Conforme orientação médica</div>';
+
+    return `<div class="med-card">
+      <div class="med-nome">${x(m.nome||'')}</div>
+      <div class="med-dose">${x(m.dose||'')}</div>
+      <div class="med-grid">
+        <div class="med-field">
+          <div class="med-field-lbl">Indicação</div>
+          <div class="med-field-val">${x(indic||'Conforme prescrição')}</div>
+        </div>
+        <div class="med-field">
+          <div class="med-field-lbl">Horários</div>
+          ${hChips}
+        </div>
+      </div>
+      ${prec?`<div style="margin-top:8px"><span class="med-tag ${prec.tipo}">⚠️ ${x(prec.txt)}</span></div>`:''}
+    </div>`;
+  }).join('');
+
+  // Load farmacêutico
+  const farm = await dbGetConfig('farmaceutico_cfg');
+  if (farm) {
+    document.getElementById('farmNome').value = farm.nome||'';
+    document.getElementById('farmCRF').value  = farm.crf||'';
+  }
+
+  document.getElementById('emptyState').style.display = 'none';
+  document.getElementById('fopDoc').style.display = 'block';
+}
+
+async function salvarFarm() {
+  await dbSetConfig('farmaceutico_cfg', {
+    nome: document.getElementById('farmNome').value,
+    crf:  document.getElementById('farmCRF').value,
+  });
+}
+
+function imprimir() {
+  if (document.getElementById('fopDoc').style.display==='none') { alert('Gere a ficha primeiro.'); return; }
+  window.print();
+}
+
+function compartilhar() {
+  if (document.getElementById('fopDoc').style.display==='none') { alert('Gere a ficha primeiro.'); return; }
+  const nome = document.getElementById('fopPacNome').textContent;
+  const data = document.getElementById('fopData').textContent;
+  const meds = [...document.querySelectorAll('.med-card')].map(el => {
+    const n = el.querySelector('.med-nome')?.textContent || '';
+    const d = el.querySelector('.med-dose')?.textContent || '';
+    const hors = [...el.querySelectorAll('.hor-chip')].map(c=>c.textContent.replace('⏰ ','')).join(', ');
+    return `• ${n} ${d}${hors?' — '+hors:''}`;
+  }).join('\n');
+  const txt = `💊 *FICHA DE ORIENTAÇÃO — ${nome}*\n${data}\n\n*Medicamentos:*\n${meds}\n\n_Gerado pelo VitaDose_`;
+  const url = 'https://wa.me/?text='+encodeURIComponent(txt);
+  window.open(url,'_blank');
+}
+
+function x(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+</script>
+</body>
+</html>

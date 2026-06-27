@@ -1,5 +1,5 @@
 /* VitaDose — Service Worker (offline cache + notificações) */
-const CACHE = 'vitadose-v62';
+const CACHE = 'vitadose-v63';
 
 const ASSETS = [
   '/',
@@ -71,6 +71,9 @@ const ASSETS = [
   '/interacao-alimento.html',
   '/dor.html',
   '/farmacia-popular.html',
+  '/risco-sangramento.html',
+  '/saude-mental.html',
+  '/orientacao-paciente.html',
   '/js/app.js',
   '/js/cadastro.js',
   '/js/diario.js',

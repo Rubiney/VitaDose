@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Risco de Sangramento — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .rs-hdr { background:linear-gradient(135deg,#7f1d1d,#b91c1c);color:#fff;border-radius:14px;padding:18px;margin-bottom:14px }
+    .rs-title { font-size:1rem;font-weight:800;margin-bottom:4px }
+    .rs-sub   { font-size:.73rem;opacity:.8 }
+
+    .tab-bar { display:flex;gap:6px;margin-bottom:14px }
+    .tab-btn { flex:1;padding:10px;border-radius:10px;border:2px solid #e2e8f0;background:#fff;font-size:.78rem;font-weight:700;cursor:pointer;color:#64748b;transition:.15s }
+    .tab-btn.active { border-color:#dc2626;background:#fef2f2;color:#dc2626 }
+
+    .crit-row { display:flex;align-items:flex-start;gap:10px;padding:11px 0;border-bottom:1px solid #f1f5f9;cursor:pointer }
+    .crit-row:last-child { border-bottom:none }
+    .crit-toggle { width:34px;height:20px;border-radius:999px;border:2px solid #cbd5e1;background:#f1f5f9;flex-shrink:0;position:relative;transition:.2s;margin-top:2px }
+    .crit-toggle.on { background:#dc2626;border-color:#dc2626 }
+    .crit-toggle::after { content:'';position:absolute;width:12px;height:12px;border-radius:50%;background:#fff;top:2px;left:2px;transition:.2s }
+    .crit-toggle.on::after { left:16px }
+    .crit-lbl { flex:1 }
+    .crit-name { font-size:.82rem;font-weight:700;color:#1e3a5f }
+    .crit-desc { font-size:.7rem;color:#64748b;margin-top:2px;line-height:1.4 }
+    .crit-pts  { font-size:.75rem;font-weight:800;color:#dc2626;flex-shrink:0;margin-top:2px }
+
+    .score-box { border-radius:14px;padding:18px;text-align:center;margin:14px 0;border:3px solid }
+    .score-num  { font-size:3rem;font-weight:900;line-height:1 }
+    .score-max  { font-size:1rem;font-weight:600;opacity:.5 }
+    .score-risk { font-size:.9rem;font-weight:800;margin-top:6px }
+    .score-ann  { font-size:.75rem;margin-top:4px;opacity:.8 }
+
+    .mod-row { display:flex;align-items:center;gap:8px;padding:8px 0;font-size:.77rem }
+    .mod-icon { width:24px;height:24px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:800;flex-shrink:0 }
+    .mod-icon.mod { background:#d1fae5;color:#16a34a }
+    .mod-icon.nm  { background:#fee2e2;color:#dc2626 }
+
+    .btn-autofill { background:#1e3a5f;color:#fff;border:none;border-radius:10px;padding:10px 18px;font-size:.8rem;font-weight:700;cursor:pointer;margin-bottom:10px }
+    .btn-save { width:100%;background:#dc2626;color:#fff;border:none;border-radius:12px;padding:13px;font-size:.87rem;font-weight:700;cursor:pointer;margin-top:12px }
+
+    .hist-item { padding:10px 0;border-bottom:1px solid #f1f5f9;font-size:.78rem }
+    .hist-item:last-child { border-bottom:none }
+    .hist-score { font-weight:800;font-size:1rem }
+    .empty-msg { text-align:center;color:#94a3b8;font-size:.82rem;padding:24px 0 }
+  </style>
+</head>
+<body>
+
+<header class="top-bar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <span class="top-title">Risco de Sangramento</span>
+  <div class="top-right"></div>
+</header>
+
+<main class="container" style="padding-bottom:90px">
+
+  <div class="rs-hdr">
+    <div class="rs-title">🩸 Avaliação de Risco Hemorrágico</div>
+    <div class="rs-sub">HAS-BLED · ORBIT · Para pacientes em anticoagulação (FA, TEV, valvopatia)</div>
+  </div>
+
+  <div class="tab-bar">
+    <button class="tab-btn active" id="tb0" onclick="showTab(0)">HAS-BLED</button>
+    <button class="tab-btn"        id="tb1" onclick="showTab(1)">ORBIT</button>
+    <button class="tab-btn"        id="tb2" onclick="showTab(2)">Histórico</button>
+  </div>
+
+  <!-- ── TAB 0: HAS-BLED ─────────────────────────────────────────── -->
+  <div id="tab0">
+    <button class="btn-autofill" onclick="autoFill()">⚡ Auto-preencher do paciente</button>
+    <div class="card" style="padding:8px 14px" id="hasbledCrits">
+      <!-- rendered by JS -->
+    </div>
+
+    <div class="score-box" id="hbScoreBox" style="border-color:#94a3b8;color:#64748b">
+      <span class="score-num" id="hbNum">0</span><span class="score-max">/9</span>
+      <div class="score-risk" id="hbRisk">Calcule os critérios acima</div>
+      <div class="score-ann"  id="hbAnn"></div>
+    </div>
+
+    <div class="card" id="modCard" style="display:none">
+      <div class="card-title">🔧 Fatores Modificáveis</div>
+      <div id="modList"></div>
+    </div>
+
+    <div class="card" style="font-size:.72rem;color:#64748b">
+      <strong style="color:#1e3a5f;display:block;margin-bottom:6px">⚖️ Interpretação clínica</strong>
+      Score ≥3 indica <strong>alto risco hemorrágico</strong> — não contraindica anticoagulação per se, mas sugere tratar fatores modificáveis, monitorar INR/TFG, evitar AINEs e revisar antiplaquetários concomitantes.<br><br>
+      <em>Ref: Pisters R et al. Chest 2010;138(5):1093-1100. ESC Guidelines 2020.</em>
+    </div>
+
+    <button class="btn-save" onclick="salvarHB()">💾 Salvar avaliação HAS-BLED</button>
+  </div>
+
+  <!-- ── TAB 1: ORBIT ────────────────────────────────────────────── -->
+  <div id="tab1" style="display:none">
+    <div class="card" style="padding:8px 14px" id="orbitCrits">
+      <!-- rendered by JS -->
+    </div>
+
+    <div class="score-box" id="orScoreBox" style="border-color:#94a3b8;color:#64748b">
+      <span class="score-num" id="orNum">0</span><span class="score-max">/7</span>
+      <div class="score-risk" id="orRisk">Calcule os critérios acima</div>
+      <div class="score-ann"  id="orAnn"></div>
+    </div>
+
+    <div class="card" style="font-size:.72rem;color:#64748b">
+      <strong style="color:#1e3a5f;display:block;margin-bottom:6px">📊 ORBIT vs HAS-BLED</strong>
+      ORBIT é recomendado pelas diretrizes da AHA/ACC (2019) como complemento ao HAS-BLED. Melhor desempenho para NOACs; HAS-BLED mais validado para varfarina.<br><br>
+      <em>Ref: O'Brien EC et al. Am J Med 2015;128:1388-98. AHA/ACC FA Guidelines 2019.</em>
+    </div>
+
+    <button class="btn-save" style="background:#0369a1" onclick="salvarOR()">💾 Salvar avaliação ORBIT</button>
+  </div>
+
+  <!-- ── TAB 2: Histórico ────────────────────────────────────────── -->
+  <div id="tab2" style="display:none">
+    <div id="histArea"><p class="empty-msg">Nenhuma avaliação salva.</p></div>
+  </div>
+
+</main>
+
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+
+<script src="js/db.js"></script>
+<script>
+const pid  = localStorage.getItem('vd_active');
+const KEY  = 'sangramento_hist_' + pid;
+
+/* ── HAS-BLED criteria ─────────────────────────────────────────────── */
+const HB = [
+  { id:'h',  ltr:'H',  name:'Hipertensão não controlada',       desc:'PA sistólica >160 mmHg persistente',                      pts:1, mod:true  },
+  { id:'ar', ltr:'A₁', name:'Disfunção renal',                   desc:'Diálise, transplante renal, creatinina >2,26 mg/dL',      pts:1, mod:false },
+  { id:'al', ltr:'A₂', name:'Disfunção hepática',                desc:'Cirrose, bilirrubina >2×, ALT/AST >3× do normal',        pts:1, mod:false },
+  { id:'s',  ltr:'S',  name:'AVC (histórico)',                   desc:'Acidente vascular cerebral isquêmico ou hemorrágico prévio', pts:1, mod:false },
+  { id:'b',  ltr:'B',  name:'Sangramento prévio ou predisposição',desc:'Anemia, plaquetopenia (<100.000), hemofilia, sangramento GI', pts:1, mod:false },
+  { id:'l',  ltr:'L',  name:'INR lábil (se em uso de varfarina)',desc:'Tempo na faixa terapêutica <60% (TTR baixo)',              pts:1, mod:true  },
+  { id:'e',  ltr:'E',  name:'Idade >65 anos',                    desc:'Fator de risco independente não modificável',             pts:1, mod:false },
+  { id:'dd', ltr:'D₁', name:'Fármacos antitrombóticos / AINEs',  desc:'AAS, clopidogrel, ticagrelor, AINEs, corticosteroides',   pts:1, mod:true  },
+  { id:'da', ltr:'D₂', name:'Álcool (≥8 doses/semana)',          desc:'Consumo excessivo aumenta risco de trauma e queda',       pts:1, mod:true  },
+];
+
+/* ── ORBIT criteria ────────────────────────────────────────────────── */
+const OR = [
+  { id:'o', ltr:'O', name:'Idoso (≥75 anos)',                   desc:'',                                                        pts:1 },
+  { id:'r', ltr:'R', name:'Hemoglobina reduzida / Anemia',      desc:'Hb <13 g/dL (H) ou <12 g/dL (M), ou Ht <40% (H) / <36% (M)', pts:2 },
+  { id:'b', ltr:'B', name:'Sangramento (histórico)',             desc:'Sangramento maior espontâneo prévio',                     pts:2 },
+  { id:'i', ltr:'I', name:'Insuficiência renal',                desc:'TFG (CKD-EPI) <60 mL/min/1,73m²',                       pts:1 },
+  { id:'t', ltr:'T', name:'Tratamento antiplaquetário',         desc:'AAS ou tienopiridínico (clopidogrel, ticagrelor) em uso', pts:1 },
+];
+
+const _hb = {};  HB.forEach(c => _hb[c.id] = 0);
+const _or = {};  OR.forEach(c => _or[c.id] = 0);
+
+let _tab = 0;
+
+/* ── Score colors ──────────────────────────────────────────────────── */
+const HB_INTERP = [
+  { max:1, risk:'Baixo risco',       ann:'~1,0–1,1 eventos/100 pacientes-ano', col:'#16a34a' },
+  { max:2, risk:'Risco moderado',    ann:'~1,9 eventos/100 pacientes-ano',     col:'#d97706' },
+  { max:9, risk:'Alto risco',        ann:'≥3,7 eventos/100 pacientes-ano',     col:'#dc2626' },
+];
+const OR_INTERP = [
+  { max:2, risk:'Baixo risco',       ann:'2,4%/ano sangramento maior',         col:'#16a34a' },
+  { max:3, risk:'Risco intermediário', ann:'4,7%/ano sangramento maior',       col:'#d97706' },
+  { max:7, risk:'Alto risco',        ann:'8,1%/ano sangramento maior',         col:'#dc2626' },
+];
+
+function getInterp(score, table) {
+  return table.find(r => score <= r.max) || table[table.length-1];
+}
+
+/* ── Render criteria ───────────────────────────────────────────────── */
+function renderHB() {
+  document.getElementById('hasbledCrits').innerHTML = HB.map(c => `
+    <div class="crit-row" onclick="toggleCrit('hb','${c.id}')">
+      <div class="crit-toggle ${_hb[c.id]?'on':''}" id="hbt_${c.id}"></div>
+      <div class="crit-lbl">
+        <div class="crit-name"><strong>${x(c.ltr)}</strong> — ${x(c.name)}</div>
+        <div class="crit-desc">${x(c.desc)}</div>
+      </div>
+      <div class="crit-pts">+${c.pts}</div>
+    </div>`).join('');
+}
+
+function renderOR() {
+  document.getElementById('orbitCrits').innerHTML = OR.map(c => `
+    <div class="crit-row" onclick="toggleCrit('or','${c.id}')">
+      <div class="crit-toggle ${_or[c.id]?'on':''}" id="ort_${c.id}"></div>
+      <div class="crit-lbl">
+        <div class="crit-name"><strong>${x(c.ltr)}</strong> — ${x(c.name)}</div>
+        ${c.desc?`<div class="crit-desc">${x(c.desc)}</div>`:''}
+      </div>
+      <div class="crit-pts">+${c.pts}</div>
+    </div>`).join('');
+}
+
+function toggleCrit(type, id) {
+  if (type === 'hb') {
+    _hb[id] = _hb[id] ? 0 : 1;
+    document.getElementById('hbt_'+id).classList.toggle('on', !!_hb[id]);
+    calcHB();
+  } else {
+    _or[id] = _or[id] ? 0 : 1;
+    document.getElementById('ort_'+id).classList.toggle('on', !!_or[id]);
+    calcOR();
+  }
+}
+
+function calcHB() {
+  const score = HB.reduce((a,c) => a + ((_hb[c.id]||0)*c.pts), 0);
+  const interp = getInterp(score, HB_INTERP);
+  const box = document.getElementById('hbScoreBox');
+  box.style.borderColor = interp.col;
+  box.style.color = interp.col;
+  document.getElementById('hbNum').textContent  = score;
+  document.getElementById('hbRisk').textContent = interp.risk;
+  document.getElementById('hbAnn').textContent  = interp.ann;
+
+  // Modifiable factors
+  const mods = HB.filter(c => c.mod && _hb[c.id]);
+  const nmods = HB.filter(c => !c.mod && _hb[c.id]);
+  const allPresent = [...mods, ...nmods];
+  if (allPresent.length) {
+    document.getElementById('modCard').style.display = 'block';
+    document.getElementById('modList').innerHTML =
+      mods.map(c=>`<div class="mod-row"><div class="mod-icon mod">M</div><strong>${x(c.name)}</strong> — modificável, tratar</div>`).join('') +
+      nmods.map(c=>`<div class="mod-row"><div class="mod-icon nm">N</div><strong>${x(c.name)}</strong> — não modificável</div>`).join('');
+  } else {
+    document.getElementById('modCard').style.display = 'none';
+  }
+}
+
+function calcOR() {
+  const score = OR.reduce((a,c) => a + ((_or[c.id]||0)*c.pts), 0);
+  const interp = getInterp(score, OR_INTERP);
+  const box = document.getElementById('orScoreBox');
+  box.style.borderColor = interp.col;
+  box.style.color = interp.col;
+  document.getElementById('orNum').textContent  = score;
+  document.getElementById('orRisk').textContent = interp.risk;
+  document.getElementById('orAnn').textContent  = interp.ann;
+}
+
+async function autoFill() {
+  if (!pid) { alert('Nenhum paciente ativo.'); return; }
+  const pac = await dbGet('pacientes', parseInt(pid));
+  if (!pac) return;
+  const conds = pac.condicoes || [];
+  const idade = parseInt(pac.idadePac) || 0;
+
+  if (conds.includes('has'))     { _hb.h  = 1; }
+  if (conds.includes('hepatica')){ _hb.al = 1; }
+  if (idade > 65)                { _hb.e  = 1; }
+  if (idade >= 75)               { _or.o  = 1; }
+
+  renderHB(); calcHB();
+  renderOR(); calcOR();
+}
+
+async function salvarHB() {
+  if (!pid) { alert('Nenhum paciente ativo.'); return; }
+  const score = HB.reduce((a,c) => a + ((_hb[c.id]||0)*c.pts), 0);
+  const hist = (await dbGetConfig(KEY)) || [];
+  hist.unshift({ id:Date.now(), data: new Date().toLocaleDateString('pt-BR'),
+    tipo:'HAS-BLED', score, criterios: {..._hb} });
+  await dbSetConfig(KEY, hist.slice(0,30));
+  if (_tab === 2) renderHist();
+  alert(`HAS-BLED ${score}/9 salvo!`);
+}
+
+async function salvarOR() {
+  if (!pid) { alert('Nenhum paciente ativo.'); return; }
+  const score = OR.reduce((a,c) => a + ((_or[c.id]||0)*c.pts), 0);
+  const hist = (await dbGetConfig(KEY)) || [];
+  hist.unshift({ id:Date.now(), data: new Date().toLocaleDateString('pt-BR'),
+    tipo:'ORBIT', score, criterios: {..._or} });
+  await dbSetConfig(KEY, hist.slice(0,30));
+  if (_tab === 2) renderHist();
+  alert(`ORBIT ${score}/7 salvo!`);
+}
+
+async function renderHist() {
+  const hist = (await dbGetConfig(KEY)) || [];
+  if (!hist.length) { document.getElementById('histArea').innerHTML = '<p class="empty-msg">Nenhuma avaliação salva.</p>'; return; }
+  document.getElementById('histArea').innerHTML = hist.map(h => {
+    const max = h.tipo === 'HAS-BLED' ? 9 : 7;
+    const col = h.score <= (h.tipo === 'HAS-BLED' ? 1 : 2) ? '#16a34a' : h.score <= (h.tipo === 'HAS-BLED' ? 2 : 3) ? '#d97706' : '#dc2626';
+    return `<div class="hist-item">
+      <span style="color:#64748b;font-size:.7rem">${h.data}</span>
+      <span style="color:#94a3b8;font-size:.7rem;margin:0 6px">·</span>
+      <span style="color:${col}" class="hist-score">${h.tipo} ${h.score}/${max}</span>
+    </div>`;
+  }).join('');
+}
+
+function showTab(n) {
+  _tab = n;
+  [0,1,2].forEach(i => {
+    document.getElementById('tab'+i).style.display = i===n?'block':'none';
+    document.getElementById('tb'+i).classList.toggle('active', i===n);
+  });
+  if (n===2) renderHist();
+}
+
+function x(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+renderHB(); calcHB();
+renderOR(); calcOR();
+</script>
+</body>
+</html>

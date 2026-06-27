@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Saúde Mental — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .sm-hdr { background:linear-gradient(135deg,#4338ca,#7c3aed);color:#fff;border-radius:14px;padding:18px;margin-bottom:14px }
+    .sm-title { font-size:1rem;font-weight:800;margin-bottom:4px }
+    .sm-sub   { font-size:.73rem;opacity:.8 }
+
+    .tab-bar { display:flex;gap:6px;margin-bottom:14px }
+    .tab-btn { flex:1;padding:10px;border-radius:10px;border:2px solid #e2e8f0;background:#fff;font-size:.78rem;font-weight:700;cursor:pointer;color:#64748b;transition:.15s }
+    .tab-btn.active { border-color:#7c3aed;background:#f5f3ff;color:#7c3aed }
+
+    .q-block { padding:12px 0;border-bottom:1px solid #f1f5f9 }
+    .q-block:last-child { border-bottom:none }
+    .q-num  { font-size:.62rem;font-weight:800;color:#7c3aed;text-transform:uppercase }
+    .q-text { font-size:.82rem;font-weight:600;color:#1e3a5f;margin:4px 0 10px;line-height:1.4 }
+    .q-opts { display:grid;grid-template-columns:repeat(2,1fr);gap:6px }
+    .q-opt  { border:2px solid #e2e8f0;background:#fff;border-radius:10px;padding:8px;text-align:center;font-size:.7rem;font-weight:600;color:#64748b;cursor:pointer;transition:.15s;line-height:1.3 }
+    .q-opt.sel { border-color:#7c3aed;background:#f5f3ff;color:#7c3aed }
+    .q-opt .opt-val { font-size:1rem;font-weight:900;display:block }
+
+    .q9-alert { background:#fee2e2;border:2px solid #dc2626;border-radius:12px;padding:12px 14px;margin-top:8px;display:none }
+    .q9-alert-txt { font-size:.78rem;color:#7f1d1d;font-weight:600 }
+
+    .score-box { border-radius:14px;padding:16px;text-align:center;margin:12px 0;border:3px solid }
+    .score-num  { font-size:3rem;font-weight:900;line-height:1 }
+    .score-max  { font-size:1rem;font-weight:600;opacity:.5 }
+    .score-sev  { font-size:.9rem;font-weight:800;margin-top:6px }
+
+    .guide-item { padding:8px 0;border-bottom:1px solid #f1f5f9;font-size:.78rem;line-height:1.5 }
+    .guide-item:last-child { border-bottom:none }
+
+    .btn-save { width:100%;background:#7c3aed;color:#fff;border:none;border-radius:12px;padding:13px;font-size:.87rem;font-weight:700;cursor:pointer;margin-top:12px }
+
+    .sparkline { display:block;margin:8px 0 }
+    .hist-item { padding:10px 0;border-bottom:1px solid #f1f5f9;font-size:.78rem }
+    .hist-item:last-child { border-bottom:none }
+    .empty-msg { text-align:center;color:#94a3b8;font-size:.82rem;padding:24px 0 }
+  </style>
+</head>
+<body>
+
+<header class="top-bar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <span class="top-title">Saúde Mental — PHQ-9 / GAD-7</span>
+  <div class="top-right"></div>
+</header>
+
+<main class="container" style="padding-bottom:90px">
+
+  <div class="sm-hdr">
+    <div class="sm-title">🧠 Rastreio de Saúde Mental</div>
+    <div class="sm-sub">PHQ-9 — Depressão · GAD-7 — Ansiedade · Validados para uso em farmácia clínica</div>
+  </div>
+
+  <div class="tab-bar">
+    <button class="tab-btn active" id="tb0" onclick="showTab(0)">PHQ-9</button>
+    <button class="tab-btn"        id="tb1" onclick="showTab(1)">GAD-7</button>
+    <button class="tab-btn"        id="tb2" onclick="showTab(2)">Histórico</button>
+  </div>
+
+  <!-- ── TAB 0: PHQ-9 ─────────────────────────────────────────────── -->
+  <div id="tab0">
+    <div class="card" style="font-size:.75rem;color:#4b5563;margin-bottom:8px;padding:10px 14px">
+      Nas últimas <strong>2 semanas</strong>, com que frequência você foi incomodado(a) pelos seguintes problemas?
+    </div>
+
+    <div class="card" style="padding:8px 14px" id="phqQs">
+      <!-- rendered by JS -->
+    </div>
+
+    <div id="q9Alert" class="q9-alert" style="margin-top:0">
+      <div class="q9-alert-txt">⚠️ <strong>Atenção — Pensamentos de automutilação identificados.</strong> Avalie imediatamente o risco de suicídio. Se necessário, encaminhe para avaliação psiquiátrica urgente ou acione o CVV (188).</div>
+    </div>
+
+    <div class="score-box" id="phqBox" style="border-color:#94a3b8;color:#64748b">
+      <span class="score-num" id="phqNum">—</span><span class="score-max">/27</span>
+      <div class="score-sev" id="phqSev">Responda todas as questões</div>
+    </div>
+
+    <div class="card" id="phqGuide" style="display:none">
+      <div class="card-title">💊 Orientação Farmacoterapêutica</div>
+      <div id="phqGuideList"></div>
+    </div>
+
+    <div class="card" style="font-size:.72rem;color:#64748b">
+      <em>PHQ-9: Kroenke K et al. JAMA Intern Med 2001;161:1737-44. Versão BR validada por Moreno RA et al.</em>
+    </div>
+
+    <button class="btn-save" onclick="salvar('phq9')">💾 Salvar PHQ-9</button>
+  </div>
+
+  <!-- ── TAB 1: GAD-7 ─────────────────────────────────────────────── -->
+  <div id="tab1" style="display:none">
+    <div class="card" style="font-size:.75rem;color:#4b5563;margin-bottom:8px;padding:10px 14px">
+      Nas últimas <strong>2 semanas</strong>, com que frequência você foi incomodado(a) pelos seguintes problemas?
+    </div>
+
+    <div class="card" style="padding:8px 14px" id="gadQs">
+      <!-- rendered by JS -->
+    </div>
+
+    <div class="score-box" id="gadBox" style="border-color:#94a3b8;color:#64748b">
+      <span class="score-num" id="gadNum">—</span><span class="score-max">/21</span>
+      <div class="score-sev" id="gadSev">Responda todas as questões</div>
+    </div>
+
+    <div class="card" id="gadGuide" style="display:none">
+      <div class="card-title">💊 Orientação Farmacoterapêutica</div>
+      <div id="gadGuideList"></div>
+    </div>
+
+    <div class="card" style="font-size:.72rem;color:#64748b">
+      <em>GAD-7: Spitzer RL et al. Arch Intern Med 2006;166:1092-7. Versão BR: Moreno et al., 2016.</em>
+    </div>
+
+    <button class="btn-save" style="background:#4338ca" onclick="salvar('gad7')">💾 Salvar GAD-7</button>
+  </div>
+
+  <!-- ── TAB 2: Histórico ─────────────────────────────────────────── -->
+  <div id="tab2" style="display:none">
+    <div id="histArea"><p class="empty-msg">Nenhuma avaliação salva.</p></div>
+  </div>
+
+</main>
+
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+
+<script src="js/db.js"></script>
+<script>
+const pid = localStorage.getItem('vd_active');
+const KEY = 'mental_hist_' + pid;
+
+const OPTS = [
+  { val:0, lbl:'Nenhuma vez',               emoji:'😶' },
+  { val:1, lbl:'Vários dias',               emoji:'😕' },
+  { val:2, lbl:'Mais da metade dos dias',   emoji:'😟' },
+  { val:3, lbl:'Quase todos os dias',       emoji:'😰' },
+];
+
+const PHQ = [
+  'Pouco interesse ou prazer em fazer as coisas',
+  'Sentir-se "para baixo", deprimido(a) ou sem perspectiva',
+  'Dificuldade para adormecer, permanecer dormindo ou dormir demais',
+  'Sentir-se cansado(a) ou com pouca energia',
+  'Falta de apetite ou comer demais',
+  'Sentir-se mal consigo mesmo(a), fracasso ou decepção com você mesmo(a)',
+  'Dificuldade para se concentrar nas coisas (ler, ver TV)',
+  'Lentidão para falar/mover OU agitação/irrequietude perceptível',
+  'Pensamentos de se machucar ou de que seria melhor estar morto(a)',
+];
+
+const GAD = [
+  'Sentir-se nervoso(a), ansioso(a) ou muito agitado(a)',
+  'Não conseguir parar ou controlar as preocupações',
+  'Preocupar-se demais com diversas coisas',
+  'Dificuldade para relaxar',
+  'Ficar tão agitado(a) que é difícil permanecer sentado(a)',
+  'Ficar facilmente aborrecido(a) ou irritado(a)',
+  'Sentir medo como se algo horrível fosse acontecer',
+];
+
+let _phq = new Array(9).fill(-1);
+let _gad = new Array(7).fill(-1);
+let _tab = 0;
+
+const PHQ_SEV = [
+  { max:4,  sev:'Mínima / Sem depressão', col:'#16a34a',
+    guide:['Orientação sobre higiene do sono e atividade física','Reavaliar em 2–4 semanas'] },
+  { max:9,  sev:'Depressão leve',         col:'#84cc16',
+    guide:['Psicoeducação e suporte social','Considerar psicoterapia (TCC)','Reavaliar em 4 semanas','Farmacoterapia geralmente não indicada neste nível'] },
+  { max:14, sev:'Depressão moderada',     col:'#d97706',
+    guide:['Iniciar ISRS (sertralina 50 mg/d, escitalopram 10 mg/d ou fluoxetina 20 mg/d) + psicoterapia','Reavaliar em 4–6 semanas','Alertar sobre latência de 2–4 semanas para resposta','Orientar sobre descontinuação gradual'] },
+  { max:19, sev:'Depressão moderada-grave', col:'#f97316',
+    guide:['ISRS em dose plena (titular até dose terapêutica)','Considerar IRSN (venlafaxina, duloxetina) se comorbidade dolorosa','Encaminhar para psiquiatria','Avaliar risco de suicídio em toda consulta'] },
+  { max:27, sev:'Depressão grave',        col:'#dc2626',
+    guide:['Encaminhamento psiquiátrico urgente','Considerar internação se risco de suicídio','Antidepressivo + antipsicótico atípico se sintomas psicóticos','Avaliar uso de mirtazapina se insônia e anorexia importantes'] },
+];
+
+const GAD_SEV = [
+  { max:4,  sev:'Ansiedade mínima',        col:'#16a34a',
+    guide:['Técnicas de relaxamento e mindfulness','Orientar redução de cafeína e álcool','Reavaliar em 4 semanas'] },
+  { max:9,  sev:'Ansiedade leve',          col:'#84cc16',
+    guide:['TCC (terapia cognitivo-comportamental)','Técnicas respiratórias e exercício físico regular','Reavaliar em 4–6 semanas','Evitar benzodiazepínicos como primeira escolha'] },
+  { max:14, sev:'Ansiedade moderada',      col:'#d97706',
+    guide:['ISRS de primeira escolha (escitalopram, sertralina, paroxetina)','Buspar (buspirona 5–10 mg 2–3×/d) como alternativa não-benzo','Benzodiazepínico por curto prazo (<2–4 semanas) se aguda e incapacitante','Encaminhar para psicoterapia TCC'] },
+  { max:21, sev:'Ansiedade grave',         col:'#dc2626',
+    guide:['Encaminhamento psiquiátrico','ISRS/IRSN em dose terapêutica','Evitar benzodiazepínicos de longa duração (dependência)','Avaliar comorbidades (pânico, fobia social, TOC)'] },
+];
+
+/* ── Render ──────────────────────────────────────────────────────── */
+function renderQs(arr, state, containerId, prefix) {
+  document.getElementById(containerId).innerHTML = arr.map((q,i) => `
+    <div class="q-block">
+      <div class="q-num">Questão ${i+1}</div>
+      <div class="q-text">${x(q)}</div>
+      <div class="q-opts">
+        ${OPTS.map(o=>`<div class="q-opt ${state[i]===o.val?'sel':''}" onclick="sel('${prefix}',${i},${o.val})">
+          <span class="opt-val">${o.emoji}</span>${x(o.lbl)}
+        </div>`).join('')}
+      </div>
+    </div>`).join('');
+}
+
+function sel(type, i, val) {
+  if (type==='phq') {
+    _phq[i] = val;
+    renderQs(PHQ, _phq, 'phqQs', 'phq');
+    calcPHQ();
+  } else {
+    _gad[i] = val;
+    renderQs(GAD, _gad, 'gadQs', 'gad');
+    calcGAD();
+  }
+}
+
+function calcPHQ() {
+  if (_phq.includes(-1)) return;
+  const score = _phq.reduce((a,b)=>a+b,0);
+  const interp = PHQ_SEV.find(s=>score<=s.max);
+  const box = document.getElementById('phqBox');
+  box.style.borderColor = interp.col; box.style.color = interp.col;
+  document.getElementById('phqNum').textContent = score;
+  document.getElementById('phqSev').textContent = interp.sev;
+
+  // Q9 suicidal ideation alert
+  document.getElementById('q9Alert').style.display = _phq[8] >= 1 ? 'block' : 'none';
+
+  document.getElementById('phqGuide').style.display = 'block';
+  document.getElementById('phqGuideList').innerHTML =
+    interp.guide.map(g=>`<div class="guide-item">• ${x(g)}</div>`).join('');
+}
+
+function calcGAD() {
+  if (_gad.includes(-1)) return;
+  const score = _gad.reduce((a,b)=>a+b,0);
+  const interp = GAD_SEV.find(s=>score<=s.max);
+  const box = document.getElementById('gadBox');
+  box.style.borderColor = interp.col; box.style.color = interp.col;
+  document.getElementById('gadNum').textContent = score;
+  document.getElementById('gadSev').textContent = interp.sev;
+
+  document.getElementById('gadGuide').style.display = 'block';
+  document.getElementById('gadGuideList').innerHTML =
+    interp.guide.map(g=>`<div class="guide-item">• ${x(g)}</div>`).join('');
+}
+
+async function salvar(tipo) {
+  if (!pid) { alert('Nenhum paciente ativo.'); return; }
+  const state  = tipo==='phq9' ? _phq : _gad;
+  if (state.includes(-1)) { alert('Responda todas as questões antes de salvar.'); return; }
+  const score  = state.reduce((a,b)=>a+b,0);
+  const hist   = (await dbGetConfig(KEY)) || [];
+  hist.unshift({ id:Date.now(), data:new Date().toLocaleDateString('pt-BR'), tipo, score, respostas:[...state] });
+  await dbSetConfig(KEY, hist.slice(0,60));
+  if (_tab===2) renderHist();
+  alert(`${tipo.toUpperCase()} ${score} salvo!`);
+}
+
+async function renderHist() {
+  const hist = (await dbGetConfig(KEY)) || [];
+  if (!hist.length) { document.getElementById('histArea').innerHTML = '<p class="empty-msg">Nenhuma avaliação salva.</p>'; return; }
+
+  const phqH = hist.filter(h=>h.tipo==='phq9').slice(0,20);
+  const gadH = hist.filter(h=>h.tipo==='gad7').slice(0,20);
+
+  let html = '';
+  if (phqH.length) {
+    html += `<p style="font-size:.62rem;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.08em;margin:10px 0 6px">PHQ-9 — Depressão</p>`;
+    html += renderSparkline(phqH, 27, '#7c3aed');
+    html += `<div class="card" style="padding:8px 14px">${phqH.map(h=>{
+      const interp=PHQ_SEV.find(s=>h.score<=s.max);
+      return `<div class="hist-item"><span style="color:#64748b;font-size:.7rem">${h.data}</span> · <strong style="color:${interp.col}">PHQ-9 ${h.score}/27</strong> <span style="color:#64748b;font-size:.7rem">— ${interp.sev}</span></div>`;
+    }).join('')}</div>`;
+  }
+  if (gadH.length) {
+    html += `<p style="font-size:.62rem;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.08em;margin:10px 0 6px">GAD-7 — Ansiedade</p>`;
+    html += renderSparkline(gadH, 21, '#4338ca');
+    html += `<div class="card" style="padding:8px 14px">${gadH.map(h=>{
+      const interp=GAD_SEV.find(s=>h.score<=s.max);
+      return `<div class="hist-item"><span style="color:#64748b;font-size:.7rem">${h.data}</span> · <strong style="color:${interp.col}">GAD-7 ${h.score}/21</strong> <span style="color:#64748b;font-size:.7rem">— ${interp.sev}</span></div>`;
+    }).join('')}</div>`;
+  }
+  document.getElementById('histArea').innerHTML = html || '<p class="empty-msg">Nenhuma avaliação.</p>';
+}
+
+function renderSparkline(items, max, col) {
+  const rev = [...items].reverse();
+  const W=260,H=40,pad=4;
+  const xStep = rev.length>1 ? (W-pad*2)/(rev.length-1) : 0;
+  const pts = rev.map((h,i)=>{ const px=pad+i*xStep; const py=H-pad-(h.score/max)*(H-pad*2); return `${px},${py}`; }).join(' ');
+  const circles = rev.map((h,i)=>{ const px=pad+i*xStep; const py=H-pad-(h.score/max)*(H-pad*2);
+    return `<circle cx="${px}" cy="${py}" r="3" fill="${col}"/>`; }).join('');
+  return `<svg class="sparkline" viewBox="0 0 ${W} ${H}" width="100%" height="${H}">
+    <polyline points="${pts}" fill="none" stroke="${col}" stroke-width="2" stroke-linejoin="round"/>
+    ${circles}
+  </svg>`;
+}
+
+function showTab(n) {
+  _tab = n;
+  [0,1,2].forEach(i=>{
+    document.getElementById('tab'+i).style.display = i===n?'block':'none';
+    document.getElementById('tb'+i).classList.toggle('active', i===n);
+  });
+  if (n===2) renderHist();
+}
+
+function x(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+renderQs(PHQ, _phq, 'phqQs', 'phq');
+renderQs(GAD, _gad, 'gadQs', 'gad');
+</script>
+</body>
+</html>
