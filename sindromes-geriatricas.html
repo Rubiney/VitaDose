@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Síndromes Geriátricas — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .inst-header { display:flex;align-items:center;justify-content:space-between;margin-bottom:12px }
+    .inst-title  { font-size:.95rem;font-weight:800;color:#1e3a5f }
+    .score-chip  { padding:4px 12px;border-radius:999px;font-size:.78rem;font-weight:800;color:#fff }
+
+    .q-row { padding:11px 0;border-bottom:1px solid #f1f5f9 }
+    .q-row:last-child { border-bottom:none }
+    .q-text { font-size:.82rem;margin-bottom:6px;line-height:1.4 }
+    .q-opts { display:flex;gap:6px;flex-wrap:wrap }
+    .q-opt  { flex:1;min-width:0;border:1.5px solid #e2e8f0;border-radius:9px;padding:7px 4px;font-size:.7rem;text-align:center;cursor:pointer;background:#f8fafc;line-height:1.3 }
+    .q-opt.sel { border-color:#1e3a5f;background:#1e3a5f;color:#fff }
+
+    .instr-sub { font-size:.7rem;color:#64748b;margin-bottom:14px;line-height:1.5 }
+
+    .mini-row  { display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #f1f5f9 }
+    .mini-row:last-child { border-bottom:none }
+    .mini-lbl  { font-size:.82rem;flex:1 }
+    .mini-sel  { border:1.5px solid #e2e8f0;border-radius:8px;padding:6px 8px;font-size:.8rem;background:#fff }
+
+    .katz-row  { display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #f1f5f9 }
+    .katz-row:last-child { border-bottom:none }
+    .katz-lbl  { font-size:.82rem;flex:1;padding-right:10px }
+    .katz-tog  { display:flex;border:1.5px solid #e2e8f0;border-radius:9px;overflow:hidden }
+    .katz-btn  { padding:6px 14px;font-size:.7rem;font-weight:700;cursor:pointer;background:#f8fafc;border:none;color:#64748b }
+    .katz-btn.sel { background:#1e3a5f;color:#fff }
+
+    .summary-row { display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:14px }
+    .sum-box { border-radius:12px;padding:14px;text-align:center;border:1.5px solid #e2e8f0 }
+    .sum-score { font-size:1.6rem;font-weight:900 }
+    .sum-name  { font-size:.62rem;font-weight:700;color:#64748b;margin-top:2px }
+    .sum-interp{ font-size:.6rem;color:#475569;margin-top:4px }
+
+    .hist-card { background:#f8fafc;border-radius:12px;padding:12px;margin-bottom:8px;border:1px solid #e2e8f0 }
+    .hist-date { font-size:.7rem;font-weight:700;color:#64748b;margin-bottom:6px }
+    .hist-grid { display:grid;grid-template-columns:repeat(4,1fr);gap:6px }
+    .hist-item { text-align:center;font-size:.65rem;color:#64748b }
+    .hist-val  { font-size:.9rem;font-weight:800;display:block }
+  </style>
+</head>
+<body>
+
+<header class="top-bar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <span class="top-title">Síndromes Geriátricas</span>
+  <div class="top-right"></div>
+</header>
+
+<main class="container" style="padding-bottom:90px">
+
+  <!-- Summary scores (filled after calc) -->
+  <div class="summary-row" id="summaryRow" style="display:none">
+    <div class="sum-box" id="sumSarc"></div>
+    <div class="sum-box" id="sumMC"></div>
+    <div class="sum-box" id="sumKatz"></div>
+    <div class="sum-box" id="sumIADL"></div>
+  </div>
+
+  <!-- ═══════ SARC-F ═══════ -->
+  <div class="card">
+    <div class="inst-header">
+      <span class="inst-title">💪 SARC-F — Risco de Sarcopenia</span>
+      <span class="score-chip" id="chipSarc" style="background:#94a3b8">0 / 10</span>
+    </div>
+    <p class="instr-sub">5 perguntas, 0–2 pontos cada. <strong>Score ≥4 = risco de sarcopenia</strong> → indicar avaliação física (força de preensão, velocidade de marcha ou bioimpedância).</p>
+
+    <div class="q-row" id="sarcQ0">
+      <div class="q-text">1. <strong>Força:</strong> Com que frequência tem dificuldade para levantar/carregar 4–5 kg?</div>
+      <div class="q-opts">
+        <div class="q-opt sel" data-grp="sarc" data-idx="0" data-val="0" onclick="selQ(this)">Nenhuma<br><small>0 pts</small></div>
+        <div class="q-opt"    data-grp="sarc" data-idx="0" data-val="1" onclick="selQ(this)">Algumas vezes<br><small>1 pt</small></div>
+        <div class="q-opt"    data-grp="sarc" data-idx="0" data-val="2" onclick="selQ(this)">Muitas vezes / incapaz<br><small>2 pts</small></div>
+      </div>
+    </div>
+    <div class="q-row">
+      <div class="q-text">2. <strong>Caminhar:</strong> Dificuldade para caminhar por um cômodo?</div>
+      <div class="q-opts">
+        <div class="q-opt sel" data-grp="sarc" data-idx="1" data-val="0" onclick="selQ(this)">Nenhuma<br><small>0 pts</small></div>
+        <div class="q-opt"    data-grp="sarc" data-idx="1" data-val="1" onclick="selQ(this)">Algumas vezes<br><small>1 pt</small></div>
+        <div class="q-opt"    data-grp="sarc" data-idx="1" data-val="2" onclick="selQ(this)">Muitas vezes / usa andador<br><small>2 pts</small></div>
+      </div>
+    </div>
+    <div class="q-row">
+      <div class="q-text">3. <strong>Levantar de cadeira:</strong> Dificuldade para levantar de uma cadeira ou cama?</div>
+      <div class="q-opts">
+        <div class="q-opt sel" data-grp="sarc" data-idx="2" data-val="0" onclick="selQ(this)">Nenhuma<br><small>0 pts</small></div>
+        <div class="q-opt"    data-grp="sarc" data-idx="2" data-val="1" onclick="selQ(this)">Algumas vezes<br><small>1 pt</small></div>
+        <div class="q-opt"    data-grp="sarc" data-idx="2" data-val="2" onclick="selQ(this)">Muitas vezes / precisa de ajuda<br><small>2 pts</small></div>
+      </div>
+    </div>
+    <div class="q-row">
+      <div class="q-text">4. <strong>Escadas:</strong> Dificuldade para subir 10 degraus?</div>
+      <div class="q-opts">
+        <div class="q-opt sel" data-grp="sarc" data-idx="3" data-val="0" onclick="selQ(this)">Nenhuma<br><small>0 pts</small></div>
+        <div class="q-opt"    data-grp="sarc" data-idx="3" data-val="1" onclick="selQ(this)">Algumas vezes<br><small>1 pt</small></div>
+        <div class="q-opt"    data-grp="sarc" data-idx="3" data-val="2" onclick="selQ(this)">Muitas vezes / incapaz<br><small>2 pts</small></div>
+      </div>
+    </div>
+    <div class="q-row">
+      <div class="q-text">5. <strong>Quedas:</strong> Quantas vezes caiu no último ano?</div>
+      <div class="q-opts">
+        <div class="q-opt sel" data-grp="sarc" data-idx="4" data-val="0" onclick="selQ(this)">Nenhuma<br><small>0 pts</small></div>
+        <div class="q-opt"    data-grp="sarc" data-idx="4" data-val="1" onclick="selQ(this)">1–3 quedas<br><small>1 pt</small></div>
+        <div class="q-opt"    data-grp="sarc" data-idx="4" data-val="2" onclick="selQ(this)">4 ou mais<br><small>2 pts</small></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════ MINI-COG ═══════ -->
+  <div class="card">
+    <div class="inst-header">
+      <span class="inst-title">🧠 Mini-Cog — Rastreio Cognitivo</span>
+      <span class="score-chip" id="chipMC" style="background:#94a3b8">0 / 5</span>
+    </div>
+    <p class="instr-sub">Instrua o paciente a memorizar 3 palavras (ex: <em>limão, chave, bola</em>), realize outra tarefa (~1 min), depois solicite a recordação. Avalie o desenho do relógio separadamente.<br>
+    <strong>Score 0–2 = rastreio positivo</strong> (possível comprometimento cognitivo); <strong>3–5 = negativo</strong>.</p>
+
+    <div class="mini-row">
+      <span class="mini-lbl">Palavras recordadas (0 a 3)</span>
+      <select class="mini-sel" id="mcPalavras" onchange="calcMC()">
+        <option value="0">0 — Nenhuma</option>
+        <option value="1">1 — Uma palavra</option>
+        <option value="2">2 — Duas palavras</option>
+        <option value="3">3 — Três palavras</option>
+      </select>
+    </div>
+    <div class="mini-row">
+      <span class="mini-lbl">Desenho do relógio</span>
+      <select class="mini-sel" id="mcRelogio" onchange="calcMC()">
+        <option value="2">Normal (hora correta, ponteiros presentes)</option>
+        <option value="0">Anormal (erros de hora, ausência de ponteiros)</option>
+        <option value="-1">Não realizado</option>
+      </select>
+    </div>
+    <div id="mcResult" style="margin-top:10px;padding:10px;border-radius:10px;background:#f8fafc;font-size:.82rem;text-align:center"></div>
+  </div>
+
+  <!-- ═══════ KATZ ADL ═══════ -->
+  <div class="card">
+    <div class="inst-header">
+      <span class="inst-title">🛁 Katz ADL — Atividades Básicas de Vida Diária</span>
+      <span class="score-chip" id="chipKatz" style="background:#94a3b8">6 / 6</span>
+    </div>
+    <p class="instr-sub">6 atividades. Marque <strong>Independente</strong> (1 pt) ou <strong>Dependente</strong> (0 pt).<br>
+    Score 6=independência total · 4–5=leve · 2–3=moderada · 0–1=grave.</p>
+
+    <div class="katz-row">
+      <span class="katz-lbl">🚿 <strong>Banho</strong> — banha-se sem ajuda</span>
+      <div class="katz-tog">
+        <button class="katz-btn sel" data-grp="katz" data-idx="0" data-val="1" onclick="selKatz(this)">Independente</button>
+        <button class="katz-btn"    data-grp="katz" data-idx="0" data-val="0" onclick="selKatz(this)">Dependente</button>
+      </div>
+    </div>
+    <div class="katz-row">
+      <span class="katz-lbl">👕 <strong>Vestir</strong> — seleciona e veste-se sem ajuda</span>
+      <div class="katz-tog">
+        <button class="katz-btn sel" data-grp="katz" data-idx="1" data-val="1" onclick="selKatz(this)">Independente</button>
+        <button class="katz-btn"    data-grp="katz" data-idx="1" data-val="0" onclick="selKatz(this)">Dependente</button>
+      </div>
+    </div>
+    <div class="katz-row">
+      <span class="katz-lbl">🚽 <strong>Toalete</strong> — usa o banheiro sem ajuda</span>
+      <div class="katz-tog">
+        <button class="katz-btn sel" data-grp="katz" data-idx="2" data-val="1" onclick="selKatz(this)">Independente</button>
+        <button class="katz-btn"    data-grp="katz" data-idx="2" data-val="0" onclick="selKatz(this)">Dependente</button>
+      </div>
+    </div>
+    <div class="katz-row">
+      <span class="katz-lbl">🛏 <strong>Transferência</strong> — levanta da cama/cadeira sem ajuda</span>
+      <div class="katz-tog">
+        <button class="katz-btn sel" data-grp="katz" data-idx="3" data-val="1" onclick="selKatz(this)">Independente</button>
+        <button class="katz-btn"    data-grp="katz" data-idx="3" data-val="0" onclick="selKatz(this)">Dependente</button>
+      </div>
+    </div>
+    <div class="katz-row">
+      <span class="katz-lbl">💧 <strong>Continência</strong> — controla micção e defecação</span>
+      <div class="katz-tog">
+        <button class="katz-btn sel" data-grp="katz" data-idx="4" data-val="1" onclick="selKatz(this)">Independente</button>
+        <button class="katz-btn"    data-grp="katz" data-idx="4" data-val="0" onclick="selKatz(this)">Dependente</button>
+      </div>
+    </div>
+    <div class="katz-row">
+      <span class="katz-lbl">🍽 <strong>Alimentação</strong> — come sem ajuda</span>
+      <div class="katz-tog">
+        <button class="katz-btn sel" data-grp="katz" data-idx="5" data-val="1" onclick="selKatz(this)">Independente</button>
+        <button class="katz-btn"    data-grp="katz" data-idx="5" data-val="0" onclick="selKatz(this)">Dependente</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════ LAWTON IADL ═══════ -->
+  <div class="card">
+    <div class="inst-header">
+      <span class="inst-title">🏠 Lawton IADL — Atividades Instrumentais</span>
+      <span class="score-chip" id="chipIADL" style="background:#94a3b8">8 / 8</span>
+    </div>
+    <p class="instr-sub">8 atividades instrumentais. Marque se independente (1) ou dependente (0).<br>
+    Score 8=total · 5–7=leve · 2–4=moderada · 0–1=grave.</p>
+
+    <div class="katz-row">
+      <span class="katz-lbl">📱 Usar telefone por iniciativa própria</span>
+      <div class="katz-tog">
+        <button class="katz-btn sel" data-grp="iadl" data-idx="0" data-val="1" onclick="selKatz(this)">Sim</button>
+        <button class="katz-btn"    data-grp="iadl" data-idx="0" data-val="0" onclick="selKatz(this)">Não</button>
+      </div>
+    </div>
+    <div class="katz-row">
+      <span class="katz-lbl">🛒 Fazer compras sem ajuda</span>
+      <div class="katz-tog">
+        <button class="katz-btn sel" data-grp="iadl" data-idx="1" data-val="1" onclick="selKatz(this)">Sim</button>
+        <button class="katz-btn"    data-grp="iadl" data-idx="1" data-val="0" onclick="selKatz(this)">Não</button>
+      </div>
+    </div>
+    <div class="katz-row">
+      <span class="katz-lbl">🍳 Preparar as próprias refeições</span>
+      <div class="katz-tog">
+        <button class="katz-btn sel" data-grp="iadl" data-idx="2" data-val="1" onclick="selKatz(this)">Sim</button>
+        <button class="katz-btn"    data-grp="iadl" data-idx="2" data-val="0" onclick="selKatz(this)">Não</button>
+      </div>
+    </div>
+    <div class="katz-row">
+      <span class="katz-lbl">🧹 Realizar tarefas domésticas</span>
+      <div class="katz-tog">
+        <button class="katz-btn sel" data-grp="iadl" data-idx="3" data-val="1" onclick="selKatz(this)">Sim</button>
+        <button class="katz-btn"    data-grp="iadl" data-idx="3" data-val="0" onclick="selKatz(this)">Não</button>
+      </div>
+    </div>
+    <div class="katz-row">
+      <span class="katz-lbl">👔 Cuidar da própria roupa (lavar/guardar)</span>
+      <div class="katz-tog">
+        <button class="katz-btn sel" data-grp="iadl" data-idx="4" data-val="1" onclick="selKatz(this)">Sim</button>
+        <button class="katz-btn"    data-grp="iadl" data-idx="4" data-val="0" onclick="selKatz(this)">Não</button>
+      </div>
+    </div>
+    <div class="katz-row">
+      <span class="katz-lbl">🚌 Usar transporte público ou dirigir</span>
+      <div class="katz-tog">
+        <button class="katz-btn sel" data-grp="iadl" data-idx="5" data-val="1" onclick="selKatz(this)">Sim</button>
+        <button class="katz-btn"    data-grp="iadl" data-idx="5" data-val="0" onclick="selKatz(this)">Não</button>
+      </div>
+    </div>
+    <div class="katz-row">
+      <span class="katz-lbl">💊 Tomar medicamentos no horário/dose corretos</span>
+      <div class="katz-tog">
+        <button class="katz-btn sel" data-grp="iadl" data-idx="6" data-val="1" onclick="selKatz(this)">Sim</button>
+        <button class="katz-btn"    data-grp="iadl" data-idx="6" data-val="0" onclick="selKatz(this)">Não</button>
+      </div>
+    </div>
+    <div class="katz-row">
+      <span class="katz-lbl">💰 Administrar finanças (conta, pagamentos)</span>
+      <div class="katz-tog">
+        <button class="katz-btn sel" data-grp="iadl" data-idx="7" data-val="1" onclick="selKatz(this)">Sim</button>
+        <button class="katz-btn"    data-grp="iadl" data-idx="7" data-val="0" onclick="selKatz(this)">Não</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Salvar avaliação -->
+  <button class="btn" style="width:100%;background:#1e3a5f;color:#fff;margin-bottom:14px" onclick="salvarAvaliacao()">
+    💾 Registrar avaliação completa
+  </button>
+
+  <!-- Histórico -->
+  <div class="card" id="histCard" style="display:none">
+    <div class="card-title">Histórico de Avaliações</div>
+    <div id="histList"></div>
+  </div>
+
+  <!-- Referências -->
+  <div class="card" style="font-size:.72rem;color:#64748b">
+    <strong style="color:#1e3a5f;display:block;margin-bottom:6px">📌 Referências</strong>
+    <strong>SARC-F:</strong> Malmstrom & Cruz-Jentoft. JAMDA. 2014.<br>
+    <strong>Mini-Cog:</strong> Borson et al. JAGS. 2003.<br>
+    <strong>Katz ADL:</strong> Katz et al. JAMA. 1963.<br>
+    <strong>Lawton IADL:</strong> Lawton & Brody. Gerontologist. 1969.
+  </div>
+
+</main>
+
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+
+<script src="js/db.js"></script>
+<script>
+const pid  = localStorage.getItem('vd_active');
+const KEY  = 'geri_hist_' + pid;
+
+// State
+const _state = {
+  sarc: [0,0,0,0,0],
+  mc:   { palavras:0, relogio:2 },
+  katz: [1,1,1,1,1,1],
+  iadl: [1,1,1,1,1,1,1,1],
+};
+
+// ── Selectors ────────────────────────────────────────────────────────────
+function selQ(el) {
+  const grp = el.dataset.grp;
+  const idx = parseInt(el.dataset.idx);
+  const val = parseInt(el.dataset.val);
+  document.querySelectorAll(`[data-grp="${grp}"][data-idx="${idx}"]`).forEach(o => o.classList.remove('sel'));
+  el.classList.add('sel');
+  _state[grp][idx] = val;
+  calcSarc();
+}
+
+function selKatz(btn) {
+  const grp = btn.dataset.grp;
+  const idx = parseInt(btn.dataset.idx);
+  const val = parseInt(btn.dataset.val);
+  btn.parentElement.querySelectorAll('.katz-btn').forEach(b => b.classList.remove('sel'));
+  btn.classList.add('sel');
+  _state[grp][idx] = val;
+  grp === 'katz' ? calcKatz() : calcIADL();
+}
+
+// ── Calculations ─────────────────────────────────────────────────────────
+function calcSarc() {
+  const s = _state.sarc.reduce((a,b)=>a+b,0);
+  const cor = s >= 4 ? '#dc2626' : s >= 2 ? '#d97706' : '#16a34a';
+  document.getElementById('chipSarc').style.background = cor;
+  document.getElementById('chipSarc').textContent = s + ' / 10';
+  updateSummary();
+}
+
+function calcMC() {
+  const palavras = parseInt(document.getElementById('mcPalavras').value)||0;
+  const relogio  = parseInt(document.getElementById('mcRelogio').value);
+  _state.mc.palavras = palavras;
+  _state.mc.relogio  = relogio;
+  const s = relogio < 0 ? palavras : palavras + (relogio === 2 ? 2 : 0);
+  const cor = s <= 2 ? '#dc2626' : '#16a34a';
+  const txt = s <= 2 ? '⚠️ Rastreio positivo — possível comprometimento cognitivo' : '✅ Rastreio negativo';
+  document.getElementById('chipMC').style.background = cor;
+  document.getElementById('chipMC').textContent = s + ' / 5';
+  document.getElementById('mcResult').innerHTML = `<strong style="color:${cor}">${txt}</strong>`;
+  document.getElementById('mcResult').style.background = cor + '18';
+  updateSummary();
+}
+
+function calcKatz() {
+  const s = _state.katz.reduce((a,b)=>a+b,0);
+  const cor = s <= 2 ? '#dc2626' : s <= 3 ? '#ea580c' : s <= 5 ? '#d97706' : '#16a34a';
+  document.getElementById('chipKatz').style.background = cor;
+  document.getElementById('chipKatz').textContent = s + ' / 6';
+  updateSummary();
+}
+
+function calcIADL() {
+  const s = _state.iadl.reduce((a,b)=>a+b,0);
+  const cor = s <= 1 ? '#dc2626' : s <= 4 ? '#ea580c' : s <= 7 ? '#d97706' : '#16a34a';
+  document.getElementById('chipIADL').style.background = cor;
+  document.getElementById('chipIADL').textContent = s + ' / 8';
+  updateSummary();
+}
+
+function interpSarc(s) { return s >= 4 ? 'Risco de sarcopenia' : s >= 2 ? 'Atenção' : 'Baixo risco'; }
+function interpMC(s)   { return s <= 2 ? 'Rastreio positivo' : 'Rastreio negativo'; }
+function interpKatz(s) { return s <= 1 ? 'Dependência grave' : s <= 3 ? 'Dependência moderada' : s <= 5 ? 'Dependência leve' : 'Independente'; }
+function interpIADL(s) { return s <= 1 ? 'Dependência grave' : s <= 4 ? 'Dependência moderada' : s <= 7 ? 'Dependência leve' : 'Independente'; }
+
+function corSarc(s) { return s >= 4 ? '#dc2626' : s >= 2 ? '#d97706' : '#16a34a'; }
+function corMC(s)   { return s <= 2 ? '#dc2626' : '#16a34a'; }
+function corKatz(s) { return s <= 2 ? '#dc2626' : s <= 3 ? '#ea580c' : s <= 5 ? '#d97706' : '#16a34a'; }
+function corIADL(s) { return s <= 1 ? '#dc2626' : s <= 4 ? '#ea580c' : s <= 7 ? '#d97706' : '#16a34a'; }
+
+function updateSummary() {
+  const sarc  = _state.sarc.reduce((a,b)=>a+b,0);
+  const katz  = _state.katz.reduce((a,b)=>a+b,0);
+  const iadl  = _state.iadl.reduce((a,b)=>a+b,0);
+  const mcVal = _state.mc.relogio < 0 ? _state.mc.palavras : _state.mc.palavras + (_state.mc.relogio === 2 ? 2 : 0);
+
+  document.getElementById('summaryRow').style.display = 'grid';
+  document.getElementById('sumSarc').innerHTML = `<div class="sum-score" style="color:${corSarc(sarc)}">${sarc}/10</div><div class="sum-name">SARC-F</div><div class="sum-interp">${interpSarc(sarc)}</div>`;
+  document.getElementById('sumMC').innerHTML   = `<div class="sum-score" style="color:${corMC(mcVal)}">${mcVal}/5</div><div class="sum-name">Mini-Cog</div><div class="sum-interp">${interpMC(mcVal)}</div>`;
+  document.getElementById('sumKatz').innerHTML = `<div class="sum-score" style="color:${corKatz(katz)}">${katz}/6</div><div class="sum-name">Katz ADL</div><div class="sum-interp">${interpKatz(katz)}</div>`;
+  document.getElementById('sumIADL').innerHTML = `<div class="sum-score" style="color:${corIADL(iadl)}">${iadl}/8</div><div class="sum-name">Lawton IADL</div><div class="sum-interp">${interpIADL(iadl)}</div>`;
+}
+
+// ── Save / History ────────────────────────────────────────────────────────
+async function salvarAvaliacao() {
+  if (!pid) { alert('Nenhum paciente ativo.'); return; }
+  const sarc = _state.sarc.reduce((a,b)=>a+b,0);
+  const katz = _state.katz.reduce((a,b)=>a+b,0);
+  const iadl = _state.iadl.reduce((a,b)=>a+b,0);
+  const mcVal = _state.mc.relogio < 0 ? _state.mc.palavras : _state.mc.palavras + (_state.mc.relogio === 2 ? 2 : 0);
+
+  const entry = {
+    id: Date.now(),
+    data: new Date().toISOString().slice(0,10),
+    sarc_score: sarc, sarc: [..._state.sarc],
+    mc_score: mcVal, mc: {..._state.mc},
+    katz_score: katz, katz: [..._state.katz],
+    iadl_score: iadl, iadl: [..._state.iadl],
+  };
+
+  const hist = await dbGetConfig(KEY) || [];
+  hist.push(entry);
+  await dbSetConfig(KEY, hist);
+  renderHist(hist);
+  alert('Avaliação registrada com sucesso!');
+}
+
+async function carregarHist() {
+  if (!pid) return;
+  const hist = await dbGetConfig(KEY) || [];
+  if (hist.length) renderHist(hist);
+}
+
+function renderHist(hist) {
+  const card = document.getElementById('histCard');
+  const list = document.getElementById('histList');
+  card.style.display = '';
+  const sorted = [...hist].sort((a,b) => b.data < a.data ? -1 : 1);
+  list.innerHTML = sorted.map((h,i) => {
+    const dt = h.data ? new Date(h.data+'T12:00').toLocaleDateString('pt-BR') : '—';
+    return `<div class="hist-card">
+      <div class="hist-date">${dt}</div>
+      <div class="hist-grid">
+        <div class="hist-item"><span class="hist-val" style="color:${corSarc(h.sarc_score)}">${h.sarc_score}/10</span>SARC-F</div>
+        <div class="hist-item"><span class="hist-val" style="color:${corMC(h.mc_score)}">${h.mc_score}/5</span>Mini-Cog</div>
+        <div class="hist-item"><span class="hist-val" style="color:${corKatz(h.katz_score)}">${h.katz_score}/6</span>Katz ADL</div>
+        <div class="hist-item"><span class="hist-val" style="color:${corIADL(h.iadl_score)}">${h.iadl_score}/8</span>Lawton</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// Init
+calcSarc(); calcMC(); calcKatz(); calcIADL();
+carregarHist();
+</script>
+</body>
+</html>

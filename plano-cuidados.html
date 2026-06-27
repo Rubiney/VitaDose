@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Plano de Cuidados — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .tabs { display:flex;gap:6px;margin-bottom:14px }
+    .tab-btn { flex:1;padding:10px;border-radius:10px;border:1.5px solid #e2e8f0;background:#f8fafc;font-size:.82rem;font-weight:700;color:#64748b;cursor:pointer }
+    .tab-btn.active { background:#1e3a5f;color:#fff;border-color:#1e3a5f }
+    .tab-panel { display:none }
+    .tab-panel.active { display:block }
+
+    .stats-row { display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px }
+    .stat-box  { background:#f8fafc;border-radius:12px;padding:12px;text-align:center;border:1.5px solid #e2e8f0 }
+    .stat-num  { font-size:1.4rem;font-weight:800 }
+    .stat-lbl  { font-size:.6rem;color:#64748b;margin-top:2px }
+
+    .prob-card { background:#fff;border:1.5px solid #e2e8f0;border-radius:14px;padding:14px;margin-bottom:10px;border-left:4px solid #e2e8f0 }
+    .prob-tipo { display:inline-block;padding:2px 8px;border-radius:999px;font-size:.62rem;font-weight:700;color:#fff;margin-bottom:6px }
+    .prob-med  { font-size:.73rem;color:#64748b;margin-bottom:4px }
+    .prob-desc { font-size:.82rem;line-height:1.5;margin-bottom:6px }
+    .prob-intv { font-size:.75rem;color:#0369a1;background:#e0f2fe;border-radius:6px;padding:6px 8px;margin-bottom:8px }
+    .prob-ft   { display:flex;align-items:center;gap:6px;flex-wrap:wrap }
+    .prob-date { font-size:.65rem;color:#94a3b8 }
+
+    .meta-card { background:#fff;border:1.5px solid #e2e8f0;border-radius:14px;padding:14px;margin-bottom:10px }
+    .meta-par  { font-size:.85rem;font-weight:700;margin-bottom:4px }
+    .meta-alvo { font-size:.75rem;color:#0f766e;font-weight:700 }
+    .meta-obs  { font-size:.73rem;color:#64748b;margin-top:4px }
+    .meta-prazo { font-size:.65rem;color:#94a3b8;margin-top:4px }
+
+    .badge { display:inline-block;padding:2px 9px;border-radius:999px;font-size:.65rem;font-weight:700 }
+    .st-ativo    { background:#fee2e2;color:#991b1b }
+    .st-parcial  { background:#fef9c3;color:#713f12 }
+    .st-resolvido{ background:#d1fae5;color:#065f46 }
+    .st-nao      { background:#f1f5f9;color:#475569 }
+    .st-andamento{ background:#dbeafe;color:#1e40af }
+    .st-atingida { background:#d1fae5;color:#065f46 }
+    .st-nao_a   { background:#fee2e2;color:#991b1b }
+
+    .fab { position:fixed;right:20px;bottom:75px;width:52px;height:52px;border-radius:50%;background:#1e3a5f;color:#fff;font-size:1.5rem;border:none;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,.25);z-index:100;display:flex;align-items:center;justify-content:center }
+
+    .modal-overlay { position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;display:none;align-items:flex-end }
+    .modal-overlay.open { display:flex }
+    .modal-sheet { background:#fff;border-radius:20px 20px 0 0;padding:20px;width:100%;max-height:90vh;overflow-y:auto;box-sizing:border-box }
+    .modal-title { font-size:1rem;font-weight:800;color:#1e3a5f;margin-bottom:16px }
+    .field-lbl { font-size:.7rem;font-weight:700;color:#64748b;display:block;margin-bottom:4px;margin-top:12px }
+    .field-inp { width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:9px;padding:9px 12px;font-size:.85rem;background:#fff }
+    .field-sel { width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:9px;padding:9px 12px;font-size:.82rem;background:#fff }
+    .field-ta  { width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:9px;padding:9px 12px;font-size:.82rem;min-height:80px;resize:vertical }
+    .empty-msg { text-align:center;color:#94a3b8;font-size:.82rem;padding:30px 0 }
+
+    .status-sel { border:1.5px solid #e2e8f0;border-radius:8px;padding:3px 6px;font-size:.65rem;font-weight:700;background:#f8fafc;cursor:pointer }
+    .btn-del { background:none;border:none;cursor:pointer;font-size:1rem;opacity:.5;padding:4px }
+    .btn-del:hover { opacity:1 }
+  </style>
+</head>
+<body>
+
+<header class="top-bar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <span class="top-title">Plano de Cuidados (SFT)</span>
+  <div class="top-right"></div>
+</header>
+
+<main class="container" style="padding-bottom:90px">
+
+  <!-- Stats -->
+  <div class="stats-row" id="statsRow">
+    <div class="stat-box"><div class="stat-num" id="sAtivos" style="color:#dc2626">0</div><div class="stat-lbl">Problemas<br>Ativos</div></div>
+    <div class="stat-box"><div class="stat-num" id="sResolvidos" style="color:#16a34a">0</div><div class="stat-lbl">Problemas<br>Resolvidos</div></div>
+    <div class="stat-box"><div class="stat-num" id="sMetas" style="color:#0369a1">0</div><div class="stat-lbl">Metas<br>Definidas</div></div>
+    <div class="stat-box"><div class="stat-num" id="sAtingidas" style="color:#16a34a">0</div><div class="stat-lbl">Metas<br>Atingidas</div></div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab-btn active" onclick="showTab('prob',this)">⚠️ Problemas</button>
+    <button class="tab-btn"        onclick="showTab('meta',this)">🎯 Metas Terapêuticas</button>
+  </div>
+
+  <!-- Tab: Problemas -->
+  <div id="tab-prob" class="tab-panel active">
+    <div id="listProb"></div>
+  </div>
+
+  <!-- Tab: Metas -->
+  <div id="tab-meta" class="tab-panel">
+    <div id="listMeta"></div>
+  </div>
+
+</main>
+
+<!-- FAB + -->
+<button class="fab" id="fabBtn" onclick="abrirModal()">＋</button>
+
+<!-- Modal -->
+<div class="modal-overlay" id="modalOv" onclick="fecharSeOverlay(event)">
+  <div class="modal-sheet">
+    <div class="modal-title" id="modalTit">Novo Problema</div>
+
+    <!-- Problema form -->
+    <div id="formProb">
+      <label class="field-lbl">Medicamento envolvido (opcional)</label>
+      <input type="text" class="field-inp" id="fMed" placeholder="Ex: Metformina 850 mg">
+
+      <label class="field-lbl">Tipo de problema *</label>
+      <select class="field-sel" id="fTipo">
+        <option value="">Selecione…</option>
+        <option>Indicação sem medicamento</option>
+        <option>Medicamento sem indicação</option>
+        <option>Subdosagem / efeito insuficiente</option>
+        <option>Superdosagem / evento tóxico</option>
+        <option>RAM / Evento adverso</option>
+        <option>Interação medicamentosa</option>
+        <option>Não adesão ao tratamento</option>
+        <option>Monitoramento terapêutico</option>
+        <option>Duplicidade terapêutica</option>
+        <option>Medicamento inapropriado</option>
+        <option>Outro</option>
+      </select>
+
+      <label class="field-lbl">Descrição do problema *</label>
+      <textarea class="field-ta" id="fDesc" placeholder="Descreva o problema identificado…"></textarea>
+
+      <label class="field-lbl">Intervenção farmacêutica</label>
+      <textarea class="field-ta" id="fIntv" placeholder="Descreva a intervenção proposta…"></textarea>
+    </div>
+
+    <!-- Meta form -->
+    <div id="formMeta" style="display:none">
+      <label class="field-lbl">Parâmetro terapêutico *</label>
+      <select class="field-sel" id="fPar" onchange="toggleCustomPar()">
+        <option value="">Selecione…</option>
+        <option>PA sistólica</option>
+        <option>PA diastólica</option>
+        <option>HbA1c (%)</option>
+        <option>Glicemia jejum (mg/dL)</option>
+        <option>Glicemia pós-prandial (mg/dL)</option>
+        <option>LDL-colesterol (mg/dL)</option>
+        <option>Colesterol total (mg/dL)</option>
+        <option>HDL-colesterol (mg/dL)</option>
+        <option>Triglicerídeos (mg/dL)</option>
+        <option>IMC (kg/m²)</option>
+        <option>Peso corporal (kg)</option>
+        <option>FC (bpm)</option>
+        <option>INR</option>
+        <option>TFG (mL/min)</option>
+        <option>Ácido úrico (mg/dL)</option>
+        <option value="outro">Outro (especificar)</option>
+      </select>
+      <input type="text" class="field-inp" id="fParCustom" placeholder="Especifique o parâmetro" style="display:none;margin-top:8px">
+
+      <label class="field-lbl">Valor-alvo *</label>
+      <input type="text" class="field-inp" id="fAlvo" placeholder="Ex: &lt; 130 mmHg, entre 6,5–7%">
+
+      <label class="field-lbl">Prazo para atingir</label>
+      <input type="date" class="field-inp" id="fPrazo">
+
+      <label class="field-lbl">Observação</label>
+      <input type="text" class="field-inp" id="fObs" placeholder="Ex: Reavaliação em consulta de retorno">
+    </div>
+
+    <div style="display:flex;gap:8px;margin-top:18px">
+      <button class="btn btn-outline" style="flex:1" onclick="fecharModal()">Cancelar</button>
+      <button class="btn" style="flex:1;background:#1e3a5f;color:#fff" onclick="salvar()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+
+<script src="js/db.js"></script>
+<script>
+const pid  = localStorage.getItem('vd_active');
+const KEY  = 'plano_cuidados_' + pid;
+let _tab   = 'prob';
+let _edit  = null;
+
+const _COR = {
+  'RAM / Evento adverso':'#dc2626',
+  'Interação medicamentosa':'#ea580c',
+  'Superdosagem / evento tóxico':'#b45309',
+  'Subdosagem / efeito insuficiente':'#d97706',
+  'Indicação sem medicamento':'#7c3aed',
+  'Medicamento sem indicação':'#6366f1',
+  'Não adesão ao tratamento':'#0369a1',
+  'Monitoramento terapêutico':'#0891b2',
+  'Duplicidade terapêutica':'#0f766e',
+  'Medicamento inapropriado':'#9f1239',
+  'Outro':'#475569',
+};
+
+const _ST_PROB = { ativo:{cls:'st-ativo',txt:'Ativo'}, parcial:{cls:'st-parcial',txt:'Parcial'}, resolvido:{cls:'st-resolvido',txt:'Resolvido'}, nao_resolvido:{cls:'st-nao',txt:'Não resolvido'} };
+const _ST_META = { andamento:{cls:'st-andamento',txt:'Em andamento'}, atingida:{cls:'st-atingida',txt:'Atingida'}, nao_atingida:{cls:'st-nao_a',txt:'Não atingida'} };
+
+async function load() {
+  if (!pid) { document.getElementById('listProb').innerHTML = '<p class="empty-msg">Nenhum paciente ativo.</p>'; return; }
+  const d = await dbGetConfig(KEY) || { problemas:[], metas:[] };
+  renderProb(d.problemas);
+  renderMeta(d.metas);
+  atualizarStats(d);
+}
+
+function atualizarStats(d) {
+  const pr = d.problemas || [];
+  const mt = d.metas || [];
+  document.getElementById('sAtivos').textContent    = pr.filter(p => p.status === 'ativo').length;
+  document.getElementById('sResolvidos').textContent = pr.filter(p => p.status === 'resolvido').length;
+  document.getElementById('sMetas').textContent      = mt.length;
+  document.getElementById('sAtingidas').textContent  = mt.filter(m => m.status === 'atingida').length;
+}
+
+function renderProb(lista) {
+  const el = document.getElementById('listProb');
+  if (!lista.length) { el.innerHTML = '<p class="empty-msg">Nenhum problema registrado.<br>Toque em + para adicionar.</p>'; return; }
+  el.innerHTML = lista.map((p,i) => {
+    const cor = _COR[p.tipo] || '#475569';
+    const st  = _ST_PROB[p.status] || _ST_PROB.ativo;
+    const dt  = p.data ? new Date(p.data+'T12:00').toLocaleDateString('pt-BR') : '—';
+    return `<div class="prob-card" style="border-left-color:${cor}">
+      <span class="prob-tipo" style="background:${cor}">${x(p.tipo||'Outro')}</span>
+      ${p.medicamento ? `<div class="prob-med">💊 ${x(p.medicamento)}</div>` : ''}
+      <div class="prob-desc">${x(p.descricao||'')}</div>
+      ${p.intervencao ? `<div class="prob-intv">💡 ${x(p.intervencao)}</div>` : ''}
+      <div class="prob-ft">
+        <select class="status-sel" onchange="mudarStatusProb(${i},this.value)">
+          ${Object.entries(_ST_PROB).map(([k,v])=>`<option value="${k}" ${p.status===k?'selected':''}>${v.txt}</option>`).join('')}
+        </select>
+        <span class="prob-date">${dt}</span>
+        <button class="btn-del" onclick="editarProb(${i})" title="Editar">✏️</button>
+        <button class="btn-del" onclick="excluirProb(${i})" title="Excluir">🗑️</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderMeta(lista) {
+  const el = document.getElementById('listMeta');
+  if (!lista.length) { el.innerHTML = '<p class="empty-msg">Nenhuma meta definida.<br>Toque em + para adicionar.</p>'; return; }
+  el.innerHTML = lista.map((m,i) => {
+    const st  = _ST_META[m.status] || _ST_META.andamento;
+    const dt  = m.prazo ? new Date(m.prazo+'T12:00').toLocaleDateString('pt-BR') : '—';
+    const venc = m.prazo && m.status === 'andamento' && new Date(m.prazo) < new Date() ? '⚠️ ' : '';
+    return `<div class="meta-card">
+      <div class="meta-par">🎯 ${x(m.parametro||'Meta')}</div>
+      <div class="meta-alvo">Alvo: ${x(m.alvo||'—')}</div>
+      ${m.obs ? `<div class="meta-obs">${x(m.obs)}</div>` : ''}
+      <div class="meta-prazo">${venc}Prazo: ${dt}</div>
+      <div style="margin-top:8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <select class="status-sel" onchange="mudarStatusMeta(${i},this.value)">
+          ${Object.entries(_ST_META).map(([k,v])=>`<option value="${k}" ${m.status===k?'selected':''}>${v.txt}</option>`).join('')}
+        </select>
+        <button class="btn-del" onclick="editarMeta(${i})" title="Editar">✏️</button>
+        <button class="btn-del" onclick="excluirMeta(${i})" title="Excluir">🗑️</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── Status changes ─────────────────────────────────────────────────────
+async function mudarStatusProb(i, val) {
+  const d = await dbGetConfig(KEY) || { problemas:[], metas:[] };
+  d.problemas[i].status = val;
+  await dbSetConfig(KEY, d);
+  atualizarStats(d);
+}
+
+async function mudarStatusMeta(i, val) {
+  const d = await dbGetConfig(KEY) || { problemas:[], metas:[] };
+  d.metas[i].status = val;
+  await dbSetConfig(KEY, d);
+  atualizarStats(d);
+}
+
+// ── CRUD ────────────────────────────────────────────────────────────────
+async function excluirProb(i) {
+  if (!confirm('Excluir este problema?')) return;
+  const d = await dbGetConfig(KEY) || { problemas:[], metas:[] };
+  d.problemas.splice(i,1);
+  await dbSetConfig(KEY, d);
+  renderProb(d.problemas);
+  atualizarStats(d);
+}
+
+async function excluirMeta(i) {
+  if (!confirm('Excluir esta meta?')) return;
+  const d = await dbGetConfig(KEY) || { problemas:[], metas:[] };
+  d.metas.splice(i,1);
+  await dbSetConfig(KEY, d);
+  renderMeta(d.metas);
+  atualizarStats(d);
+}
+
+function editarProb(i) {
+  _edit = { tipo:'prob', idx:i };
+  abrirModal();
+  dbGetConfig(KEY).then(d => {
+    const p = (d||{}).problemas?.[i];
+    if (!p) return;
+    document.getElementById('fMed').value   = p.medicamento || '';
+    document.getElementById('fTipo').value  = p.tipo || '';
+    document.getElementById('fDesc').value  = p.descricao || '';
+    document.getElementById('fIntv').value  = p.intervencao || '';
+    document.getElementById('modalTit').textContent = 'Editar Problema';
+  });
+}
+
+function editarMeta(i) {
+  _edit = { tipo:'meta', idx:i };
+  _tab = 'meta';
+  abrirModal();
+  dbGetConfig(KEY).then(d => {
+    const m = (d||{}).metas?.[i];
+    if (!m) return;
+    document.getElementById('fPar').value   = m.parametro || '';
+    document.getElementById('fAlvo').value  = m.alvo || '';
+    document.getElementById('fPrazo').value = m.prazo || '';
+    document.getElementById('fObs').value   = m.obs || '';
+    toggleCustomPar();
+    document.getElementById('modalTit').textContent = 'Editar Meta';
+  });
+}
+
+async function salvar() {
+  const d = await dbGetConfig(KEY) || { problemas:[], metas:[] };
+
+  if (_tab === 'prob') {
+    const tipo = document.getElementById('fTipo').value;
+    const desc = document.getElementById('fDesc').value.trim();
+    if (!tipo || !desc) { alert('Tipo e descrição são obrigatórios.'); return; }
+    const obj = {
+      id: _edit ? d.problemas[_edit.idx].id : Date.now(),
+      data: (_edit ? d.problemas[_edit.idx].data : undefined) || new Date().toISOString().slice(0,10),
+      medicamento: document.getElementById('fMed').value.trim(),
+      tipo, desc, descricao: desc,
+      intervencao: document.getElementById('fIntv').value.trim(),
+      status: _edit ? d.problemas[_edit.idx].status : 'ativo',
+    };
+    if (_edit && _edit.tipo === 'prob') d.problemas[_edit.idx] = obj;
+    else d.problemas.push(obj);
+    await dbSetConfig(KEY, d);
+    renderProb(d.problemas);
+  } else {
+    let par = document.getElementById('fPar').value;
+    if (par === 'outro') par = document.getElementById('fParCustom').value.trim();
+    const alvo = document.getElementById('fAlvo').value.trim();
+    if (!par || !alvo) { alert('Parâmetro e alvo são obrigatórios.'); return; }
+    const obj = {
+      id: _edit ? d.metas[_edit.idx].id : Date.now(),
+      data: (_edit ? d.metas[_edit.idx].data : undefined) || new Date().toISOString().slice(0,10),
+      parametro: par, alvo,
+      prazo: document.getElementById('fPrazo').value,
+      obs: document.getElementById('fObs').value.trim(),
+      status: _edit ? d.metas[_edit.idx].status : 'andamento',
+    };
+    if (_edit && _edit.tipo === 'meta') d.metas[_edit.idx] = obj;
+    else d.metas.push(obj);
+    await dbSetConfig(KEY, d);
+    renderMeta(d.metas);
+  }
+
+  atualizarStats(d);
+  fecharModal();
+}
+
+// ── Modal ───────────────────────────────────────────────────────────────
+function abrirModal() {
+  _edit = _edit || null;
+  document.getElementById('modalTit').textContent = _tab === 'prob' ? 'Novo Problema' : 'Nova Meta Terapêutica';
+  document.getElementById('formProb').style.display = _tab === 'prob' ? '' : 'none';
+  document.getElementById('formMeta').style.display = _tab === 'meta' ? '' : 'none';
+  if (!_edit) {
+    ['fMed','fTipo','fDesc','fIntv','fPar','fAlvo','fPrazo','fObs'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = '';
+    });
+  }
+  document.getElementById('modalOv').classList.add('open');
+}
+
+function fecharModal() {
+  document.getElementById('modalOv').classList.remove('open');
+  _edit = null;
+}
+
+function fecharSeOverlay(e) { if (e.target === document.getElementById('modalOv')) fecharModal(); }
+
+function toggleCustomPar() {
+  const sel = document.getElementById('fPar').value;
+  document.getElementById('fParCustom').style.display = sel === 'outro' ? '' : 'none';
+}
+
+// ── Tabs ────────────────────────────────────────────────────────────────
+function showTab(id, btn) {
+  _tab = id;
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  btn.classList.add('active');
+}
+
+function x(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+load();
+</script>
+</body>
+</html>

@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Risco QTc — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .risco-hdr { background:linear-gradient(135deg,#1e3a5f,#7c3aed);color:#fff;border-radius:14px;padding:18px;margin-bottom:14px }
+    .risco-title { font-size:1rem;font-weight:800;margin-bottom:4px }
+    .risco-sub { font-size:.73rem;opacity:.8 }
+
+    .drug-row { display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #f1f5f9 }
+    .drug-row:last-child { border-bottom:none }
+    .drug-icon { width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:800;color:#fff;flex-shrink:0 }
+    .drug-name { font-size:.82rem;font-weight:700;flex:1 }
+    .drug-med  { font-size:.7rem;color:#64748b;display:block }
+    .pts-badge { font-size:.65rem;font-weight:800;padding:2px 7px;border-radius:999px;color:#fff }
+
+    .rf-row { display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #f1f5f9;cursor:pointer }
+    .rf-row:last-child { border-bottom:none }
+    .rf-check { width:20px;height:20px;accent-color:#7c3aed;flex-shrink:0;cursor:pointer }
+    .rf-lbl { font-size:.82rem;flex:1 }
+    .rf-pts { font-size:.72rem;font-weight:700;color:#7c3aed }
+
+    .score-panel { border-radius:14px;padding:18px;margin-top:14px;text-align:center }
+    .score-big { font-size:3rem;font-weight:900;line-height:1 }
+    .score-lbl { font-size:.75rem;margin-top:4px;opacity:.85 }
+    .interp { font-size:.82rem;padding:12px;border-radius:10px;text-align:left;line-height:1.6;margin-top:10px }
+
+    .qtc-row { display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;margin-bottom:4px }
+    .qtc-field { flex:1;min-width:100px }
+    .qtc-lbl { font-size:.7rem;font-weight:700;color:#64748b;display:block;margin-bottom:4px }
+    .qtc-inp { border:1.5px solid #e2e8f0;border-radius:9px;padding:8px 12px;font-size:.9rem;width:100%;box-sizing:border-box;text-align:right }
+    .qtc-result { flex:0 0 120px;text-align:center;background:#f8fafc;border-radius:10px;padding:8px;font-size:.72rem }
+
+    .no-detect { color:#94a3b8;font-size:.8rem;padding:16px 0;text-align:center }
+    .btn-auto { background:#f0fdf4;border:1.5px solid #bbf7d0;color:#16a34a;border-radius:9px;padding:8px 14px;font-size:.78rem;font-weight:700;cursor:pointer;width:100%;margin-bottom:12px }
+    .sec-lbl { font-size:.62rem;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.08em;margin:0 0 8px }
+  </style>
+</head>
+<body>
+
+<header class="top-bar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <span class="top-title">Risco QTc Farmacológico</span>
+  <div class="top-right"></div>
+</header>
+
+<main class="container" style="padding-bottom:90px">
+
+  <div class="risco-hdr">
+    <div class="risco-title">⚡ Risco de Prolongamento do QTc</div>
+    <div class="risco-sub">Baseado na classificação CredibleMeds / AzCERT — Detecção automática nos medicamentos ativos</div>
+  </div>
+
+  <!-- Medicamentos detectados -->
+  <div class="card">
+    <p class="sec-lbl">Medicamentos com risco QT detectados</p>
+    <button class="btn-auto" onclick="escanearMeds()">⚡ Escanear medicamentos ativos</button>
+    <div id="drugList"><p class="no-detect">Toque em "Escanear" para detectar medicamentos com risco QT.</p></div>
+  </div>
+
+  <!-- QTc do ECG -->
+  <div class="card">
+    <p class="sec-lbl">QTc do ECG (opcional)</p>
+    <div class="qtc-row">
+      <div class="qtc-field">
+        <label class="qtc-lbl">QTc medido (ms)</label>
+        <input type="number" class="qtc-inp" id="qtcVal" placeholder="Ex: 450" min="200" max="700" oninput="calcRisco()">
+      </div>
+      <div class="qtc-field">
+        <label class="qtc-lbl">Sexo do paciente</label>
+        <select class="qtc-inp" id="sexoSel" onchange="calcRisco()">
+          <option value="">Não informado</option>
+          <option value="M">Masculino</option>
+          <option value="F">Feminino</option>
+        </select>
+      </div>
+      <div class="qtc-result" id="qtcResult">—</div>
+    </div>
+    <p style="font-size:.68rem;color:#94a3b8;margin-top:6px">Normal: H &lt;440ms / F &lt;460ms · Limítrofe: H 440–470ms / F 460–480ms · Prolongado: H &gt;470ms / F &gt;480ms</p>
+  </div>
+
+  <!-- Fatores de risco do paciente -->
+  <div class="card">
+    <p class="sec-lbl">Fatores de risco clínicos</p>
+    <button class="btn-auto" onclick="autoFillRF()">⚡ Auto-detectar do paciente ativo</button>
+    <div id="rfList">
+      <div class="rf-row" onclick="toggleRF(this)">
+        <input type="checkbox" class="rf-check" data-pts="1" id="rfFem">
+        <label class="rf-lbl" for="rfFem">Sexo feminino (QTc basal mais longo)</label>
+        <span class="rf-pts">+1</span>
+      </div>
+      <div class="rf-row" onclick="toggleRF(this)">
+        <input type="checkbox" class="rf-check" data-pts="1" id="rfBradi">
+        <label class="rf-lbl" for="rfBradi">Bradicardia (FC &lt; 60 bpm)</label>
+        <span class="rf-pts">+1</span>
+      </div>
+      <div class="rf-row" onclick="toggleRF(this)">
+        <input type="checkbox" class="rf-check" data-pts="1" id="rfHipoK">
+        <label class="rf-lbl" for="rfHipoK">Hipocalemia (K &lt; 3,5 mEq/L)</label>
+        <span class="rf-pts">+1</span>
+      </div>
+      <div class="rf-row" onclick="toggleRF(this)">
+        <input type="checkbox" class="rf-check" data-pts="1" id="rfHipoMg">
+        <label class="rf-lbl" for="rfHipoMg">Hipomagnesemia (Mg &lt; 0,7 mmol/L)</label>
+        <span class="rf-pts">+1</span>
+      </div>
+      <div class="rf-row" onclick="toggleRF(this)">
+        <input type="checkbox" class="rf-check" data-pts="1" id="rfHipoCa">
+        <label class="rf-lbl" for="rfHipoCa">Hipocalcemia (Ca corrigido &lt; 8,5 mg/dL)</label>
+        <span class="rf-pts">+1</span>
+      </div>
+      <div class="rf-row" onclick="toggleRF(this)">
+        <input type="checkbox" class="rf-check" data-pts="1" id="rfICC">
+        <label class="rf-lbl" for="rfICC">Insuficiência cardíaca / Cardiopatia estrutural</label>
+        <span class="rf-pts">+1</span>
+      </div>
+      <div class="rf-row" onclick="toggleRF(this)">
+        <input type="checkbox" class="rf-check" data-pts="1" id="rfRenal">
+        <label class="rf-lbl" for="rfRenal">Insuficiência renal grave (TFG &lt; 30 mL/min)</label>
+        <span class="rf-pts">+1</span>
+      </div>
+      <div class="rf-row" onclick="toggleRF(this)">
+        <input type="checkbox" class="rf-check" data-pts="1" id="rfHepat">
+        <label class="rf-lbl" for="rfHepat">Insuficiência hepática grave (Child B/C)</label>
+        <span class="rf-pts">+1</span>
+      </div>
+      <div class="rf-row" onclick="toggleRF(this)">
+        <input type="checkbox" class="rf-check" data-pts="2" id="rfSinc">
+        <label class="rf-lbl" for="rfSinc">Síncope inexplicada ou palpitações recorrentes</label>
+        <span class="rf-pts" style="color:#dc2626">+2</span>
+      </div>
+      <div class="rf-row" onclick="toggleRF(this)">
+        <input type="checkbox" class="rf-check" data-pts="2" id="rfQTL">
+        <label class="rf-lbl" for="rfQTL">Síndrome do QT longo congênita (SQTL) ou familiar</label>
+        <span class="rf-pts" style="color:#dc2626">+2</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Score -->
+  <div id="scorePanel"></div>
+
+  <!-- Nota diuréticos -->
+  <div class="card" style="border-left:4px solid #d97706">
+    <p style="font-size:.75rem;color:#92400e;line-height:1.5">
+      ⚠️ <strong>Diuréticos de alça e tiazídicos</strong> (furosemida, hidroclorotiazida, indapamida) não prolongam diretamente o QTc, mas a <strong>hipocalemia e hipomagnesemia</strong> que induzem amplificam significativamente o risco dos fármacos listados acima. Monitore eletrólitos regularmente.
+    </p>
+  </div>
+
+  <!-- Referência -->
+  <div class="card" style="font-size:.73rem;color:#64748b">
+    <strong style="color:#1e3a5f;display:block;margin-bottom:6px">📌 Referências</strong>
+    CredibleMeds® / AzCERT — Arizona CERT QTdrugs List (atualizada continuamente).<br>
+    Woosley RL et al. QTdrugs List. AZCERT Inc. Crediblemeds.org.<br>
+    Viskin S. Long QT syndromes and torsade de pointes. Lancet. 1999;354:1625-1633.
+  </div>
+
+</main>
+
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+
+<script src="js/db.js"></script>
+<script>
+const pid = localStorage.getItem('vd_active');
+
+// Known Risk: 3 pts each
+const _KR = [
+  [/amiodarona/i,'Amiodarona'],[/sotalol/i,'Sotalol'],[/quinidina/i,'Quinidina'],
+  [/haloperidol/i,'Haloperidol'],[/metadona/i,'Metadona'],
+  [/eritromicina/i,'Eritromicina'],[/azitromicina/i,'Azitromicina'],[/claritromicina/i,'Claritromicina'],
+  [/ciprofloxacino/i,'Ciprofloxacino'],[/levofloxacino/i,'Levofloxacino'],[/moxifloxacino/i,'Moxifloxacino'],
+  [/fluconazol/i,'Fluconazol'],[/voriconazol/i,'Voriconazol'],[/itraconazol/i,'Itraconazol'],
+  [/ondansetrona/i,'Ondansetrona'],[/granisetrona/i,'Granisetrona'],
+  [/quetiapina/i,'Quetiapina'],[/clorpromazina/i,'Clorpromazina'],[/tioridazina/i,'Tioridazina'],[/ziprasidona/i,'Ziprasidona'],
+  [/cloroquina/i,'Cloroquina'],[/hidroxicloroquina/i,'Hidroxicloroquina'],
+  [/droperidol/i,'Droperidol'],[/domperidona/i,'Domperidona'],
+  [/pimozida/i,'Pimozida'],[/arsenico|tri.xido de ars/i,'Trióxido de Arsênio'],
+];
+
+// Conditional Risk: 2 pts each
+const _CR = [
+  [/fluoxetina/i,'Fluoxetina'],[/citalopram/i,'Citalopram'],[/escitalopram/i,'Escitalopram'],
+  [/sertralina/i,'Sertralina'],[/paroxetina/i,'Paroxetina'],[/venlafaxina/i,'Venlafaxina'],
+  [/amitriptilina/i,'Amitriptilina'],[/imipramina/i,'Imipramina'],[/clomipramina/i,'Clomipramina'],[/nortriptilina/i,'Nortriptilina'],
+  [/risperidona/i,'Risperidona'],[/olanzapina/i,'Olanzapina'],[/aripiprazol/i,'Aripiprazol'],
+  [/tramadol/i,'Tramadol'],[/metoclopramida/i,'Metoclopramida'],
+  [/tamoxifeno/i,'Tamoxifeno'],[/tacrolimus/i,'Tacrolimus'],[/ciclosporina/i,'Ciclosporina'],
+  [/ranolazina/i,'Ranolazina'],[/donepezila/i,'Donepezila'],[/galantamina/i,'Galantamina'],
+  [/vandetanibe/i,'Vandetanibe'],[/osimertinibe/i,'Osimertinibe'],
+];
+
+// Possible Risk: 1 pt each
+const _PR = [
+  [/famotidina/i,'Famotidina'],[/ranitidina/i,'Ranitidina'],
+  [/salbutamol|albuterol/i,'Salbutamol'],[/formoterol/i,'Formoterol'],[/salmeterol/i,'Salmeterol'],
+  [/tizanidina/i,'Tizanidina'],[/vardenafila/i,'Vardenafila'],
+];
+
+let _drugScore = 0;
+let _detectedDrugs = [];
+
+async function escanearMeds() {
+  if (!pid) { alert('Nenhum paciente ativo.'); return; }
+  const all = await dbGetAll('medicamentos');
+  const meds = all.filter(m => m.status === 'ativo' && (!m.pacienteId || String(m.pacienteId) === String(pid)));
+
+  _detectedDrugs = [];
+  _drugScore = 0;
+  const found = [];
+
+  meds.forEach(m => {
+    const nome = m.nome || '';
+    for (const [rx, label] of _KR) {
+      if (rx.test(nome)) {
+        found.push({ label, medNome: nome, cat: 'KR', pts: 3 });
+        _drugScore += 3;
+        return;
+      }
+    }
+    for (const [rx, label] of _CR) {
+      if (rx.test(nome)) {
+        found.push({ label, medNome: nome, cat: 'CR', pts: 2 });
+        _drugScore += 2;
+        return;
+      }
+    }
+    for (const [rx, label] of _PR) {
+      if (rx.test(nome)) {
+        found.push({ label, medNome: nome, cat: 'PR', pts: 1 });
+        _drugScore += 1;
+        return;
+      }
+    }
+  });
+
+  // Extra points if ≥2 KR drugs (combination risk)
+  const nKR = found.filter(f => f.cat === 'KR').length;
+  if (nKR >= 2) _drugScore += 2;
+
+  _detectedDrugs = found;
+  renderDrugList(found, nKR);
+  calcRisco();
+}
+
+function renderDrugList(found, nKR) {
+  const el = document.getElementById('drugList');
+  if (!found.length) {
+    el.innerHTML = '<p class="no-detect">✅ Nenhum medicamento com risco QT conhecido detectado.</p>';
+    return;
+  }
+  const catInfo = {
+    KR: { bg:'#dc2626', label:'Risco Conhecido', desc:'Evidências robustas de prolongamento do QTc' },
+    CR: { bg:'#ea580c', label:'Risco Condicional', desc:'Risco aumentado em condições específicas' },
+    PR: { bg:'#d97706', label:'Risco Possível', desc:'Evidências limitadas ou indiretas' },
+  };
+  el.innerHTML = found.map(f => {
+    const c = catInfo[f.cat];
+    return `<div class="drug-row">
+      <div class="drug-icon" style="background:${c.bg}">${f.cat}</div>
+      <div style="flex:1">
+        <div class="drug-name">${x(f.label)}</div>
+        <span class="drug-med">via: ${x(f.medNome)} · ${c.desc}</span>
+      </div>
+      <span class="pts-badge" style="background:${c.bg}">+${f.pts}</span>
+    </div>`;
+  }).join('') + (nKR >= 2 ? `<p style="font-size:.72rem;color:#dc2626;margin-top:8px;padding:8px;background:#fef2f2;border-radius:8px">⚠️ Combinação de ${nKR} fármacos de Risco Conhecido (+2 pts adicionais)</p>` : '');
+}
+
+function toggleRF(row) {
+  const cb = row.querySelector('.rf-check');
+  if (event.target !== cb) cb.checked = !cb.checked;
+  calcRisco();
+}
+
+function calcRisco() {
+  let rfScore = 0;
+  document.querySelectorAll('.rf-check').forEach(cb => {
+    if (cb.checked) rfScore += parseInt(cb.dataset.pts || 0);
+  });
+
+  // QTc bonus
+  let qtcScore = 0;
+  const qtcVal  = parseFloat(document.getElementById('qtcVal').value) || 0;
+  const sexo    = document.getElementById('sexoSel').value;
+  const femQTc  = sexo === 'F';
+  const limNorm = femQTc ? 460 : 440;
+  const limBord = femQTc ? 480 : 470;
+
+  if (qtcVal > 0) {
+    if (qtcVal > limBord) qtcScore = 3;
+    else if (qtcVal > limNorm) qtcScore = 1;
+  }
+
+  const el = document.getElementById('qtcResult');
+  if (qtcVal > 0) {
+    if (qtcVal > limBord) el.innerHTML = `<span style="color:#dc2626;font-weight:800">⚠️ PROLONGADO<br>${qtcVal} ms</span>`;
+    else if (qtcVal > limNorm) el.innerHTML = `<span style="color:#d97706;font-weight:800">⚡ Limítrofe<br>${qtcVal} ms</span>`;
+    else el.innerHTML = `<span style="color:#16a34a;font-weight:800">✅ Normal<br>${qtcVal} ms</span>`;
+  } else {
+    el.innerHTML = '—';
+  }
+
+  const total = _drugScore + rfScore + qtcScore;
+  renderScore(total, rfScore, qtcScore);
+}
+
+function renderScore(total, rfScore, qtcScore) {
+  let cor, nivel, titulo, rec;
+  if (total === 0) {
+    cor='#16a34a'; nivel='Mínimo'; titulo='Sem risco QT identificado';
+    rec='Nenhum medicamento com risco QT detectado. Manter monitoramento clínico habitual.';
+  } else if (total <= 2) {
+    cor='#65a30d'; nivel='Baixo'; titulo='Risco baixo';
+    rec='Monitorar sinais e sintomas. ECG basal recomendado. Cautela ao adicionar novos fármacos com risco QT.';
+  } else if (total <= 5) {
+    cor='#d97706'; nivel='Moderado'; titulo='Risco moderado';
+    rec='Avaliar necessidade de ECG. Considerar alternativas terapêuticas sem risco QT. Corrigir fatores de risco reversíveis (eletrólitos).';
+  } else if (total <= 9) {
+    cor='#ea580c'; nivel='Alto'; titulo='Risco alto';
+    rec='ECG indicado. Avaliar substituição dos fármacos de Risco Conhecido. Monitorar QTc antes e após inicio/ajuste de doses. Corrigir hipocalemia/hipomagnesemia.';
+  } else {
+    cor='#dc2626'; nivel='Crítico'; titulo='Risco crítico — ação necessária';
+    rec='ECG urgente. Comunicar médico assistente. Substituir fármacos de Risco Conhecido sempre que possível. Suspender ou reduzir dose das combinações de risco. Monitorar eletrólitos e função renal/hepática.';
+  }
+
+  document.getElementById('scorePanel').innerHTML = `
+    <div class="card score-panel" style="background:${cor}18;border:2px solid ${cor}">
+      <div class="score-big" style="color:${cor}">${total}</div>
+      <div class="score-lbl" style="color:${cor};font-size:.8rem;font-weight:700">${nivel} · ${titulo}</div>
+      <div style="font-size:.7rem;color:#94a3b8;margin-top:4px">
+        Fármacos: ${_drugScore} pts · Fatores clínicos: ${rfScore} pts${qtcScore ? ` · QTc: ${qtcScore} pts` : ''}
+      </div>
+      <div class="interp" style="background:${cor}12;color:#1e293b">
+        <strong>Recomendação:</strong><br>${x(rec)}
+      </div>
+    </div>`;
+}
+
+async function autoFillRF() {
+  if (!pid) { alert('Nenhum paciente ativo.'); return; }
+  const [pac, allDiario] = await Promise.all([
+    dbGet('pacientes', isNaN(pid) ? pid : parseInt(pid)),
+    dbGetAll('diario'),
+  ]);
+  if (!pac) return;
+
+  // Sexo feminino
+  document.getElementById('rfFem').checked = pac.sexoPac === 'F';
+
+  // ICC
+  const conds = Array.isArray(pac.condicoes) ? pac.condicoes : [];
+  const texto = (pac.condicoesClinicas||'').toLowerCase();
+  document.getElementById('rfICC').checked = conds.includes('ic') || /insufici[eê]ncia card/i.test(texto);
+
+  // Bradicardia: from last diario
+  if (allDiario.length) {
+    const last = [...allDiario].sort((a,b) => b.data < a.data ? -1 : 1)[0];
+    if (last.fc) document.getElementById('rfBradi').checked = parseInt(last.fc) < 60;
+  }
+
+  // Sexo also sets the QTc select
+  if (pac.sexoPac) document.getElementById('sexoSel').value = pac.sexoPac;
+
+  calcRisco();
+}
+
+function x(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// Init with empty score
+renderScore(0, 0, 0);
+</script>
+</body>
+</html>
