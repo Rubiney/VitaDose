@@ -453,6 +453,8 @@ function renderAlertas() {
     ? verificarContraindicacoes(medicamentos, paciente.condicoes) : [];
   const labFarma = (typeof verificarLabFarma === 'function' && Object.keys(_ultimosLab).length)
     ? verificarLabFarma(_ultimosLab, medicamentos) : [];
+  const alimentoAlertas = (typeof verificarAlimentoFarma === 'function')
+    ? verificarAlimentoFarma(medicamentos) : [];
 
   if (!medicamentos.length) { wrap.innerHTML = ''; return; }
 
@@ -541,6 +543,27 @@ function renderAlertas() {
         <p class="al-desc" style="font-size:.77rem;color:#64748b;margin-bottom:4px">
           <strong>${exLbl}:</strong> ${a.labValor} (${a.labData}) ·
           <strong>Med:</strong> ${a.medsTrigger.join(', ')}
+        </p>
+        <p class="al-desc">${a.desc}</p>
+        <div style="background:#f0fdf4;border-radius:6px;padding:5px 8px;margin-top:5px">
+          <p style="font-size:.77rem;color:#047857;font-weight:600;margin:0">✅ Conduta: ${a.conduta}</p>
+        </div>
+      </div>
+    </div>`;
+  });
+
+  // Interações Alimento–Medicamento
+  alimentoAlertas.forEach(a => {
+    const isGrave = a.risco === 'grave';
+    const bg    = isGrave ? '#fff5f5' : '#eff6ff';
+    const borda = isGrave ? '#ef4444' : '#3b82f6';
+    const cor   = isGrave ? '#991b1b' : '#1e40af';
+    html += `<div class="al-card" style="border-left-color:${borda};background:${bg}">
+      <span class="al-icon">🍽️</span>
+      <div>
+        <p class="al-title" style="color:${cor}">${isGrave ? '🔴' : '🔵'} ${a.titulo}</p>
+        <p class="al-desc" style="font-size:.77rem;color:#64748b;margin-bottom:3px">
+          <strong>Alimento:</strong> ${a.alimento} · <strong>Med:</strong> ${a.medsTrigger.join(', ')}
         </p>
         <p class="al-desc">${a.desc}</p>
         <div style="background:#f0fdf4;border-radius:6px;padding:5px 8px;margin-top:5px">

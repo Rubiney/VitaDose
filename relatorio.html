@@ -167,6 +167,7 @@
   <script src="js/adesao.js"></script>
   <script src="js/contraindicacoes.js"></script>
   <script src="js/lab_farma.js"></script>
+  <script src="js/alimento.js"></script>
   <script src="js/risco.js"></script>
   <script src="js/reacoes.js"></script>
   <script>
@@ -257,6 +258,10 @@
     /* ── Interações Fármaco-Laboratório ── */
     const labFarmaAlerts = (typeof verificarLabFarma === 'function' && Object.keys(ultimosLabRel).length)
       ? verificarLabFarma(ultimosLabRel, meds) : [];
+
+    /* ── Interações Alimento–Medicamento ── */
+    const alimentoRel = (typeof verificarAlimentoFarma === 'function' && meds.length)
+      ? verificarAlimentoFarma(meds) : [];
 
     /* ── Score de Risco Farmacoterapêutico ── */
     const riscoRel = (typeof calcularRiscoFarmacoterapeutico === 'function' && meds.length)
@@ -646,6 +651,29 @@
               <p style="font-size:.77rem;color:#4a5568;margin-bottom:3px">
                 <strong>Exame:</strong> ${a.labValor} (${a.labData}) ·
                 <strong>Medicamento:</strong> ${a.medsTrigger.join(', ')}
+              </p>
+              <p style="font-size:.77rem;color:#4a5568;line-height:1.5;margin-bottom:6px">${a.desc}</p>
+              <p style="font-size:.77rem;color:#276749;font-weight:600">✅ Conduta: ${a.conduta}</p>
+            </div>`;
+          }).join('')}
+        </div>` : ''}
+
+      <!-- Interações Alimento–Medicamento -->
+      ${alimentoRel.length > 0 ? `
+        <div class="sec">
+          <p class="sec-title">🍽️ Atenção com Alimentos e Bebidas</p>
+          <p style="font-size:.72rem;color:#666;margin-bottom:10px">
+            Interações entre os medicamentos em uso e alimentos/bebidas que podem alterar eficácia ou segurança.
+          </p>
+          ${alimentoRel.map(a => {
+            const isGrave = a.risco === 'grave';
+            const bg    = isGrave ? '#fff5f5' : '#eff6ff';
+            const borda = isGrave ? '#fc8181' : '#93c5fd';
+            const cor   = isGrave ? '#c53030' : '#1e40af';
+            return `<div class="alerta-item" style="background:${bg};border-left-color:${borda};margin-bottom:10px">
+              <p style="font-weight:700;color:${cor};font-size:.82rem;margin-bottom:4px">${isGrave?'🔴':'🔵'} ${a.titulo}</p>
+              <p style="font-size:.77rem;color:#4a5568;margin-bottom:3px">
+                <strong>Alimento:</strong> ${a.alimento} · <strong>Medicamento:</strong> ${a.medsTrigger.join(', ')}
               </p>
               <p style="font-size:.77rem;color:#4a5568;line-height:1.5;margin-bottom:6px">${a.desc}</p>
               <p style="font-size:.77rem;color:#276749;font-weight:600">✅ Conduta: ${a.conduta}</p>
