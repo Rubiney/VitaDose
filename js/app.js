@@ -454,7 +454,12 @@ function renderAlertas() {
   const labFarma = (typeof verificarLabFarma === 'function' && Object.keys(_ultimosLab).length)
     ? verificarLabFarma(_ultimosLab, medicamentos) : [];
 
-  if (!alertas.length && !dups.length && !polif && (!acb || acb.total === 0) && !cis.length && !labFarma.length) { wrap.innerHTML = ''; return; }
+  if (!medicamentos.length) { wrap.innerHTML = ''; return; }
+
+  // Score de Risco Farmacoterapêutico
+  const risco = (typeof calcularRiscoFarmacoterapeutico === 'function')
+    ? calcularRiscoFarmacoterapeutico({ medicamentos, paciente, ultimosLab: _ultimosLab, tfg: paciente?.tfg })
+    : null;
 
   const nivelCor = {
     grave:    { borda:'#ef4444', bg:'#fff5f5', icone:'🔴' },
@@ -492,6 +497,35 @@ function renderAlertas() {
   };
 
   let html = '<p class="sec-header">Alertas Clínicos</p><div class="alertas-sec">';
+
+  // Score de Risco Farmacoterapêutico — sempre exibido quando há medicamentos
+  if (risco) {
+    const semAlerta = !risco.breakdown.length;
+    html += `<div style="background:${risco.bg};border-left:4px solid ${risco.borda};border-radius:12px;padding:14px 16px;margin-bottom:10px">
+      <div style="display:flex;align-items:center;justify-content:space-between${semAlerta ? '' : ';margin-bottom:10px'}">
+        <div>
+          <p style="font-weight:800;font-size:.9rem;color:${risco.cor};margin:0 0 2px">${risco.icone} Risco Farmacoterapêutico: ${risco.label}</p>
+          <p style="font-size:.72rem;color:#64748b;margin:0">Pontuação integrada de segurança — ${risco.pontos} pts</p>
+        </div>
+        <div style="background:${risco.cor};color:#fff;border-radius:50%;width:44px;height:44px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.92rem;flex-shrink:0">
+          ${risco.pontos}
+        </div>
+      </div>
+      ${semAlerta
+        ? '<p style="font-size:.77rem;color:#16a34a;margin:0">✓ Nenhum alerta clínico identificado nesta farmacoterapia.</p>'
+        : `<div style="border-top:1px solid ${risco.borda};padding-top:8px">
+            ${risco.breakdown.map(b =>
+              `<div style="display:flex;justify-content:space-between;align-items:baseline;padding:3px 0;font-size:.77rem">
+                <span style="color:#475569">${b.icone} ${b.categoria}</span>
+                <span style="font-weight:700;color:${risco.cor};white-space:nowrap;margin-left:8px">
+                  +${b.pontos}&thinsp;pts <span style="font-weight:400;color:#94a3b8">(${b.detalhe})</span>
+                </span>
+              </div>`
+            ).join('')}
+          </div>`
+      }
+    </div>`;
+  }
 
   // Interações Fármaco-Laboratório (exames alterados × medicamentos em uso)
   labFarma.forEach(a => {

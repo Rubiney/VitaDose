@@ -167,6 +167,7 @@
   <script src="js/adesao.js"></script>
   <script src="js/contraindicacoes.js"></script>
   <script src="js/lab_farma.js"></script>
+  <script src="js/risco.js"></script>
   <script src="js/reacoes.js"></script>
   <script>
   document.addEventListener('DOMContentLoaded', gerarRelatorio);
@@ -246,17 +247,21 @@
       labPorTipo[tipo].sort((a,b) => b.data.localeCompare(a.data));
     }
 
+    /* ── Últimos exames por tipo (reutilizado em lab-farma e risco) ── */
+    const ultimosLabRel = Object.fromEntries(
+      Object.entries(labPorTipo).map(([tipo, lista]) =>
+        [tipo, { valor: lista[0].valor, data: lista[0].data }]
+      )
+    );
+
     /* ── Interações Fármaco-Laboratório ── */
-    const labFarmaAlerts = (typeof verificarLabFarma === 'function' && Object.keys(labPorTipo).length)
-      ? verificarLabFarma(
-          Object.fromEntries(
-            Object.entries(labPorTipo).map(([tipo, lista]) =>
-              [tipo, { valor: lista[0].valor, data: lista[0].data }]
-            )
-          ),
-          meds
-        )
-      : [];
+    const labFarmaAlerts = (typeof verificarLabFarma === 'function' && Object.keys(ultimosLabRel).length)
+      ? verificarLabFarma(ultimosLabRel, meds) : [];
+
+    /* ── Score de Risco Farmacoterapêutico ── */
+    const riscoRel = (typeof calcularRiscoFarmacoterapeutico === 'function' && meds.length)
+      ? calcularRiscoFarmacoterapeutico({ medicamentos: meds, paciente: pac, ultimosLab: ultimosLabRel, tfg: pac.tfg || null })
+      : null;
 
     /* ── Beers ── */
     const beersAlertas = [];
@@ -339,6 +344,42 @@
             <p>${pac.alergias}</p>
           </div>` : ''}
       </div>
+
+      <!-- Score de Risco Farmacoterapêutico -->
+      ${riscoRel ? `
+        <div class="sec" style="background:${riscoRel.bg};border:2px solid ${riscoRel.borda};border-radius:10px;padding:16px 20px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:${riscoRel.breakdown.length ? '12px' : '0'}">
+            <div>
+              <p class="sec-title" style="color:${riscoRel.cor};margin:0 0 4px">${riscoRel.icone} Risco Farmacoterapêutico: ${riscoRel.label}</p>
+              <p style="font-size:.78rem;color:#555;margin:0">
+                Pontuação integrada — ${riscoRel.pontos} pts
+                ${riscoRel.nivel === 'baixo' ? '· Farmacoterapia sem alertas clínicos significativos.'
+                  : riscoRel.nivel === 'moderado' ? '· Revisar itens com o médico prescritor.'
+                  : riscoRel.nivel === 'alto' ? '· Intervenção farmacêutica recomendada.'
+                  : '· Reavaliação urgente da farmacoterapia.'}
+              </p>
+            </div>
+            <div style="background:${riscoRel.cor};color:#fff;border-radius:50%;width:52px;height:52px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1.05rem;flex-shrink:0">
+              ${riscoRel.pontos}
+            </div>
+          </div>
+          ${riscoRel.breakdown.length > 0 ? `
+            <div style="border-top:1px solid ${riscoRel.borda};padding-top:10px">
+              <p style="font-size:.72rem;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Contribuições por categoria</p>
+              <table style="width:100%;border-collapse:collapse;font-size:.8rem">
+                ${riscoRel.breakdown.map(b => `
+                  <tr>
+                    <td style="padding:3px 0;color:#333">${b.icone} ${b.categoria}</td>
+                    <td style="color:#555;font-size:.75rem;padding:3px 8px">${b.detalhe}</td>
+                    <td style="text-align:right;font-weight:700;color:${riscoRel.cor};white-space:nowrap">+${b.pontos} pts</td>
+                  </tr>`).join('')}
+                <tr style="border-top:1px solid ${riscoRel.borda}">
+                  <td colspan="2" style="padding-top:5px;font-weight:700;font-size:.8rem">Total</td>
+                  <td style="padding-top:5px;text-align:right;font-weight:800;color:${riscoRel.cor}">= ${riscoRel.pontos} pts</td>
+                </tr>
+              </table>
+            </div>` : ''}
+        </div>` : ''}
 
       <!-- Medicamentos -->
       <div class="sec">
