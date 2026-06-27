@@ -168,6 +168,7 @@
   <script src="js/contraindicacoes.js"></script>
   <script src="js/lab_farma.js"></script>
   <script src="js/alimento.js"></script>
+  <script src="js/stopp_start.js"></script>
   <script src="js/risco.js"></script>
   <script src="js/reacoes.js"></script>
   <script>
@@ -262,6 +263,10 @@
     /* ── Interações Alimento–Medicamento ── */
     const alimentoRel = (typeof verificarAlimentoFarma === 'function' && meds.length)
       ? verificarAlimentoFarma(meds) : [];
+
+    /* ── STOPP/START ── */
+    const stoppStartRel = (typeof verificarStoppStart === 'function' && isIdoso)
+      ? verificarStoppStart(meds, pac) : { stopp: [], start: [] };
 
     /* ── Score de Risco Farmacoterapêutico ── */
     const riscoRel = (typeof calcularRiscoFarmacoterapeutico === 'function' && meds.length)
@@ -455,6 +460,33 @@
               <p class="alerta-titulo" style="color:${c.cor}">${b.med} — ${label} · ${b.categoria}</p>
               <p class="alerta-desc">${b.motivo}</p>
               ${b.alternativa ? `<p class="alerta-alt">✅ Alternativa: ${b.alternativa}</p>` : ''}
+            </div>`;
+          }).join('')}
+        </div>` : ''}
+
+      <!-- STOPP/START -->
+      ${(stoppStartRel.stopp.length + stoppStartRel.start.length) > 0 ? `
+        <div class="sec">
+          <p class="sec-title">🛑 Critérios STOPP/START v3 (2023) — Prescrição em Idoso</p>
+          <p style="font-size:.72rem;color:#666;margin-bottom:10px">
+            Fonte: O'Mahony D et al. Age Ageing. 2023. Paciente ≥ 65 anos.
+            STOPP = medicamentos que deveriam ser suspensos. START = medicamentos potencialmente omitidos.
+          </p>
+          ${stoppStartRel.stopp.map(s => {
+            const isGrave = s.risco === 'grave';
+            return `<div class="alerta-item" style="background:${isGrave?'#fff5f5':'#fff7ed'};border-left-color:${isGrave?'#fc8181':'#f6ad55'}">
+              <p class="alerta-titulo" style="color:${isGrave?'#c53030':'#c05621'}">🛑 STOPP ${s.codigo}: ${s.titulo}</p>
+              <p style="font-size:.73rem;color:#4a5568;margin-bottom:3px"><strong>Med:</strong> ${s.medsTrigger.join(', ')} · <strong>Classe:</strong> ${s.classe}</p>
+              <p class="alerta-desc">${s.motivo}</p>
+              <p class="alerta-alt">💡 Alternativa: ${s.alternativa}</p>
+            </div>`;
+          }).join('')}
+          ${stoppStartRel.start.map(s => {
+            return `<div class="alerta-item" style="background:#f5f3ff;border-left-color:#a5b4fc">
+              <p class="alerta-titulo" style="color:#4338ca">💡 START ${s.codigo}: ${s.titulo}</p>
+              <p style="font-size:.73rem;color:#4a5568;margin-bottom:3px"><strong>Classe:</strong> ${s.classe}</p>
+              <p class="alerta-desc">${s.motivo}</p>
+              <p class="alerta-alt">✅ Sugestão: ${s.alternativa}</p>
             </div>`;
           }).join('')}
         </div>` : ''}

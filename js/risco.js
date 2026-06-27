@@ -135,6 +135,17 @@ function calcularRiscoFarmacoterapeutico({ medicamentos, paciente, ultimosLab = 
     add('Polimedicação', '💊', pts, `${polif.total} medicamentos em uso`);
   }
 
+  /* ── 9. STOPP (medicamentos inapropriados em idosos) ───────── */
+  if (typeof verificarSTOPP === 'function') {
+    const stopps = verificarSTOPP(medicamentos, paciente);
+    if (stopps.length) {
+      const ptsGrave = stopps.filter(s => s.risco === 'grave').length;
+      const ptsMod   = stopps.filter(s => s.risco !== 'grave').length;
+      const pts      = ptsGrave * 15 + ptsMod * 6;
+      if (pts > 0) add('STOPP/START', '🛑', pts, `${stopps.length} critério(s): ${ptsGrave} grave · ${ptsMod} mod.`);
+    }
+  }
+
   /* ── Ordenar breakdown por pontos decrescente ─────────────── */
   breakdown.sort((a, b) => b.pontos - a.pontos);
 

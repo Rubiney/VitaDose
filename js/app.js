@@ -455,6 +455,8 @@ function renderAlertas() {
     ? verificarLabFarma(_ultimosLab, medicamentos) : [];
   const alimentoAlertas = (typeof verificarAlimentoFarma === 'function')
     ? verificarAlimentoFarma(medicamentos) : [];
+  const stoppStart = (typeof verificarStoppStart === 'function')
+    ? verificarStoppStart(medicamentos, paciente) : { stopp: [], start: [] };
 
   if (!medicamentos.length) { wrap.innerHTML = ''; return; }
 
@@ -629,6 +631,42 @@ function renderAlertas() {
 
   dups.forEach(d => { html += renderDup(d); });
   alertas.forEach(a => { html += renderAlerta(a); });
+
+  // STOPP — medicamentos potencialmente inapropriados em idosos
+  stoppStart.stopp.forEach(s => {
+    const isGrave = s.risco === 'grave';
+    html += `<div class="al-card" style="border-left-color:${isGrave?'#dc2626':'#d97706'};background:${isGrave?'#fff5f5':'#fff7ed'}">
+      <span class="al-icon">🛑</span>
+      <div>
+        <p class="al-title" style="color:${isGrave?'#991b1b':'#92400e'}">${isGrave?'🔴':'🟠'} STOPP ${s.codigo}: ${s.titulo}</p>
+        <p class="al-desc" style="font-size:.77rem;color:#64748b;margin-bottom:3px">
+          <strong>Med:</strong> ${s.medsTrigger.join(', ')} · <strong>Classe:</strong> ${s.classe}
+        </p>
+        <p class="al-desc">${s.motivo}</p>
+        <div style="background:#f0fdf4;border-radius:6px;padding:5px 8px;margin-top:5px">
+          <p style="font-size:.77rem;color:#047857;font-weight:600;margin:0">💡 Alternativa: ${s.alternativa}</p>
+        </div>
+      </div>
+    </div>`;
+  });
+
+  // START — medicamentos potencialmente omitidos em idosos
+  stoppStart.start.forEach(s => {
+    html += `<div class="al-card" style="border-left-color:#6366f1;background:#f5f3ff">
+      <span class="al-icon">💡</span>
+      <div>
+        <p class="al-title" style="color:#4338ca">START ${s.codigo}: ${s.titulo}</p>
+        <p class="al-desc" style="font-size:.77rem;color:#64748b;margin-bottom:3px">
+          <strong>Classe:</strong> ${s.classe} · <strong>Condição:</strong> ${s.condicoes.join(', ')}
+        </p>
+        <p class="al-desc">${s.motivo}</p>
+        <div style="background:#f0fdf4;border-radius:6px;padding:5px 8px;margin-top:5px">
+          <p style="font-size:.77rem;color:#047857;font-weight:600;margin:0">✅ Sugestão: ${s.alternativa}</p>
+        </div>
+      </div>
+    </div>`;
+  });
+
   html += '</div>';
   wrap.innerHTML = html;
 }
