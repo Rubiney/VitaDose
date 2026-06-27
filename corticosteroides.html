@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Corticosteroides — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .cs-hdr { background:linear-gradient(135deg,#854d0e,#d97706);color:#fff;border-radius:14px;padding:18px;margin-bottom:14px }
+    .cs-title{ font-size:1rem;font-weight:800;margin-bottom:4px }
+    .cs-sub  { font-size:.73rem;opacity:.8 }
+
+    .tab-bar { display:flex;gap:6px;margin-bottom:14px }
+    .tab-btn { flex:1;padding:10px;border-radius:10px;border:2px solid #e2e8f0;background:#fff;font-size:.78rem;font-weight:700;cursor:pointer;color:#64748b }
+    .tab-btn.active { border-color:#d97706;background:#fffbeb;color:#b45309 }
+
+    label { font-size:.75rem;font-weight:700;color:#1e3a5f;display:block;margin-bottom:4px }
+    select, input[type=number] {
+      width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:10px;
+      padding:10px 12px;font-size:.85rem;background:#fff;outline:none;margin-bottom:10px }
+    select:focus,input:focus { border-color:#d97706 }
+
+    .btn-calc { width:100%;background:#d97706;color:#fff;border:none;border-radius:12px;padding:13px;font-size:.87rem;font-weight:700;cursor:pointer;margin:6px 0 }
+
+    .res-box { border-radius:14px;border:3px solid #d97706;padding:18px;margin:12px 0;display:none;text-align:center }
+    .res-num { font-size:2.8rem;font-weight:900;color:#b45309;line-height:1 }
+    .res-unit{ font-size:.9rem;font-weight:700;color:#92400e }
+    .res-sub { font-size:.75rem;color:#64748b;margin-top:8px }
+
+    .taper-step{ display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid #f1f5f9 }
+    .taper-step:last-child { border-bottom:none }
+    .taper-wk  { min-width:60px;font-size:.7rem;font-weight:800;color:#b45309 }
+    .taper-dose{ font-size:.82rem;font-weight:700;color:#1e3a5f }
+    .taper-note{ font-size:.68rem;color:#64748b }
+
+    .eq-table { width:100%;border-collapse:collapse;font-size:.7rem }
+    .eq-table th { background:#fef3c7;padding:7px 8px;text-align:left;font-weight:800;color:#1e3a5f;border-bottom:2px solid #fde68a }
+    .eq-table td { padding:7px 8px;border-bottom:1px solid #fef9c3 }
+    .eq-table tr:last-child td { border-bottom:none }
+    .pot-bar { height:8px;border-radius:4px;background:#d97706;display:inline-block }
+
+    .hha-card { background:#fff7ed;border-left:4px solid #d97706;border-radius:8px;padding:12px 14px;font-size:.75rem;color:#92400e;margin-top:8px }
+  </style>
+</head>
+<body>
+
+<header class="top-bar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <span class="top-title">Corticosteroides</span>
+  <div class="top-right"></div>
+</header>
+
+<main class="container" style="padding-bottom:90px">
+
+  <div class="cs-hdr">
+    <div class="cs-title">💊 Corticosteroides — Equivalência e Desmame</div>
+    <div class="cs-sub">Conversão entre corticosteroides · Desmame escalonado · Supressão do eixo HHA</div>
+  </div>
+
+  <div class="tab-bar">
+    <button class="tab-btn active" id="tb0" onclick="showTab(0)">Conversor</button>
+    <button class="tab-btn"        id="tb1" onclick="showTab(1)">Desmame</button>
+    <button class="tab-btn"        id="tb2" onclick="showTab(2)">Tabela</button>
+  </div>
+
+  <!-- ── TAB 0: CONVERSOR ─────────────────────────────────────────────── -->
+  <div id="tab0">
+    <div class="card" style="padding:12px 14px">
+      <label>Corticosteroide atual</label>
+      <select id="srcCS" onchange="calcCS()">
+        <option value="">— Selecione —</option>
+      </select>
+      <label>Dose atual (mg)</label>
+      <input type="number" id="srcDose" placeholder="ex.: 40" min="0" step="0.5" oninput="calcCS()">
+
+      <label style="margin-top:4px">Converter para</label>
+      <select id="tgtCS" onchange="calcCS()">
+        <option value="">— Selecione —</option>
+      </select>
+    </div>
+
+    <div class="res-box" id="csResBox">
+      <div class="res-num" id="csResNum">0</div>
+      <div class="res-unit" id="csResUnit">mg</div>
+      <div class="res-sub" id="csResSub"></div>
+    </div>
+
+    <div class="card" style="font-size:.72rem;color:#374151;padding:10px 14px" id="csCompareCard" style="display:none">
+      <div id="csCompare"></div>
+    </div>
+
+    <div class="card" style="font-size:.72rem;color:#64748b">
+      Equivalências baseadas na potência anti-inflamatória relativa à hidrocortisona. A potência mineralocorticoide varia independentemente — importante em insuficiência adrenal e na escolha para edema. Dexametasona e betametasona NÃO têm ação mineralocorticoide.<br><br>
+      <em>Ref: Chrousos GP. Glucocorticoid therapy. In: Harrison's Principles of Internal Medicine, 2022.</em>
+    </div>
+  </div>
+
+  <!-- ── TAB 1: DESMAME ──────────────────────────────────────────────── -->
+  <div id="tab1">
+    <div class="card" style="padding:12px 14px">
+      <label>Corticosteroide em uso</label>
+      <select id="tapCS">
+        <option value="">— Selecione —</option>
+      </select>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div>
+          <label>Dose atual (mg/dia)</label>
+          <input type="number" id="tapDose" placeholder="ex.: 40" min="0" step="0.5">
+        </div>
+        <div>
+          <label>Tempo de uso</label>
+          <select id="tapDur">
+            <option value="short">≤ 3 semanas</option>
+            <option value="medium" selected>4–12 semanas</option>
+            <option value="long">≥ 3 meses</option>
+          </select>
+        </div>
+      </div>
+      <label>Indicação</label>
+      <select id="tapIndic">
+        <option value="inflam">Inflamatória / Autoimune</option>
+        <option value="adrenal">Insuficiência adrenal primária</option>
+        <option value="allergie">Alergia / Asma exacerbação</option>
+      </select>
+    </div>
+    <button class="btn-calc" onclick="calcTaper()">📅 Gerar esquema de desmame</button>
+
+    <div id="taperResult" style="display:none">
+      <div class="hha-card" id="hhaWarn"></div>
+      <div class="card" style="padding:8px 14px;margin-top:8px" id="taperSteps"></div>
+    </div>
+
+    <div class="card" style="font-size:.72rem;color:#64748b">
+      <strong style="color:#1e3a5f;display:block;margin-bottom:4px">⚠️ Supressão do Eixo HHA</strong>
+      Uso de prednisona >5 mg/dia (ou equivalente) por >3 semanas pode suprimir o eixo hipotálamo-hipófise-adrenal. A dose fisiológica equivale a ~5 mg prednisona ou 20 mg hidrocortisona/dia. O eixo pode levar de meses a 1 ano para se recuperar após uso prolongado.<br><br>
+      Sinais de insuficiência adrenal no desmame: fadiga, hipotensão ortostática, hiponatremia, hipoglicemia — considerar teste de estimulação com ACTH se suspeita.<br><br>
+      <em>Ref: Dinsen S et al. Eur J Intern Med 2013;24(6):503-11.</em>
+    </div>
+  </div>
+
+  <!-- ── TAB 2: TABELA ───────────────────────────────────────────────── -->
+  <div id="tab2" style="display:none">
+    <div class="card" style="padding:10px 14px">
+      <div style="font-size:.72rem;font-weight:700;color:#1e3a5f;margin-bottom:8px">Doses equivalentes (mesma potência anti-inflamatória)</div>
+      <div style="overflow-x:auto">
+        <table class="eq-table">
+          <thead><tr>
+            <th>Corticosteroide</th>
+            <th>Dose equiv. (mg)</th>
+            <th>Pot. AI</th>
+            <th>Pot. MC</th>
+            <th>Duração</th>
+          </tr></thead>
+          <tbody id="eqTbody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="card" style="font-size:.72rem;color:#64748b">
+      <strong>AI</strong> = Potência anti-inflamatória (relativa à hidrocortisona = 1).<br>
+      <strong>MC</strong> = Potência mineralocorticoide (retenção de sódio).<br>
+      Dose fisiológica de cortisol endógeno ≈ 8–10 mg/m² BSA/dia ≈ 20 mg hidrocortisona/dia.
+    </div>
+  </div>
+
+</main>
+
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+
+<script>
+/* ── Drug database ─────────────────────────────────────────────────────
+   equiv: dose (mg) equivalent to 20mg hydrocortisone (anti-inflammatory)
+   ai: anti-inflammatory potency relative to HC
+   mc: mineralocorticoid potency relative to HC  */
+const CS = [
+  { id:'hc',   name:'Hidrocortisona',     equiv:20,   ai:1,    mc:1,    dur:'Curta (8–12h)' },
+  { id:'cor',  name:'Cortisona',           equiv:25,   ai:0.8,  mc:0.8,  dur:'Curta (8–12h)' },
+  { id:'pred', name:'Prednisona',          equiv:5,    ai:4,    mc:0.8,  dur:'Intermediária (12–36h)' },
+  { id:'predn',name:'Prednisolona',        equiv:5,    ai:4,    mc:0.8,  dur:'Intermediária (12–36h)' },
+  { id:'mp',   name:'Metilprednisolona',   equiv:4,    ai:5,    mc:0.5,  dur:'Intermediária (12–36h)' },
+  { id:'tri',  name:'Triancinolona',       equiv:4,    ai:5,    mc:0,    dur:'Intermediária (12–36h)' },
+  { id:'dex',  name:'Dexametasona',        equiv:0.75, ai:25,   mc:0,    dur:'Longa (36–54h)' },
+  { id:'beta', name:'Betametasona',        equiv:0.6,  ai:25,   mc:0,    dur:'Longa (36–54h)' },
+];
+
+function populateSelects() {
+  const opts = CS.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
+  ['srcCS','tgtCS','tapCS'].forEach(id=>{
+    document.getElementById(id).innerHTML = '<option value="">— Selecione —</option>'+opts;
+  });
+}
+
+function populateTable() {
+  document.getElementById('eqTbody').innerHTML = CS.map(c=>{
+    const aiBar = Math.min(100, c.ai*4);
+    const mcBar = Math.min(100, c.mc*40);
+    return `<tr>
+      <td><strong>${c.name}</strong></td>
+      <td>${c.equiv} mg</td>
+      <td><span style="color:#b45309;font-weight:800">${c.ai}×</span></td>
+      <td><span style="color:#0369a1;font-weight:800">${c.mc}×</span></td>
+      <td style="font-size:.65rem">${c.dur}</td>
+    </tr>`;
+  }).join('');
+}
+
+/* ── Converter ─────────────────────────────────────────────────────── */
+function calcCS() {
+  const src  = CS.find(c=>c.id===document.getElementById('srcCS').value);
+  const tgt  = CS.find(c=>c.id===document.getElementById('tgtCS').value);
+  const dose = parseFloat(document.getElementById('srcDose').value)||0;
+
+  if (!src||!tgt||dose<=0) { document.getElementById('csResBox').style.display='none'; return; }
+
+  // Convert: source → HC units → target
+  const hc_units  = dose / src.equiv;   // number of "HC-20mg units"
+  const tgt_dose  = hc_units * tgt.equiv;
+
+  const box = document.getElementById('csResBox');
+  box.style.display='block';
+
+  // Smart rounding
+  let d = tgt_dose;
+  const disp = d<1 ? d.toFixed(2) : d<5 ? d.toFixed(1) : Math.round(d*2)/2;
+  document.getElementById('csResNum').textContent  = disp;
+  document.getElementById('csResUnit').textContent = 'mg de '+tgt.name;
+  document.getElementById('csResSub').textContent  =
+    `${dose} mg ${src.name} ≡ ${tgt_dose.toFixed(2)} mg ${tgt.name} (potência AI ${src.ai}× → ${tgt.ai}×)`;
+
+  // Mineralocorticoid note
+  const cCard = document.getElementById('csCompareCard');
+  let comp='';
+  if (src.mc!==tgt.mc) {
+    comp=`<span style="color:#0369a1">⚠️ Potência mineralocorticoide diferente: ${src.name} (${src.mc}×) → ${tgt.name} (${tgt.mc}×). `;
+    if (tgt.mc===0) comp+='Nenhuma retenção de Na⁺/K⁺ — atenção em insuficiência adrenal (suplementar mineralocorticoide se necessário).';
+    else if (tgt.mc>src.mc) comp+='Maior retenção de Na⁺ — monitorar PA e edema.';
+    else comp+='Menor retenção de Na⁺ que o atual.';
+    comp+='</span>';
+  }
+  if (comp) { cCard.style.display='block'; document.getElementById('csCompare').innerHTML=comp; }
+  else cCard.style.display='none';
+}
+
+/* ── Taper ──────────────────────────────────────────────────────────── */
+function calcTaper() {
+  const cs    = CS.find(c=>c.id===document.getElementById('tapCS').value);
+  const dose  = parseFloat(document.getElementById('tapDose').value)||0;
+  const dur   = document.getElementById('tapDur').value;
+  const indic = document.getElementById('tapIndic').value;
+
+  if (!cs||dose<=0) { alert('Selecione o corticosteroide e informe a dose.'); return; }
+
+  // Convert to prednisone equivalents for tapering logic
+  const pred_equiv = (dose / cs.equiv) * 5;  // dose in mg prednisone equivalent
+  const phys_pred  = 5;                        // physiological dose in pred equiv
+
+  const steps = [];
+  let hhaWarn = '';
+
+  if (dur==='short' && pred_equiv <= 40) {
+    hhaWarn = '✅ Curso curto (≤3 semanas) e dose ≤ 40 mg prednisona: supressão do eixo HHA improvável. Pode suspender abruptamente com segurança.';
+    steps.push({ wk:'Imediato', dose: 0, note:'Suspensão abrupta é segura neste caso.' });
+  } else if (indic==='adrenal') {
+    hhaWarn = '⚠️ Insuficiência adrenal primária: desmame para dose de reposição (≈20 mg HC pela manhã + 10 mg à tarde). NÃO suspender sem avaliação endocrinológica.';
+    const hc_phys = (5/cs.equiv)*20;
+    steps.push({ wk:'Objetivo', dose:hc_phys, note:'Dose de reposição fisiológica de '+cs.name });
+  } else {
+    hhaWarn = dur==='long'
+      ? '⚠️ Uso prolongado (≥3 meses): eixo HHA provavelmente suprimido. Desmame lento necessário; considerar cortisol matinal após atingir dose fisiológica.'
+      : '⚠️ Desmame gradual recomendado para dose acima do nível fisiológico. Monitorar sintomas de insuficiência adrenal.';
+
+    let curr_pred = pred_equiv;
+    let wk = 1;
+
+    // Phase 1: reduce by 10-20% every week until physiological dose
+    while (curr_pred > phys_pred * 2 && wk <= 24) {
+      const reduction = curr_pred > 20 ? 0.20 : 0.10;
+      const new_pred  = Math.max(curr_pred*(1-reduction), phys_pred);
+      const new_cs    = (new_pred / 5) * cs.equiv;
+      steps.push({
+        wk: `Semana ${wk}–${wk+1}`,
+        dose: parseFloat(new_cs.toFixed(2)),
+        note: new_pred <= phys_pred ? 'Dose fisiológica — próxima fase' : '',
+      });
+      curr_pred = new_pred;
+      wk += 2;
+    }
+
+    // Phase 2: from physiological down to 0 (slower)
+    if (curr_pred > phys_pred*0.5 && wk <= 32) {
+      steps.push({ wk:`Semana ${wk}–${wk+3}`, dose:parseFloat(((phys_pred/2/5)*cs.equiv).toFixed(2)), note:'50% da dose fisiológica' });
+      wk+=4;
+      steps.push({ wk:`Semana ${wk}+`, dose:0, note:'Suspensão. Monitorar 4 semanas.' });
+    } else {
+      steps.push({ wk:`Semana ${wk}+`, dose:0, note:'Suspensão. Monitorar sintomas 4 semanas.' });
+    }
+  }
+
+  document.getElementById('taperResult').style.display='block';
+  document.getElementById('hhaWarn').innerHTML = hhaWarn;
+  document.getElementById('taperSteps').innerHTML = steps.length
+    ? steps.map(s=>`<div class="taper-step">
+        <div class="taper-wk">${s.wk}</div>
+        <div><div class="taper-dose">${s.dose>0?s.dose+' mg '+cs.name:' — Suspensão'}</div>${s.note?`<div class="taper-note">${s.note}</div>`:''}</div>
+      </div>`).join('')
+    : '<p style="color:#94a3b8;font-size:.8rem;text-align:center">Nenhum passo gerado.</p>';
+}
+
+function showTab(n) {
+  [0,1,2].forEach(i=>{
+    document.getElementById('tab'+i).style.display=i===n?'block':'none';
+    document.getElementById('tb'+i).classList.toggle('active',i===n);
+  });
+  if(n===2) populateTable();
+}
+
+populateSelects();
+</script>
+</body>
+</html>

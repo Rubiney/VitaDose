@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Anticoagulação — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .ac-hdr { background:linear-gradient(135deg,#7f1d1d,#b91c1c);color:#fff;border-radius:14px;padding:18px;margin-bottom:14px }
+    .ac-title{ font-size:1rem;font-weight:800;margin-bottom:4px }
+    .ac-sub  { font-size:.73rem;opacity:.8 }
+
+    .tab-bar { display:flex;gap:5px;margin-bottom:14px }
+    .tab-btn { flex:1;padding:9px 4px;border-radius:10px;border:2px solid #e2e8f0;background:#fff;font-size:.73rem;font-weight:700;cursor:pointer;color:#64748b;text-align:center }
+    .tab-btn.active { border-color:#b91c1c;background:#fef2f2;color:#b91c1c }
+
+    label { font-size:.75rem;font-weight:700;color:#1e3a5f;display:block;margin-bottom:4px }
+    select, input[type=number] {
+      width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:10px;
+      padding:10px 12px;font-size:.85rem;background:#fff;outline:none;margin-bottom:10px }
+    select:focus,input:focus { border-color:#b91c1c }
+    .input-row { display:grid;grid-template-columns:1fr 1fr;gap:8px }
+
+    .btn-calc { width:100%;background:#b91c1c;color:#fff;border:none;border-radius:12px;padding:13px;font-size:.87rem;font-weight:700;cursor:pointer;margin:8px 0 }
+
+    .conduta-box { border-radius:12px;padding:14px;margin:10px 0;display:none }
+    .cond-title { font-size:.82rem;font-weight:800;margin-bottom:8px }
+    .cond-item  { font-size:.78rem;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.2);line-height:1.5 }
+    .cond-item:last-child { border-bottom:none }
+
+    .noac-card { border-radius:12px;border:2px solid;padding:14px;margin-bottom:10px }
+    .noac-name { font-size:.9rem;font-weight:800;margin-bottom:6px }
+    .noac-dose { font-size:.8rem;font-weight:700;padding:4px 0 }
+    .noac-adj  { font-size:.72rem;color:#4b5563;line-height:1.4 }
+    .noac-ci   { font-size:.7rem;background:#fee2e2;border-radius:6px;padding:4px 8px;margin-top:6px;color:#7f1d1d }
+
+    .bridge-row { padding:10px 0;border-bottom:1px solid #f1f5f9;font-size:.78rem }
+    .bridge-row:last-child { border-bottom:none }
+    .bridge-hdr { font-size:.65rem;font-weight:800;color:#94a3b8;text-transform:uppercase;margin-bottom:3px }
+    .bridge-val { font-weight:700;color:#1e3a5f }
+
+    .risk-chip { display:inline-block;padding:3px 10px;border-radius:999px;font-size:.68rem;font-weight:800;color:#fff }
+    .risk-h { background:#dc2626 }
+    .risk-m { background:#d97706 }
+    .risk-l { background:#16a34a }
+
+    .sec-lbl { font-size:.62rem;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.08em;margin:12px 0 6px }
+  </style>
+</head>
+<body>
+
+<header class="top-bar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <span class="top-title">Guia de Anticoagulação</span>
+  <div class="top-right"></div>
+</header>
+
+<main class="container" style="padding-bottom:90px">
+
+  <div class="ac-hdr">
+    <div class="ac-title">🩸 Anticoagulação — Guia Prático</div>
+    <div class="ac-sub">Warfarina (INR) · NOACs (rivaroxabana, apixabana, dabigatrana, edoxabana) · Bridging</div>
+  </div>
+
+  <div class="tab-bar">
+    <button class="tab-btn active" id="tb0" onclick="showTab(0)">Warfarina</button>
+    <button class="tab-btn"        id="tb1" onclick="showTab(1)">NOACs</button>
+    <button class="tab-btn"        id="tb2" onclick="showTab(2)">Bridging</button>
+  </div>
+
+  <!-- ── TAB 0: WARFARINA ─────────────────────────────────────────────── -->
+  <div id="tab0">
+    <div class="card" style="padding:12px 14px">
+      <label>Indicação</label>
+      <select id="wf_indic" onchange="updateAlvoINR()">
+        <option value="2_3_fa">Fibrilação atrial (FA) / Flutter</option>
+        <option value="2_3_tev">TEP / TVP (tratamento e prevenção)</option>
+        <option value="2_3_bio">Prótese valvar biológica (posição mitral)</option>
+        <option value="2_3_mec_ao">Prótese valvar mecânica — posição aórtica</option>
+        <option value="2.5_3.5_mec_mi">Prótese valvar mecânica — posição mitral</option>
+        <option value="2.5_3.5_recur">TEV recorrente / Síndrome antifosfolipídeo</option>
+      </select>
+      <div style="font-size:.75rem;background:#fef3c7;border-radius:8px;padding:8px 10px;margin-bottom:10px">
+        🎯 INR alvo: <strong id="alvoINR">2,0–3,0</strong>
+      </div>
+
+      <div class="input-row">
+        <div>
+          <label>INR atual</label>
+          <input type="number" id="wf_inr" placeholder="ex.: 2.5" min="0" step="0.1" oninput="calcWarfarin()">
+        </div>
+        <div>
+          <label>Dose semanal total (mg)</label>
+          <input type="number" id="wf_dose" placeholder="ex.: 35" min="0" step="0.5" oninput="calcWarfarin()">
+        </div>
+      </div>
+
+      <label>Sangramento atual</label>
+      <select id="wf_bleed" onchange="calcWarfarin()">
+        <option value="none">Sem sangramento</option>
+        <option value="minor">Leve (equimose, epistaxe)</option>
+        <option value="moderate">Moderado (hematúria, sangramento GI sem instabilidade)</option>
+        <option value="major">Grave / Ameaça à vida (intracraniano, sangramento com instabilidade)</option>
+      </select>
+    </div>
+
+    <div class="conduta-box" id="wfConduta" style="display:none">
+      <div class="cond-title" id="wfCondTit">Conduta</div>
+      <div id="wfCondList"></div>
+    </div>
+
+    <div class="card" style="font-size:.72rem;color:#64748b;margin-top:4px">
+      <strong style="color:#1e3a5f;display:block;margin-bottom:4px">⚠️ Interações importantes com warfarina</strong>
+      <strong>Aumentam INR:</strong> amiodarona, fluconazol, metronidazol, ciprofloxacino, omeprazol, AINEs, Ginkgo biloba, ômega-3.<br>
+      <strong>Diminuem INR:</strong> rifampicina, fenitoína, carbamazepina, vitamina K (dieta), ginseng, colestiramina.<br>
+      Monitorar INR após qualquer mudança de medicamento, dieta ou intercorrência clínica.<br><br>
+      <em>Ref: Kearon C et al. Chest 2012. Douketis JD et al. N Engl J Med 2015.</em>
+    </div>
+  </div>
+
+  <!-- ── TAB 1: NOACs ────────────────────────────────────────────────── -->
+  <div id="tab1">
+    <div class="card" style="padding:12px 14px">
+      <label>Indicação</label>
+      <select id="noac_indic" onchange="renderNOACs()">
+        <option value="fa">Fibrilação atrial não valvar (FA)</option>
+        <option value="tev_agudo">TEP / TVP — tratamento de fase aguda</option>
+        <option value="tev_ext">TEP / TVP — prevenção estendida</option>
+        <option value="ortopedico">Prevenção TEV — cirurgia ortopédica</option>
+      </select>
+      <div class="input-row">
+        <div>
+          <label>TFG CKD-EPI (mL/min)</label>
+          <input type="number" id="noac_tfg" placeholder="ex.: 60" min="0" oninput="renderNOACs()">
+        </div>
+        <div>
+          <label>Peso (kg)</label>
+          <input type="number" id="noac_peso" placeholder="ex.: 70" min="0" oninput="renderNOACs()">
+        </div>
+      </div>
+      <div class="input-row">
+        <div>
+          <label>Idade</label>
+          <input type="number" id="noac_idade" placeholder="ex.: 75" min="0" oninput="renderNOACs()">
+        </div>
+        <div>
+          <label>Creatinina (mg/dL)</label>
+          <input type="number" id="noac_cr" placeholder="ex.: 1.2" min="0" step="0.1" oninput="renderNOACs()">
+        </div>
+      </div>
+    </div>
+
+    <div id="noacCards"></div>
+
+    <div class="card" style="font-size:.72rem;color:#64748b">
+      <strong style="color:#1e3a5f;display:block;margin-bottom:4px">⚠️ Contraindicações gerais NOACs</strong>
+      Prótese valvar mecânica · Estenose mitral reumática grave · Gravidez/lactação · TFG &lt;15 mL/min (relativo) · Sangramento ativo.<br>
+      Dabigatrana específico: TFG &lt;30 mL/min contraindicada em FA e TEV.<br>
+      Interações: inibidores potentes de P-gp/CYP3A4 (cetoconazol, ritonavir) e indutores (rifampicina) alteram significativamente os níveis.<br><br>
+      <em>Ref: Steffel J et al. Eur Heart J 2021. ISTH Guidance NOACs 2022.</em>
+    </div>
+  </div>
+
+  <!-- ── TAB 2: BRIDGING ─────────────────────────────────────────────── -->
+  <div id="tab2">
+    <div class="card" style="padding:12px 14px">
+      <label>Anticoagulante em uso</label>
+      <select id="br_drug">
+        <option value="wf">Varfarina</option>
+        <option value="noac">NOAC (rivaroxabana / apixabana)</option>
+        <option value="noac_dab">NOAC (dabigatrana)</option>
+      </select>
+
+      <label>Indicação da anticoagulação</label>
+      <select id="br_indic">
+        <option value="fa_low">FA — CHA₂DS₂-VASc ≤2 (sem AVC prévio)</option>
+        <option value="fa_mid">FA — CHA₂DS₂-VASc 3–4</option>
+        <option value="fa_high">FA — CHA₂DS₂-VASc ≥5 ou AVC/AIT prévio</option>
+        <option value="tev_remote">TEP/TVP há >12 meses</option>
+        <option value="tev_recent">TEP/TVP há 3–12 meses</option>
+        <option value="tev_acute">TEP/TVP há &lt;3 meses</option>
+        <option value="mec_ao">Prótese mecânica — posição aórtica (baixo risco)</option>
+        <option value="mec_mi">Prótese mecânica — posição mitral ou dupla</option>
+      </select>
+
+      <label>Risco hemostático do procedimento</label>
+      <select id="br_proc">
+        <option value="low">Baixo (endoscopia, colonoscopia diagnóstica, cateterismo)</option>
+        <option value="high">Alto (cirurgia abdominal, ortopédica, urológica, neurocirurgia)</option>
+      </select>
+
+      <label>TFG (mL/min) — para NOACs</label>
+      <input type="number" id="br_tfg" placeholder="ex.: 60" min="0">
+    </div>
+    <button class="btn-calc" onclick="calcBridge()">📅 Gerar protocolo de interrupção</button>
+
+    <div id="bridgeResult" style="display:none">
+      <div class="card" style="padding:8px 14px" id="bridgeBox"></div>
+    </div>
+
+    <div class="card" style="font-size:.72rem;color:#64748b">
+      <strong style="color:#1e3a5f;display:block;margin-bottom:4px">📌 Orientações gerais de bridging</strong>
+      Estudo BRIDGE (Douketis 2015): em FA com risco baixo-moderado, ponte com HBPM NÃO reduziu eventos tromboembólicos mas AUMENTOU sangramentos — abordar individualmente.<br>
+      Para NOACs: dispensa ponte na maioria dos casos devido a meia-vida curta. Suspensão baseada na TFG e no risco hemostático.<br>
+      Sempre coordenar com o médico cirurgião/anestesista quanto ao momento de reinício.<br><br>
+      <em>Ref: Douketis JD et al. N Engl J Med 2015 (BRIDGE). ESC Guidelines NVAF 2020. AHA/ACC AF 2019.</em>
+    </div>
+  </div>
+
+</main>
+
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+
+<script>
+function showTab(n) {
+  [0,1,2].forEach(i=>{
+    document.getElementById('tab'+i).style.display=i===n?'block':'none';
+    document.getElementById('tb'+i).classList.toggle('active',i===n);
+  });
+  if(n===1) renderNOACs();
+}
+
+/* ── WARFARINA ─────────────────────────────────────────────────────── */
+function updateAlvoINR() {
+  const val = document.getElementById('wf_indic').value;
+  const [lo,hi] = val.startsWith('2.5') ? [2.5,3.5] : [2.0,3.0];
+  document.getElementById('alvoINR').textContent = lo.toFixed(1)+'–'+hi.toFixed(1);
+  calcWarfarin();
+}
+
+function calcWarfarin() {
+  const indicVal = document.getElementById('wf_indic').value;
+  const [alvo_lo, alvo_hi] = indicVal.startsWith('2.5') ? [2.5,3.5] : [2.0,3.0];
+  const inr   = parseFloat(document.getElementById('wf_inr').value)||0;
+  const dose  = parseFloat(document.getElementById('wf_dose').value)||0;
+  const bleed = document.getElementById('wf_bleed').value;
+  const box   = document.getElementById('wfConduta');
+  const titEl = document.getElementById('wfCondTit');
+  const listEl= document.getElementById('wfCondList');
+
+  if (!inr) { box.style.display='none'; return; }
+  box.style.display='block';
+
+  let bg='', title='', items=[];
+
+  if (bleed==='major') {
+    bg='#fee2e2'; title='⛔ Sangramento Grave / Ameaça à Vida';
+    items=[
+      'Suspender varfarina imediatamente.',
+      'Vitamina K 10 mg IV em infusão lenta (15–20 min) — repetir em 12h se necessário.',
+      'CCP (Concentrado de Complexo Protrombínico 4 fatores) 25–50 UI/kg IV — primeira escolha para reversão rápida.',
+      'Plasma fresco congelado (PFC) 15–30 mL/kg se CCP indisponível.',
+      'Medir INR após 15 min do CCP; repetir dose se INR >1,5.',
+      'Avaliar causa do sangramento — gastroenterologia, neurocirurgia, etc.',
+      'NÃO reiniciar anticoagulação antes de controle da hemorragia e avaliação risco-benefício.',
+    ];
+  } else if (bleed==='moderate') {
+    bg='#fff3cd'; title='⚠️ Sangramento Moderado';
+    items=[
+      'Suspender próximas doses de varfarina.',
+      'Vitamina K 2,5–5 mg VO ou IV (preferir IV se urgência).',
+      'Avaliar hemostasia local e suporte clínico.',
+      'Medir INR em 24h; se ainda elevado, repetir vitamina K.',
+      'Considerar hospitalização para monitoramento.',
+      'Discutir com médico sobre necessidade de reversão com CCP.',
+    ];
+  } else if (bleed==='minor') {
+    bg='#e0f2fe'; title='💡 Sangramento Leve';
+    items=[
+      'Investigar causa local (trauma, lesão mucosa).',
+      'Geralmente não requer interrupção se INR na faixa alvo.',
+      'Se INR acima do alvo, reduzir próxima(s) dose(s).',
+      'Medidas hemostáticas locais (pressão, hemostático tópico).',
+      'Revisar interações medicamentosas e ingestão de vitamina K na dieta.',
+    ];
+  } else {
+    // No bleeding — INR-guided dose adjustment
+    const faixa = inr < alvo_lo ? 'sub' : inr > alvo_hi ? 'supra' : 'ok';
+    if (faixa==='ok') {
+      bg='#d1fae5'; title='✅ INR dentro do alvo — Manter';
+      items=[
+        `INR ${inr.toFixed(1)} — dentro do alvo (${alvo_lo.toFixed(1)}–${alvo_hi.toFixed(1)}).`,
+        dose>0?`Dose semanal atual: ${dose} mg — manter.`:'Manter dose atual.',
+        'Próxima avaliação: 4 semanas se estável (TTR >70%); 1–2 semanas se recente ajuste.',
+      ];
+    } else if (faixa==='sub') {
+      bg='#e0f2fe'; title='📉 INR Subterapêutico — Aumentar Dose';
+      const adj = inr < alvo_lo - 0.5 ? 15 : 10;  // 15% if well below, 10% if close
+      const nova = dose>0 ? (dose*(1+adj/100)).toFixed(1) : '—';
+      items=[
+        `INR ${inr.toFixed(1)} — ABAIXO do alvo (${alvo_lo.toFixed(1)}–${alvo_hi.toFixed(1)}).`,
+        `Aumentar dose semanal em ~${adj}%.${dose>0?' Nova dose semanal sugerida: '+nova+' mg.':''}`,
+        'Verificar adesão, alterações dietéticas (vitamina K) e interações.',
+        'Reavaliação de INR em 7–14 dias após ajuste.',
+        inr < 1.5 ? '⚠️ INR muito baixo — considerar adição de heparina em dose profilática se alto risco trombótico.' : '',
+      ].filter(Boolean);
+    } else {
+      const over = inr - alvo_hi;
+      let adj, extra=[];
+      if (inr <= alvo_hi+1) {
+        adj=10; extra=['Reavaliação em 7–14 dias.'];
+      } else if (inr <= 5) {
+        adj=15; extra=['Suspender 1 dose; reiniciar com dose reduzida.','Reavaliação em 4–7 dias.'];
+      } else if (inr <= 9) {
+        adj=20; extra=['Suspender 1–2 doses.','Vitamina K 1–2,5 mg VO se sem sangramento e risco alto de sangramento.','Reavaliação em 2–4 dias.'];
+      } else {
+        adj=25; extra=['Suspender varfarina.','Vitamina K 2,5–5 mg VO.','Avaliar hospitalização.','Reavaliação de INR em 24h.'];
+      }
+      const nova = dose>0 ? (dose*(1-adj/100)).toFixed(1) : '—';
+      bg='#fff3cd'; title=inr>9?'⛔ INR Muito Elevado — Risco Alto':'⚠️ INR Supraterapêutico — Reduzir';
+      items=[
+        `INR ${inr.toFixed(1)} — ACIMA do alvo (${alvo_lo.toFixed(1)}–${alvo_hi.toFixed(1)}).`,
+        `Reduzir dose semanal em ~${adj}%.${dose>0?' Nova dose semanal sugerida: '+nova+' mg.':''}`,
+        ...extra,
+        'Investigar causas: novos medicamentos, diarreia, alterações dietéticas, infecções.',
+      ];
+    }
+  }
+
+  box.style.background=bg; box.style.border='none';
+  titEl.textContent=title;
+  listEl.innerHTML=items.map(i=>`<div class="cond-item">• ${i}</div>`).join('');
+}
+
+/* ── NOACs ─────────────────────────────────────────────────────────── */
+function renderNOACs() {
+  const indic = document.getElementById('noac_indic').value;
+  const tfg   = parseFloat(document.getElementById('noac_tfg').value)||999;
+  const peso  = parseFloat(document.getElementById('noac_peso').value)||0;
+  const idade = parseFloat(document.getElementById('noac_idade').value)||0;
+  const cr    = parseFloat(document.getElementById('noac_cr').value)||0;
+
+  // Apixabana dose reduction criteria (any 2 of 3)
+  const apix_red_criteria = [idade>=80?1:0, peso<=60?1:0, cr>=1.5?1:0].reduce((a,b)=>a+b,0);
+  const apixRed = apix_red_criteria >= 2;
+
+  const NOACS = [
+    {
+      name:'Rivaroxabana',
+      col:'#7c3aed',
+      fa:    tfg>=15 ? (tfg<50?'15 mg 1×/dia com alimento'   :'20 mg 1×/dia com alimento da noite') : null,
+      tev_agudo:'15 mg 2×/dia por 21 dias (com alimento), depois 20 mg 1×/dia',
+      tev_ext:'10 mg 1×/dia (após ≥6 meses de anticoagulação plena)',
+      ortopedico:'10 mg 1×/dia — iniciar 6–10h pós-cirurgia; duração: 35d (Q. quadril) / 14d (Q. joelho)',
+      ci: tfg<15 ? 'Contraindicada (TFG <15)' : null,
+      adj_renal: tfg<50&&tfg>=15 ? 'TFG 15–49: 15 mg/dia (FA)' : null,
+      notas:'Tomar com alimento para aumentar biodisponibilidade (89% vs 66% em jejum). Inibidores de P-gp/CYP3A4 aumentam nível.',
+    },
+    {
+      name:'Apixabana',
+      col:'#0369a1',
+      fa:    tfg>=25 ? (apixRed?'2,5 mg 2×/dia (dose reduzida)*':'5 mg 2×/dia') : null,
+      tev_agudo:'10 mg 2×/dia por 7 dias, depois 5 mg 2×/dia',
+      tev_ext:'2,5 mg 2×/dia (após ≥6 meses anticoagulação plena)',
+      ortopedico:'2,5 mg 2×/dia — iniciar 12–24h pós-cirurgia; 35d (quadril) / 12d (joelho)',
+      ci: tfg<25 ? 'Cuidado (TFG <25); TFG <15 contraindicada' : null,
+      adj_renal: apixRed ? `*Reduzir para 2,5 mg 2×/dia: ≥2 critérios presentes (idade≥80: ${idade>=80?'✓':'✗'}, peso≤60kg: ${peso<=60&&peso>0?'✓':'✗'}, Cr≥1,5: ${cr>=1.5&&cr>0?'✓':'✗'})` : null,
+      notas:'Menor interação com alimentos. Inibidores de P-gp (cetoconazol, itraconazol) contraindicados concomitantemente.',
+    },
+    {
+      name:'Dabigatrana',
+      col:'#b45309',
+      fa:    tfg>=30 ? (tfg<50||idade>=80?'110 mg 2×/dia':'150 mg 2×/dia') : null,
+      tev_agudo: tfg>=30 ? '150 mg 2×/dia após 5–10 dias de HBPM (sem fase de ataque VO)' : null,
+      tev_ext: tfg>=30 ? '150 mg 2×/dia' : null,
+      ortopedico: tfg>=30 ? '110 mg 1×/dia no dia da cirurgia (1–4h após), depois 220 mg 1×/dia; 28–35d (quadril) / 10d (joelho)' : null,
+      ci: tfg<30 ? 'Contraindicada em FA e TEV (TFG <30). Evitar em TFG <50 em idosos.' : null,
+      adj_renal: tfg<50&&tfg>=30 ? 'TFG 30–49: 110 mg 2×/dia em FA' : null,
+      notas:'Única com antídoto específico disponível (idarucizumabe). Não abrir cápsula. Proibitório com inibidores de P-gp (cetoconazol).',
+    },
+    {
+      name:'Edoxabana',
+      col:'#0f766e',
+      fa:    tfg>=15 ? (tfg<=50||peso<=60?'30 mg 1×/dia':'60 mg 1×/dia') : null,
+      tev_agudo: tfg>=15 ? (tfg<=50||peso<=60?'30 mg 1×/dia após 5–10d HBPM':'60 mg 1×/dia após 5–10d HBPM') : null,
+      tev_ext: tfg>=15 ? (tfg<=50||peso<=60?'30 mg 1×/dia':'60 mg 1×/dia') : null,
+      ortopedico:null,
+      ci: tfg<15?'TFG <15: não recomendada':null,
+      adj_renal: tfg<=50&&tfg>=15?'TFG 15–50: 30 mg/dia':peso<=60&&peso>0?'Peso ≤60 kg: 30 mg/dia':null,
+      notas:'Paradoxo dabigatrana: NÃO usar em FA com TFG >95 mL/min (maior risco de AVC). Dose VO após HBPM inicial (não iniciar sem heparina nos primeiros 5–10 dias).',
+    },
+  ];
+
+  const doseKey = indic;
+  document.getElementById('noacCards').innerHTML = NOACS.map(n=>{
+    const dose = n[doseKey] || (n.ci ? null : '—');
+    const card_style = n.ci ? 'opacity:.6' : '';
+    return `<div class="noac-card" style="border-color:${n.col};${card_style}">
+      <div class="noac-name" style="color:${n.col}">${n.name}</div>
+      ${n.ci?`<div class="noac-ci">⛔ ${n.ci}</div>`:''}
+      ${dose?`<div class="noac-dose" style="color:${n.col}">📋 ${dose}</div>`:'<div class="noac-dose" style="color:#94a3b8">Sem indicação aprovada para esta situação</div>'}
+      ${n.adj_renal?`<div class="noac-adj" style="color:#d97706;margin-top:4px">⚠️ ${n.adj_renal}</div>`:''}
+      <div class="noac-adj" style="margin-top:6px">${n.notas}</div>
+    </div>`;
+  }).join('');
+}
+
+/* ── BRIDGING ─────────────────────────────────────────────────────── */
+function calcBridge() {
+  const drug  = document.getElementById('br_drug').value;
+  const indic = document.getElementById('br_indic').value;
+  const proc  = document.getElementById('br_proc').value;
+  const tfg   = parseFloat(document.getElementById('br_tfg').value)||80;
+
+  // Thromboembolic risk
+  let risk, riskLabel;
+  if (['fa_high','tev_acute','mec_mi'].includes(indic)) { risk='high'; riskLabel='<span class="risk-chip risk-h">Alto (&gt;10%/ano)</span>'; }
+  else if (['fa_mid','tev_recent','mec_ao'].includes(indic)) { risk='med'; riskLabel='<span class="risk-chip risk-m">Intermediário (4–10%/ano)</span>'; }
+  else { risk='low'; riskLabel='<span class="risk-chip risk-l">Baixo (&lt;4%/ano)</span>'; }
+
+  let rows=[];
+
+  if (drug==='wf') {
+    // Warfarin bridging
+    rows.push({ hdr:'Risco tromboembólico', val:riskLabel });
+    if (risk==='low') {
+      rows.push({ hdr:'Decisão', val:'<strong style="color:#16a34a">Suspender sem ponte</strong> — risco de sangramento com HBPM supera benefício (evidência: BRIDGE trial).' });
+      rows.push({ hdr:'Protocolo', val:'• Suspender varfarina 5 dias antes<br>• Sem HBPM<br>• Reiniciar varfarina no pós-op imediato (noite da cirurgia ou D+1)' });
+    } else if (risk==='med') {
+      rows.push({ hdr:'Decisão', val:'<strong style="color:#d97706">Avaliar individualmente</strong> — discutir com médico assistente.' });
+      rows.push({ hdr:'Protocolo', val:'• Suspender varfarina 5 dias antes<br>• HBPM profilática (ex.: enoxaparina 40 mg SC/dia) D−3 a D−1<br>• Suspender HBPM 12–24h antes<br>• Reiniciar varfarina D+0/D+1<br>• Reiniciar HBPM 24–48h após se hemostasia ok' });
+    } else {
+      rows.push({ hdr:'Decisão', val:'<strong style="color:#dc2626">Ponte com HBPM recomendada</strong>' });
+      rows.push({ hdr:'Protocolo', val:`• Suspender varfarina <strong>5 dias</strong> antes<br>• Enoxaparina ${proc==='high'?'1 mg/kg 2×/dia (terapêutica)':'40 mg SC/dia (profilática)'} D−3<br>• Última dose HBPM terapêutica <strong>24h antes</strong> / profilática <strong>12h antes</strong><br>• Reiniciar varfarina na noite da cirurgia ou D+1<br>• Reiniciar HBPM ${proc==='high'?'48–72h':'24h'} após (confirmar hemostasia)` });
+    }
+    rows.push({ hdr:'Verificação pré-operatória', val:'INR no dia anterior — ideal &lt;1,5 para cirurgia de alto risco; &lt;2,0 para baixo risco.' });
+  } else {
+    // NOACs — no bridging needed usually
+    const dab = drug==='noac_dab';
+    rows.push({ hdr:'Risco tromboembólico', val:riskLabel });
+    rows.push({ hdr:'Necessidade de ponte', val:'<strong style="color:#16a34a">Geralmente NÃO necessária</strong> — NOACs têm meia-vida curta, não requerem ponte heparina na maioria dos casos.' });
+
+    let dias_antes = '';
+    if (!dab) {
+      dias_antes = proc==='high' ? '2 dias (48h)' : '1 dia (24h)';
+      rows.push({ hdr:`Suspensão (${drug==='noac'?'Rivaroxabana / Apixabana':'—'})`, val:`Suspender <strong>${dias_antes} antes</strong> do procedimento` });
+    } else {
+      const stop = tfg>=80 ? (proc==='high'?'4 dias':'2 dias') : tfg>=50 ? (proc==='high'?'4 dias':'2 dias') : (proc==='high'?'5 dias':'3 dias');
+      rows.push({ hdr:'Suspensão (Dabigatrana)', val:`Suspender <strong>${stop} antes</strong> (TFG ${tfg.toFixed(0)} mL/min)` });
+    }
+
+    rows.push({ hdr:'Reinício pós-operatório', val:`Procedimento <strong>${proc==='high'?'alto':'baixo'} risco hemostático</strong>:<br>${proc==='high'?'48–72h após (confirmar hemostasia)':'24h após (ou dentro de 6h se anestesia neuroaxial finalizada)'}` });
+    rows.push({ hdr:'Atenção', val:'Nunca reiniciar se sangramento ativo. Coordenar com cirurgião/anestesista. Em cirurgia de urgência: considerar antídotos (idarucizumabe para dabigatrana; andexanete alfa para Xa-i).' });
+  }
+
+  document.getElementById('bridgeResult').style.display='block';
+  document.getElementById('bridgeBox').innerHTML = rows.map(r=>`
+    <div class="bridge-row">
+      <div class="bridge-hdr">${r.hdr}</div>
+      <div class="bridge-val">${r.val}</div>
+    </div>`).join('');
+}
+
+updateAlvoINR();
+renderNOACs();
+</script>
+</body>
+</html>

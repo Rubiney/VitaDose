@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Nutrição Clínica — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .nc-hdr { background:linear-gradient(135deg,#166534,#15803d);color:#fff;border-radius:14px;padding:18px;margin-bottom:14px }
+    .nc-title{ font-size:1rem;font-weight:800;margin-bottom:4px }
+    .nc-sub  { font-size:.73rem;opacity:.8 }
+
+    label { font-size:.75rem;font-weight:700;color:#1e3a5f;display:block;margin-bottom:4px }
+    select, input[type=number] {
+      width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:10px;
+      padding:10px 12px;font-size:.85rem;background:#fff;outline:none;margin-bottom:10px }
+    select:focus,input:focus { border-color:#16a34a }
+    .input-row { display:grid;grid-template-columns:1fr 1fr;gap:8px }
+
+    .btn-calc { width:100%;background:#16a34a;color:#fff;border:none;border-radius:12px;padding:13px;font-size:.87rem;font-weight:700;cursor:pointer;margin:8px 0 }
+    .btn-auto { background:#1e3a5f;color:#fff;border:none;border-radius:10px;padding:10px 16px;font-size:.8rem;font-weight:700;cursor:pointer;margin-bottom:10px }
+
+    .res-grid { display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px }
+    .res-card { border-radius:12px;border:2px solid;padding:12px;text-align:center }
+    .res-num  { font-size:1.5rem;font-weight:900;line-height:1.1 }
+    .res-lbl  { font-size:.62rem;font-weight:800;margin-top:3px }
+
+    .big-res  { border-radius:14px;border:3px solid #16a34a;padding:16px;margin-bottom:10px;text-align:center }
+    .big-num  { font-size:3rem;font-weight:900;color:#166534;line-height:1 }
+    .big-unit { font-size:.9rem;font-weight:700;color:#166534 }
+    .big-sub  { font-size:.75rem;color:#64748b;margin-top:8px }
+
+    .imc-bar-wrap { border-radius:8px;overflow:hidden;height:10px;background:#f1f5f9;margin:10px 0 4px }
+    .imc-bar      { height:100%;border-radius:8px;transition:width .5s }
+
+    .sec-lbl { font-size:.62rem;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.08em;margin:12px 0 6px }
+
+    .detail-row { display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f1f5f9;font-size:.78rem }
+    .detail-row:last-child { border-bottom:none }
+    .detail-lbl { color:#374151 }
+    .detail-val { font-weight:800;color:#1e3a5f }
+
+    .prot-row { padding:7px 0;border-bottom:1px solid #f1f5f9;font-size:.75rem }
+    .prot-row:last-child { border-bottom:none }
+
+    .warn-card { background:#fff7ed;border-left:4px solid #d97706;border-radius:8px;padding:10px 12px;font-size:.75rem;color:#92400e;margin-bottom:10px;display:none }
+  </style>
+</head>
+<body>
+
+<header class="top-bar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <span class="top-title">Avaliação Nutricional Clínica</span>
+  <div class="top-right"></div>
+</header>
+
+<main class="container" style="padding-bottom:90px">
+
+  <div class="nc-hdr">
+    <div class="nc-title">🥗 Nutrição Clínica e Composição Corporal</div>
+    <div class="nc-sub">IMC · Peso Ideal · Peso Ajustado · LBW · BSA · GET · Proteína · Hidratação</div>
+  </div>
+
+  <button class="btn-auto" onclick="autoFill()">⚡ Auto-preencher do paciente ativo</button>
+
+  <div class="card" style="padding:12px 14px">
+    <div class="input-row">
+      <div>
+        <label>Peso atual (kg)</label>
+        <input type="number" id="peso" placeholder="ex.: 70" min="1" step="0.1">
+      </div>
+      <div>
+        <label>Altura (cm)</label>
+        <input type="number" id="altura" placeholder="ex.: 170" min="50" step="0.5">
+      </div>
+    </div>
+    <div class="input-row">
+      <div>
+        <label>Sexo</label>
+        <select id="sexo">
+          <option value="M">Masculino</option>
+          <option value="F">Feminino</option>
+        </select>
+      </div>
+      <div>
+        <label>Idade (anos)</label>
+        <input type="number" id="idade" placeholder="ex.: 55" min="1" max="120">
+      </div>
+    </div>
+
+    <p class="sec-lbl">Fator de Atividade</p>
+    <select id="atividade">
+      <option value="1.2">Sedentário (acamado / sem exercício)</option>
+      <option value="1.375" selected>Levemente ativo (exercício leve 1–3×/sem)</option>
+      <option value="1.55">Moderadamente ativo (exercício 3–5×/sem)</option>
+      <option value="1.725">Muito ativo (exercício intenso 6–7×/sem)</option>
+      <option value="1.9">Extremamente ativo (atleta / trabalho físico intenso)</option>
+    </select>
+
+    <p class="sec-lbl">Fator de Estresse Clínico</p>
+    <select id="estresse">
+      <option value="1.0">Sem estresse / Ambulatorial</option>
+      <option value="1.15">Pós-operatório simples / Infecção leve</option>
+      <option value="1.3">Trauma moderado / Cirurgia eletiva grande</option>
+      <option value="1.5">Politrauma / Cirurgia de emergência / Sepse</option>
+      <option value="1.7">Queimaduras extensas (20–40% SCQ)</option>
+      <option value="2.0">Queimaduras graves (>40% SCQ)</option>
+    </select>
+
+    <p class="sec-lbl">Condição Clínica (para proteína)</p>
+    <select id="condicao">
+      <option value="normal">Adulto saudável / Ambulatorial</option>
+      <option value="idoso">Idoso ≥65 anos</option>
+      <option value="cirurgia">Cirurgia / Trauma</option>
+      <option value="neoplas">Neoplasia</option>
+      <option value="queimado">Queimaduras</option>
+      <option value="hemodial">Hemodiálise</option>
+      <option value="irc">IRC sem diálise</option>
+      <option value="hepatica">Hepatopatia grave (Child B/C)</option>
+    </select>
+  </div>
+
+  <button class="btn-calc" onclick="calcNutri()">📐 Calcular</button>
+
+  <!-- RESULTADO -->
+  <div id="resultArea" style="display:none">
+
+    <p class="sec-lbl">Composição Corporal</p>
+
+    <!-- IMC -->
+    <div class="card" style="padding:14px">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <div style="font-size:1.8rem;font-weight:900;color:#1e3a5f" id="imcVal">—</div>
+          <div style="font-size:.72rem;font-weight:700;color:#64748b">IMC (kg/m²)</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:.9rem;font-weight:800" id="imcCls">—</div>
+          <div style="font-size:.68rem;color:#64748b" id="imcRange">—</div>
+        </div>
+      </div>
+      <div class="imc-bar-wrap"><div class="imc-bar" id="imcBar" style="width:0"></div></div>
+    </div>
+
+    <!-- Pesos -->
+    <div class="res-grid">
+      <div class="res-card" style="border-color:#1e3a5f;color:#1e3a5f">
+        <div class="res-num" id="piVal">—</div>
+        <div class="res-lbl">Peso Ideal Devine (kg)</div>
+      </div>
+      <div class="res-card" style="border-color:#0369a1;color:#0369a1">
+        <div class="res-num" id="paVal">—</div>
+        <div class="res-lbl">Peso Ajustado (kg)</div>
+      </div>
+      <div class="res-card" style="border-color:#7c3aed;color:#7c3aed">
+        <div class="res-num" id="lbwVal">—</div>
+        <div class="res-lbl">LBW Janmahasatian (kg)</div>
+      </div>
+      <div class="res-card" style="border-color:#0f766e;color:#0f766e">
+        <div class="res-num" id="bsaVal">—</div>
+        <div class="res-lbl">BSA Mosteller (m²)</div>
+      </div>
+    </div>
+
+    <div class="warn-card" id="warnDose">
+      <strong>📌 Peso para dosagem de fármacos:</strong>
+      <span id="warnDoseText"></span>
+    </div>
+
+    <!-- GET -->
+    <p class="sec-lbl">Gasto Energético Total (GET)</p>
+    <div class="big-res">
+      <div class="big-num" id="getMiff">—</div>
+      <div class="big-unit">kcal/dia — Mifflin-St Jeor</div>
+      <div class="big-sub" id="getMiffSub"></div>
+    </div>
+    <div class="card" style="padding:8px 14px">
+      <div class="detail-row">
+        <span class="detail-lbl">TMB Mifflin-St Jeor</span>
+        <span class="detail-val" id="tmbMiff">—</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-lbl">TMB Harris-Benedict</span>
+        <span class="detail-val" id="tmbHB">—</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-lbl">GET Harris-Benedict</span>
+        <span class="detail-val" id="getHB">—</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-lbl">Fator de atividade</span>
+        <span class="detail-val" id="fatAtiv">—</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-lbl">Fator de estresse</span>
+        <span class="detail-val" id="fatEst">—</span>
+      </div>
+    </div>
+
+    <!-- Proteína -->
+    <p class="sec-lbl">Necessidade Proteica</p>
+    <div class="card" style="padding:8px 14px" id="protCard"></div>
+
+    <!-- Hidratação -->
+    <p class="sec-lbl">Necessidade Hídrica</p>
+    <div class="card" style="padding:8px 14px">
+      <div class="detail-row">
+        <span class="detail-lbl">Holliday-Segar adulto</span>
+        <span class="detail-val" id="hidHS">—</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-lbl">Regra geral 30 mL/kg</span>
+        <span class="detail-val" id="hid30">—</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-lbl">Regra geral 35 mL/kg</span>
+        <span class="detail-val" id="hid35">—</span>
+      </div>
+    </div>
+
+    <div class="card" style="font-size:.72rem;color:#64748b">
+      <em>Ref: Mifflin MD et al. Am J Clin Nutr 1990. Devine BJ. Drug Intell Clin Pharm 1974. Janmahasatian S et al. Clin Pharmacokinet 2005. Mosteller RD. N Engl J Med 1987.</em>
+    </div>
+  </div>
+
+</main>
+
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+
+<script src="js/db.js"></script>
+<script>
+const pid = localStorage.getItem('vd_active');
+
+async function autoFill() {
+  if (!pid) { alert('Nenhum paciente ativo.'); return; }
+  const pac = await dbGet('pacientes', parseInt(pid));
+  if (!pac) { alert('Paciente não encontrado.'); return; }
+  if (pac.pesoPac) document.getElementById('peso').value = pac.pesoPac;
+  if (pac.idadePac) document.getElementById('idade').value = pac.idadePac;
+  if (pac.sexoPac === 'F') document.getElementById('sexo').value = 'F';
+  else document.getElementById('sexo').value = 'M';
+}
+
+const PROT = {
+  normal:   { min:0.8,  max:1.0,  lbl:'Adulto saudável',       note:'RDA de proteínas' },
+  idoso:    { min:1.2,  max:1.5,  lbl:'Idoso ≥65 anos',        note:'ESPEN 2018: 1,2–1,5 g/kg para prevenir sarcopenia' },
+  cirurgia: { min:1.5,  max:2.0,  lbl:'Cirurgia/Trauma',       note:'ASPEN/ESPEN: catabolia pós-operatória exige aporte elevado' },
+  neoplas:  { min:1.2,  max:1.5,  lbl:'Neoplasia',             note:'Suporte nutricional oncológico (ASCO/ESMO)' },
+  queimado: { min:2.0,  max:3.0,  lbl:'Queimaduras',           note:'Alta demanda catabólica; monitorar ureia' },
+  hemodial: { min:1.2,  max:1.5,  lbl:'Hemodiálise',           note:'KDOQI: perdas dialíticas aumentam necessidade' },
+  irc:      { min:0.6,  max:0.8,  lbl:'IRC sem diálise',       note:'Restrição protéica para retardar progressão (KDIGO)' },
+  hepatica: { min:1.2,  max:1.5,  lbl:'Hepatopatia grave',     note:'ESPEN: proteína NÃO deve ser restringida em cirrose (contraintuitivo)' },
+};
+
+const IMC_CLASSES = [
+  { max:18.5, cls:'Baixo peso',        col:'#0369a1', txt:'<18,5' },
+  { max:25,   cls:'Peso normal',        col:'#16a34a', txt:'18,5–24,9' },
+  { max:30,   cls:'Sobrepeso',          col:'#d97706', txt:'25–29,9' },
+  { max:35,   cls:'Obesidade I',        col:'#ea580c', txt:'30–34,9' },
+  { max:40,   cls:'Obesidade II',       col:'#dc2626', txt:'35–39,9' },
+  { max:999,  cls:'Obesidade III',      col:'#7f1d1d', txt:'≥40' },
+];
+
+function calcNutri() {
+  const peso   = parseFloat(document.getElementById('peso').value);
+  const alt_cm = parseFloat(document.getElementById('altura').value);
+  const sexo   = document.getElementById('sexo').value;
+  const idade  = parseFloat(document.getElementById('idade').value);
+  const fatA   = parseFloat(document.getElementById('atividade').value);
+  const fatE   = parseFloat(document.getElementById('estresse').value);
+  const cond   = document.getElementById('condicao').value;
+
+  if (!peso||!alt_cm||!idade) { alert('Preencha peso, altura e idade.'); return; }
+
+  const alt_m = alt_cm / 100;
+  const alt_in= alt_cm / 2.54;
+
+  // IMC
+  const imc = peso / (alt_m * alt_m);
+  const imcCls = IMC_CLASSES.find(c=>imc<c.max) || IMC_CLASSES[5];
+
+  document.getElementById('imcVal').textContent = imc.toFixed(1);
+  document.getElementById('imcCls').textContent = imcCls.cls;
+  document.getElementById('imcCls').style.color = imcCls.col;
+  document.getElementById('imcRange').textContent = imcCls.txt + ' kg/m²';
+
+  // IMC bar (scale: 15–45 mapped to 0–100%)
+  const barPct = Math.min(100, Math.max(0, (imc - 15) / (45-15) * 100));
+  document.getElementById('imcBar').style.width = barPct+'%';
+  document.getElementById('imcBar').style.background = imcCls.col;
+
+  // Peso Ideal (Devine)
+  const pi = sexo === 'M'
+    ? 50 + 2.3 * (alt_in - 60)
+    : 45.5 + 2.3 * (alt_in - 60);
+  const pi_pos = Math.max(pi, 30);
+
+  // Peso Ajustado (only if imc > 30)
+  const pa = imc > 30 ? pi_pos + 0.4 * (peso - pi_pos) : peso;
+
+  // LBW (Janmahasatian)
+  const lbw = sexo === 'M'
+    ? (9270 * peso) / (6680 + 216 * imc)
+    : (9270 * peso) / (8780 + 244 * imc);
+
+  // BSA (Mosteller)
+  const bsa = Math.sqrt((peso * alt_cm) / 3600);
+
+  document.getElementById('piVal').textContent  = pi_pos.toFixed(1);
+  document.getElementById('paVal').textContent  = pa.toFixed(1);
+  document.getElementById('lbwVal').textContent = lbw.toFixed(1);
+  document.getElementById('bsaVal').textContent = bsa.toFixed(2);
+
+  // Dose weight warning
+  const wCard = document.getElementById('warnDose');
+  const wText = document.getElementById('warnDoseText');
+  if (imc < 25) {
+    wCard.style.display='block';
+    wText.textContent=' Usar PESO ATUAL ('+peso.toFixed(0)+' kg) para dosagem de fármacos.';
+  } else if (imc < 30) {
+    wCard.style.display='block';
+    wText.textContent=' Sobrepeso: usar PESO ATUAL ou IDEAL dependendo do fármaco.';
+  } else {
+    wCard.style.display='block';
+    wText.textContent=' Obesidade: usar PESO AJUSTADO ('+pa.toFixed(1)+' kg) para maioria dos fármacos lipofílicos. Fármacos hidrofílicos: peso ideal ('+pi_pos.toFixed(1)+' kg). Consultar literatura específica do fármaco.';
+  }
+
+  // GET
+  // Mifflin-St Jeor
+  const tmb_miff = sexo==='M'
+    ? 10*peso + 6.25*alt_cm - 5*idade + 5
+    : 10*peso + 6.25*alt_cm - 5*idade - 161;
+  const get_miff = tmb_miff * fatA * fatE;
+
+  // Harris-Benedict (original)
+  const tmb_hb = sexo==='M'
+    ? 66.5 + 13.75*peso + 5.003*alt_cm - 6.775*idade
+    : 655.1 + 9.563*peso + 1.850*alt_cm - 4.676*idade;
+  const get_hb = tmb_hb * fatA * fatE;
+
+  document.getElementById('getMiff').textContent    = Math.round(get_miff);
+  document.getElementById('getMiffSub').textContent = `TMB ${Math.round(tmb_miff)} kcal × atividade ${fatA} × estresse ${fatE}`;
+  document.getElementById('tmbMiff').textContent    = Math.round(tmb_miff)+' kcal';
+  document.getElementById('tmbHB').textContent      = Math.round(tmb_hb)+' kcal';
+  document.getElementById('getHB').textContent      = Math.round(get_hb)+' kcal/dia';
+  document.getElementById('fatAtiv').textContent    = fatA+'×';
+  document.getElementById('fatEst').textContent     = fatE+'×';
+
+  // Proteína
+  const prot = PROT[cond];
+  const prot_peso = imc > 30 ? pi_pos : peso;  // use IBW if obese
+  const prot_min = (prot.min * prot_peso).toFixed(0);
+  const prot_max = (prot.max * prot_peso).toFixed(0);
+  document.getElementById('protCard').innerHTML = `
+    <div class="prot-row"><strong>${prot.lbl}: ${prot_min}–${prot_max} g/dia</strong> (${prot.min}–${prot.max} g/kg)</div>
+    <div class="prot-row" style="color:#64748b">${prot.note}</div>
+    ${imc>30?`<div class="prot-row" style="color:#d97706;font-size:.7rem">⚠️ Calculado com peso ideal (${pi_pos.toFixed(0)} kg) — uso de peso atual superestimaria necessidade em obesos.</div>`:''}`;
+
+  // Hidratação
+  let hid_hs = 0;
+  if (peso <= 20) hid_hs = peso * 100;
+  else if (peso <= 50) hid_hs = 1500 + (peso-20)*50;
+  else hid_hs = 2500 + (peso-50)*20;
+
+  document.getElementById('hidHS').textContent = Math.round(hid_hs)+' mL/dia';
+  document.getElementById('hid30').textContent = Math.round(peso*30)+' mL/dia';
+  document.getElementById('hid35').textContent = Math.round(peso*35)+' mL/dia';
+
+  document.getElementById('resultArea').style.display='block';
+  window.scrollTo({top: document.getElementById('resultArea').offsetTop-80, behavior:'smooth'});
+}
+</script>
+</body>
+</html>
