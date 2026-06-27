@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Avaliação Nutricional — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <style>
+    body { background:#f8fafc;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif }
+    .topbar { display:flex;align-items:center;gap:10px;padding:14px 16px;background:#fff;border-bottom:1px solid #e2e8f0;position:sticky;top:0;z-index:100 }
+    .back-btn { background:none;border:none;font-size:1.3rem;cursor:pointer;padding:4px 8px;color:#475569;border-radius:8px }
+    .topbar-title { font-size:1rem;font-weight:700;color:#1e293b;flex:1 }
+    .sec-title { font-size:.68rem;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.1em;padding:0 16px;margin:14px 0 6px }
+
+    /* Medidas antropométricas */
+    .medidas-card { background:#fff;border-radius:14px;margin:0 16px 10px;box-shadow:0 1px 4px rgba(0,0,0,.06);padding:14px }
+    .form-row  { margin-bottom:10px }
+    .form-lbl  { font-size:.67rem;font-weight:700;color:#64748b;margin-bottom:4px }
+    .form-inp  { width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:9px;padding:8px 12px;font-size:.82rem;color:#1e293b }
+    .form-inp:focus { outline:none;border-color:#0891b2 }
+    .form-grid2 { display:grid;grid-template-columns:1fr 1fr;gap:8px }
+    .form-grid3 { display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px }
+
+    /* Resultados corporais */
+    .resul-grid { display:grid;grid-template-columns:repeat(2,1fr);gap:10px;padding:0 16px }
+    .resul-card { background:#fff;border-radius:14px;padding:12px 14px;box-shadow:0 1px 4px rgba(0,0,0,.06) }
+    .resul-val  { font-size:1.4rem;font-weight:900 }
+    .resul-lbl  { font-size:.62rem;font-weight:700;color:#94a3b8;text-transform:uppercase;margin-top:2px }
+    .resul-badge{ display:inline-block;border-radius:5px;padding:2px 8px;font-size:.62rem;font-weight:800;margin-top:4px }
+
+    /* MNA */
+    .mna-card { background:#fff;border-radius:14px;margin:0 16px 10px;box-shadow:0 1px 4px rgba(0,0,0,.06);overflow:hidden }
+    .mna-row  { padding:12px 14px;border-bottom:1px solid #f1f5f9 }
+    .mna-row:last-child { border-bottom:none }
+    .mna-lbl  { font-size:.8rem;font-weight:700;color:#1e293b;margin-bottom:8px }
+    .mna-pts  { font-size:.65rem;color:#94a3b8;margin-bottom:7px }
+    .opts-row { display:flex;flex-wrap:wrap;gap:6px }
+    .opt-btn  { background:#f1f5f9;border:1.5px solid transparent;border-radius:10px;padding:7px 12px;font-size:.74rem;font-weight:700;color:#475569;cursor:pointer;white-space:nowrap }
+    .opt-btn.sel { background:#cffafe;border-color:#67e8f9;color:#0891b2 }
+
+    /* Score MNA */
+    .mna-score-wrap { background:#fff;border-radius:14px;margin:0 16px;box-shadow:0 1px 6px rgba(0,0,0,.07);padding:18px;text-align:center }
+    .mna-score-num  { font-size:2.5rem;font-weight:900 }
+    .mna-score-max  { font-size:.75rem;color:#94a3b8 }
+    .mna-score-badge{ display:inline-block;border-radius:10px;padding:6px 18px;font-size:.85rem;font-weight:800;margin-top:8px }
+
+    /* Sparkline peso */
+    .spark-wrap { background:#fff;border-radius:14px;margin:0 16px 10px;box-shadow:0 1px 4px rgba(0,0,0,.06);padding:14px }
+    .spark-title { font-size:.72rem;font-weight:700;color:#1e293b;margin-bottom:8px }
+    .spark-svg { width:100%;height:60px;overflow:visible }
+
+    .btn-salvar { width:calc(100% - 32px);display:block;margin:0 16px 10px;background:#0891b2;color:#fff;border:none;border-radius:12px;padding:13px;font-size:.9rem;font-weight:800;cursor:pointer }
+
+    /* Histórico MNA */
+    .hist-row { display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid #f1f5f9 }
+    .hist-row:last-child { border-bottom:none }
+    .hist-data { font-size:.72rem;font-weight:700;color:#0891b2 }
+    .hist-score{ font-size:.85rem;font-weight:900;flex:1 }
+    .hist-del  { background:none;border:none;color:#cbd5e1;cursor:pointer;font-size:.9rem }
+
+    .vazio { text-align:center;color:#94a3b8;padding:16px;font-size:.82rem }
+
+    @media print {
+      .topbar,.back-btn,.btn-salvar,.hist-del { display:none }
+    }
+  </style>
+</head>
+<body>
+<div class="topbar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <span class="topbar-title">🥗 Avaliação Nutricional</span>
+</div>
+<div id="app" style="padding-bottom:80px">
+  <p style="text-align:center;color:#94a3b8;padding:40px;font-size:.85rem">Carregando...</p>
+</div>
+<div class="toast" id="toast"></div>
+<script src="js/db.js"></script>
+<script src="js/utils.js"></script>
+<script>
+
+/* ─── MNA-SF (Mini Nutritional Assessment — Short Form) ─── */
+const _MNA_Qs = [
+  {
+    id:'apetite', pts_max:2,
+    lbl:'Houve diminuição da ingesta alimentar nos últimos 3 meses por falta de apetite, problemas digestivos, dificuldade de mastigação ou deglutição?',
+    opts:[ {lbl:'Redução grave', pts:0}, {lbl:'Redução moderada', pts:1}, {lbl:'Sem redução', pts:2} ]
+  },
+  {
+    id:'peso', pts_max:3,
+    lbl:'Perda de peso nos últimos 3 meses',
+    opts:[ {lbl:'Perda >3 kg', pts:0}, {lbl:'Não sabe', pts:1}, {lbl:'Perda 1-3 kg', pts:2}, {lbl:'Sem perda de peso', pts:3} ]
+  },
+  {
+    id:'motricidade', pts_max:2,
+    lbl:'Mobilidade',
+    opts:[ {lbl:'Acamado ou cadeira de rodas', pts:0}, {lbl:'Levanta da cama/cadeira, mas não sai', pts:1}, {lbl:'Sai de casa', pts:2} ]
+  },
+  {
+    id:'estresse', pts_max:2,
+    lbl:'Sofreu estresse psicológico ou doença aguda nos últimos 3 meses?',
+    opts:[ {lbl:'Sim', pts:0}, {lbl:'Não', pts:2} ]
+  },
+  {
+    id:'neuro', pts_max:2,
+    lbl:'Problemas neuropsicológicos',
+    opts:[ {lbl:'Demência ou depressão graves', pts:0}, {lbl:'Demência leve', pts:1}, {lbl:'Sem problema', pts:2} ]
+  },
+  {
+    id:'imc_cc', pts_max:3,
+    lbl:'IMC (kg/m²)  —  ou circunferência da panturrilha (se IMC não disponível)',
+    opts:[ {lbl:'IMC <19 (ou CC <31 cm)', pts:0}, {lbl:'IMC 19-21', pts:1}, {lbl:'IMC 21-23', pts:2}, {lbl:'IMC ≥23 (ou CC ≥31 cm)', pts:3} ]
+  },
+];
+
+/* ─── Cálculos de composição corporal ─────────────────── */
+function calcIMC(peso, altura) {
+  if (!peso||!altura) return null;
+  return +(peso / (altura/100)**2).toFixed(1);
+}
+function classIMC(imc) {
+  if (imc < 18.5) return { lbl:'Baixo peso',        cor:'#dc2626', bg:'#fee2e2' };
+  if (imc < 25)   return { lbl:'Eutrófico',          cor:'#16a34a', bg:'#dcfce7' };
+  if (imc < 30)   return { lbl:'Sobrepeso',          cor:'#d97706', bg:'#fef3c7' };
+  if (imc < 35)   return { lbl:'Obesidade G1',       cor:'#ea580c', bg:'#ffedd5' };
+  if (imc < 40)   return { lbl:'Obesidade G2',       cor:'#dc2626', bg:'#fee2e2' };
+  return                   { lbl:'Obesidade G3',      cor:'#991b1b', bg:'#fecaca' };
+}
+/* Peso Ideal — Devine (1974) */
+function calcPesoIdeal(altura_cm, sexo) {
+  const h_in = altura_cm / 2.54;
+  if (sexo === 'M') return +(50 + 2.3 * (h_in - 60)).toFixed(1);
+  return +(45.5 + 2.3 * (h_in - 60)).toFixed(1);
+}
+/* Peso Ajustado (obesidade) */
+function calcPesoAjustado(pesoReal, pesoIdeal) {
+  return +(pesoIdeal + 0.4 * (pesoReal - pesoIdeal)).toFixed(1);
+}
+/* Lean Body Weight — Janmahasatian */
+function calcLBW(peso, imc, sexo) {
+  if (!peso||!imc) return null;
+  if (sexo === 'M') return +((9270 * peso) / (6680 + 216 * imc)).toFixed(1);
+  return +((9270 * peso) / (8780 + 244 * imc)).toFixed(1);
+}
+/* BSA — Mosteller */
+function calcBSA(altura_cm, peso) {
+  return +(Math.sqrt(altura_cm * peso / 3600)).toFixed(2);
+}
+
+function classifMNA(score) {
+  if (score >= 12) return { lbl:'Estado nutricional normal',       cor:'#16a34a', bg:'#dcfce7' };
+  if (score >= 8)  return { lbl:'Risco de desnutrição',            cor:'#d97706', bg:'#fef3c7' };
+  return                   { lbl:'Desnutrição provável',            cor:'#dc2626', bg:'#fee2e2' };
+}
+
+/* ─── Sparkline SVG peso ──────────────────────────────── */
+function sparklinePeso(diarios) {
+  const pontos = diarios.filter(d=>d.peso).slice(-30);
+  if (pontos.length < 2) return '<p class="vazio">Menos de 2 registros de peso no diário.</p>';
+  const pesos = pontos.map(d=>parseFloat(d.peso));
+  const mn = Math.min(...pesos)-1, mx = Math.max(...pesos)+1;
+  const W=300, H=50;
+  const xScale = i => Math.round(i / (pontos.length-1) * W);
+  const yScale = p => Math.round(H - (p-mn)/(mx-mn)*H);
+  const pts = pontos.map((d,i) => `${xScale(i)},${yScale(parseFloat(d.peso))}`).join(' ');
+  const ul  = pesos[pesos.length-1];
+  const pr  = pesos[0];
+  const dif = +(ul-pr).toFixed(1);
+  const cor = dif < -3 ? '#dc2626' : dif > 2 ? '#d97706' : '#0891b2';
+  return `<svg class="spark-svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">
+    <polyline points="${pts}" fill="none" stroke="${cor}" stroke-width="2.5" stroke-linejoin="round"/>
+    ${pontos.map((d,i)=>`<circle cx="${xScale(i)}" cy="${yScale(parseFloat(d.peso))}" r="3" fill="${cor}"/>`).join('')}
+  </svg>
+  <div style="display:flex;justify-content:space-between;font-size:.68rem;color:#94a3b8;margin-top:4px">
+    <span>${pontos[0].data?.slice(5).replace('-','/')}</span>
+    <span style="color:${cor};font-weight:700">${dif>0?'+':''}${dif} kg em ${pontos.length} registros</span>
+    <span>${pontos[pontos.length-1].data?.slice(5).replace('-','/')}</span>
+  </div>`;
+}
+
+let _pid     = null;
+let _pac     = null;
+let _cfg     = {};   // { altura, uc }  armazenado em config
+let _resps   = {};   // MNA respostas
+let _hist    = [];
+let _diarios = [];
+
+async function init() {
+  _pid = getActivePacienteId();
+  if (!_pid) { window.location.href='index.html'; return; }
+  _pac  = await dbGet('pacientes', _pid);
+  _cfg  = (await dbGetConfig('nutricao_cfg_'+_pid)) || {};
+  _hist = (await dbGetConfig('mna_hist_'+_pid))     || [];
+  _hist.sort((a,b) => b.data.localeCompare(a.data));
+
+  /* Dados de peso do diário */
+  try {
+    const hoje = new Date().toISOString().slice(0,10);
+    const dt90 = new Date(); dt90.setDate(dt90.getDate()-90);
+    _diarios = (await dbGetDiarioRange(dt90.toISOString().slice(0,10), hoje)) || [];
+    _diarios.sort((a,b) => a.data.localeCompare(b.data));
+  } catch(e) {}
+
+  render();
+}
+
+function calcTudo(peso, altura, sexo) {
+  if (!peso || !altura) return {};
+  const imc = calcIMC(peso, altura);
+  const pi  = calcPesoIdeal(altura, sexo);
+  const pa  = peso > pi * 1.2 ? calcPesoAjustado(peso, pi) : null;
+  const lbw = calcLBW(peso, imc, sexo);
+  const bsa = calcBSA(altura, peso);
+  return { imc, pi, pa, lbw, bsa };
+}
+
+function render() {
+  const sexo   = _pac?.sexoPac || 'M';
+  const pesoP  = _pac?.pesoPac;
+  const alturaP= _cfg.altura || null;
+  const pesoU  = _diarios.filter(d=>d.peso).reverse()[0]?.peso || pesoP;
+  const hoje   = new Date().toISOString().slice(0,10);
+
+  const c = calcTudo(parseFloat(pesoU)||0, parseFloat(alturaP)||0, sexo);
+  const imcCl = c.imc ? classIMC(c.imc) : null;
+
+  /* Score MNA parcial */
+  const mnaScore = _MNA_Qs.reduce((s,q) => s + (_resps[q.id] ?? 0), 0);
+  const mnaMax   = _MNA_Qs.reduce((s,q) => s + q.pts_max, 0);
+  const mnaCl    = classifMNA(mnaScore);
+
+  /* Bloco de resultados corporais */
+  const resultItems = [
+    { lbl:'Peso atual', val: pesoU ? pesoU+' kg' : '—', cor:'#0891b2', badge:null },
+    { lbl:'IMC',       val: c.imc ? c.imc+' kg/m²' : '—', cor: imcCl?.cor||'#94a3b8', badge: imcCl?.lbl },
+    { lbl:'Peso Ideal (Devine)', val: c.pi ? c.pi+' kg' : '—', cor:'#7c3aed', badge: c.pi&&pesoU ? (pesoU>c.pi*1.2?'Obeso':Math.abs(pesoU-c.pi)<3?'Atingido':'Abaixo') : null },
+    { lbl:'Peso Ajust. (ABW)',  val: c.pa ? c.pa+' kg' : '—',  cor:'#d97706', badge: c.pa ? 'Para dosagem em obesos' : null },
+    { lbl:'Lean Body Wt (LBW)', val: c.lbw ? c.lbw+' kg' : '—', cor:'#16a34a', badge: null },
+    { lbl:'BSA (Mosteller)',    val: c.bsa ? c.bsa+' m²' : '—', cor:'#0891b2', badge: null },
+  ];
+
+  const resulHTML = resultItems.map(r => `
+    <div class="resul-card">
+      <div class="resul-val" style="color:${r.cor}">${r.val}</div>
+      <div class="resul-lbl">${r.lbl}</div>
+      ${r.badge ? `<span class="resul-badge" style="background:${r.cor}22;color:${r.cor}">${r.badge}</span>` : ''}
+    </div>`).join('');
+
+  const mnaQsHTML = _MNA_Qs.map(q => {
+    const sel = _resps[q.id];
+    return `<div class="mna-row">
+      <p class="mna-lbl">${q.lbl}</p>
+      <p class="mna-pts">(0 a ${q.pts_max} pontos)</p>
+      <div class="opts-row">
+        ${q.opts.map(o => {
+          const isSel = sel === o.pts;
+          return `<button class="opt-btn${isSel?' sel':''}" onclick="setResp('${q.id}',${o.pts})">${o.pts>0?o.pts+' — ':'0 — '}${o.lbl}</button>`;
+        }).join('')}
+      </div>
+    </div>`;
+  }).join('');
+
+  const histHTML = _hist.slice(0,5).map(h => {
+    const cl = classifMNA(h.score);
+    return `<div class="hist-row">
+      <span class="hist-data">${h.data.split('-').reverse().join('/')}</span>
+      <span class="hist-score">${h.score}/${mnaMax} pts</span>
+      <span style="font-size:.7rem;font-weight:700;border-radius:5px;padding:2px 8px;background:${cl.bg};color:${cl.cor}">${cl.lbl}</span>
+      <button class="hist-del" onclick="excluirHist('${h.id}')">×</button>
+    </div>`;
+  }).join('');
+
+  document.getElementById('app').innerHTML = `
+    <p class="sec-title" style="margin-top:10px">Medidas Antropométricas — ${_pac?.nome||'Paciente'}</p>
+    <div class="medidas-card">
+      <div class="form-grid3">
+        <div>
+          <p class="form-lbl">Peso atual (kg)</p>
+          <input class="form-inp" id="f-peso" type="number" step="0.1" value="${pesoU||''}" placeholder="Ex: 72.5" oninput="onMed()">
+        </div>
+        <div>
+          <p class="form-lbl">Altura (cm)</p>
+          <input class="form-inp" id="f-alt" type="number" step="0.1" value="${alturaP||''}" placeholder="Ex: 168" oninput="onMed()">
+        </div>
+        <div>
+          <p class="form-lbl">Circunf. panturrilha (cm)</p>
+          <input class="form-inp" id="f-cc" type="number" step="0.1" value="${_cfg.cc||''}" placeholder="Ex: 32">
+        </div>
+      </div>
+      <p style="font-size:.65rem;color:#94a3b8;margin-top:8px">Peso e altura auto-preenchidos do perfil/diário quando disponíveis. Altura é salva para este paciente.</p>
+    </div>
+
+    <p class="sec-title">Composição Corporal</p>
+    <div class="resul-grid">${resulHTML}</div>
+
+    <!-- Sparkline peso -->
+    ${_diarios.filter(d=>d.peso).length >= 2 ? `
+    <p class="sec-title">Evolução do Peso (últimos 90 dias)</p>
+    <div class="spark-wrap">
+      <p class="spark-title">Peso (kg)</p>
+      ${sparklinePeso(_diarios)}
+    </div>` : ''}
+
+    <!-- Fórmulas -->
+    <div style="background:#f8fafc;border-radius:12px;margin:0 16px 10px;padding:10px 14px;font-size:.68rem;color:#64748b;line-height:1.7">
+      <b>Referências:</b> IBW Devine: homem 50+2,3×(altura_pol−60); mulher 45,5+2,3×(altura_pol−60).
+      ABW (obesos: IMC>30) = IBW + 0,4×(peso real−IBW).
+      LBW (Janmahasatian): H=9270×P/(6680+216×IMC) | M=9270×P/(8780+244×IMC).
+      BSA (Mosteller) = √(alt×peso/3600) m².
+    </div>
+
+    <!-- MNA-SF -->
+    <p class="sec-title">MNA-SF — Triagem Nutricional</p>
+    <div class="mna-score-wrap" style="margin-bottom:10px">
+      <div class="mna-score-num" style="color:${mnaCl.cor}">${mnaScore}</div>
+      <p class="mna-score-max">de ${mnaMax} pontos</p>
+      <span class="mna-score-badge" style="background:${mnaCl.bg};color:${mnaCl.cor}">${mnaCl.lbl}</span>
+      <p style="font-size:.65rem;color:#94a3b8;margin-top:6px">≥12=normal · 8-11=risco · ≤7=desnutrição provável</p>
+    </div>
+
+    <div class="mna-card">${mnaQsHTML}</div>
+
+    <button class="btn-salvar" onclick="salvar()">✓ Salvar Avaliação MNA (${mnaScore}/${mnaMax} pts)</button>
+
+    ${_hist.length ? `<p class="sec-title">Histórico MNA</p>
+    <div class="mna-card" style="margin:0 16px 60px">${histHTML}</div>` : '<div style="height:60px"></div>'}
+  `;
+}
+
+function setResp(id, pts) { _resps[id] = pts; render(); }
+
+function onMed() {
+  const peso  = parseFloat(document.getElementById('f-peso')?.value||'0');
+  const alt   = parseFloat(document.getElementById('f-alt')?.value||'0');
+  if (!peso||!alt) return;
+  const c = calcTudo(peso, alt, _pac?.sexoPac||'M');
+  /* Atualiza badges ao vivo — rerender completo */
+  render();
+}
+
+async function salvar() {
+  /* Salva altura para o paciente */
+  const alt = parseFloat(document.getElementById('f-alt')?.value||'0');
+  const cc  = parseFloat(document.getElementById('f-cc')?.value||'0');
+  if (alt) _cfg.altura = alt;
+  if (cc)  _cfg.cc     = cc;
+  await dbSetConfig('nutricao_cfg_'+_pid, _cfg);
+
+  const mnaScore = _MNA_Qs.reduce((s,q) => s + (_resps[q.id] ?? 0), 0);
+  const registro = {
+    id:      Date.now().toString(36),
+    data:    new Date().toISOString().slice(0,10),
+    score:   mnaScore,
+    resps:   { ..._resps },
+    peso:    parseFloat(document.getElementById('f-peso')?.value||'0') || null,
+    altura:  alt || null,
+    criadoEm: new Date().toISOString(),
+  };
+  _hist.unshift(registro);
+  await dbSetConfig('mna_hist_'+_pid, _hist);
+  showToast('✓ Avaliação MNA salva');
+  render();
+}
+
+async function excluirHist(id) {
+  _hist = _hist.filter(h=>h.id!==id);
+  await dbSetConfig('mna_hist_'+_pid, _hist);
+  showToast('Registro removido');
+  render();
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>

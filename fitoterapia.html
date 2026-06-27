@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Fitoterápicos — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <style>
+    body { background:#f8fafc;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif }
+    .topbar { display:flex;align-items:center;gap:10px;padding:14px 16px;background:#fff;border-bottom:1px solid #e2e8f0;position:sticky;top:0;z-index:100 }
+    .back-btn { background:none;border:none;font-size:1.3rem;cursor:pointer;padding:4px 8px;color:#475569;border-radius:8px }
+    .topbar-title { font-size:1rem;font-weight:700;color:#1e293b;flex:1 }
+    .sec-title { font-size:.68rem;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.1em;padding:0 16px;margin:14px 0 6px }
+
+    .form-card { background:#fff;border-radius:14px;margin:0 16px 10px;box-shadow:0 1px 4px rgba(0,0,0,.06);padding:14px }
+    .form-row   { margin-bottom:10px }
+    .form-lbl   { font-size:.67rem;font-weight:700;color:#64748b;margin-bottom:4px }
+    .form-sel, .form-inp { width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:9px;padding:8px 12px;font-size:.82rem;color:#1e293b }
+    .form-sel:focus,.form-inp:focus { outline:none;border-color:#16a34a }
+    .form-grid { display:grid;grid-template-columns:1fr 1fr;gap:8px }
+    .btn-add { width:100%;background:#16a34a;color:#fff;border:none;border-radius:10px;padding:11px;font-size:.85rem;font-weight:800;cursor:pointer;margin-top:4px }
+
+    /* Lista em uso */
+    .uso-card { background:#fff;border-radius:14px;margin:0 16px 10px;box-shadow:0 1px 4px rgba(0,0,0,.06);overflow:hidden }
+    .uso-row  { display:flex;align-items:center;gap:10px;padding:11px 14px;border-bottom:1px solid #f1f5f9 }
+    .uso-row:last-child { border-bottom:none }
+    .uso-icon { font-size:1.2rem;flex-shrink:0 }
+    .uso-nome { font-size:.82rem;font-weight:700;color:#1e293b;flex:1 }
+    .uso-dose { font-size:.68rem;color:#94a3b8 }
+    .uso-del  { background:none;border:none;color:#cbd5e1;cursor:pointer;font-size:.95rem }
+    .uso-del:hover { color:#ef4444 }
+
+    /* Interações */
+    .int-card { background:#fff;border-radius:14px;margin:0 16px 10px;box-shadow:0 1px 4px rgba(0,0,0,.06);overflow:hidden }
+    .int-row  { padding:12px 14px;border-bottom:1px solid #f1f5f9 }
+    .int-row:last-child { border-bottom:none }
+    .int-top  { display:flex;align-items:center;gap:8px;margin-bottom:5px }
+    .int-sev  { width:8px;height:8px;border-radius:50%;flex-shrink:0 }
+    .int-pair { font-size:.8rem;font-weight:800;color:#1e293b }
+    .int-badge{ font-size:.62rem;font-weight:800;border-radius:5px;padding:2px 7px;margin-left:auto }
+    .int-ef   { font-size:.75rem;color:#475569;line-height:1.4;margin-bottom:3px }
+    .int-cond { font-size:.7rem;font-weight:700;color:#6366f1 }
+
+    .vazio { text-align:center;color:#94a3b8;padding:20px;font-size:.82rem }
+    .ok-box { background:#dcfce7;border-radius:12px;padding:14px;margin:0 16px 10px;text-align:center;font-size:.82rem;font-weight:700;color:#16a34a }
+
+    .mecanismo-tag { display:inline-block;background:#f1f5f9;border-radius:5px;padding:2px 8px;font-size:.62rem;font-weight:700;color:#64748b;margin-top:4px }
+
+    @media print { .topbar,.btn-add,.uso-del,.back-btn { display:none } }
+  </style>
+</head>
+<body>
+<div class="topbar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <span class="topbar-title">🌿 Fitoterápicos e Suplementos</span>
+</div>
+<div id="app" style="padding-bottom:60px">
+  <p style="text-align:center;color:#94a3b8;padding:40px;font-size:.85rem">Carregando...</p>
+</div>
+<div class="toast" id="toast"></div>
+<script src="js/db.js"></script>
+<script src="js/utils.js"></script>
+<script>
+
+/* ─── Catálogo de fitoterápicos / suplementos ─────────────────── */
+const _CAT = [
+  { id:'hiperico',   icon:'🌿', nome:"Hipérico (St. John's Wort)",  ind:'Depressão leve, ansiedade', mec:'Indutor CYP3A4 / CYP2C9 / P-gp' },
+  { id:'ginkgo',     icon:'🍃', nome:'Ginkgo Biloba',                ind:'Memória, circulação', mec:'Antiagregante plaquetário; modula CYP' },
+  { id:'ginseng',    icon:'🫚', nome:'Ginseng (Panax)',              ind:'Energia, imunidade, glicemia', mec:'Hipoglicemiante; antiagregante leve' },
+  { id:'valeriana',  icon:'💜', nome:'Valeriana',                    ind:'Insônia, ansiedade', mec:'Potencialização GABAérgica' },
+  { id:'alho',       icon:'🧄', nome:'Alho (Allium sativum)',        ind:'Colesterol, pressão', mec:'Antiagregante; indutor CYP2E1' },
+  { id:'equinacea',  icon:'🌸', nome:'Equinácea (Echinacea)',        ind:'Imunidade, resfriados', mec:'Imunomodulador; hepatotóxico cumulativo' },
+  { id:'kava',       icon:'🟤', nome:'Kava-Kava',                    ind:'Ansiedade, insônia', mec:'Depressor SNC; inibidor CYP; hepatotóxico' },
+  { id:'alcacuz',    icon:'🟡', nome:'Alcaçuz (Glycyrrhiza)',        ind:'Gastrite, expectorante', mec:'Retém sódio; hipocalemia; pseudo-hiperaldosteronismo' },
+  { id:'omega3',     icon:'🐟', nome:'Ômega-3 (óleo de peixe)',      ind:'Triglicerídeos, cardio', mec:'Antiagregante em altas doses (≥3g/dia)' },
+  { id:'vitamek',    icon:'🟢', nome:'Vitamina K (suplemento)',      ind:'Coagulação, ossos', mec:'Antagonista de anticoagulantes cumarínicos' },
+  { id:'vitame',     icon:'🟡', nome:'Vitamina E (>400UI/dia)',      ind:'Antioxidante', mec:'Antiagregante; potencializa anticoagulantes' },
+  { id:'calcio',     icon:'🦴', nome:'Cálcio (suplemento)',          ind:'Ossos, prevenção osteoporose', mec:'Quelação oral — reduz absorção de vários fármacos' },
+  { id:'ferro',      icon:'🔴', nome:'Ferro (suplemento)',           ind:'Anemia ferropriva', mec:'Quelação oral — reduz absorção de vários fármacos' },
+  { id:'magnesio',   icon:'⚡', nome:'Magnésio (suplemento)',        ind:'Câimbras, relaxante', mec:'Quelação oral — reduz absorção de vários fármacos' },
+  { id:'coq10',      icon:'🔋', nome:'Coenzima Q10 (CoQ10)',         ind:'Energia celular, cardio', mec:'Estrutura análoga à vitamina K; pode reduzir efeito da varfarina' },
+  { id:'curcuma',    icon:'🟠', nome:'Cúrcuma / Curcumina',         ind:'Anti-inflamatório, artrite', mec:'Antiagregante; inibidor fraco CYP3A4; potencializa anticoagulantes' },
+  { id:'chverde',    icon:'🍵', nome:'Chá Verde (extrato concentrado)', ind:'Antioxidante, emagrecimento', mec:'Antiagregante em altas doses; antagoniza varfarina (vitamina K)' },
+  { id:'gengibre',   icon:'🫚', nome:'Gengibre (Zingiber)',          ind:'Náuseas, anti-inflamatório', mec:'Antiagregante plaquetário fraco; leve hipoglicemiante' },
+  { id:'espinheiro', icon:'❤️', nome:'Espinheiro-alvo (Hawthorn)',   ind:'Insuficiência cardíaca leve, palpitações', mec:'Potencializa efeito de glicosídeos digitálicos e anti-hipertensivos' },
+  { id:'camomila',   icon:'🌼', nome:'Camomila (Matricaria)',        ind:'Ansiedade, gastrite', mec:'Leve anticoagulante; potencializa sedativos' },
+  { id:'gugurana',   icon:'☕', nome:'Guaraná (Paullinia)',          ind:'Energia, emagrecimento', mec:'Cafeína em alta concentração; efeito simpatomimético' },
+  { id:'primula',    icon:'🌺', nome:'Prímula (Evening Primrose)',   ind:'TPM, eczema', mec:'Reduz limiar convulsivo; antiagregante fraco' },
+  { id:'sawpalm',    icon:'🌴', nome:'Saw Palmetto (Serenoa)',       ind:'Hiperplasia prostática', mec:'Antiandrogênico fraco; pode mascarar PSA' },
+  { id:'outro',      icon:'🌱', nome:'Outro / Não listado',          ind:'', mec:'' },
+];
+
+/* ─── Banco de interações ─────────────────────────────────────── */
+/* nivel: 3=grave(vermelho), 2=moderado(laranja), 1=leve(amarelo) */
+const _INTS = {
+  hiperico: [
+    { d:/warfar|acenocoumar|femprocoumon/i, n:3, ef:'Indução de CYP2C9 e P-gp reduz INR — risco de tromboembolismo', c:'Contraindicado. Monitorar INR intensamente se indispensável.' },
+    { d:/ciclosporin|tacrolimus|sirolimus|everolimus/i, n:3, ef:'Redução drástica dos níveis do imunossupressor — risco de rejeição de órgão transplantado', c:'Contraindicado em pacientes transplantados.' },
+    { d:/indinavir|lopinavir|atazanavir|efavirenz|nevirapina|rilpivirina|elvitegravir/i, n:3, ef:'Indução de CYP3A4/P-gp reduz níveis de antiretrovirais abaixo do limiar terapêutico', c:'Contraindicado. Risco de falha virológica.' },
+    { d:/levonorgest|etinilestradiol|desogestrel|gestodeno/i, n:3, ef:'Acelera metabolismo de estrogênios e progestágenos — falha contraceptiva', c:'Usar método adicional de barreira. Informar a paciente.' },
+    { d:/sertralin|fluoxetin|paroxetin|venlafaxin|duloxetin|escitalopram|citalopram/i, n:2, ef:'Risco de síndrome serotoninérgica (tremores, diarreia, confusão, febre)', c:'Evitar associação. Se necessário, monitorar sinais serotoninérgicos.' },
+    { d:/amitriptilin|imipram|clomipram|nortriptilin/i, n:2, ef:'Síndrome serotoninérgica por somatório de efeito serotonina', c:'Evitar associação.' },
+    { d:/digoxin/i, n:2, ef:'Indução de P-gp reduz níveis séricos de digoxina — risco de subtratamento', c:'Monitorar digitalemia. Ajustar dose.' },
+    { d:/midazolam|alprazolam|triazolam/i, n:2, ef:'Indução de CYP3A4 pode reduzir efeito de benzodiazepínicos metabolizados por essa via', c:'Monitorar eficácia. Ajustar dose se necessário.' },
+    { d:/atorvastatin|sinvastatin|lovastatina/i, n:2, ef:'Redução dos níveis da estatina por indução de CYP3A4 — perda de controle lipídico', c:'Monitorar perfil lipídico. Preferir rosuvastatina ou fluvastatina.' },
+    { d:/imatinib|irinotecan|docetaxel|paclitaxel/i, n:3, ef:'Redução significativa dos níveis do antineoplásico com risco de falha terapêutica', c:'Contraindicado em pacientes oncológicos.' },
+    { d:/fenitoina|carbamazep|fenobarbital/i, n:2, ef:'Efeitos aditivos de indução enzimática — pode reduzir níveis dos anticonvulsivantes', c:'Monitorar níveis séricos dos anticonvulsivantes.' },
+  ],
+  ginkgo: [
+    { d:/warfar|acenocoumar/i, n:3, ef:'Efeito antiagregante do ginkgo aumenta risco de sangramento com anticoagulantes cumarínicos', c:'Contraindicado. Monitorar INR e sinais de sangramento.' },
+    { d:/aspirina|aas|acetilsalic/i, n:2, ef:'Duplo efeito antiagregante plaquetário — risco de sangramento aumentado', c:'Monitorar. Evitar em procedimentos cirúrgicos.' },
+    { d:/clopidogrel|prasugrel|ticagrelor/i, n:2, ef:'Potencialização do efeito antiagregante — sangramento', c:'Monitorar sinais de sangramento.' },
+    { d:/ibuprofeno|naproxeno|diclofenaco|celecoxib/i, n:2, ef:'Risco aditivo de sangramento gastrointestinal com AINEs', c:'Evitar em pacientes com gastropatia ou alto risco hemorrágico.' },
+    { d:/insulina|glibenclamida|glimepirida|glipizida/i, n:1, ef:'Possível potencialização da hipoglicemia (relatos de caso)', c:'Monitorar glicemia.' },
+    { d:/carbamazep|fenitoina|fenobarbital/i, n:2, ef:'Ginkgo pode diminuir limiar convulsivo e reduzir eficácia de anticonvulsivantes', c:'Evitar em epilépticos.' },
+    { d:/trazodona/i, n:2, ef:'Relatos de coma com a associação ginkgo + trazodona em idosos', c:'Evitar a associação.' },
+  ],
+  ginseng: [
+    { d:/warfar|acenocoumar/i, n:2, ef:'Redução do efeito anticoagulante (possível indução enzimática) e efeito antiagregante aditivo', c:'Monitorar INR com frequência.' },
+    { d:/insulina|glibenclamida|glimepirida|metformin/i, n:2, ef:'Efeito hipoglicemiante aditivo — risco de hipoglicemia', c:'Monitorar glicemia capilar. Ajustar dose do antidiabético.' },
+    { d:/inibidor.*mao|selegilina|tranilcipromina|fenelzina/i, n:3, ef:'Risco de síndrome serotoninérgica e hipertensão com IMAOs', c:'Contraindicado.' },
+    { d:/cafeina|guarana/i, n:1, ef:'Efeito estimulante aditivo — insônia, palpitações, hipertensão', c:'Usar com cautela; reduzir cafeína.' },
+    { d:/ciclosporin/i, n:2, ef:'Possível aumento dos níveis de ciclosporina', c:'Monitorar nível sérico de ciclosporina.' },
+  ],
+  valeriana: [
+    { d:/alprazolam|clonazepam|diazepam|midazolam|lorazepam|oxazepam/i, n:2, ef:'Potencialização da sedação por efeito GABAérgico aditivo', c:'Evitar associação. Risco de sedação excessiva e quedas em idosos.' },
+    { d:/zolpidem|zopiclona|eszopiclona/i, n:2, ef:'Sedação excessiva aditiva', c:'Evitar em idosos. Monitorar estado de alerta.' },
+    { d:/haloper|quetiap|olanzap|risperid|clorpromazin/i, n:2, ef:'Depressão do SNC aditiva', c:'Usar com cautela; monitorar sedação.' },
+    { d:/amitriptilin|imipram|doxepin/i, n:2, ef:'Sedação aditiva com antidepressivos tricíclicos', c:'Monitorar sedação e tontura.' },
+    { d:/anestesico|propofol|midazolam/i, n:2, ef:'Prolongamento da anestesia relatado com uso crônico de valeriana', c:'Suspender 2 semanas antes de procedimentos cirúrgicos.' },
+  ],
+  alho: [
+    { d:/warfar|acenocoumar/i, n:2, ef:'Efeito antiagregante e possível indução de CYP2E1 podem alterar INR', c:'Monitorar INR regularmente.' },
+    { d:/aspirina|aas|clopidogrel/i, n:2, ef:'Antiagregação plaquetária aditiva — risco de sangramento', c:'Evitar altas doses em pacientes antiagregados.' },
+    { d:/insulina|glibenclamida|glimepirida/i, n:1, ef:'Leve efeito hipoglicemiante aditivo (altas doses)', c:'Monitorar glicemia.' },
+    { d:/saquinavir|ritonavir/i, n:2, ef:'Indução de CYP3A4 reduz níveis de inibidores de protease', c:'Evitar em pacientes com HIV.' },
+  ],
+  equinacea: [
+    { d:/ciclosporin|tacrolimus|metotrexato/i, n:3, ef:'Estimulação imune pode antagonizar imunossupressores — risco de rejeição', c:'Contraindicado em pacientes imunossuprimidos.' },
+    { d:/cafeina\b|teofil/i, n:1, ef:'Inibição de CYP1A2 pode aumentar níveis de cafeína e teofilina', c:'Monitorar sinais de toxicidade.' },
+    { d:/midazolam|triazolam/i, n:1, ef:'Possível inibição de CYP3A4 pode aumentar exposição ao benzodiazepínico', c:'Observar sedação.' },
+  ],
+  kava: [
+    { d:/alprazolam|clonazepam|diazepam|lorazepam/i, n:3, ef:'Depressão profunda do SNC por mecanismo GABAérgico aditivo', c:'Contraindicado.' },
+    { d:/haloper|quetiap|olanzap/i, n:2, ef:'Sedação excessiva e risco de distonia aumentado', c:'Evitar associação.' },
+    { d:/paracetamol|acetaminofen/i, n:2, ef:'Kava é hepatotóxico; potencializa hepatotoxicidade com doses altas de paracetamol', c:'Limitar paracetamol a <2g/dia.' },
+    { d:/levodopa/i, n:2, ef:'Relatos de piora dos sintomas de Parkinson com uso de kava', c:'Evitar em parkinsonianos.' },
+    { d:/warfar/i, n:2, ef:'Inibição de CYP pode aumentar efeito anticoagulante', c:'Monitorar INR.' },
+  ],
+  alcacuz: [
+    { d:/furosem|hidroclorotia|indapamida|espironolacto/i, n:2, ef:'Hipocalemia aditiva — risco de arritmias, especialmente em uso de digoxina', c:'Monitorar K+ sérico. Evitar em hipocalêmicos.' },
+    { d:/digoxin/i, n:3, ef:'Hipocalemia induzida pelo alcaçuz potencializa toxicidade digitálica', c:'Contraindicado. Risco de arritmias graves.' },
+    { d:/enalapril|captopril|losartan|valsartan/i, n:2, ef:'Retenção de sódio e água pelo alcaçuz antagoniza efeito anti-hipertensivo', c:'Evitar. Monitorar pressão arterial.' },
+    { d:/corticosteroide|prednisona|dexametasona/i, n:2, ef:'Efeito mineralocorticoide aditivo — retenção hídrica, hipertensão, hipocalemia', c:'Evitar associação prolongada.' },
+    { d:/warfar/i, n:1, ef:'Alcaçuz pode alterar metabolismo de cumarínicos', c:'Monitorar INR.' },
+  ],
+  omega3: [
+    { d:/warfar|acenocoumar/i, n:2, ef:'Ômega-3 ≥3g/dia tem efeito antiagregante que potencializa risco de sangramento', c:'Monitorar INR. Suspender 1 semana antes de cirurgias.' },
+    { d:/aspirina|aas|clopidogrel|ticagrelor/i, n:1, ef:'Efeito antiagregante aditivo em doses altas (>3g/dia)', c:'Monitorar sinais de sangramento. Doses <1g geralmente seguras.' },
+  ],
+  vitamek: [
+    { d:/warfar|acenocoumar/i, n:3, ef:'Vitamina K antagoniza diretamente o mecanismo de ação da varfarina — reduz INR', c:'Manter ingestão de vitamina K consistente. Evitar suplementação adicional sem ajuste da dose de varfarina.' },
+  ],
+  vitame: [
+    { d:/warfar|acenocoumar/i, n:2, ef:'Vitamina E >400UI/dia tem efeito antiagregante que potencializa risco hemorrágico', c:'Evitar altas doses. Monitorar INR.' },
+    { d:/aspirina|aas|clopidogrel/i, n:1, ef:'Antiagregação aditiva em doses altas', c:'Monitorar.' },
+    { d:/ciclosporin/i, n:1, ef:'Pode reduzir absorção de ciclosporina', c:'Separar administração por 2h.' },
+  ],
+  calcio: [
+    { d:/levotiroxin|tiroxin/i, n:2, ef:'Quelação do cálcio com levotiroxina reduz absorção do hormônio tireoidiano — hipotireoidismo', c:'Separar administração por pelo menos 4 horas.' },
+    { d:/ciprofloxacin|levofloxacin|norfloxacin|moxifloxacin/i, n:2, ef:'Quelação reduz absorção da fluoroquinolona — falha terapêutica', c:'Separar administração por 2h antes ou 6h depois.' },
+    { d:/alendronato|risedronato|ibandronato/i, n:3, ef:'Quelação reduz drasticamente a absorção de bisfosfonatos', c:'Separar por pelo menos 2 horas. Tomar bisfosfonato em jejum com água pura.' },
+    { d:/doxiciclin|tetraciclina|minociclina/i, n:2, ef:'Quelação reduz absorção da tetraciclina', c:'Separar por 2-3 horas.' },
+    { d:/digoxin/i, n:2, ef:'Hipercalcemia por suplementação excessiva de cálcio potencializa toxicidade digitálica', c:'Monitorar calcemia e sinais de toxicidade digitálica.' },
+  ],
+  ferro: [
+    { d:/levotiroxin/i, n:2, ef:'Quelação do ferro com levotiroxina reduz absorção do hormônio', c:'Separar por pelo menos 2-4 horas.' },
+    { d:/ciprofloxacin|levofloxacin|norfloxacin/i, n:2, ef:'Quelação reduz absorção da fluoroquinolona', c:'Separar por 2h antes ou 6h depois da quinolona.' },
+    { d:/doxiciclin|tetraciclina/i, n:2, ef:'Quelação reduz absorção da tetraciclina', c:'Separar por 2-3 horas.' },
+    { d:/levodopa|metildopa/i, n:2, ef:'Quelação reduz absorção de levodopa e metildopa', c:'Separar por pelo menos 2 horas.' },
+    { d:/metotrexato/i, n:1, ef:'Possível redução da absorção de metotrexato oral', c:'Monitorar eficácia do metotrexato.' },
+  ],
+  magnesio: [
+    { d:/ciprofloxacin|levofloxacin|norfloxacin|moxifloxacin/i, n:2, ef:'Quelação reduz absorção da fluoroquinolona — falha terapêutica', c:'Separar por 2h antes ou 6h depois.' },
+    { d:/doxiciclin|tetraciclina|minociclina/i, n:2, ef:'Quelação reduz absorção da tetraciclina', c:'Separar por 2-3 horas.' },
+    { d:/alendronato|risedronato/i, n:2, ef:'Quelação pode reduzir absorção de bisfosfonatos', c:'Separar por pelo menos 2 horas.' },
+    { d:/digoxin/i, n:1, ef:'Magnésio pode alterar absorção de digoxina', c:'Separar administração.' },
+  ],
+  coq10: [
+    { d:/warfar|acenocoumar/i, n:2, ef:'CoQ10 tem estrutura similar à vitamina K e pode reduzir efeito anticoagulante da varfarina', c:'Monitorar INR. Ajustar dose se necessário.' },
+    { d:/metformin|insulina/i, n:1, ef:'CoQ10 pode melhorar sensibilidade à insulina — leve risco de hipoglicemia', c:'Monitorar glicemia.' },
+  ],
+  curcuma: [
+    { d:/warfar|acenocoumar/i, n:2, ef:'Inibição de CYP2C9 e efeito antiagregante podem aumentar INR', c:'Monitorar INR. Evitar suplementação em altas doses.' },
+    { d:/aspirina|aas|clopidogrel/i, n:2, ef:'Antiagregação aditiva', c:'Monitorar sangramento.' },
+    { d:/omeprazol|rabeprazol|pantoprazol/i, n:1, ef:'Inibição de CYP2C19 pode aumentar exposição a IBPs', c:'Monitorar eficácia gastrointestinal.' },
+    { d:/metformin/i, n:1, ef:'Curcumina pode potencializar efeito hipoglicemiante da metformina', c:'Monitorar glicemia.' },
+    { d:/tamoxifeno/i, n:1, ef:'Inibição de CYP3A4 pode alterar metabolismo do tamoxifeno', c:'Monitorar em pacientes oncológicas.' },
+  ],
+  chverde: [
+    { d:/warfar|acenocoumar/i, n:2, ef:'Chá verde concentrado contém vitamina K (antagoniza varfarina) e antiagregantes — efeito bidirecional imprevisível', c:'Monitorar INR. Manter consumo constante.' },
+    { d:/aspirina|aas|clopidogrel/i, n:1, ef:'Antiagregação aditiva em doses altas', c:'Monitorar.' },
+    { d:/bortezomib/i, n:2, ef:'Antioxidantes do chá verde podem reduzir eficácia do bortezomibe (quimioterápico)', c:'Evitar em pacientes com mieloma múltiplo em tratamento.' },
+    { d:/clozapin/i, n:2, ef:'Taninos do chá verde precipitam clozapina — reduz absorção', c:'Separar administração por 2h.' },
+  ],
+  gengibre: [
+    { d:/warfar|acenocoumar/i, n:1, ef:'Leve efeito antiagregante pode somar-se ao anticoagulante', c:'Monitorar INR em doses terapêuticas (>4g/dia).' },
+    { d:/insulina|glibenclamida|metformin/i, n:1, ef:'Leve efeito hipoglicemiante (relatos)', c:'Monitorar glicemia com doses altas.' },
+    { d:/nifedipin|felodipino/i, n:1, ef:'Possível potencialização do efeito hipotensor', c:'Monitorar pressão arterial.' },
+  ],
+  espinheiro: [
+    { d:/digoxin/i, n:2, ef:'Espinheiro-alvo potencializa efeito cronotrópico e inotrópico da digoxina — toxicidade', c:'Monitorar digitalemia e FC.' },
+    { d:/enalapril|captopril|losartan|metoprolol|atenolol|amlodipino|nifedipin/i, n:2, ef:'Efeito hipotensor e bradicardizante aditivo', c:'Monitorar PA e FC. Risco de hipotensão excessiva.' },
+    { d:/sildenafil|tadalafil|vardenafil/i, n:2, ef:'Hipotensão aditiva', c:'Evitar associação.' },
+  ],
+  camomila: [
+    { d:/warfar|acenocoumar/i, n:1, ef:'Cumarina natural da camomila pode potencializar efeito anticoagulante', c:'Monitorar INR com uso intenso de chá de camomila.' },
+    { d:/alprazolam|clonazepam|diazepam/i, n:1, ef:'Leve potencialização da sedação', c:'Observar sedação excessiva.' },
+    { d:/ciclosporin/i, n:1, ef:'Possível inibição de CYP3A4 pela apigenina (componente da camomila)', c:'Monitorar nível sérico de ciclosporina.' },
+  ],
+  gugurana: [
+    { d:/aspirina|aas/i, n:1, ef:'Cafeína do guaraná pode aumentar agregação plaquetária', c:'Usar com moderação em antiagregados.' },
+    { d:/atenolol|metoprolol|propranolol/i, n:2, ef:'Cafeína antagoniza efeito bradicardizante e hipotensor dos beta-bloqueadores', c:'Evitar guaraná em doses altas em hipertensos.' },
+    { d:/quinolon|fluoroquinolon/i, n:1, ef:'Fluoroquinolonas inibem metabolismo da cafeína (CYP1A2) — toxicidade cafeínica', c:'Reduzir ingestão de cafeína durante antibioticoterapia com quinolonas.' },
+    { d:/litio/i, n:2, ef:'Cafeína aumenta clearance renal de lítio — possível queda dos níveis abaixo do terapêutico', c:'Monitorar litemias.' },
+  ],
+  primula: [
+    { d:/fenitoina|carbamazep|fenobarbital|valproat/i, n:2, ef:'Ácido gama-linolênico da prímula pode reduzir limiar convulsivo e antagonizar anticonvulsivantes', c:'Evitar em epilépticos.' },
+    { d:/warfar|aspirina|clopidogrel/i, n:1, ef:'Leve efeito antiagregante aditivo', c:'Monitorar sangramento.' },
+  ],
+  sawpalm: [
+    { d:/warfar|acenocoumar/i, n:1, ef:'Possível efeito antiagregante fraco', c:'Monitorar INR.' },
+    { d:/finasterida|dutasterida/i, n:1, ef:'Mecanismo de ação similar — pode potencializar efeito antiandrogênico', c:'Monitorar eficácia clínica.' },
+    { d:/contraceptiv|antiandrogeno/i, n:1, ef:'Efeito antiandrogênico fraco pode interagir com terapia hormonal', c:'Monitorar.' },
+  ],
+};
+
+function norm(s) { return (s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,''); }
+
+let _pid   = null;
+let _pac   = null;
+let _meds  = [];
+let _fitoList = [];
+
+async function init() {
+  _pid = getActivePacienteId();
+  if (!_pid) { window.location.href='index.html'; return; }
+  _pac = await dbGet('pacientes', _pid);
+  const hoje = new Date().toISOString().slice(0,10);
+  const todos = await dbGetAll('medicamentos');
+  _meds = todos.filter(m => m.pacienteId===_pid && m.ativo!==false && (!m.dataFim||m.dataFim>=hoje));
+  _fitoList = (await dbGetConfig('fitoterapicos_'+_pid)) || [];
+  render();
+}
+
+function checkarInteracoes() {
+  const achados = [];
+  for (const fito of _fitoList) {
+    const ints = _INTS[fito.catId] || [];
+    for (const int of ints) {
+      for (const med of _meds) {
+        if (int.d.test(med.nome)) {
+          achados.push({
+            herb: fito.nome,
+            med:  med.nome,
+            nivel: int.n,
+            ef:   int.ef,
+            c:    int.c,
+          });
+        }
+      }
+    }
+  }
+  return achados.sort((a,b) => b.nivel - a.nivel);
+}
+
+function nivelCor(n) {
+  return n===3 ? { cor:'#dc2626', bg:'#fee2e2', lbl:'Grave' }
+       : n===2 ? { cor:'#ea580c', bg:'#ffedd5', lbl:'Moderada' }
+               : { cor:'#d97706', bg:'#fef3c7', lbl:'Leve' };
+}
+
+function render() {
+  const ints = checkarInteracoes();
+  const catOpts = _CAT.map(c => `<option value="${c.id}">${c.icon} ${c.nome}</option>`).join('');
+
+  const emUsoHTML = _fitoList.length
+    ? _fitoList.map(f => {
+        const cat = _CAT.find(c=>c.id===f.catId)||{icon:'🌿',ind:'',mec:''};
+        return `<div class="uso-row">
+          <span class="uso-icon">${cat.icon}</span>
+          <div style="flex:1;min-width:0">
+            <p class="uso-nome">${f.nome}</p>
+            <p class="uso-dose">${[f.dose,f.freq].filter(Boolean).join(' · ')}${cat.ind?` · ${cat.ind}`:''}</p>
+            ${cat.mec ? `<span class="mecanismo-tag">${cat.mec}</span>` : ''}
+          </div>
+          <button class="uso-del" onclick="remover('${f.id}')">×</button>
+        </div>`;
+      }).join('')
+    : `<p class="vazio">Nenhum fitoterápico ou suplemento registrado.</p>`;
+
+  const intsHTML = ints.length
+    ? ints.map(i => {
+        const nv = nivelCor(i.nivel);
+        return `<div class="int-row">
+          <div class="int-top">
+            <span class="int-sev" style="background:${nv.cor}"></span>
+            <span class="int-pair">${i.herb} + ${i.med}</span>
+            <span class="int-badge" style="background:${nv.bg};color:${nv.cor}">${nv.lbl}</span>
+          </div>
+          <p class="int-ef">${i.ef}</p>
+          <p class="int-cond">→ ${i.c}</p>
+        </div>`;
+      }).join('')
+    : _fitoList.length
+      ? `<div class="ok-box">✓ Nenhuma interação detectada entre os fitoterápicos/suplementos registrados e os medicamentos ativos.</div>`
+      : `<p class="vazio">Adicione fitoterápicos acima para verificar interações.</p>`;
+
+  document.getElementById('app').innerHTML = `
+    <p class="sec-title" style="margin-top:10px">Adicionar — ${_pac?.nome||'Paciente'}</p>
+    <div class="form-card">
+      <div class="form-row">
+        <p class="form-lbl">Fitoterápico / Suplemento</p>
+        <select class="form-sel" id="f-cat" onchange="onCatChange()">
+          ${catOpts}
+        </select>
+      </div>
+      <div id="outro-wrap" style="display:none" class="form-row">
+        <p class="form-lbl">Nome (outro)</p>
+        <input class="form-inp" id="f-outro" placeholder="Ex: Própolis, Astragalus...">
+      </div>
+      <div class="form-grid">
+        <div class="form-row" style="margin:0">
+          <p class="form-lbl">Dose</p>
+          <input class="form-inp" id="f-dose" placeholder="Ex: 500mg">
+        </div>
+        <div class="form-row" style="margin:0">
+          <p class="form-lbl">Frequência</p>
+          <input class="form-inp" id="f-freq" placeholder="Ex: 2×/dia">
+        </div>
+      </div>
+      <button class="btn-add" onclick="adicionar()">+ Adicionar</button>
+    </div>
+
+    <p class="sec-title">Em uso (${_fitoList.length})</p>
+    <div class="uso-card">${emUsoHTML}</div>
+
+    <p class="sec-title">Interações com Medicamentos (${ints.length})</p>
+    <div class="int-card">${intsHTML}</div>
+
+    <p style="font-size:.67rem;color:#94a3b8;padding:4px 16px 20px;line-height:1.5">
+      Base de dados inclui ${Object.keys(_INTS).length} fitoterápicos e suplementos. Interações verificadas contra os medicamentos ativos do paciente. Dados de apoio à decisão clínica — não substitui avaliação profissional.
+    </p>
+  `;
+}
+
+function onCatChange() {
+  const v = document.getElementById('f-cat')?.value;
+  document.getElementById('outro-wrap').style.display = v==='outro' ? '' : 'none';
+}
+
+async function adicionar() {
+  const catId = document.getElementById('f-cat')?.value;
+  const cat   = _CAT.find(c=>c.id===catId);
+  const outro = document.getElementById('f-outro')?.value.trim();
+  const nome  = catId==='outro' ? (outro||'Outro') : (cat?.nome||catId);
+  const dose  = document.getElementById('f-dose')?.value.trim();
+  const freq  = document.getElementById('f-freq')?.value.trim();
+
+  if (_fitoList.find(f => norm(f.nome)===norm(nome))) {
+    showToast('Já está na lista.'); return;
+  }
+
+  _fitoList.push({ id:Date.now().toString(36), catId, nome, dose, freq, criadoEm:new Date().toISOString() });
+  await dbSetConfig('fitoterapicos_'+_pid, _fitoList);
+  showToast('✓ Adicionado');
+  render();
+}
+
+async function remover(id) {
+  _fitoList = _fitoList.filter(f=>f.id!==id);
+  await dbSetConfig('fitoterapicos_'+_pid, _fitoList);
+  showToast('Removido');
+  render();
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>

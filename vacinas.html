@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Carteira de Vacinação — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <style>
+    body { background:#f8fafc;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif }
+    .topbar { display:flex;align-items:center;gap:10px;padding:14px 16px;background:#fff;border-bottom:1px solid #e2e8f0;position:sticky;top:0;z-index:100 }
+    .back-btn { background:none;border:none;font-size:1.3rem;cursor:pointer;padding:4px 8px;color:#475569;border-radius:8px }
+    .topbar-title { font-size:1rem;font-weight:700;color:#1e293b;flex:1 }
+    .sec-title { font-size:.68rem;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.1em;padding:0 16px;margin:14px 0 6px }
+
+    /* Sugestões */
+    .sug-card { background:#fff;border-radius:14px;margin:0 16px 10px;box-shadow:0 1px 4px rgba(0,0,0,.06);overflow:hidden }
+    .sug-row  { display:flex;align-items:center;gap:12px;padding:12px 14px;border-bottom:1px solid #f1f5f9;cursor:pointer }
+    .sug-row:last-child { border-bottom:none }
+    .sug-icon { font-size:1.2rem;flex-shrink:0 }
+    .sug-nome { font-size:.82rem;font-weight:700;color:#1e293b;flex:1 }
+    .sug-freq { font-size:.68rem;color:#94a3b8 }
+    .sug-why  { font-size:.65rem;font-weight:700;background:#fef3c7;color:#d97706;border-radius:5px;padding:2px 7px;flex-shrink:0 }
+    .sug-atrasada { background:#fee2e2;color:#dc2626 }
+    .sug-btn  { background:#16a34a;color:#fff;border:none;border-radius:8px;padding:5px 11px;font-size:.68rem;font-weight:700;cursor:pointer;flex-shrink:0 }
+
+    /* Form */
+    .form-card { background:#fff;border-radius:14px;margin:0 16px 10px;box-shadow:0 1px 4px rgba(0,0,0,.06);padding:14px }
+    .form-row  { margin-bottom:10px }
+    .form-lbl  { font-size:.67rem;font-weight:700;color:#64748b;margin-bottom:4px }
+    .form-sel, .form-inp { width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:9px;padding:8px 12px;font-size:.82rem;color:#1e293b }
+    .form-sel:focus,.form-inp:focus { outline:none;border-color:#16a34a }
+    .form-grid2 { display:grid;grid-template-columns:1fr 1fr;gap:8px }
+    .form-grid3 { display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px }
+    .btn-salvar { width:100%;background:#16a34a;color:#fff;border:none;border-radius:10px;padding:11px;font-size:.85rem;font-weight:800;cursor:pointer;margin-top:4px }
+
+    /* Registro */
+    .vac-item { padding:12px 14px;border-bottom:1px solid #f1f5f9 }
+    .vac-item:last-child { border-bottom:none }
+    .vac-top  { display:flex;align-items:center;gap:8px;margin-bottom:3px }
+    .vac-nome { font-size:.82rem;font-weight:800;color:#1e293b;flex:1 }
+    .vac-data { font-size:.7rem;font-weight:700;color:#16a34a }
+    .vac-del  { background:none;border:none;color:#cbd5e1;cursor:pointer;font-size:.9rem }
+    .vac-del:hover { color:#ef4444 }
+    .vac-meta { font-size:.7rem;color:#94a3b8;line-height:1.5 }
+    .prox-badge { display:inline-block;background:#ede9fe;color:#6366f1;border-radius:5px;padding:2px 7px;font-size:.62rem;font-weight:700;margin-top:3px }
+    .prox-badge.atrasada { background:#fee2e2;color:#dc2626 }
+    .prox-badge.ok { background:#dcfce7;color:#16a34a }
+
+    .vazio { text-align:center;color:#94a3b8;padding:20px;font-size:.82rem }
+
+    @media print {
+      .topbar,.back-btn,.btn-salvar,.sug-btn,.form-card,.vac-del { display:none }
+    }
+  </style>
+</head>
+<body>
+<div class="topbar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <span class="topbar-title">💉 Carteira de Vacinação</span>
+</div>
+<div id="app" style="padding-bottom:60px">
+  <p style="text-align:center;color:#94a3b8;padding:40px;font-size:.85rem">Carregando...</p>
+</div>
+<div class="toast" id="toast"></div>
+<script src="js/db.js"></script>
+<script src="js/utils.js"></script>
+<script>
+
+/* ─── Catálogo de vacinas ─────────────────────────────────────── */
+const _VACINAS = [
+  { id:'influenza',     nome:'Influenza (gripe)',          doses:1, intervalo:null,  periodo:'Anual (preferencialmente mar-abr)',  icon:'🤧' },
+  { id:'covid',         nome:'COVID-19',                   doses:2, intervalo:28,    periodo:'Reforço anual conforme calendário',  icon:'😷' },
+  { id:'pneumo23',      nome:'Pneumocócica 23v (PPSV23)',  doses:1, intervalo:null,  periodo:'Reforço em 5 anos se indicado',      icon:'🫁' },
+  { id:'pneumo13',      nome:'Pneumocócica 13v (PCV13)',   doses:1, intervalo:null,  periodo:'1 dose (PCV13 → PPSV23 em 8 sem)',  icon:'🫁' },
+  { id:'hepatiteb',     nome:'Hepatite B',                 doses:3, intervalo:180,   periodo:'0-1-6 meses',                        icon:'🟡' },
+  { id:'hepatitea',     nome:'Hepatite A',                 doses:2, intervalo:180,   periodo:'0-6 meses',                          icon:'🟠' },
+  { id:'dTpa',          nome:'dTpa / dT (tétano)',         doses:1, intervalo:3650,  periodo:'Reforço a cada 10 anos',             icon:'💉' },
+  { id:'herpes',        nome:'Herpes Zóster (Shingrix)',   doses:2, intervalo:60,    periodo:'0-2 a 6 meses (≥50 anos)',           icon:'🔴' },
+  { id:'hpv',           nome:'HPV',                        doses:2, intervalo:180,   periodo:'0-6 meses (até 45 anos)',            icon:'🩺' },
+  { id:'tripliceViral', nome:'Tríplice Viral (MMR)',       doses:2, intervalo:30,    periodo:'2 doses no adulto não imune',        icon:'🧬' },
+  { id:'varicelaMono',  nome:'Varicela',                   doses:2, intervalo:30,    periodo:'2 doses no adulto não imune',        icon:'🌸' },
+  { id:'febreAmarela',  nome:'Febre Amarela',              doses:1, intervalo:null,  periodo:'1 dose (dose única vitalícia)',      icon:'🌡️' },
+  { id:'meningB',       nome:'Meningocócica B',            doses:2, intervalo:30,    periodo:'0-1 a 2 meses',                     icon:'🧠' },
+  { id:'meningACWY',    nome:'Meningocócica ACWY',         doses:1, intervalo:null,  periodo:'1 dose adulto; reforço em 5 anos',  icon:'🧠' },
+  { id:'rsvPfizer',     nome:'RSV (≥60 anos)',             doses:1, intervalo:null,  periodo:'1 dose (aprovada ≥60 anos)',         icon:'🌬️' },
+  { id:'outro',         nome:'Outra',                      doses:null, intervalo:null, periodo:'',                                  icon:'💉' },
+];
+
+/* ─── Sugestões por perfil ───────────────────────────────────── */
+function calcularSugestoes(pac, vacinasRegistradas) {
+  const idade     = pac.idadePac || 0;
+  const condicoes = pac.condicoes || [];
+  const texto     = (pac.condicoesClinicas||'').toLowerCase();
+  const isDM      = condicoes.includes('dm')   || /diabet/.test(texto);
+  const isHAS     = condicoes.includes('has')  || /hiperten/.test(texto);
+  const isCardio  = condicoes.includes('ic')   || /cardio|coronar|infarto/.test(texto);
+  const isAsma    = condicoes.includes('asma') || /asma|dpoc|pulmon/.test(texto);
+  const isRenal   = /renal|dialise|hemodial/.test(texto);
+  const isHep     = condicoes.includes('hepatica') || /hepat/.test(texto);
+  const isImuno   = /imunossup|hiv|aids|cancer|quimio|transplant/.test(texto);
+
+  const regras = [];
+
+  /* Regras universais do adulto brasileiro (SBIM 2024) */
+  regras.push({ id:'influenza',  razao:'Recomendada anualmente para todos os adultos', prioridade: idade>=60||isDM||isCardio||isAsma||isRenal ? 'alta':'normal' });
+  regras.push({ id:'covid',      razao:'Reforço anual conforme calendário vigente',    prioridade:'normal' });
+  regras.push({ id:'dTpa',       razao:'Reforço a cada 10 anos para todos os adultos',prioridade:'normal' });
+
+  if (idade >= 60) {
+    regras.push({ id:'pneumo23',   razao:'≥60 anos — alto risco de pneumonia invasiva',  prioridade:'alta' });
+    regras.push({ id:'herpes',     razao:'≥60 anos — prevenção de herpes zóster e neuralgia pós-herpética', prioridade:'alta' });
+    regras.push({ id:'febreAmarela', razao:'≥60 anos — verificar se recebeu dose única vitalícia', prioridade:'normal' });
+  }
+  if (isDM) {
+    regras.push({ id:'hepatiteb', razao:'Diabetes Mellitus — risco aumentado (compartilhamento de dispositivos)', prioridade:'alta' });
+    regras.push({ id:'pneumo13',  razao:'Diabetes Mellitus — risco aumentado de pneumonia pneumocócica',          prioridade:'alta' });
+  }
+  if (isCardio || isAsma || isRenal) {
+    regras.push({ id:'pneumo23', razao:'Doença cardiorrespiratória ou renal — risco aumentado de infecção pneumocócica', prioridade:'alta' });
+    regras.push({ id:'hepatiteb', razao:'Insuficiência renal — risco aumentado de hepatite B',                            prioridade:'alta' });
+  }
+  if (isImuno) {
+    regras.push({ id:'pneumo13',     razao:'Imunocomprometido — esquema combinado PCV13 + PPSV23',  prioridade:'alta' });
+    regras.push({ id:'pneumo23',     razao:'Imunocomprometido — reforço PPSV23 em 8 semanas após PCV13', prioridade:'alta' });
+    regras.push({ id:'hepatiteb',    razao:'Imunocomprometido — risco aumentado',                   prioridade:'alta' });
+    regras.push({ id:'influenza',    razao:'Imunocomprometido — vacinação prioritária',             prioridade:'alta' });
+  }
+  if (isHep) {
+    regras.push({ id:'hepatitea', razao:'Doença hepática crônica — prevenir sobreposição de hepatites', prioridade:'alta' });
+    regras.push({ id:'hepatiteb', razao:'Doença hepática — prevenção de hepatite B',                     prioridade:'alta' });
+  }
+
+  /* Remove duplicatas */
+  const vistos = new Set();
+  return regras.filter(r => { if (vistos.has(r.id)) return false; vistos.add(r.id); return true; });
+}
+
+function statusVacina(id, registros) {
+  const regs = registros.filter(r => r.catId===id).sort((a,b) => b.data.localeCompare(a.data));
+  if (!regs.length) return { status:'pendente', label:'Não registrada', ultima:null };
+  const vac  = _VACINAS.find(v=>v.id===id);
+  const ul   = regs[0];
+  const hoje = new Date().toISOString().slice(0,10);
+  if (vac?.intervalo) {
+    const proxData = new Date(ul.data);
+    proxData.setDate(proxData.getDate() + vac.intervalo);
+    const prox = proxData.toISOString().slice(0,10);
+    if (prox < hoje) return { status:'atrasada', label:'Atrasada desde '+fmtData(prox), ultima:ul.data };
+    return { status:'ok', label:'Reforço em '+fmtData(prox), ultima:ul.data };
+  }
+  return { status:'ok', label:'Registrada em '+fmtData(ul.data), ultima:ul.data };
+}
+
+function fmtData(iso) {
+  if (!iso) return '';
+  const [y,m,d] = iso.split('-');
+  return `${d}/${m}/${y}`;
+}
+
+let _pid  = null;
+let _pac  = null;
+let _vacs = [];
+
+async function init() {
+  _pid = getActivePacienteId();
+  if (!_pid) { window.location.href='index.html'; return; }
+  _pac  = await dbGet('pacientes', _pid);
+  _vacs = (await dbGetConfig('vacinas_'+_pid)) || [];
+  render();
+}
+
+function render() {
+  const sugestoes = calcularSugestoes(_pac||{}, _vacs);
+  const hoje      = new Date().toISOString().slice(0,10);
+
+  const sugHTML = sugestoes.map(s => {
+    const vac  = _VACINAS.find(v=>v.id===s.id);
+    const st   = statusVacina(s.id, _vacs);
+    const isAt = st.status === 'atrasada';
+    const isOk = st.status === 'ok';
+    return `<div class="sug-row" onclick="preencherForm('${s.id}')">
+      <span class="sug-icon">${vac?.icon||'💉'}</span>
+      <div style="flex:1;min-width:0">
+        <p class="sug-nome">${vac?.nome||s.id}</p>
+        <p class="sug-freq">${vac?.periodo||''}</p>
+        <p style="font-size:.65rem;color:#64748b;margin-top:2px">${s.razao}</p>
+      </div>
+      ${isAt ? `<span class="sug-why sug-atrasada">Atrasada</span>`
+      : isOk ? `<span class="sug-why" style="background:#dcfce7;color:#16a34a">Em dia</span>`
+               : `<span class="sug-why">Indicada</span>`}
+      <button class="sug-btn" onclick="event.stopPropagation();preencherForm('${s.id}')">+ Registrar</button>
+    </div>`;
+  }).join('');
+
+  const vacOpts = _VACINAS.map(v => `<option value="${v.id}">${v.icon} ${v.nome}</option>`).join('');
+
+  /* Histórico — agrupa por nome */
+  const ordenadas = [..._vacs].sort((a,b) => b.data.localeCompare(a.data));
+  const histHTML = ordenadas.length
+    ? ordenadas.map(v => {
+        const vac  = _VACINAS.find(x=>x.id===v.catId)||{icon:'💉'};
+        const prox = v.proxDose;
+        let proxBadge = '';
+        if (prox) {
+          const cls = prox < hoje ? 'atrasada' : '';
+          proxBadge = `<span class="prox-badge ${cls}">Próxima dose: ${fmtData(prox)}</span>`;
+        }
+        return `<div class="vac-item">
+          <div class="vac-top">
+            <span style="font-size:1.1rem">${vac.icon}</span>
+            <span class="vac-nome">${v.nome}</span>
+            <span class="vac-data">${fmtData(v.data)}</span>
+            <button class="vac-del" onclick="excluir('${v.id}')">×</button>
+          </div>
+          <p class="vac-meta">${[v.dose?'Dose '+v.dose:'',v.lote?'Lote: '+v.lote:'',v.via,v.local].filter(Boolean).join(' · ')}</p>
+          ${proxBadge}
+          ${v.obs ? `<p class="vac-meta" style="color:#475569;margin-top:2px">${v.obs}</p>` : ''}
+        </div>`;
+      }).join('')
+    : `<p class="vazio">Nenhuma vacina registrada ainda.</p>`;
+
+  document.getElementById('app').innerHTML = `
+    <p class="sec-title" style="margin-top:10px">Vacinas Indicadas — ${_pac?.nome||'Paciente'}</p>
+    <div class="sug-card">${sugHTML||'<p class="vazio">Complete o perfil do paciente para sugestões personalizadas.</p>'}</div>
+
+    <p class="sec-title">Registrar Vacina</p>
+    <div class="form-card">
+      <div class="form-row">
+        <p class="form-lbl">Vacina</p>
+        <select class="form-sel" id="f-cat" onchange="onVacChange()">
+          ${vacOpts}
+        </select>
+      </div>
+      <div id="outro-wrap" style="display:none" class="form-row">
+        <p class="form-lbl">Nome da vacina</p>
+        <input class="form-inp" id="f-nome-outro" placeholder="Ex: Dengue (Qdenga)">
+      </div>
+      <div class="form-grid3">
+        <div class="form-row" style="margin:0">
+          <p class="form-lbl">Data</p>
+          <input class="form-inp" id="f-data" type="date" value="${hoje}">
+        </div>
+        <div class="form-row" style="margin:0">
+          <p class="form-lbl">Dose nº</p>
+          <select class="form-sel" id="f-dose">
+            <option>1ª</option><option>2ª</option><option>3ª</option><option>Reforço</option>
+          </select>
+        </div>
+        <div class="form-row" style="margin:0">
+          <p class="form-lbl">Próxima dose</p>
+          <input class="form-inp" id="f-prox" type="date">
+        </div>
+      </div>
+      <div class="form-grid2" style="margin-top:8px">
+        <div>
+          <p class="form-lbl">Lote</p>
+          <input class="form-inp" id="f-lote" placeholder="Ex: AB12345C">
+        </div>
+        <div>
+          <p class="form-lbl">Via / Local</p>
+          <input class="form-inp" id="f-local" placeholder="Ex: IM — deltoide D">
+        </div>
+      </div>
+      <div class="form-row" style="margin-top:8px">
+        <p class="form-lbl">Observações</p>
+        <input class="form-inp" id="f-obs" placeholder="Reações, fabricante…">
+      </div>
+      <button class="btn-salvar" onclick="salvar()">✓ Registrar Vacina</button>
+    </div>
+
+    <p class="sec-title">Histórico Vacinal (${_vacs.length})</p>
+    <div class="sug-card" style="margin:0 16px 60px">${histHTML}</div>
+  `;
+}
+
+function onVacChange() {
+  const v = document.getElementById('f-cat')?.value;
+  document.getElementById('outro-wrap').style.display = v==='outro' ? '' : 'none';
+  /* Sugerir próxima dose */
+  const vac  = _VACINAS.find(x=>x.id===v);
+  const data = document.getElementById('f-data')?.value;
+  if (vac?.intervalo && data) {
+    const p = new Date(data);
+    p.setDate(p.getDate() + vac.intervalo);
+    document.getElementById('f-prox').value = p.toISOString().slice(0,10);
+  } else {
+    document.getElementById('f-prox').value = '';
+  }
+}
+
+function preencherForm(id) {
+  const el = document.getElementById('f-cat');
+  if (el) { el.value = id; onVacChange(); }
+  el?.scrollIntoView({ behavior:'smooth' });
+}
+
+async function salvar() {
+  const catId = document.getElementById('f-cat')?.value;
+  const vac   = _VACINAS.find(v=>v.id===catId);
+  const outro = document.getElementById('f-nome-outro')?.value.trim();
+  const nome  = catId==='outro' ? (outro||'Vacina') : (vac?.nome||catId);
+  const data  = document.getElementById('f-data')?.value;
+  if (!data) { showToast('Informe a data de aplicação'); return; }
+
+  const reg = {
+    id:       Date.now().toString(36),
+    catId,
+    nome,
+    data,
+    dose:     document.getElementById('f-dose')?.value||'',
+    proxDose: document.getElementById('f-prox')?.value||null,
+    lote:     document.getElementById('f-lote')?.value.trim()||'',
+    via:      '',
+    local:    document.getElementById('f-local')?.value.trim()||'',
+    obs:      document.getElementById('f-obs')?.value.trim()||'',
+    criadoEm: new Date().toISOString(),
+  };
+
+  _vacs.push(reg);
+  await dbSetConfig('vacinas_'+_pid, _vacs);
+  showToast('✓ Vacina registrada');
+  render();
+}
+
+async function excluir(id) {
+  _vacs = _vacs.filter(v=>v.id!==id);
+  await dbSetConfig('vacinas_'+_pid, _vacs);
+  showToast('Registro removido');
+  render();
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
