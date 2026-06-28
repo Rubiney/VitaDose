@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Pediatria — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .ped-hdr{background:linear-gradient(135deg,#065f46,#059669);color:#fff;border-radius:14px;padding:18px;margin-bottom:14px}
+    .ped-title{font-size:1rem;font-weight:800;margin-bottom:4px}
+    .ped-sub{font-size:.73rem;opacity:.8}
+    label{font-size:.75rem;font-weight:700;color:#1e3a5f;display:block;margin-bottom:4px}
+    select{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:10px;padding:10px 12px;font-size:.85rem;background:#fff;margin-bottom:10px}
+    select:focus{border-color:#065f46;outline:none}
+    input[type=number]{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:10px;padding:10px 12px;font-size:.85rem;background:#fff;outline:none;margin-bottom:10px}
+    input:focus{border-color:#065f46}
+    .checkbox-group{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
+    .checkbox-item{display:flex;align-items:center;gap:8px;font-size:.8rem;cursor:pointer}
+    .checkbox-item input[type=checkbox]{width:18px;height:18px;accent-color:#065f46;cursor:pointer}
+    .btn-calc{width:100%;background:#065f46;color:#fff;border:none;border-radius:12px;padding:13px;font-size:.87rem;font-weight:700;cursor:pointer;margin:8px 0}
+    .tab-bar{display:flex;gap:6px;margin-bottom:14px}
+    .tab-btn{flex:1;padding:9px 4px;border-radius:10px;border:2px solid #e2e8f0;background:#fff;font-size:.72rem;font-weight:700;cursor:pointer;color:#64748b}
+    .tab-btn.active{border-color:#065f46;background:#ecfdf5;color:#065f46}
+    .rec-card{border-radius:12px;border:2px solid;padding:14px;margin-bottom:10px}
+    .rec-hdr{font-size:.63rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+    .rec-nome{font-size:.88rem;font-weight:800;margin-bottom:6px}
+    .rec-badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:.65rem;font-weight:800;color:#fff;margin:2px}
+    .rec-body{font-size:.78rem;margin-top:6px;line-height:1.7}
+    .rec-note{font-size:.71rem;color:#64748b;margin-top:6px;padding-top:6px;border-top:1px solid #f1f5f9}
+    .dose-box{background:#ecfdf5;border:2px solid #059669;border-radius:12px;padding:14px;margin:8px 0;text-align:center}
+    .dose-num{font-size:1.6rem;font-weight:900;color:#065f46;line-height:1.1}
+    .dose-lbl{font-size:.8rem;font-weight:700;color:#065f46;margin-top:4px}
+    .dose-sub{font-size:.7rem;color:#64748b;margin-top:4px}
+    .dose-warn{font-size:.7rem;color:#dc2626;font-weight:700;margin-top:4px}
+    .input-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .ped-card{border-radius:10px;border-left:5px solid;padding:10px 14px;margin-bottom:8px;background:#fff}
+    .ped-nome{font-size:.83rem;font-weight:800;margin-bottom:4px}
+    .ped-body{font-size:.76rem;line-height:1.7;color:#374151}
+  </style>
+</head>
+<body>
+<header class="top-bar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <span class="top-title">Pediatria — Algoritmo</span>
+  <div class="top-right"></div>
+</header>
+<main class="container" style="padding-bottom:90px">
+  <div class="ped-hdr">
+    <div class="ped-title">👶 Pediatria — Doses e Algoritmos Clínicos</div>
+    <div class="ped-sub">Febre · Doses mg/kg · Infecções pediátricas · TDAH · Asma · Epilepsia pediátrica</div>
+  </div>
+  <div class="tab-bar">
+    <button class="tab-btn active" id="tb0" onclick="showTab(0)">Febre & Doses</button>
+    <button class="tab-btn" id="tb1" onclick="showTab(1)">Infecções Ped.</button>
+    <button class="tab-btn" id="tb2" onclick="showTab(2)">TDAH & Neurologia</button>
+  </div>
+
+  <!-- TAB 0 — FEBRE E DOSES -->
+  <div id="tab0">
+    <div class="card" style="padding:12px 14px">
+      <label>Peso da criança (kg)</label>
+      <input type="number" id="ped_peso" placeholder="ex.: 18" min="1" max="80" step="0.1">
+      <label>Fármaco</label>
+      <select id="ped_farm">
+        <option value="para">Paracetamol / Acetaminofeno — Febre e dor</option>
+        <option value="ibu">Ibuprofeno — Febre e dor anti-inflamatória</option>
+        <option value="amoxi">Amoxicilina — Infecções respiratórias</option>
+        <option value="amoxiclav">Amoxicilina+Clavulanato — OMA, sinusite, infecções resistentes</option>
+        <option value="azitro">Azitromicina — Infecções atípicas, alérgico à penicilina</option>
+        <option value="cefalex">Cefalexina — Infecções de pele, ITU pediátrica</option>
+        <option value="ceftri">Ceftriaxona IV/IM — Infecções graves, meningite</option>
+        <option value="predni">Prednisolona — Asma, croup, crises inflamatórias</option>
+        <option value="dexa">Dexametasona — Croup, meningite, asma grave</option>
+        <option value="ibuprom">Ibuprofeno analgésico pós-procedimento</option>
+        <option value="metilfen">Metilfenidato (TDAH) — dose inicial</option>
+        <option value="ondanset">Ondansetrona — Náusea/vômito</option>
+        <option value="dipiro">Dipirona — Dor e febre</option>
+      </select>
+    </div>
+    <button class="btn-calc" onclick="calcPed()">⚖️ Calcular dose pediátrica</button>
+    <div id="pedResult" style="display:none"></div>
+    <div class="card" style="padding:10px 14px;margin-top:8px">
+      <div style="font-size:.78rem;font-weight:800;color:#065f46;margin-bottom:8px">🌡️ Manejo da Febre Pediátrica</div>
+      <div id="febreInfo"></div>
+    </div>
+  </div>
+
+  <!-- TAB 1 — INFECÇÕES PEDIÁTRICAS -->
+  <div id="tab1" style="display:none">
+    <div class="card" style="padding:12px 14px">
+      <label>Infecção / Condição</label>
+      <select id="inf_tipo">
+        <option value="oma">OMA — Otite Média Aguda</option>
+        <option value="faring">Faringite / Tonsilite</option>
+        <option value="pneu">Pneumonia Adquirida na Comunidade (PAC)</option>
+        <option value="ivu">ITU pediátrica</option>
+        <option value="gastro">Gastroenterite / Desidratação</option>
+        <option value="croup">Croup (Laringotraqueíte viral)</option>
+        <option value="bron">Bronquiolite (VSR)</option>
+        <option value="menin">Meningite bacteriana</option>
+      </select>
+      <label>Faixa etária</label>
+      <select id="inf_idade">
+        <option value="lactente">&lt;2 anos (lactente)</option>
+        <option value="pre_esc">2–5 anos (pré-escolar)</option>
+        <option value="esc">6–12 anos (escolar)</option>
+        <option value="adoles">&gt;12 anos (adolescente)</option>
+      </select>
+    </div>
+    <button class="btn-calc" onclick="calcInfPed()">🦠 Gerar protocolo pediátrico</button>
+    <div id="infPedResult" style="display:none"></div>
+  </div>
+
+  <!-- TAB 2 — TDAH & NEUROLOGIA -->
+  <div id="tab2" style="display:none">
+    <div id="tdahList"></div>
+  </div>
+</main>
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+<script src="js/db.js"></script>
+<script>
+function showTab(n){[0,1,2].forEach(i=>{document.getElementById('tab'+i).style.display=i===n?'block':'none';document.getElementById('tb'+i).classList.toggle('active',i===n);});if(n===0&&!document.getElementById('febreInfo').innerHTML)renderFebre();if(n===2)renderTDAH();}
+function recHTML(r){return `<div class="rec-card" style="border-color:${r.col}"><div class="rec-hdr" style="color:${r.col}">${r.hdr}</div><div class="rec-nome">${r.nome}</div><div>${(r.badges||[]).map(b=>`<span class="rec-badge" style="background:${b.c}">${b.t}</span>`).join('')}</div><div class="rec-body">${r.body}</div>${r.note?`<div class="rec-note">${r.note}</div>`:''}</div>`;}
+
+/* ─── CALCULADORA DE DOSES ─────────────────────────────────────────── */
+const DRUGS={
+  para:{nome:'Paracetamol',dose:15,max_dose:75,max_dia:4000,unit:'mg',freq:'6/6h (máx 4×/dia)',nota:'Máx 1 g por dose. Máx 75 mg/kg/dia ou 4 g/dia (o menor). Xarope 200 mg/5 mL ou gotas 100 mg/mL (1 gota ≈ 3,3 mg).'},
+  ibu:{nome:'Ibuprofeno',dose:10,max_dose:40,max_dia:2400,unit:'mg',freq:'8/8h (máx 3×/dia)',nota:'Máx 400 mg por dose em crianças. Máx 40 mg/kg/dia ou 2400 mg/dia. NÃO usar em lactentes <6 meses. Xarope 100 mg/5 mL ou 200 mg/5 mL (conferir concentração!).'},
+  amoxi:{nome:'Amoxicilina',dose:50,max_dose:90,max_dia:3000,unit:'mg',freq:'8/8h (3×/dia)',nota:'Alta dose (90 mg/kg/dia): OMA em região de alta resistência, <2 anos, recente AB (<3 meses), creche. Baixa dose (45 mg/kg/dia): faringite, infecção leve. Suspensão 250 mg/5 mL ou 500 mg/5 mL.'},
+  amoxiclav:{nome:'Amoxicilina+Clavulanato',dose:45,max_dose:90,max_dia:3000,unit:'mg (componente amoxicilina)',freq:'8/8h ou 12/12h',nota:'Referência pela amoxicilina. Formulação 400/57 mg/5 mL (pediatria): dose pelo componente amox. Máx 90 mg/kg/dia de amox. Tomar com alimento (↓ RAM GI).'},
+  azitro:{nome:'Azitromicina',dose:10,max_dose:10,max_dia:500,unit:'mg',freq:'1×/dia × 3–5 dias',nota:'10 mg/kg/dia D1–D3 (máx 500 mg/dia). Para faringite: D1 10 mg/kg + D2–D5 5 mg/kg. Suspensão 200 mg/5 mL. Intervalo mínimo 4h antes ou depois de antiácido.'},
+  cefalex:{nome:'Cefalexina',dose:25,max_dose:100,max_dia:4000,unit:'mg',freq:'6/6h (4×/dia)',nota:'25–50 mg/kg/dia em 4 doses. Infecções graves: até 100 mg/kg/dia. Máx 4 g/dia. Suspensão 250 mg/5 mL.'},
+  ceftri:{nome:'Ceftriaxona IV/IM',dose:50,max_dose:100,max_dia:4000,unit:'mg',freq:'1×/dia IV/IM',nota:'50–100 mg/kg/dia (1 dose). Meningite: 100 mg/kg/dia (máx 4 g/dia). Sepse: 50–75 mg/kg/dia. Neonato: evitar (desloca bilirrubina). IM: diluir em lidocaína 1% para reduzir dor.'},
+  predni:{nome:'Prednisolona',dose:1,max_dose:2,max_dia:60,unit:'mg',freq:'1×/dia (manhã)',nota:'Asma moderada-grave: 1–2 mg/kg/dia × 3–5 dias. Croup: 1 mg/kg dose única. Máx 60 mg/dia. Xarope 3 mg/mL. Redução gradual se uso >7 dias.'},
+  dexa:{nome:'Dexametasona',dose:0.15,max_dose:0.6,max_dia:10,unit:'mg',freq:'Dose única ou 1×/dia',nota:'Croup leve-moderado: 0,15 mg/kg dose única VO/IM (máx 10 mg). Croup grave: 0,6 mg/kg IV. Meningite: 0,15 mg/kg 6/6h × 4 dias (iniciar com 1ª dose de ATB). Apresentação: 4 mg/mL.'},
+  ibuprom:{nome:'Ibuprofeno (analgesia)',dose:10,max_dose:10,max_dia:40,unit:'mg',freq:'8/8h',nota:'Mesma dose que antipirético. Máx 400 mg/dose. Tomar com alimento para ↓ RAM GI.'},
+  metilfen:{nome:'Metilfenidato — dose inicial TDAH',dose:0.3,max_dose:0.5,max_dia:60,unit:'mg',freq:'2×/dia (manhã e início da tarde)',nota:'Iniciar 0,3 mg/kg/dose 2×/dia. Titular 0,1 mg/kg/semana. Máx 60 mg/dia ou 2 mg/kg/dia (o menor). Liberar imediata: tomar com café da manhã e almoço (não após 16h → insônia). Monitorar: PA, FC, peso, altura.'},
+  ondanset:{nome:'Ondansetrona',dose:0.15,max_dose:0.3,max_dia:8,unit:'mg',freq:'8/8h SOS (máx 3 doses/dia)',nota:'0,15 mg/kg/dose (máx 4 mg/dose). Comprimido ODT 4 mg disponível (dissolve na língua — conveniente em vômito). IV: 0,15 mg/kg lento. Prolongamento QTc: monitorar se risco.'},
+  dipiro:{nome:'Dipirona',dose:15,max_dose:25,max_dia:100,unit:'mg',freq:'6/6h (máx 4×/dia)',nota:'10–25 mg/kg/dose. Máx 1 g/dose. Não usar em <3 meses. Gotas 500 mg/mL (1 gota = 25 mg). Xarope 50 mg/mL.'},
+};
+
+function calcPed(){
+  const peso=parseFloat(document.getElementById('ped_peso').value)||0;
+  const farm=document.getElementById('ped_farm').value;
+  if(!peso){alert('Informe o peso da criança.');return;}
+  const d=DRUGS[farm];
+  const doseMg=Math.round(peso*d.dose*10)/10;
+  const doseMax=Math.round(peso*d.max_dose*10)/10;
+  const doseReal=Math.min(doseMg,d.max_dia/3,d.max_dose*peso);
+  const doseRealFmt=Math.round(Math.min(doseMg,d.max_dose*peso)*10)/10;
+  const limDia=d.max_dia;
+  const warn=doseMg>=d.max_dia/3;
+
+  document.getElementById('pedResult').style.display='block';
+  document.getElementById('pedResult').innerHTML=`<div class="dose-box">
+    <div class="dose-num">${doseRealFmt} mg</div>
+    <div class="dose-lbl">${d.nome} — dose por administração</div>
+    <div class="dose-sub">Peso: ${peso} kg · ${d.dose} mg/kg · Frequência: ${d.freq}</div>
+    <div class="dose-sub">Dose máxima por administração: ${Math.min(d.max_dose*peso,d.max_dia/3).toFixed(0)} mg · Máx diário: ${limDia} mg/dia</div>
+    ${warn?`<div class="dose-warn">⚠️ Dose próxima ao máximo — verificar peso e indicação</div>`:''}
+  </div>
+  <div style="font-size:.73rem;color:#64748b;background:#f8fafc;border-radius:10px;padding:10px;margin-top:4px">💡 ${d.nota}</div>`;}
+
+function renderFebre(){
+  document.getElementById('febreInfo').innerHTML=`<div style="font-size:.77rem;line-height:1.8">
+<strong>Definição de febre:</strong> temperatura axilar ≥37,5°C; retal ≥38°C; timpânica ≥38°C<br><br>
+<strong>Quando tratar a febre farmacologicamente:</strong><br>
+• Temperatura ≥38,5°C com desconforto ou irritabilidade<br>
+• Temperatura ≥39°C mesmo sem sintomas visíveis<br>
+• Febre em lactentes &lt;3 meses: avaliação médica URGENTE (qualquer grau)<br>
+• Febre em imunocomprometido: avaliação urgente<br><br>
+<strong>Alternância Paracetamol–Ibuprofeno:</strong><br>
+Paracetamol 15 mg/kg → 4h depois ibuprofeno 10 mg/kg → 4h depois paracetamol...<br>
+(Não associar os dois no mesmo horário — riscos de superdosagem e mascara febre)<br><br>
+<strong>Sinais de alarme (febre sem foco):</strong><br>
+🚨 Lactente &lt;3 meses: qualquer febre → pediatria urgente<br>
+🚨 Petéquias ou púrpura + febre → meningococcemia (emergência)<br>
+🚨 Rigidez de nuca + febre → meningite<br>
+🚨 Febre > 5 dias sem diagnóstico → investigar doença de Kawasaki (criança &lt;5 anos)<br><br>
+<strong>Kawasaki (critérios): febre ≥5 dias + ≥4:</strong> conjuntivite bilateral · Mucosa oral (língua de morango, lábios secos) · Eritema e descamação de extremidades · Rash polimórfico · Linfadenopatia cervical · Tratamento: IVIG 2 g/kg + AAS 80 mg/kg/dia fase aguda → 3–5 mg/kg/dia fase de manutenção</div>`;}
+
+/* ─── INFECÇÕES PEDIÁTRICAS ─────────────────────────────────────────── */
+function calcInfPed(){
+  const tipo =document.getElementById('inf_tipo').value;
+  const idade=document.getElementById('inf_idade').value;
+  const recs=[];
+
+  const PROTO={
+    oma:{hdr:'OMA — Otite Média Aguda',col:'#d97706',
+      body:{lactente:`<strong>Lactente &lt;2 anos:</strong><br>
+ATB SEMPRE em &lt;6 meses · Em 6–24 meses: ATB se bilateral, otorreia ou sintomas graves<br>
+• <strong>Amoxicilina 90 mg/kg/dia 8/8h × 10 dias</strong> (alta dose — resistência pneumococo)<br>
+• Falha em 72h ou recorrente: Amoxicilina-clavulanato 90 mg/kg/dia × 10 dias<br>
+• Alergia penicilina: cefdinir ou azitromicina (menor eficácia)<br>
+Analgesia: paracetamol ou ibuprofeno`,
+pre_esc:`<strong>2–5 anos:</strong><br>
+• ATB se bilateral, otorreia ou sintomas moderados-graves<br>
+• Watchful waiting (48–72h): OMA unilateral leve em criança ≥2 anos<br>
+• <strong>Amoxicilina 50–90 mg/kg/dia × 5–7 dias</strong><br>
+• Alta dose (90 mg/kg): exposição recente a ATB, creche, bilateral`,
+esc:`<strong>6–12 anos:</strong><br>
+• Considerar watchful waiting 48–72h se sintomas leves<br>
+• <strong>Amoxicilina 50 mg/kg/dia × 5 dias</strong> (7–10 dias se grave)<br>
+• Falha: amoxicilina-clavulanato`,
+adoles:`<strong>Adolescente:</strong><br>
+• Amoxicilina 500 mg 3×/dia × 7 dias · Alta dose se necessário<br>
+• Falha: amoxicilina-clavulanato 875/125 mg 2×/dia`},
+      note:'OMA com otorreia: tópico (ofloxacino otológico) + ATB sistêmico. Descongestinante/anti-histamínico: SEM evidência para OMA. Miringotomia: OMA recorrente (≥3 em 6 meses ou ≥4 em 1 ano).'},
+    faring:{hdr:'Faringite / Tonsilite',col:'#dc2626',
+      body:{lactente:'Faringite bacteriana rara em <3 anos. Tratar viral (vírus responsável por 70%). Se cultura/TR positivo para EBHGA: amoxicilina 50 mg/kg/dia × 10 dias.',
+pre_esc:`<strong>Centor/McIsaac ≥2 em >3 anos — pesquisar EBHGA:</strong><br>
+TR ou cultura · Se positivo: tratar<br>
+• <strong>Amoxicilina 50 mg/kg/dia 12/12h × 10 dias</strong><br>
+• Alternativa: Penicilina V 250 mg 2–3×/dia × 10 dias<br>
+• Alergia: Azitromicina 12 mg/kg/dia × 5 dias`,
+esc:`<strong>Escolar — EBHGA predominante:</strong><br>
+TR positivo ou Centor ≥2 → tratar<br>
+• <strong>Amoxicilina 50 mg/kg/dia × 10 dias</strong> (máx 1 g/dia)<br>
+• Penicilina benzatina IM (aderência ruim ao oral): 600.000 UI se &lt;27 kg / 1.200.000 UI se ≥27 kg — dose única`,
+adoles:`• Amoxicilina 500 mg 3×/dia × 10 dias OU Penicilina benzatina 1.200.000 UI IM dose única<br>
+• Mononucleose: NÃO dar amoxicilina (rash maculopapular) · Diagnóstico: MonoTest/EBV IgM`},
+      note:'Faringite viral: tratamento sintomático (paracetamol, ibuprofeno, pastilhas). Critérios de amigdalectomia: Paradise (≥7 episódios/ano ou ≥5 por 2 anos consecutivos ou ≥3 por 3 anos).'},
+    pneu:{hdr:'PAC Pediátrica — Pneumonia Adquirida na Comunidade',col:'#1e3a8a',
+      body:{lactente:`<strong>Lactente (&lt;2 anos):</strong><br>
+Viral em maioria (VSR, rinovírus, adenovírus) — ATB apenas se:<br>
+• Febre alta + consolidação radiológica + leucocitose · Ou quadro grave<br>
+<strong>ATB: Amoxicilina 90 mg/kg/dia 8/8h × 7–10 dias</strong><br>
+Grave (internação): Ampicilina IV 150–200 mg/kg/dia 6/6h`,
+pre_esc:`<strong>2–5 anos:</strong><br>
+Pneumococo ainda predominante nessa faixa<br>
+• <strong>Amoxicilina 90 mg/kg/dia × 7–10 dias</strong> (cobre pneumococo)<br>
+• Grave: Penicilina cristalina IV 200.000 UI/kg/dia 4/4h + Azitromicina se atípico suspeito`,
+esc:`<strong>Escolar (6–12 anos):</strong><br>
+Mycoplasma pneumoniae ganha importância nessa faixa ("pneumonia ambulante")<br>
+• <strong>Amoxicilina 50 mg/kg/dia</strong> se lobar/típica<br>
+• <strong>Azitromicina 10 mg/kg/dia × 5 dias</strong> se atípica (infiltrado intersticial, tosse seca, febre baixa, criança bem)<br>
+• Combinação: amoxicilina + azitromicina se incerto`,
+adoles:`• Amoxicilina 1 g 3×/dia (típica) · Azitromicina 500 mg/dia × 5 dias (atípica)<br>
+• Doxiciclina 100 mg 2×/dia × 7 dias: alternativa para atípica em >8 anos`},
+      note:'Internação: SpO₂ <92%, FR >70 ipm lactente />50 ipm criança, tiragem intensa, gemência, dificuldade alimentar, falha ambulatorial. Raio-X: solicitado se internação ou dúvida diagnóstica — não rotineiro em PAC leve ambulatorial.'},
+    ivu:{hdr:'ITU Pediátrica',col:'#7c3aed',
+      body:{lactente:`<strong>Lactente — ITU febril (pielonefrite):</strong><br>
+Internação se &lt;3 meses (qualquer) ou &lt;12 meses com aspecto grave<br>
+• Internação: Ceftriaxona 50 mg/kg/dia IV × 7–14 dias<br>
+• Ambulatorial (&gt;3 meses, estável): Cefalexina 50 mg/kg/dia 6/6h × 7–14 dias<br>
+• Excluir: malformação urinária (US renal + refluxo vesicoureteral)`,
+pre_esc:`<strong>Pré-escolar:</strong><br>
+• Cefalexina 25–50 mg/kg/dia 6/6h × 7–14 dias<br>
+• Amoxicilina-clavulanato: se ESBL suspeito<br>
+• Após 1ª ITU febril: US renal obrigatório; CUMS seletivo`,
+esc:`<strong>Escolar:</strong><br>
+• Cistite: SMX-TMP 8/40 mg/kg/dia 12/12h × 3–5 dias OU Nitrofurantoína 5 mg/kg/dia 6/6h × 5 dias<br>
+• Pielonefrite: cefalexina × 14 dias ou amoxicilina-clavulanato`,
+adoles:`• Cistite feminina: Fosfomicina 3 g dose única / Nitrofurantoína 100 mg 2×/dia × 5 dias<br>
+• Pielonefrite: ciprofloxacino 500 mg 2×/dia × 7 dias`},
+      note:'Profilaxia antibiótica de ITU: indicada em refluxo grau III–V ou malformações com ITU recorrente. SMX-TMP 2 mg/kg (de TMP) à noite ou nitrofurantoína 1 mg/kg/dia. Urocultura antes de iniciar ATB.'},
+    gastro:{hdr:'Gastroenterite e Desidratação Pediátrica',col:'#d97706',
+      body:{lactente:`<strong>Desidratação em lactente:</strong><br>
+Leve (3–5%): SRO oral 50 mL/kg em 4h + reposição de perdas 10 mL/kg por diarreia<br>
+Moderada (5–10%): SRO 100 mL/kg em 4h · Se vômito: ondansetrona 0,15 mg/kg ODT<br>
+Grave (&gt;10% ou choque): SF 20 mL/kg IV rápido → reavaliação → SRO oral quando tolerado<br>
+<strong>Continuar amamentação</strong> durante reidratação`,
+pre_esc:'<strong>SRO oral:</strong> pedialyte ou soro caseiro (1 L água + 1 col sopa rasa de sal + 2 col sopa de açúcar)<br>SRO 5–10 mL a cada 5 min com colher (volume pequeno frequente > copo inteiro)<br>Ondansetrona: 2 mg ODT em <15 kg · 4 mg em ≥15 kg · 8 mg em adulto/adol',
+esc:'Igual ao pré-escolar. ATB: apenas para cólera, shigelose grave, Salmonella em imunocomprometido, Clostridioides difficile.',
+adoles:'ATB seletivo por causa. Azitromicina: Campylobacter (em alto risco). Metronidazol: Giardia (250 mg 3×/dia × 5 dias). Cotrimoxazol: Shigella.'},
+      note:'Zinco 10–20 mg/dia × 10–14 dias: indicado em diarreia aguda (reduz duração e gravidade — WHO). Probióticos: L. rhamnosus GG e S. boulardii com evidência em diarreia associada a ATB.'},
+    croup:{hdr:'Croup — Laringotraqueíte Viral',col:'#0369a1',
+      body:{lactente:'Raro em &lt;6 meses.',
+pre_esc:`<strong>Stridor + rouquidão + "tosse de cachorro" — 6 meses–3 anos:</strong><br>
+Leve (sem stridor em repouso): Dexametasona 0,15 mg/kg VO dose única<br>
+Moderado (stridor em repouso): Dexametasona 0,6 mg/kg IM/IV + Adrenalina racêmica 0,5 mL em 2,5 mL SF inalatória (efeito 30 min — observar 3–4h por efeito rebote)<br>
+Grave (cianose, retração grave): UTI + dexametasona IV + adrenalina nebulizada repetida<br>
+Umidificação: sem evidência robusta`,
+esc:'Menos comum em escolares. Mesma abordagem. Excluir epiglotite (criança tóxica, posição de "tripé", sialorreia, início súbito).',
+adoles:'Raro. Diferencial: epiglotite, abscesso peritonsilar.'},
+      note:'Epiglotite: NÃO examinar orofaringe sem via aérea garantida (pode precipitar obstrução). Ceftriaxona IV 50–100 mg/kg/dia. H. influenzae tipo b (vacinação reduziu drasticamente). Intubação orotraqueal por anestesiologista experiente.'},
+    bron:{hdr:'Bronquiolite (VSR) — Manejo',col:'#065f46',
+      body:{lactente:`<strong>Bronquiolite: &lt;2 anos — viral (VSR, rinovírus, adenovírus)</strong><br>
+<strong>Tratamento de SUPORTE — nenhum específico comprovado:</strong><br>
+• Posição elevada · Hidratação adequada (oral ou SNE se recusa)<br>
+• Aspiração nasal suave com SF nasal<br>
+• SF hipertônico 3% nebulizado: reduz internação modestamente em internados<br>
+• O₂ suplementar: SpO₂ &lt;90–92%<br>
+<strong>NÃO indicados (sem evidência):</strong> broncodilatador (salbutamol/adrenalina) de rotina · ATB · Corticoide · Fisioterapia respiratória<br>
+Internação: SpO₂ &lt;90%, apneia, frequência alimentar &lt;50%, aspecto tóxico, &lt;3 meses`,
+pre_esc:'Bronquiolite &lt;2 anos. Acima disso: tratar como asma se broncoespasmo.',
+esc:'Exacerbação asmática mais provável. Salbutamol + prednisolona.',
+adoles:'Exacerbação asmática.'},
+      note:'Profilaxia VSR: Nirsevimabe (anticorpo monoclonal, dose única IM) — indicado em todos os lactentes na primeira temporada VSR (aprovado ANVISA 2024). Substituiu o palivizumabe como primeira opção. Palivizumabe: reservar para prematuros extremos ou cardiopatas com CI.'},
+    menin:{hdr:'Meningite Bacteriana Pediátrica — Emergência',col:'#dc2626',
+      body:{lactente:`<strong>Lactente — Etiologias: Streptococcus agalactiae, E. coli, Listeria</strong><br>
+• ATB IMEDIATO: <strong>Ampicilina 200 mg/kg/dia 6/6h + Ceftriaxona 100 mg/kg/dia 12/12h IV</strong><br>
+• <strong>Dexametasona 0,15 mg/kg 6/6h × 4 dias</strong> → reduz sequelas (iniciar com 1ª dose do ATB)<br>
+Punção lombar: após estabilização (se sem papiledema ou sinais de herniação)`,
+pre_esc:`<strong>Pneumococo / Meningococo / Hib:</strong><br>
+• <strong>Ceftriaxona 100 mg/kg/dia 12/12h IV</strong> (cobertura ampla)<br>
+• <strong>Dexametasona 0,15 mg/kg 6/6h × 4 dias</strong> (iniciar antes ou com ATB)<br>
+• Vancomicina: adicionar se pneumococo resistente suspeito (região ou falha)`,
+esc:'Igual. Vancomicina 60 mg/kg/dia 6/6h se pneumococo suspeito. LCR: glicose baixa, proteína alta, pleocitose neutrofílica.',
+adoles:'Meningococo predomina em adolescentes. Quimioprofilaxia contatos próximos: rifampicina 600 mg 12/12h × 2 dias ou ciprofloxacino 500 mg dose única.'},
+      note:'Petéquia/púrpura + febre = emergência — tratar antes de qualquer exame se instabilidade. Profilaxia meningococo: vacina meningocócica ACWY (MenACWY) e B (MenB). Hib: praticamente erradicada com vacinação.'},
+  };
+
+  const p=PROTO[tipo];
+  const txt=p.body[idade]||Object.values(p.body)[0];
+  document.getElementById('infPedResult').style.display='block';
+  document.getElementById('infPedResult').innerHTML=recHTML({hdr:p.hdr,col:p.col,nome:`Protocolo para ${idade==='lactente'?'Lactente <2 anos':idade==='pre_esc'?'Pré-escolar 2–5 anos':idade==='esc'?'Escolar 6–12 anos':'Adolescente >12 anos'}`,badges:[{t:tipo.toUpperCase(),c:p.col}],body:txt,note:p.note});
+  document.getElementById('infPedResult').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+/* ─── TDAH & NEUROLOGIA PEDIÁTRICA ─────────────────────────────────── */
+function renderTDAH(){
+  if(document.getElementById('tdahList').innerHTML) return;
+  const CARDS=[
+    {col:'#4c1d95',nome:'TDAH — Transtorno do Déficit de Atenção e Hiperatividade',
+     body:`<strong>Diagnóstico (DSM-5):</strong> ≥6 sintomas de desatenção e/ou hiperatividade-impulsividade · ≥2 ambientes (escola + casa) · Início &lt;12 anos · Prejudica funcionamento<br><br>
+<strong>Farmacoterapia (&gt;6 anos — antes: TCC e psicoeducação):</strong><br>
+<strong>Estimulantes (1ª linha — maior eficácia):</strong><br>
+• <strong>Metilfenidato LI</strong> (Ritalina) 0,3 mg/kg/dose 2×/dia → titular 0,1 mg/kg/semana · Máx 60 mg/dia ou 2 mg/kg/dia<br>
+• <strong>Metilfenidato LA/XR</strong> (Concerta, Ritalina LA) 18–36 mg/dia 1×/dia (manhã): conveniência escolar<br>
+• <strong>Lisdexanfetamina</b> (Venvanse) 20 mg/dia → 30–70 mg/dia: pró-fármaco (menor abuso); 1×/dia manhã<br>
+<strong>Não-estimulantes (TDAH + ansiedade, tiques, CI estimulante):</strong><br>
+• <strong>Atomoxetina</b> 0,5 mg/kg/dia × 1 sem → 1,2 mg/kg/dia (máx 1,4 mg/kg ou 100 mg) — início 2–4 semanas<br>
+• Guanfacina XR 1–4 mg/dia · Clonidina 0,05 mg/noite → 0,1 mg 2×/dia (também para tiques e insônia)<br><br>
+<strong>Monitoramento obrigatório:</strong><br>
+PA e FC antes e após início · Peso e altura trimestralmente (↓ ganho ponderal com estimulante — compensado nos finais de semana/"drug holiday") · Sono · Humor (raro: mania de novo) · Tics<br>
+<strong>Férias de medicação:</strong> final de semana e férias escolares — individualizar (sem benefício universal; útil se RAM de apetite/sono)`,
+     note:'Efeito paradoxal ("acalma"): normal — estimulante melhora função do CPF (controle inibitório). Abuso de metilfenidato: risco BAIXO em adolescentes com TDAH tratado (tratamento reduz risco de SUD). Lisdexanfetamina: menor abuso que metilfenidato de liberação imediata. TDAH + Tiques (Tourette): clonidina, guanfacina ou atomoxetina (estimulantes podem piorar tiques em alguns).'},
+    {col:'#1e3a8a',nome:'Epilepsia Pediátrica — DEA por Síndrome',
+     body:`<strong>Espasmos infantis (Síndrome de West — &lt;1 ano):</strong><br>
+• ACTH 40–60 UI/m²/dia × 2 semanas (1ª linha em maioria) OU<br>
+• Vigabatrina 100–150 mg/kg/dia (1ª linha se esclerose tuberosa; defeito de campo visual — monitorar oftalmologia)<br>
+• Prednisolona 40–60 mg/dia × 14 dias: alternativa ao ACTH<br><br>
+<strong>Síndrome de Dravet (SCN1A):</strong><br>
+• Clobazam 0,5–1 mg/kg/dia + Valproato 20–40 mg/kg/dia<br>
+• <strong>Cannabidiol (Epidiolex)</b> 2,5–10 mg/kg/dia: aprovado FDA/ANVISA para Dravet e Lennox-Gastaut<br>
+• <strong>Fenfluramina</b>: recentemente aprovado para Dravet<br>
+• Evitar: carbamazepina, fenitoína, lamotrigina (podem agravar Dravet — canalopatia)<br><br>
+<strong>Epilepsia Ausência da Infância:</strong><br>
+• Etossuximida 15–40 mg/kg/dia (1ª linha — superior ao valproato e à lamotrigina em NECT trial)<br>
+• Alternativa: Valproato 20–30 mg/kg/dia · Lamotrigina<br><br>
+<strong>Epilepsia Rolândica (EBCR — benigna):</strong><br>
+• Frequentemente não necessita tratamento<br>
+• Carbamazepina 10–20 mg/kg/dia OU Ácido valproico (se tratar)<br><br>
+<strong>Convulsão febril simples:</strong><br>
+• Tratamento agudo: Diazepam retal 0,5 mg/kg (<5 kg: 5 mg · >5 kg: 10 mg) se >5 min<br>
+• Sem profilaxia de rotina · Reavaliar se recorrente/prolongada/focal`,
+     note:'Valproato em meninas/mulheres: risco de SOP e teratogenicidade (espinha bífida) — usar ácido fólico 4-5 mg/dia e discutir alternativas. Monitoramento valproato: amônio sérico (encefalopatia), TGP, coagulograma, peso. Valproato + carbapenêmico: ↓ nível do valproato abruptamente — evitar ou monitorar.'},
+    {col:'#065f46',nome:'Asma Pediátrica — Escalonamento GINA 2024',
+     body:`<strong>Controlador base (track 1 — GINA 2024):</strong><br>
+Todos os passos de tratamento: Budesonida/Formoterol baixa dose SOS (mesmo no passo 1)<br><br>
+<strong>Passo 1 (sintomas &lt;2×/mês):</strong><br>
+• Budesonida/formoterol 100/6 mcg inalado SOS (uso conforme sintoma)<br>
+• OU Salbutamol SOS + CI baixa dose antes de todo uso de salbutamol<br><br>
+<strong>Passo 2 (sintomas &gt;2×/mês, sem acorde noturno frequente):</strong><br>
+• CI baixa dose diária (Budesonida 100–200 mcg/dia ou fluticasona 100 mcg/dia) + salbutamol SOS<br>
+• Monteleucaste (Singulair) 4–5 mg/dia (&lt;6 anos): alternativa aos CI em asma leve<br><br>
+<strong>Passo 3 (sintomas frequentes ou acorde noturno &gt;1×/sem):</strong><br>
+• CI baixa dose + LABA (formoterol ou salmeterol) · OU CI dose média · OU CI + monteleucaste<br><br>
+<strong>Passo 4–5 (asma grave ou não-controlada):</strong><br>
+• CI alta dose + LABA + monteleucaste · Referência a especialista<br>
+• Biológicos (asma eosinofílica grave ≥6 anos): Mepolizumabe 40 mg SC/mês · Dupilumabe<br><br>
+<strong>Crise asmática:</strong><br>
+Leve: Salbutamol 2–4 puffs via espaçador a cada 20 min × 3 · Avaliar resposta<br>
+Moderada: Salbutamol 6–10 puffs + prednisolona 1–2 mg/kg VO (máx 60 mg) × 3–5 dias<br>
+Grave: Salbutamol contínuo + ipratrópio + metilprednisolona IV 1–2 mg/kg + sulfato de magnésio IV 25–75 mg/kg em 20 min`,
+     note:'Técnica inalatória é determinante da eficácia. &lt;5 anos: MDI com espaçador com máscara. 5–8 anos: MDI com espaçador bocal. &gt;8 anos: MDI direto ou DPI. Revisar técnica a cada consulta.'},
+  ];
+  document.getElementById('tdahList').innerHTML=CARDS.map(c=>`<div class="ped-card" style="border-color:${c.col}"><div class="ped-nome" style="color:${c.col}">${c.nome}</div><div class="ped-body">${c.body}</div>${c.note?`<div style="font-size:.7rem;color:#64748b;margin-top:6px">💡 ${c.note}</div>`:''}</div>`).join('');
+}
+</script>
+</body>
+</html>

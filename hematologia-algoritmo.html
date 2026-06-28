@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Hematologia — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .hem-hdr{background:linear-gradient(135deg,#7f1d1d,#b91c1c);color:#fff;border-radius:14px;padding:18px;margin-bottom:14px}
+    .hem-title{font-size:1rem;font-weight:800;margin-bottom:4px}
+    .hem-sub{font-size:.73rem;opacity:.8}
+    label{font-size:.75rem;font-weight:700;color:#1e3a5f;display:block;margin-bottom:4px}
+    select{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:10px;padding:10px 12px;font-size:.85rem;background:#fff;margin-bottom:10px}
+    select:focus{border-color:#b91c1c;outline:none}
+    input[type=number]{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:10px;padding:10px 12px;font-size:.85rem;background:#fff;outline:none;margin-bottom:10px}
+    input:focus{border-color:#b91c1c}
+    .checkbox-group{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
+    .checkbox-item{display:flex;align-items:center;gap:8px;font-size:.8rem;cursor:pointer}
+    .checkbox-item input[type=checkbox]{width:18px;height:18px;accent-color:#b91c1c;cursor:pointer}
+    .btn-calc{width:100%;background:#b91c1c;color:#fff;border:none;border-radius:12px;padding:13px;font-size:.87rem;font-weight:700;cursor:pointer;margin:8px 0}
+    .tab-bar{display:flex;gap:6px;margin-bottom:14px}
+    .tab-btn{flex:1;padding:9px 4px;border-radius:10px;border:2px solid #e2e8f0;background:#fff;font-size:.72rem;font-weight:700;cursor:pointer;color:#64748b}
+    .tab-btn.active{border-color:#b91c1c;background:#fef2f2;color:#b91c1c}
+    .rec-card{border-radius:12px;border:2px solid;padding:14px;margin-bottom:10px}
+    .rec-hdr{font-size:.63rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+    .rec-nome{font-size:.88rem;font-weight:800;margin-bottom:6px}
+    .rec-badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:.65rem;font-weight:800;color:#fff;margin:2px}
+    .rec-body{font-size:.78rem;margin-top:6px;line-height:1.7}
+    .rec-note{font-size:.71rem;color:#64748b;margin-top:6px;padding-top:6px;border-top:1px solid #f1f5f9}
+    .score-box{background:#fef2f2;border:2px solid #b91c1c;border-radius:12px;padding:14px;margin:8px 0}
+    .score-num{font-size:1.8rem;font-weight:900;color:#7f1d1d;line-height:1.1}
+    .score-lbl{font-size:.8rem;font-weight:700;color:#7f1d1d;margin-top:4px}
+    .score-sub{font-size:.73rem;color:#374151;margin-top:6px;line-height:1.6}
+    .input-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .tev-card{border-radius:10px;border-left:5px solid;padding:10px 14px;margin-bottom:8px;background:#fff}
+    .tev-nome{font-size:.83rem;font-weight:800;margin-bottom:4px}
+    .tev-body{font-size:.76rem;line-height:1.7;color:#374151}
+  </style>
+</head>
+<body>
+<header class="top-bar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <span class="top-title">Hematologia — Algoritmo</span>
+  <div class="top-right"></div>
+</header>
+<main class="container" style="padding-bottom:90px">
+  <div class="hem-hdr">
+    <div class="hem-title">🩸 Hematologia — Trombose e Coagulopatias</div>
+    <div class="hem-sub">TEV · TIH · Hemofilia · Policitemia Vera · CIVD · Reversão de anticoagulantes</div>
+  </div>
+  <div class="tab-bar">
+    <button class="tab-btn active" id="tb0" onclick="showTab(0)">TEV — DVT/TEP</button>
+    <button class="tab-btn" id="tb1" onclick="showTab(1)">TIH & Hemofilia</button>
+    <button class="tab-btn" id="tb2" onclick="showTab(2)">Hematol. Geral</button>
+  </div>
+
+  <!-- TAB 0 — TEV -->
+  <div id="tab0">
+    <div class="card" style="padding:12px 14px">
+      <div style="font-size:.78rem;font-weight:800;color:#b91c1c;margin-bottom:8px">Escore de Wells — TVP</div>
+      <div class="checkbox-group" id="wellsTvp">
+        <label class="checkbox-item"><input type="checkbox" value="1" onchange="calcWellsTvp()"> Câncer ativo (tratamento há ≤6 meses ou paliativo) +1</label>
+        <label class="checkbox-item"><input type="checkbox" value="1" onchange="calcWellsTvp()"> Paralisia, paresia ou imobilização recente da perna +1</label>
+        <label class="checkbox-item"><input type="checkbox" value="1" onchange="calcWellsTvp()"> Internação recente ou cirurgia de grande porte &lt;12 sem +1</label>
+        <label class="checkbox-item"><input type="checkbox" value="1" onchange="calcWellsTvp()"> Dor localizada ao longo do trajeto venoso profundo +1</label>
+        <label class="checkbox-item"><input type="checkbox" value="1" onchange="calcWellsTvp()"> Edema de toda a perna +1</label>
+        <label class="checkbox-item"><input type="checkbox" value="1" onchange="calcWellsTvp()"> Edema da panturrilha &gt;3 cm (vs assintomática) +1</label>
+        <label class="checkbox-item"><input type="checkbox" value="1" onchange="calcWellsTvp()"> Edema depressível (localizado na perna sintomática) +1</label>
+        <label class="checkbox-item"><input type="checkbox" value="1" onchange="calcWellsTvp()"> Veias colaterais superficiais visíveis (não varicosas) +1</label>
+        <label class="checkbox-item"><input type="checkbox" value="1" onchange="calcWellsTvp()"> TVP prévia documentada +1</label>
+        <label class="checkbox-item"><input type="checkbox" value="-2" onchange="calcWellsTvp()"> Diagnóstico alternativo ao menos tão provável quanto TVP −2</label>
+      </div>
+      <div id="wellsTvpResult" style="display:none"></div>
+    </div>
+    <div class="card" style="padding:12px 14px;margin-top:8px">
+      <div style="font-size:.78rem;font-weight:800;color:#b91c1c;margin-bottom:8px">Escore de Wells — TEP (Embolia Pulmonar)</div>
+      <div class="checkbox-group" id="wellsTep">
+        <label class="checkbox-item"><input type="checkbox" value="3" onchange="calcWellsTep()"> TVP ou TEP prévio +3</label>
+        <label class="checkbox-item"><input type="checkbox" value="3" onchange="calcWellsTep()"> FC &gt;100 bpm +1.5 (marcar 3 se sim)</label>
+        <label class="checkbox-item"><input type="checkbox" value="1.5" onchange="calcWellsTep()"> Cirurgia ou imobilização nas últimas 4 semanas +1.5</label>
+        <label class="checkbox-item"><input type="checkbox" value="1.5" onchange="calcWellsTep()"> Sinais/sintomas clínicos de TVP +3 (marcar como 1.5 para FC)</label>
+        <label class="checkbox-item"><input type="checkbox" value="1.5" onchange="calcWellsTep()"> Hemoptise +1</label>
+        <label class="checkbox-item"><input type="checkbox" value="1" onchange="calcWellsTep()"> Câncer ativo +1</label>
+        <label class="checkbox-item"><input type="checkbox" value="3" onchange="calcWellsTep()"> TEP é diagnóstico #1 (ou igual) +3</label>
+      </div>
+      <div id="wellsTepResult" style="display:none"></div>
+    </div>
+    <div class="card" style="padding:12px 14px;margin-top:8px">
+      <div style="font-size:.8rem;font-weight:800;color:#b91c1c;margin-bottom:8px">Tratamento de TEV e Duração</div>
+      <label>Causa do TEV</label>
+      <select id="tev_causa">
+        <option value="prov_cir">Provocado — Cirurgia (fator transitório maior)</option>
+        <option value="prov_med">Provocado — Fator transitório menor (viagem, ACO, trauma menor)</option>
+        <option value="nao_prov">Não-provocado (idiopático — sem fator de risco claro)</option>
+        <option value="cancer">Associado ao câncer</option>
+        <option value="rec">Recorrente (2º evento sem fator provocador)</option>
+        <option value="antifos">Síndrome antifosfolipídeo</option>
+        <option value="tep_massive">TEP maciço com instabilidade hemodinâmica</option>
+      </select>
+      <label>Anticoagulante de preferência</label>
+      <select id="tev_ac">
+        <option value="doac">DOAC (sem contraindicação)</option>
+        <option value="hbpm_vk">HBPM + VKA (antagonista vitamina K)</option>
+        <option value="hbpm">Apenas HBPM (câncer, gestação)</option>
+      </select>
+    </div>
+    <button class="btn-calc" onclick="calcTEV()">🩸 Gerar protocolo TEV</button>
+    <div id="tevResult" style="display:none"></div>
+  </div>
+
+  <!-- TAB 1 — TIH & HEMOFILIA -->
+  <div id="tab1" style="display:none">
+    <div id="tihList"></div>
+  </div>
+
+  <!-- TAB 2 — HEMATOLOGIA GERAL -->
+  <div id="tab2" style="display:none">
+    <div id="hemList"></div>
+  </div>
+</main>
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+<script src="js/db.js"></script>
+<script>
+function showTab(n){[0,1,2].forEach(i=>{document.getElementById('tab'+i).style.display=i===n?'block':'none';document.getElementById('tb'+i).classList.toggle('active',i===n);});if(n===1)renderTIH();if(n===2)renderHem();}
+function recHTML(r){return `<div class="rec-card" style="border-color:${r.col}"><div class="rec-hdr" style="color:${r.col}">${r.hdr}</div><div class="rec-nome">${r.nome}</div><div>${(r.badges||[]).map(b=>`<span class="rec-badge" style="background:${b.c}">${b.t}</span>`).join('')}</div><div class="rec-body">${r.body}</div>${r.note?`<div class="rec-note">${r.note}</div>`:''}</div>`;}
+
+/* ─── WELLS TVP ─────────────────────────────────────────────────────── */
+function calcWellsTvp(){
+  const cbs=document.querySelectorAll('#wellsTvp input[type=checkbox]');
+  let s=0; cbs.forEach(c=>{if(c.checked)s+=parseFloat(c.value);});
+  const el=document.getElementById('wellsTvpResult');
+  el.style.display='block';
+  let risco,cond,dd;
+  if(s>=2){risco='Alto';cond='TVP provável';dd='D-dímero NÃO necessário para excluir — solicitar US Doppler imediato. Se positivo: tratar. Se negativo: considerar trombose acima do joelho (US proximal em 1 sem).';}
+  else if(s===1){risco='Moderado';cond='TVP moderadamente provável';dd='D-dímero sensível (ex: ELISA) — se negativo exclui TVP. Se positivo: US Doppler.';}
+  else{risco='Baixo';cond='TVP improvável';dd='D-dímero sensível — se negativo exclui TVP com alta segurança. Se positivo (pré-teste baixo): US Doppler.';}
+  el.innerHTML=`<div class="score-box"><div class="score-num">${s}</div><div class="score-lbl">Wells TVP — ${risco} (${cond})</div><div class="score-sub">${dd}</div></div>`;}
+
+/* ─── WELLS TEP ─────────────────────────────────────────────────────── */
+function calcWellsTep(){
+  const cbs=document.querySelectorAll('#wellsTep input[type=checkbox]');
+  let s=0; cbs.forEach(c=>{if(c.checked)s+=parseFloat(c.value);});
+  const el=document.getElementById('wellsTepResult');
+  el.style.display='block';
+  let txt;
+  if(s>6){txt='<strong>Alta probabilidade (&gt;6):</strong> Angiotomografia pulmonar direta. Anticoagular antes da imagem se demora >4h.';}
+  else if(s>=2){txt='<strong>Probabilidade moderada (2–6):</strong> D-dímero — se negativo: exclui. Se positivo: angiotomografia pulmonar.';}
+  else{txt='<strong>Baixa probabilidade (&lt;2):</strong> D-dímero sensível — se negativo: exclui TEP com alta segurança. PERC rule: se todos 8 critérios negativos → descartar sem D-dímero.';}
+  const pesi=`<br><br><strong>PESI simplificado (gravidade TEP):</strong><br>
+Pontos: Idade &gt;80 anos (+1), câncer (+1), dça cardiopulmonar crônica (+1), FC ≥110 bpm (+1), SBP &lt;100 mmHg (+1), SpO₂ &lt;90% (+1)<br>
+PESI 0: baixo risco → considerar tratamento ambulatorial (rivaroxabana ou apixabana)<br>
+PESI ≥1: risco intermediário → internação · RV disfunção + troponina elevada = intermediário-alto → monitorar trombólise`;
+  el.innerHTML=`<div class="score-box"><div class="score-num">${s.toFixed(1)}</div><div class="score-lbl">Wells TEP</div><div class="score-sub">${txt}${pesi}</div></div>`;}
+
+/* ─── TRATAMENTO TEV ─────────────────────────────────────────────────── */
+function calcTEV(){
+  const causa=document.getElementById('tev_causa').value;
+  const ac=document.getElementById('tev_ac').value;
+  const DURACAO={
+    prov_cir:{dur:'3 meses',rec:'Risco de recorrência baixo após fator cirúrgico removido. 3 meses é suficiente — não prolongar sem indicação adicional.'},
+    prov_med:{dur:'3–6 meses',rec:'Fator transitório menor (ex: viagem, ACO): 3 meses. Múltiplos fatores menores ou cumulativos: até 6 meses. Reavaliar após término.'},
+    nao_prov:{dur:'≥3 meses → considerar indefinido',rec:'1º evento: ≥3 meses. Avaliar extensão com HAS-BLED, risco de recorrência (DASH, Vienna). Homens com TEP têm recorrência maior → tendência a tratar indefinidamente. Mulheres com TVP isolada: menor recorrência. D-dímero pós-tratamento: se elevado → maior risco de recorrência (considerar prolongar).'},
+    cancer:{dur:'Indefinido (enquanto ativo)',rec:'Tratar indefinidamente enquanto o câncer estiver ativo. HBPM superior aos VKA (CLOT trial). DOACs (edoxabana, rivaroxabana) não-inferiores à HBPM em tumores sólidos — preferir se sem tumor GI com alto risco de sangramento.'},
+    rec:{dur:'Indefinido',rec:'2º evento não-provocado: tratamento indefinido em maioria. Reavaliar risco de sangramento anualmente (HAS-BLED). Considerar dose reduzida de DOAC em manutenção (rivaroxabana 10 mg/dia ou apixabana 2,5 mg 2×/dia após 6 meses de dose plena).'},
+    antifos:{dur:'Indefinido',rec:'SAF de alto risco (triple positivity ou TEV): warfarina indefinida com INR 2–3. NÃO usar DOAC em SAF de alto risco (TRAPS trial mostrou maior recorrência com rivaroxabana). SAF de baixo risco (apenas anticardiolipina isolada): avaliar individualmente.'},
+    tep_massive:{dur:'Hemodinâmico instável: considerar trombólise sistêmica',rec:''},
+  };
+  const AC_TEXT={
+    doac:`<strong>DOACs (escolha preferencial):</strong><br>
+• <strong>Apixabana</strong> 10 mg 2×/dia × 7 dias → 5 mg 2×/dia (AMPLIFY); manutenção reduzida: 2,5 mg 2×/dia após 6 meses<br>
+• <strong>Rivaroxabana</strong> 15 mg 2×/dia × 21 dias → 20 mg/dia (EINSTEIN); manutenção: 10 mg/dia após 6 meses<br>
+• <strong>Edoxabana</strong>: HBPM 5–10 dias → edoxabana 60 mg/dia (30 mg se TFG 15–50 ou peso &lt;60 kg)<br>
+• <strong>Dabigatrana</strong>: HBPM 5–10 dias → dabigatrana 150 mg 2×/dia<br>
+DOACs NÃO indicados: SAF alto risco, gestação, TFG &lt;15, válvula mecânica`,
+    hbpm_vk:`<strong>HBPM + Varfarina (VKA):</strong><br>
+• Iniciar HBPM concomitante ao warfarin<br>
+• Manter HBPM ≥5 dias E até INR ≥2 por 2 dias consecutivos<br>
+• Enoxaparina: 1 mg/kg SC 12/12h OU 1,5 mg/kg SC 1×/dia<br>
+• INR alvo: 2–3 (exceto SAF alto risco: manter 2,5–3,5)<br>
+• Interações warfarina: inúmeras (CYP2C9, 3A4) — monitorar INR de perto`,
+    hbpm:`<strong>HBPM isolada (câncer, gestação):</strong><br>
+• Enoxaparina 1 mg/kg SC 12/12h OU 1,5 mg/kg SC 1×/dia<br>
+• Câncer: DOAC (edoxabana/rivaroxabana) aceitável em tumor sólido sem risco GI aumentado<br>
+• Gestação: HBPM é ÚNICA opção segura (warfarina e DOACs: contraindicados no 1T e peri-parto)<br>
+• Ajuste renal: TFG &lt;30 → fondaparinux 5–7,5 mg SC 1×/dia ou UFH IV titulada por TTPa`,
+  };
+  const d=DURACAO[causa];
+  let lise='';
+  if(causa==='tep_massive'){
+    lise=`<div class="rec-card" style="border-color:#dc2626;margin-top:8px"><div class="rec-hdr" style="color:#dc2626">TEP MACIÇO — EMERGÊNCIA HEMODINÂMICA</div><div class="rec-nome">Trombólise Sistêmica</div><div class="rec-body">
+<strong>Indicação absoluta:</strong> choque cardiogênico (SBP &lt;90 por >15 min ou queda &gt;40 mmHg) atribuída ao TEP<br>
+<strong>Alteplase (tPA):</strong> 100 mg IV em 2h (ou 0,6 mg/kg em 15 min — máx 50 mg — se parada cardíaca iminente)<br>
+<strong>Iniciar heparina não-fracionada imediatamente após alteplase:</strong> 80 UI/kg bolus → 18 UI/kg/h · Alvo TTPa 60–100 seg<br>
+<strong>CI absolutas:</strong> AVC hemorrágico préio · AVC isquêmico &lt;3 meses · Lesão intracraniana · Sangramento interno ativo · Cirurgia maior &lt;10 dias<br>
+<strong>Embolectomia cirúrgica ou por cateter:</strong> CI à trombólise ou falha após trombólise
+</div></div>`;}
+  document.getElementById('tevResult').style.display='block';
+  document.getElementById('tevResult').innerHTML=recHTML({
+    hdr:'PROTOCOLO TEV',col:'#b91c1c',
+    nome:`Duração: ${d.dur}`,
+    badges:[{t:causa.replace('_',' ').toUpperCase(),c:'#b91c1c'}],
+    body:`${AC_TEXT[ac]}<br><br><strong>Duração e contexto:</strong><br>${d.rec}`,
+    note:'TEP ambulatorial: PESI=0 + estabilidade + suporte domiciliar → apixabana ou rivaroxabana ambulatorial seguro (HoT-PE, Hestia).'
+  })+lise;
+  document.getElementById('tevResult').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+/* ─── TIH E HEMOFILIA ─────────────────────────────────────────────────── */
+function renderTIH(){
+  if(document.getElementById('tihList').innerHTML) return;
+  const CARDS=[
+    {col:'#dc2626',nome:'TIH — Trombocitopenia Induzida por Heparina (Tipo II)',
+     body:`<strong>Escore 4T (probabilidade de TIH):</strong><br>
+Trombocitopenia (magnitude e timing) · Tempo (dias após heparina) · Trombose · Outras causas<br>
+4T ≥4 = alta probabilidade → SUSPENDER HEPARINA IMEDIATAMENTE<br><br>
+<strong>Quando suspeitar:</strong><br>
+• Queda de plaquetas ≥50% do valor basal: entre D5–D14 de heparina (anticorpos atingem nível patogênico)<br>
+• OU nova trombose mesmo com heparina terapêutica<br>
+• OU trombose de tipo incomum (TVCES, TVA, gangrena isquêmica)<br><br>
+<strong>Diagnóstico:</strong><br>
+• Anti-PF4/heparina IgG (ELISA): alta sensibilidade; OD &gt;2 com alta especificidade<br>
+• SRA (serotonina release assay): padrão-ouro de especificidade; disponível em referências<br><br>
+<strong>Tratamento (SUSPENDER toda heparina — incluindo flush de cateter):</strong><br>
+• <strong>Argatrobana</strong> (inibidor direto da trombina): 2 mcg/kg/min IV contínuo → titular TTPa 1,5–3× basal<br>
+  Hepatopático: iniciar 0,5 mcg/kg/min · Monitorar transaminases<br>
+• <strong>Fondaparinux</strong> 5–7,5–10 mg SC 1×/dia (por peso): alternativa em TIH sem trombose; NÃO usar se TFG &lt;30<br>
+• <strong>Bivalirudina</strong> 0,15–0,2 mg/kg/h: preferível em IRA grave ou CEC<br>
+• Transição para warfarina: apenas após plaquetas ≥150.000 (risco de gangrena venosa por depleção de proteína C antes de anticoagulação adequada alternativa)<br>
+• HBPM: <strong>CONTRAINDICADA</strong> (reatividade cruzada)`,
+     note:'NÃO transfundir plaquetas em TIH (risco de "clot with the platelets" — trombose paradoxal). Avaliar filtro VCI: contraindicado em TIH por risco aumentado de trombose.'},
+    {col:'#7f1d1d',nome:'Hemofilia A e B — Princípios de Tratamento',
+     body:`<strong>Classificação por nível de fator:</strong><br>
+• Grave: &lt;1% (espontânea) · Moderada: 1–5% · Leve: 5–40% (trauma/cirurgia)<br><br>
+<strong>Hemofilia A (déficit Fator VIII):</strong><br>
+• <strong>Emicizumabe SC</strong> (Hemlibra — anticorpo biespecífico FIXa/FX): profilaxia<br>
+  1,5 mg/kg/sem × 4 sem → 3 mg/kg/2 sem ou 6 mg/kg/4 sem<br>
+  Vantagem: não precisa de acesso venoso; ativa mesmo na presença de inibidor<br>
+• FVIII concentrado (tratamento de sangramento ativo):<br>
+  Dose (UI) = peso (kg) × ΔFator desejado (%) × 0,5<br>
+  Ex: paciente 70 kg, nível atual 0%, alvo 50% → 70×50×0,5 = 1750 UI<br>
+• Profilaxia primária sem emicizumabe: FVIII 25–40 UI/kg 3×/sem<br>
+• Desmopressina (DDAVP): hemofilia A leve → 0,3 mcg/kg IV ou 150–300 mcg intranasal (eleva FVIII 2–4×)<br><br>
+<strong>Hemofilia B (déficit Fator IX):</strong><br>
+• FIX concentrado: dose (UI) = peso × ΔFator × 1,0 (distribuição diferente do FVIII)<br>
+• Fitusirana SC (anti-antitrombina): profilaxia mensal; aprovada FDA 2023<br><br>
+<strong>Inibidor (anticorpo anti-FVIII ou anti-FIX):</strong><br>
+• Diagnóstico: Bethesda · &lt;5 UB: baixo título · ≥5 UB: alto título<br>
+• Tratamento de sangramento ativo com inibidor:<br>
+  - <strong>Fator VIIa recombinante (NovoSeven)</strong> 90 mcg/kg IV 2/2h até hemostasia<br>
+  - <strong>FEIBA</strong> (CCP ativado) 50–100 UI/kg 8/12h (máx 200 UI/kg/dia)<br>
+• Emicizumabe: NÃO usar FEIBA (risco de MAT/TEV); usar rFVIIa para breakthrough`,
+     note:'Hemartrose (sangramento articular): imobilização + gelo + elevar membro + reposição imediata de fator. Fisioterapia pós-hemartrose é obrigatória. Antifibrinolíticos (ácido tranexâmico) adjuvante em mucosas e pós-cirurgia.'},
+  ];
+  document.getElementById('tihList').innerHTML=CARDS.map(c=>`<div class="tev-card" style="border-color:${c.col}"><div class="tev-nome" style="color:${c.col}">${c.nome}</div><div class="tev-body">${c.body}</div>${c.note?`<div style="font-size:.7rem;color:#64748b;margin-top:6px">💡 ${c.note}</div>`:''}</div>`).join('');
+}
+
+/* ─── HEMATOLOGIA GERAL ─────────────────────────────────────────────── */
+function renderHem(){
+  if(document.getElementById('hemList').innerHTML) return;
+  const CARDS=[
+    {col:'#b91c1c',nome:'Policitemia Vera (PV) e Trombocitemia Essencial (TE)',
+     body:`<strong>Policitemia Vera — diagnóstico (WHO 2022):</strong><br>
+Maiores: Hb &gt;16,5 g/dL (♂) /&gt;16 g/dL (♀) OU hematócrito &gt;49% (♂)/&gt;48% (♀) · BOM medular (eritroide proliferação) · JAK2 V617F OU exon 12<br>
+Menor: EPO sérica baixa<br>
+PV: 2 maiores + 1 menor OU 1º grande + 1 menor<br><br>
+<strong>Tratamento PV por risco:</strong><br>
+• TODOS: Flebotomia (hematócrito alvo &lt;45%) + AAS 100 mg/dia<br>
+• Baixo risco (&lt;60 anos, sem trombose prévia): flebotomia + AAS<br>
+• Alto risco (≥60 anos OU trombose): Hidroxiureia 500 mg 2×/dia → titular (mant &lt;1500 plaq, GB &gt;4000, hematócrito &lt;45%)<br>
+• Refratário a HU: Ruxolitinibe 10 mg 2×/dia (inibidor JAK1/2) — reduz baço e sintomas<br>
+• Prurido aquagênico (clássico): anti-histamínico + hidroxiureia + interferon alfa<br><br>
+<strong>Trombocitemia Essencial:</strong><br>
+• Baixo risco (&lt;60 anos, plaq &lt;1500, sem TVP): AAS 100 mg/dia (ou abstinência terapêutica)<br>
+• Alto risco: Hidroxiureia 500 mg 2×/dia (alvo plaquetas 400–600 × 10³/µL)<br>
+• Plaquetas &gt;1500 × 10³/µL: paradoxalmente risco de sangramento (von Willebrand adquirido) — EVITAR AAS`,
+     note:'Mielopoiese extramedulares + evolução para mielofibrose: avaliar spleno e sintomas B periodicamente. Mutações CALR (TE) e MPL: pesquisar se JAK2 negativo. Gravidez com TE: HBPM + AAS durante toda gestação (interferon alfa se HU usada previamente).'},
+    {col:'#7f1d1d',nome:'CIVD — Coagulação Intravascular Disseminada',
+     body:`<strong>Condições desencadeantes:</strong> sepse grave (mais comum) · traumatismo grave · descolamento prematuro de placenta · CID obstétrica · neoplasias (LPA — LMA M3) · transfusão incompatível · queimaduras graves<br><br>
+<strong>Diagnóstico (Escore ISTH):</strong><br>
+Plaquetas: &gt;100k=0 · 50–100=1 · &lt;50=2<br>
+D-dímero / PDF: sem elev=0 · elev mod=2 · forte elev=3<br>
+TP: &lt;3s=0 · 3–6s=1 · &gt;6s=2<br>
+Fibrinogênio: &gt;1 g/L=0 · &lt;1 g/L=1<br>
+≥5 pontos = CIVD manifesta · &lt;5 = CIVD não-manifesta (repetir em 1–2h)<br><br>
+<strong>Tratamento:</strong><br>
+• Tratar a CAUSA BASE (controle da infecção, parto na CIVD obstétrica, etc.)<br>
+• Sangramento ativo + coagulopatia: Plasma fresco congelado (PFC) 15–20 mL/kg<br>
+• Plaquetas &lt;50k com sangramento: concentrado de plaquetas<br>
+• Fibrinogênio &lt;1,5 g/L: crioprecipitado (10 UI → eleva ~0,5 g/L em adulto)<br>
+• Heparina (paradoxo): indicada em CIVD tromboembólica pura (LPA, tumor sólido mucinoso, trombose arterial dominante) · CONTRAINDICADA se sangramento predomina<br><br>
+<strong>LPA (LMA-M3) — caso especial:</strong><br>
+ATRA (ácido all-trans-retinóico) 45 mg/m²/dia VO (diferenciação) → induz remissão e reverte CIVD sem quimioterapia mielosupressora · + Arsen trioxide (ATO)`,
+     note:'Monitoramento de CIVD: plaquetas, TP, TTPa, fibrinogênio e D-dímero a cada 4–6h na fase aguda. CIVD sub-aguda em câncer (Trousseau): HBPM de longa duração.'},
+    {col:'#1e3a8a',nome:'Reversão de Anticoagulantes — Guia Rápido',
+     body:`<strong>Warfarina (INR elevado + sangramento):</strong><br>
+• INR 4–10 sem sangramento: suspender warfarina · vitamina K 1–2 mg VO<br>
+• INR &gt;10 sem sangramento: vitamina K 2,5–5 mg VO<br>
+• Sangramento maior: <strong>CCP (concentrado de complexo protrombínico)</strong> 25 UI/kg (INR 2–4) / 35 UI/kg (4–6) / 50 UI/kg (&gt;6) + Vitamina K 10 mg IV lento · CCP age em 15 min vs PFC (40 min)<br>
+• PFC apenas se CCP indisponível (volume-dependente, demora mais)<br><br>
+<strong>Dabigatrana (DOAC direto IIa):</strong><br>
+• <strong>Idarucizumabe (Praxbind)</strong> 5 g IV (2 frascos × 2,5 g) — reversão completa em minutos; recaptura rara<br>
+• Emergência sem idarucizumabe: hemodiálise (dabigatrana é dialisável — única excepção entre os DOACs)<br><br>
+<strong>Fator Xa (rivaroxabana, apixabana, edoxabana):</strong><br>
+• <strong>Andexanet alfa (Andexxa)</strong>: antídoto específico · Dose por fármaco e timing:<br>
+  Rivaroxabana ou apixabana ≤8h: bolus 400 mg IV + infusão 480 mg em 2h<br>
+  Se rivarox ≥10 mg ou última dose &gt;8h: bolus 800 mg + 960 mg em 2h<br>
+• CCP 50 UI/kg: alternativa ao andexanet (menor evidência mas largamente usado)<br><br>
+<strong>HBPM (Enoxaparina):</strong><br>
+• <strong>Protamina</strong>: 1 mg neutraliza 100 UI de enoxaparina (máx 50 mg IV lento — bradicardia/hipotensão se rápido)<br>
+• Se &gt;8h após a dose: protamina neutraliza parcialmente (~60%)<br><br>
+<strong>UFH (heparina não-fracionada):</strong><br>
+• <strong>Protamina</strong>: 1 mg por 100 UI de UFH administrada na última hora (máx 50 mg)`,
+     note:'Fondaparinux: SEM antídoto disponível. Andexanet tem atividade parcial mas não aprovado. Gerenciar sangramento com suporte: PFC, plaquetas, crioprecipitado se necessário. Tempo de meia-vida dos DOACs: rivaroxabana 5–9h · apixabana 8–15h · dabigatrana 12–17h (TFG-dependente).'},
+    {col:'#065f46',nome:'Filtro de Veia Cava Inferior (Filtro VCI)',
+     body:`<strong>Indicações absolutas:</strong><br>
+• TEP recorrente OU TVP proximal extensiva COM anticoagulação contraindicada (sangramento ativo, cirurgia iminente de grande porte com alto risco hemorrágico)<br>
+• Falha da anticoagulação adequada (novo evento embólico com INR/DOAC no alvo)<br><br>
+<strong>Indicações relativas (avaliar caso a caso):</strong><br>
+• Trombo flutuante livre em veia cava (evidência fraca)<br>
+• TEP maciço já tratado + TVP extensiva bilateral (recorrência pode ser fatal)<br>
+• Trauma grave + impossibilidade temporária de anticoagulação<br><br>
+<strong>NÃO indicado em:</strong><br>
+• TIH (trombose paradoxal no filtro)<br>
+• Profilaxia primária de TEV sem TVP/TEP confirmada<br>
+• Pacientes com TVP que PODEM ser anticoagulados<br><br>
+<strong>Tipos:</strong><br>
+• Permanente: se impossibilidade de anticoagulação definitiva<br>
+• <strong>Recuperável</strong> (OptEase, Celect, ALN): retrieval em 2–4 semanas (janela terapêutica); retirar assim que anticoagulação possível<br>
+• Complicações: trombose do filtro (15–30%), TVP de veia cava inferior, migração, síndrome pós-trombótica`,
+     note:'Anticoagulação retomada + filtro recuperável: retirar o filtro assim que anticoagulação for segura (janela de retrieval varia por modelo — consultar fabricante). Filtro permanente deixado in situ aumenta TVP recorrente a longo prazo.'},
+  ];
+  document.getElementById('hemList').innerHTML=CARDS.map(c=>`<div class="tev-card" style="border-color:${c.col}"><div class="tev-nome" style="color:${c.col}">${c.nome}</div><div class="tev-body">${c.body}</div>${c.note?`<div style="font-size:.7rem;color:#64748b;margin-top:6px">💡 ${c.note}</div>`:''}</div>`).join('');
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Infecções Hospitalares — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .inh-hdr{background:linear-gradient(135deg,#1e3a5f,#0f4c81);color:#fff;border-radius:14px;padding:18px;margin-bottom:14px}
+    .inh-title{font-size:1rem;font-weight:800;margin-bottom:4px}
+    .inh-sub{font-size:.73rem;opacity:.8}
+    label{font-size:.75rem;font-weight:700;color:#1e3a5f;display:block;margin-bottom:4px}
+    select{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:10px;padding:10px 12px;font-size:.85rem;background:#fff;margin-bottom:10px}
+    select:focus{border-color:#0f4c81;outline:none}
+    .checkbox-group{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
+    .checkbox-item{display:flex;align-items:center;gap:8px;font-size:.8rem;cursor:pointer}
+    .checkbox-item input[type=checkbox]{width:18px;height:18px;accent-color:#0f4c81;cursor:pointer}
+    .btn-calc{width:100%;background:#0f4c81;color:#fff;border:none;border-radius:12px;padding:13px;font-size:.87rem;font-weight:700;cursor:pointer;margin:8px 0}
+    .tab-bar{display:flex;gap:6px;margin-bottom:14px}
+    .tab-btn{flex:1;padding:9px 4px;border-radius:10px;border:2px solid #e2e8f0;background:#fff;font-size:.72rem;font-weight:700;cursor:pointer;color:#64748b}
+    .tab-btn.active{border-color:#0f4c81;background:#eff6ff;color:#0f4c81}
+    .rec-card{border-radius:12px;border:2px solid;padding:14px;margin-bottom:10px}
+    .rec-hdr{font-size:.63rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+    .rec-nome{font-size:.88rem;font-weight:800;margin-bottom:6px}
+    .rec-badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:.65rem;font-weight:800;color:#fff;margin:2px}
+    .rec-body{font-size:.78rem;margin-top:6px;line-height:1.7}
+    .rec-note{font-size:.71rem;color:#64748b;margin-top:6px;padding-top:6px;border-top:1px solid #f1f5f9}
+    .inh-card{border-radius:10px;border-left:5px solid;padding:10px 14px;margin-bottom:8px;background:#fff}
+    .inh-nome{font-size:.83rem;font-weight:800;margin-bottom:4px}
+    .inh-body{font-size:.76rem;line-height:1.7;color:#374151}
+    .alert-box{background:#fef2f2;border:2px solid #dc2626;border-radius:10px;padding:10px;margin:8px 0;font-size:.77rem;color:#7f1d1d}
+  </style>
+</head>
+<body>
+<header class="top-bar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <span class="top-title">Infecções Hospitalares — Algoritmo</span>
+  <div class="top-right"></div>
+</header>
+<main class="container" style="padding-bottom:90px">
+  <div class="inh-hdr">
+    <div class="inh-title">🏥 Infecções Hospitalares e Resistentes</div>
+    <div class="inh-sub">MRSA · ESBL/KPC · Acinetobacter · Candidemia · VAP/IVAS · Desescalonamento</div>
+  </div>
+  <div class="tab-bar">
+    <button class="tab-btn active" id="tb0" onclick="showTab(0)">Gram-Positivos</button>
+    <button class="tab-btn" id="tb1" onclick="showTab(1)">Gram-Negativos</button>
+    <button class="tab-btn" id="tb2" onclick="showTab(2)">Fungos & VAP</button>
+  </div>
+
+  <!-- TAB 0 — GRAM-POSITIVOS -->
+  <div id="tab0">
+    <div class="card" style="padding:12px 14px">
+      <div style="font-size:.78rem;font-weight:800;color:#0f4c81;margin-bottom:8px">Sítio de infecção / patógeno</div>
+      <label>Cenário clínico</label>
+      <select id="gpos_cenario">
+        <option value="mrsa_bact">MRSA — Bacteremia / Endocardite</option>
+        <option value="mrsa_pneu">MRSA — Pneumonia (PVAP / PAC grave)</option>
+        <option value="mrsa_pvos">MRSA — Pele, partes moles (SSTI grave)</option>
+        <option value="vrsa">Enterococo resistente à vancomicina (VRE)</option>
+        <option value="vanco_ajuste">Vancomicina — Monitoramento por AUC</option>
+        <option value="clostri">Clostridioides difficile (ICD)</option>
+      </select>
+      <div class="checkbox-group">
+        <label class="checkbox-item"><input type="checkbox" id="gp_ira"> IRA / TFG &lt;30</label>
+        <label class="checkbox-item"><input type="checkbox" id="gp_grave"> Instabilidade hemodinâmica / choque</label>
+        <label class="checkbox-item"><input type="checkbox" id="gp_prolong"> Bacteremia persistente (&gt;72h s/ melhora)</label>
+      </div>
+    </div>
+    <button class="btn-calc" onclick="calcGPos()">🔬 Gerar protocolo Gram-positivo</button>
+    <div id="gposResult" style="display:none"></div>
+  </div>
+
+  <!-- TAB 1 — GRAM-NEGATIVOS -->
+  <div id="tab1" style="display:none">
+    <div class="card" style="padding:12px 14px">
+      <label>Patógeno / cenário Gram-negativo</label>
+      <select id="gneg_cenario">
+        <option value="esbl">ESBL — Enterobacteriaceae produtoras de ESBL</option>
+        <option value="kpc">KPC — Klebsiella produtora de carbapenemase</option>
+        <option value="ndm">NDM / OXA — Carbapenemases metalo-betalactamases</option>
+        <option value="acine">Acinetobacter baumannii MDR / PDR</option>
+        <option value="pseudo">Pseudomonas aeruginosa MDR</option>
+        <option value="entero">Enterobacter / SPACE organisms (AmpC inducível)</option>
+      </select>
+      <label>Sítio de infecção</label>
+      <select id="gneg_sitio">
+        <option value="bact">Bacteremia / Sepse</option>
+        <option value="itu">ITU complicada / pielonefrite</option>
+        <option value="pneu">Pneumonia hospitalar / VAP</option>
+        <option value="iab">Infecção intra-abdominal</option>
+        <option value="snc">SNC / Meningite nosocomial</option>
+      </select>
+    </div>
+    <button class="btn-calc" onclick="calcGNeg()">🔬 Gerar protocolo Gram-negativo</button>
+    <div id="gnegResult" style="display:none"></div>
+    <div id="gnegExtras" style="display:none"></div>
+  </div>
+
+  <!-- TAB 2 — FUNGOS & VAP -->
+  <div id="tab2" style="display:none">
+    <div id="fungoList"></div>
+  </div>
+</main>
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+<script src="js/db.js"></script>
+<script>
+function showTab(n){[0,1,2].forEach(i=>{document.getElementById('tab'+i).style.display=i===n?'block':'none';document.getElementById('tb'+i).classList.toggle('active',i===n);});if(n===2)renderFungo();}
+function recHTML(r){return `<div class="rec-card" style="border-color:${r.col}"><div class="rec-hdr" style="color:${r.col}">${r.hdr}</div><div class="rec-nome">${r.nome}</div><div>${(r.badges||[]).map(b=>`<span class="rec-badge" style="background:${b.c}">${b.t}</span>`).join('')}</div><div class="rec-body">${r.body}</div>${r.note?`<div class="rec-note">${r.note}</div>`:''}</div>`;}
+
+/* ─── GRAM-POSITIVOS ─────────────────────────────────────────────────── */
+function calcGPos(){
+  const cenario=document.getElementById('gpos_cenario').value;
+  const ira=document.getElementById('gp_ira').checked;
+  const grave=document.getElementById('gp_grave').checked;
+  const prolong=document.getElementById('gp_prolong').checked;
+
+  const PROTO={
+    mrsa_bact:{hdr:'MRSA — Bacteremia / Endocardite',col:'#dc2626',
+      nome:'Vancomicina IV — 1ª linha',
+      body:`<strong>Vancomicina (alvo AUC/MIC 400–600 mg·h/L — ASHP/IDSA 2020):</strong><br>
+Dose de ataque: 25–30 mg/kg IV (em bacteremia grave) · Infusão lenta ≥1h para evitar RED MAN<br>
+Manutenção: 15–20 mg/kg 8–12h (ajuste por AUC — ver aba Monitoramento por AUC)<br>
+${ira?'<strong>⚠️ IRA/TFG &lt;30: dose espaçada (15–20 mg/kg a cada 24–48h) + AUC-guided</strong><br>':''}<br>
+<strong>Duração:</strong><br>
+• Bacteremia não-complicada (ecocardiograma negativo, sem foco metastático): 14 dias<br>
+• Bacteremia complicada / endocardite de valva nativa: 4–6 semanas<br>
+• Valva prostética: 6 semanas mínimo<br><br>
+<strong>2ª linha (falha ou toxicidade da vancomicina):</strong><br>
+• <strong>Daptomicina</strong> 6–10 mg/kg IV 1×/dia: NÃO para pneumonia (inativada por surfactante)<br>
+  Bacteremia simples: 6 mg/kg · Endocardite: 8–10 mg/kg<br>
+  Monitorar CPK semanalmente (miopatia)<br>
+• <strong>Linezolida</strong> 600 mg VO/IV 12/12h: boa biodisponibilidade oral (90%) — pode fazer step-down VO<br>
+  RAM: mielossupressão &gt;2 semanas · Interação com serotoninérgicos (síndrome serotoninérgica)<br>
+  Não para bacteremia primária (sem atividade bactericida rápida no sangue)<br>
+<strong>${prolong?'⚠️ Bacteremia persistente: repetir hemocultura + TC/eco para foco; considerar adicionar rifampicina 300 mg 2×/dia (NUNCA em monoterapia) ou daptomicina em dose alta':''}
+</strong>`,
+      note:'Hemoculturas de controle: colher 2–4 dias após início do tratamento. Ecocardiograma transesofágico: obrigatório em bacteremia por S. aureus (IDSA 2011). Remover cateter central suspeito ou infectado — não manter se outro acesso possível.'},
+    mrsa_pneu:{hdr:'MRSA — Pneumonia Nosocomial / VAP',col:'#b45309',
+      nome:'Vancomicina ou Linezolida',
+      body:`<strong>Vancomicina IV:</strong> 25–30 mg/kg ataque → 15–20 mg/kg 8–12h · AUC-guided<br>
+<strong>Linezolida 600 mg 12/12h IV → VO:</strong> Metanálise recente favorece linezolida sobre vancomicina em VAP por MRSA (penetração pulmonar superior)<br>
+• IDSA/ATS 2016: linezolida preferível para SSTI e pneumonia quando MRSA documentado<br>
+• Vancomicina: preferível se bacteremia concomitante (atividade bactericida)<br><br>
+<strong>Duração:</strong> 7–8 dias (sem diferença em 7 vs 14 dias em estudos randomizados para VAP)<br>
+<strong>Desescalonamento:</strong> assim que sensibilidade confirmada e estabilidade clínica<br><br>
+<strong>Combinação (pneumonia necrosante / fulminante por PVL+):</strong><br>
+Vancomicina + Clindamicina 600 mg 8h (inibe produção de toxina PVL) OU + Linezolida`,
+      note:'MRSA-CA com leuconia e bacteremia: S. aureus com gene PVL (Panton-Valentine leucocidina) — associado a pneumonia necrosante em jovens imunocompetentes. Cultura de vigilância nasal: MRSA colonização nasal → risco 5–10× de infecção. Descolonização com mupirocina 2% nasal 5 dias + clorexidina 2% banho em pacientes de risco pré-cirúrgico.'},
+    mrsa_pvos:{hdr:'MRSA — Infecção de Pele e Partes Moles (SSTI)',col:'#7c3aed',
+      nome:'Linezolida ou SMX-TMP + Clindamicina (ambulatorial)',
+      body:`<strong>Ambulatorial (SSTI não-complicada):</strong><br>
+• SMX-TMP 800/160 mg 2×/dia + Clindamicina 300 mg 3×/dia × 7–14 dias<br>
+• Linezolida 600 mg 2×/dia × 10 dias<br>
+• Drenagem: FUNDAMENTAL em abscesso — I&D + cultura · ATB pode ser dispensável em abscesso &lt;2 cm se I&D completo em imunocompetente<br><br>
+<strong>Hospitalar (fasciíte necrosante / SSTI grave):</strong><br>
+• Vancomicina 25–30 mg/kg ataque IV + Piperacilina-tazobactam (cobertura gram-neg/anaeróbio)<br>
+• Fasciíte necrosante: cirurgia de desbridamento URGENTE (não aguardar ATB sozinho)<br>
+• Clindamicina 600–900 mg 8h IV: adicionar para inibição de toxinas (S. pyogenes Tipo I, S. aureus exotoxigênico)`,
+      note:'Linezolida oral: custo-efetiva em SSTI grave quando paciente estável para alta. Tedizolida 200 mg 1×/dia × 6 dias: nova oxazolidinona com menos RAM hemato-lógicas; aprovada FDA para ABSSSI.'},
+    vrsa:{hdr:'Enterococo Resistente à Vancomicina (VRE)',col:'#1e3a8a',
+      nome:'Linezolida ou Daptomicina',
+      body:`<strong>VRE — E. faecium VanA/VanB:</strong><br>
+<strong>Linezolida</strong> 600 mg 12/12h IV/VO: 1ª linha em infecções sem bacteremia<br>
+<strong>Daptomicina</strong> 6–10 mg/kg 1×/dia: indicado em bacteremia e endocardite por VRE<br>
+• E. faecium tem menos suscetibilidade ao daptomicina — considerar daptomicina &gt;8 mg/kg em endocardite<br><br>
+<strong>Tedizolida:</strong> alternativa em SSTI por VRE<br>
+<strong>Quinupristina/dalfopristina:</strong> E. faecium vancomicina-resistente (NÃO E. faecalis — resistência intrínseca)<br>
+<strong>Tigeciclina:</strong> ITU complicada / IIA por VRE (bacteriostático — NÃO para bacteremia)<br><br>
+<strong>Medidas de controle:</strong><br>
+• Precaução de contato (avental + luva) estrita<br>
+• Rastreio de VRE em pacientes de risco em UTI (cultura retal)<br>
+• Limpeza ambiental com hipoclorito (esporulação ambiental é ameaça em VRE)`,
+      note:'E. faecalis: raramente VRE (VanA/VanB mais comuns em E. faecium). Ampicilina suscetível em E. faecalis — verificar CIM: se suscetível, preferir ampicilina à vancomicina mesmo em não-VRE.'},
+    vanco_ajuste:{hdr:'Vancomicina — Monitoramento por AUC (ASHP/IDSA 2020)',col:'#0f4c81',
+      nome:'Protocolo AUC/MIC — Substituição da triagem por nível vale',
+      body:`<strong>Por que AUC e não vale (trough)?</strong><br>
+Trough-guided aumenta nefrotoxicidade sem garantir eficácia. AUC/MIC ≥400 mg·h/L correlaciona com eficácia clínica e reduz toxicidade.<br><br>
+<strong>Cálculo Bayesiano (método preferido):</strong><br>
+• Coletar 2 amostras (pico: 1–2h após infusão + vale: 30 min antes da próxima dose)<br>
+• Utilizar software Bayesiano (MWT, DoseMe, InsightRx) para calcular AUC individualizada<br>
+• Ajustar dose/intervalo para atingir AUC 400–600 mg·h/L<br><br>
+<strong>Método linear simples (alternativa sem software):</strong><br>
+AUC₂₄ ≈ [(Pico + Vale) / 2] × Intervalo em horas<br>
+Ex: Pico 30 µg/mL + Vale 10 µg/mL → média 20 × 12h = 240 → dobrar dose ou intervalo ajustar<br><br>
+<strong>Nefrotoxicidade por vancomicina:</strong><br>
+• Definição: elevação &gt;0,5 mg/dL ou &gt;50% de creatinina basal × 2 dias consecutivos<br>
+• Fatores de risco: AUC &gt;600, furosemide concomitante, piperacilina-tazobactam (controverso), contraste iodado, aminoglicosídeos<br>
+• Ação: reduzir dose + repetir AUC + avaliar substituição por daptomicina/linezolida`,
+      note:'MIC por E-test ou gradiente: MIC vancomicina alvo ≤1 µg/mL para S. aureus. VISA (vancomicina intermediária, MIC 4–8): tratar com daptomicina 8–10 mg/kg. VRSA (MIC ≥16): extremely raro; linezolida, telavancina, tedizolida.'},
+    clostri:{hdr:'Infecção por Clostridioides difficile (ICD)',col:'#065f46',
+      nome:'Fidaxomicina ou Vancomicina VO — Metronidazol apenas em não-grave',
+      body:`<strong>Classificação de gravidade (IDSA 2021):</strong><br>
+Não-grave: leucócitos &lt;15.000 + creatinina &lt;1,5 mg/dL<br>
+Grave: leucócitos ≥15.000 OU creatinina ≥1,5 mg/dL<br>
+Fulminante: hipotensão, megacólon tóxico, ileo, perfuração, insuficiência orgânica<br><br>
+<strong>Tratamento:</strong><br>
+• <strong>1º episódio não-grave:</strong> Fidaxomicina 200 mg 2×/dia × 10 dias (1ª linha — menor recorrência); OU Vancomicina VO 125 mg 4×/dia × 10 dias<br>
+• <strong>1º episódio grave:</strong> Vancomicina VO 125 mg 4×/dia × 10 dias (ou fidaxomicina)<br>
+• <strong>Fulminante:</strong> Vancomicina VO/SNG 500 mg 4×/dia + Metronidazol 500 mg IV 8h + Vancomicina enema retal se íleo<br>
+• Metronidazol: apenas se fidaxomicina e vancomicina indisponíveis em não-grave<br><br>
+<strong>ICD recorrente:</strong><br>
+• 1ª recorrência: Fidaxomicina pulso (200 mg 2×/dia × 5 dias → 200 mg em dias alternados × 20 dias) OU Vancomicina 125 mg com desmame gradual (125 mg 4×/dia × 10–14 dias → 125 mg 2×/dia × 7 dias → 125 mg 1×/dia × 7 dias → 125 mg em dias alternados × 8 semanas)<br>
+• 2ª recorrência ou mais: <strong>Bezlotoxumab</strong> 10 mg/kg IV dose única (anticorpo monoclonal anti-toxina B; adicionar com ATB no 2º ou 3º episódio; reduz recorrência em 40%) + Fidaxomicina ou Vancomicina<br>
+• <strong>Transplante de microbiota fecal (TMF):</strong> ≥2 recorrências — eficácia 80–90%; cápsula oral (RBX2660) aprovada FDA 2022`,
+      note:'Suspender imediatamente o antibiótico precipitante se possível. Evitar antiperistálticos (loperamida). Evitar IBP desnecessário (aumenta risco de ICD). Controle de contato estrito (Clostridioides resiste álcool — lavar as mãos com água e sabão).'},
+  };
+
+  const p=PROTO[cenario];
+  document.getElementById('gposResult').style.display='block';
+  document.getElementById('gposResult').innerHTML=recHTML({hdr:p.hdr,col:p.col,nome:p.nome,badges:[{t:'GRAM-POSITIVO',c:p.col}],body:p.body,note:p.note});
+  document.getElementById('gposResult').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+/* ─── GRAM-NEGATIVOS ─────────────────────────────────────────────────── */
+function calcGNeg(){
+  const cen=document.getElementById('gneg_cenario').value;
+  const sitio=document.getElementById('gneg_sitio').value;
+
+  const PROTO={
+    esbl:{hdr:'ESBL — Enterobacteriaceae Produtoras de ESBL',col:'#b45309',
+      nome:'Meropeném ou Ertapeném (bacteremia) · Nitrofurantoína/Fosfomicina (ITU)',
+      body:`<strong>Princípio:</strong> cefalosporinas e penicilinas com inibidor são clinicamente INFERIORES mesmo se sensível in vitro ("efeito inoculum")<br><br>
+<strong>Bacteremia / Sepse por ESBL:</strong><br>
+• <strong>Meropeném 1–2 g IV 8h</strong> (infusão estendida 4h: otimiza fAUC para MIC &gt;1) OU<br>
+• <strong>Ertapeném 1 g IV 1×/dia:</strong> adequado para infecções não-graves; NÃO para Pseudomonas<br>
+• Ceftazidima-avibactam 2,5 g IV 8h: preservar para KPC — não indicar para ESBL (desperdiça recurso)<br><br>
+<strong>ITU não-complicada por ESBL (se suscetível in vitro):</strong><br>
+• Nitrofurantoína 100 mg 2×/dia × 5 dias (cistite baixa; NÃO para pielonefrite — não atinge nível tecidual renal)<br>
+• Fosfomicina 3 g VO dose única (cistite) · IV 4–8 g 6/8h (infecção grave suscetível)<br>
+• Ertapeném: pielonefrite por ESBL<br><br>
+<strong>Desescalonamento:</strong><br>
+Se sensibilidade confirmada + estabilidade clínica após 48–72h de carbapeném:<br>
+• Cipro/levo: se CIM ≤0,5 mcg/mL (não extrapolável para CIM &gt;1)<br>
+• Temocilina (se disponível): UTI complicada<br>
+• Ceftolozana-tazobactam: não ativa para ESBL (ativa para Pseudomonas)`,
+      note:'Risco de ESBL: internação prévia, uso recente de cefalosporina/FQ, ITU recorrente, viagem a Ásia/África do Sul/América Latina, instituição de longa permanência. Colocar em PRECAUÇÃO DE CONTATO.'},
+    kpc:{hdr:'KPC — Klebsiella pneumoniae Produtora de Carbapenemase',col:'#dc2626',
+      nome:'Ceftazidima-Avibactam (CAZ-AVI) — 1ª linha',
+      body:`<strong>Mecanismo:</strong> KPC (A), OXA-48 (D) — hidrolisam todos os beta-lactâmicos incluindo carbapenêmicos; avibactam inibe KPC<br><br>
+<strong>Ceftazidima-Avibactam 2,5 g IV 8h (infusão estendida 3h):</strong><br>
+• 1ª linha para KPC e OXA-48<br>
+• Ajuste renal: TFG 31–50 → 1,25 g 8h · TFG 11–30 → 0,94 g 12h · TFG 6–10 → 0,94 g 24h · SRRT → 0,94 g 48h<br>
+• Duração: 10–14 dias bacteremia · 21 dias pneumonia<br><br>
+<strong>Meropeném + Ceftazidima-avibactam (combinação sinérgica para KPC resistente):</strong><br>
+• MBL: CAZ-AVI NÃO cobre (avibactam não inibe metalo-betalactamase).<br>
+• Para NDM/VIM: usar Cefiderocol ou Aztreonam + CAZ-AVI (aztreonam resistente a NDM; CAZ-AVI inibe o espectro de betalactamase associado)<br><br>
+<strong>Opções alternativas (menor evidência — salvar CAZ-AVI):</strong><br>
+• Colistina: polimixina E — 300 mg CBA/dia (dose baseada em colistina base de atividade) + carbapeném com MIC ≤4 ("infusão estendida sinergia")<br>
+• Polimixina B: 1,25–1,5 mg/kg/dia IV 12/12h (sem ajuste renal — nefrotóxico) + rifampicina 300 mg 12h<br>
+• Fosfomicina IV 4–8 g 6/8h: adjuvante em combinação (evitar monoterapia — rápida resistência)`,
+      note:'Salvar Ceftazidima-Avibactam: não usar para ESBL ou Pseudomonas suscetível a outras opções. Risco seleção de resistência se CAZ-AVI usado para bactérias com MIC borderline — consultar CCIH/infectologia. Controle de transmissão KPC: notificação obrigatória ao CCIH; isolamento de contato rigoroso.'},
+    ndm:{hdr:'NDM / OXA-48-like — Metalo-betalactamases',col:'#7f1d1d',
+      nome:'Cefiderocol — 1ª linha para NDM/MBL',
+      body:`<strong>NDM:</strong> New Delhi Metallo-betalactamase — hidrolisa aztreonam e carbapenêmicos; avibactam NÃO inibe<br>
+<strong>OXA-48:</strong> carbapenemase Classe D; avibactam inibe OXA-48; NÃO hidrolisa cefalosporinas avançadas<br><br>
+<strong>Cefiderocol 2 g IV 8h (infusão 3h):</strong><br>
+• Sideróforo-cefalosporina: entra pela via de captação de ferro → ignora porinas fechadas e efluxo<br>
+• Cobre NDM, KPC, OXA, Acinetobacter PDR — espectro mais amplo entre os novos beta-lactâmicos<br>
+• Estudo CREDIBLE-CR: não-inferior em mortalidade vs "best available therapy" (mas 30-day survival favoreceu comparador em Acinetobacter — interpretar com cautela)<br><br>
+<strong>Aztreonam + Ceftazidima-Avibactam (combinação):</strong><br>
+• Estratégia "hidrolixis bypass": aztreonam resiste a NDM; CAZ-AVI inibe metalo-betalactamase associada (OXA, ESBL)<br>
+• Dose: aztreonam 2 g IV 8h infusão 3h + CAZ-AVI 2,5 g IV 8h infusão 3h<br>
+• Evidência crescente — considerar se cefiderocol indisponível<br><br>
+<strong>Polimixina B/Colistina:</strong> última linha em MDR extremo — nefrotoxicidade significativa`,
+      note:'Rastreio de entrada: pacientes transferidos de outros países (especialmente Índia, Mediterrâneo, Brasil — endemia de KPC/NDM) devem ter cultura de vigilância retal. Carbapenêmicos isolados: MIC de meropeném ≥2 → pesquisar carbapenemase (CHROMagar KPC, PCR filmarray).'},
+    acine:{hdr:'Acinetobacter baumannii MDR / XDR / PDR',col:'#1e3a8a',
+      nome:'Sulbactam + Cefiderocol — nova estratégia aprovada 2023',
+      body:`<strong>Mecanismo de resistência:</strong> bomba de efluxo + OXA-23/51 + NDM coexistentes — resistência a praticamente todos os beta-lactâmicos e carbapenêmicos<br><br>
+<strong>Sulbactam-Durlobactam (Xacduro — FDA 2023):</strong><br>
+• 1 g sulbactam + 0,5 g durlobactam IV 3h 6/6h × 7–14 dias<br>
+• Sulbactam tem atividade intrínseca contra Acinetobacter (PBP2 binding); durlobactam inibe beta-lactamases class C e D<br>
+• ATTACK trial: superior a colistina em mortalidade 28d + menos nefrotoxicidade<br><br>
+<strong>Cefiderocol 2 g IV 8h (infusão 3h):</strong> alternativa · combinar se PDR<br><br>
+<strong>Polimixina B 1,25–1,5 mg/kg/dia + Rifampicina 300 mg 12h:</strong><br>
+• Ainda usada onde sulbactam-durlobactam indisponível<br>
+• Nefrotoxicidade em 30–50% (monitorar creatinina diariamente)<br>
+• Polimixina B: dose NÃO ajustar para TFG (risco de subdosagem em diálise)<br>
+• Inalatória (colistimetato de sódio nebulizado): adjuvante em VAP — 2–4 MUI 2×/dia<br><br>
+<strong>Fosfomicina IV:</strong> adjuvante (não monoterapia) 4–8 g 6–8h`,
+      note:'Controle ambiental: Acinetobacter sobrevive semanas em superfícies inertes — limpeza com hipoclorito 1%. Evitar uso liberado de carbapenêmicos e polimixinas (pressão seletiva). Colistimetato de sódio (CMS) ≠ colistina base: CMS é pró-fármaco que converte para colistina — calcular dose em colistina base de atividade (CBA) não em mg de CMS.'},
+    pseudo:{hdr:'Pseudomonas aeruginosa MDR',col:'#065f46',
+      nome:'Ceftolozana-Tazobactam ou Imipeném-Relebactam',
+      body:`<strong>Resistência em Pseudomonas:</strong> múltiplos mecanismos independentes — porina + efluxo + AmpC induzida<br><br>
+<strong>Ceftolozana-Tazobactam (Zerbaxa) 1,5 g IV 8h (infusão 1h):</strong><br>
+• Cobertura de Pseudomonas MDR incluindo cepas resistentes a pip-tazo e FQ<br>
+• NÃO cobre ESBL ou KPC<br>
+• VAP por Pseudomonas MDR: dose 3 g IV 8h (infusão 3h) — ASPECT-NP trial<br>
+• Ajuste renal: TFG 30–50 → 750 mg 8h · TFG 15–29 → 375 mg 8h<br><br>
+<strong>Imipeném-Relebactam (Recarbrio) 1,25 g IV 6h (infusão 30 min):</strong><br>
+• Cobre Pseudomonas MDR + algumas KPC (não NDM/MBL)<br>
+• Aprovado para IAI e UTI em adultos<br><br>
+<strong>Cefiderocol:</strong> Pseudomonas XDR/PDR<br><br>
+<strong>Opções em Pseudomonas suscetível ("não-MDR"):</strong><br>
+• Piperacilina-tazobactam 4,5 g 6/6h (infusão 4h) · Cefepime 2 g 8/6h · Meropeném 2 g 8h<br>
+• Ciprofloxacino 400 mg IV 8h (se suscetível) · Aztreonam 2 g 6/8h<br>
+• Aminoglicosídeos (amicacina 15–20 mg/kg 1×/dia): adjuvante em VAP grave`,
+      note:'Dupla cobertura para Pseudomonas: não recomendada de rotina (não melhora mortalidade). Considerar em choque séptico nas primeiras 24–48h até resultado de cultura. Aminoglicosídeo isolado para pneumonia: NUNCA (não atinge nível pulmonar adequado). Desescalonar assim que suscetibilidade confirmada.'},
+    entero:{hdr:'Enterobacter / SPACE — Organismos com AmpC Inducível',col:'#4c1d95',
+      nome:'Cefepime ou Carbapenêm — Cuidado com Cefalosporinas 3G',
+      body:`<strong>Organismos SPACE:</strong> Serratia, Pseudomonas, Acinetobacter, Citrobacter, Enterobacter<br>
+<strong>AmpC induzível (cromossômica):</strong> cepas inicialmente suscetíveis a cef 3G podem desenvolver resistência ao longo do tratamento (desrepressão de AmpC)<br><br>
+<strong>Regra prática:</strong><br>
+• Ceftriaxona e cefotaxima: EVITAR em bacteremia por Enterobacter/Serratia/Citrobacter mesmo se suscetível in vitro<br>
+• <strong>Cefepime 2 g IV 8h</strong>: atividade melhor contra AmpC do que cefalosporinas 3G<br>
+• <strong>Carbapenêm</strong>: se cefepime CIM ≥2 ou infecção grave<br>
+• Ertapeném 1 g 1×/dia: adequado se não-Pseudomonas e estável<br><br>
+<strong>Duração geral (infecção por gram-negativo):</strong><br>
+• Bacteremia: 7 dias (se foco removido e paciente estável — ProT-ACT trial e ERA trials)<br>
+• VAP: 7–8 dias<br>
+• IAI: 4–5 dias após controle de fonte cirúrgico<br>
+• ITU complicada / pielonefrite: 7 dias (ou 5 dias com levofloxacino)`,
+      note:'Step-down oral: após 48–72h de estabilidade clínica, se trato oral funcionante. Cipro/levo oral para gram-negativo suscetível atinge nível sérico e urinário equivalente ao IV. Evitar prolongar ATB além do necessário — seleciona resistência e aumenta C. difficile.'},
+  };
+
+  const p=PROTO[cen];
+  document.getElementById('gnegResult').style.display='block';
+  document.getElementById('gnegResult').innerHTML=recHTML({hdr:p.hdr,col:p.col,nome:p.nome,badges:[{t:'GRAM-NEGATIVO',c:p.col},{t:sitio.toUpperCase(),c:'#374151'}],body:p.body,note:p.note});
+  renderDesescalonamento();
+  document.getElementById('gnegResult').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+function renderDesescalonamento(){
+  document.getElementById('gnegExtras').style.display='block';
+  document.getElementById('gnegExtras').innerHTML=recHTML({
+    hdr:'DESESCALONAMENTO ANTIMICROBIANO',col:'#059669',
+    nome:'Stewardship — Princípios de Otimização',
+    badges:[{t:'STEWARDSHIP',c:'#059669'}],
+    body:`<strong>Quando desescalonar:</strong><br>
+• 48–72h após início do ATB, com resultado de cultura e susceptibilidade<br>
+• Critérios: estabilidade hemodinâmica + tendência de melhora clínica + sem nova infecção<br><br>
+<strong>Critérios de estabilidade clínica (Wacker et al):</strong><br>
+• Temperatura ≤37,8°C · FC ≤100 · FR ≤24 · SpO₂ ≥90% sem suporte adicional · Paciente consegue ingerir oral · Status mental normal (basal)<br><br>
+<strong>Estratégias:</strong><br>
+• Reduzir espectro ao agente mais estreito com atividade comprovada<br>
+• Step-down IV → oral quando critérios de estabilidade atingidos (bioeq. cipro/levo oral ~100%)<br>
+• Reduzir duração: usar escore clínico (PCT guiada — PCT-guided reduz 20–30% do tempo de ATB em PAC e sepse)<br>
+• Procalcitonina: se PCT &lt;0,1 µg/L (viral provável) ou queda &gt;80% do pico → desescalonar/suspender<br><br>
+<strong>ATB não indicados para "cobertura":</strong><br>
+Febre neutropênica GI sem bacteremia: antifúngico empírico apenas se &gt;4–7 dias de febre persistente<br>
+SIRS não-infecciosa: não manter ATB sem foco documentado após 72h de culturas negativas`,
+    note:'Antimicrobial stewardship programs (ASP): reduzem 30% do consumo de ATB sem piora de desfechos. C. difficile, resistência e custos hospitalares são os principais alvos. Revisão diária de ATB em UTI recomendada.'
+  });
+}
+
+/* ─── FUNGOS & VAP ─────────────────────────────────────────────────── */
+function renderFungo(){
+  if(document.getElementById('fungoList').innerHTML) return;
+  const CARDS=[
+    {col:'#b45309',nome:'Candidemia e Candida Invasiva',
+     body:`<strong>Fatores de risco para candidemia:</strong> CVC de longa permanência · NPT prolongada · cirurgia abdominal de grande porte · neutropenia · antibioticoterapia prolongada de amplo espectro · colonização multissítio<br><br>
+<strong>Tratamento (IDSA 2016 / ESCMID 2020):</strong><br>
+<strong>1ª linha — Equinocandina:</strong><br>
+• <strong>Caspofungina</strong> 70 mg D1 → 50 mg 1×/dia IV (70 mg se peso &gt;80 kg manutenção)<br>
+• <strong>Micafungina</strong> 100 mg 1×/dia IV · 150 mg se Candida parapsilosis suspeita (menos suscetível)<br>
+• <strong>Anidulafungina</b> 200 mg D1 → 100 mg 1×/dia<br>
+• Vantagem: sem ajuste renal · sem interações significativas · fungicida<br><br>
+<strong>Step-down oral:</strong><br>
+• Fluconazol 400–800 mg/dia: após 5–7 dias de equinocandina, estabilidade clínica, hemocultura negativa E espécie suscetível (C. albicans, C. tropicalis)<br>
+• C. glabrata: equinocandina completa (fluconazol CIM geralmente elevado)<br>
+• C. krusei: voriconazol ou equinocandina (resistência intrínseca ao fluconazol)<br>
+• C. auris: equinocandina (resistência frequente a azólicos e anfotericina — notificação obrigatória)<br><br>
+<strong>Remover CVC:</strong> FORTEMENTE RECOMENDADO em candidemia (candidemia sem remoção de CVC → 2× mortalidade)<br>
+<strong>Ecocardiograma:</strong> em toda candidemia (endocardite em 5–10%)<br>
+<strong>Duração:</strong> 14 dias após última hemocultura negativa e melhora dos sinais e sintomas<br><br>
+<strong>Profilaxia primária (alto risco):</strong><br>
+• Fluconazol 400 mg/dia em neutropenia grave prolongada &gt;7 dias<br>
+• Equinocandina: profilaxia em TMO alogênico de alto risco`,
+     note:'Anfotericina B lipossomal 3–5 mg/kg/dia: reservar para Candida MDR, C. auris, candidemia após falha de equinocandina, ou endoftalmite (melhor penetração ocular que equinocandinas). Nefrotoxicidade: hidratar com SF antes e após infusão. NUNCA anfotericina B desoxicolato (convencional) em UTI — toxicidade superior sem benefício sobre lipossômica.'},
+    {col:'#1e3a8a',nome:'Pneumonia Associada à Ventilação (VAP) / IVAS Hospitalar',
+     body:`<strong>Diagnóstico de VAP:</strong><br>
+• Paciente em VM ≥48h + novo infiltrado + 2 de: febre/hipotermia · leucocitose/leucopenia · secreção purulenta · piora trocas gasosas<br>
+• CPIS ≥6 (Clinical Pulmonary Infection Score): pontuação de infiltrado, secreção, Rx, leucócitos, PaO₂/FiO₂, cultura<br>
+• Coleta de cultura ANTES de iniciar ATB: mini-BAL / lavado broncoalveolar (BAL) OU aspirado traqueal qualitativo<br><br>
+<strong>Início imediato (não aguardar cultura se instável):</strong><br>
+<strong>VAP precoce (&lt;5 dias, sem FDRM):</strong><br>
+• Ceftriaxona 2 g IV 1×/dia OU Moxifloxacino 400 mg 1×/dia OU Ampicilina-sulbactam<br>
+<strong>VAP tardia (≥5 dias) ou FDRM presentes:</strong><br>
+• Cobertura Pseudomonas: Cefepime 2 g 8h (inf 3h) OU Pip-Tazo 4,5 g 6h OU Meropeném 1–2 g 8h<br>
++ MRSA suspeito: Vancomicina ou Linezolida<br>
+• PCR/BioFire Pneumonia Panel: disponível em referências — reduz 24–48h de espera de cultura<br><br>
+<strong>FDRM para VAP:</strong> internação ≥5 dias · ATB prévio · hemodiálise · imunocomprometido · colonização prévia documentada<br><br>
+<strong>Duração VAP:</strong> 7 dias (IDSA 2016) — PCT guiada pode reduzir<br>
+<strong>Desescalonar em 48–72h</strong> com resultado de cultura<br><br>
+<strong>IVAS (Infecção Relacionada ao Acesso Vascular):</strong><br>
+• IACS (infecção de corrente sanguínea associada a CVC): remover CVC + vancomicina IV + colher hemo periférico e de cateter simultâneos<br>
+• DTP (differential time to positivity) &gt;2h: sugestivo de infecção do cateter<br>
+• Fechamento de cateter com lock antibiótico: considerar em cateter não-removível (onco, HD)`,
+     note:'Profilaxia de VAP (bundle de UTI): cabeceira 30–45° · higiene oral com clorexidina 0,12% 4×/dia · pressão do cuff 25–30 cmH₂O · extubação precoce e avaliação diária de readiness · evitar sedação excessiva (SAT/SBT protocol). IACS prevenção: protocolo de inserção estéril + avaliação diária de necessidade de CVC.'},
+    {col:'#065f46',nome:'Aspergilose Invasiva e Fungos Endêmicos',
+     body:`<strong>Aspergilose Pulmonar Invasiva (API):</strong><br>
+Fatores de risco: neutropenia prolongada &gt;10 dias · transplante de células-tronco hematopoéticas · corticoterapia prolongada · biológicos (anti-IL-6, anti-TNF) · COVID-19 grave (CAPA)<br><br>
+<strong>Diagnóstico:</strong><br>
+• TC tórax: nódulos com "halo sign" (hemorragia perilesional) → muito sugestivo mas não patognomônico<br>
+• Galactomanana sérica: GM ≥1,0 (alto risco) ou GM BAL ≥1,0 — sensibilidade ~71% em neutropênicos<br>
+• PCR Aspergillus (BAL ou soro): aumenta sensibilidade<br>
+• EORTC/MSGERC critérios (2019): definida / provável / possível<br><br>
+<strong>Tratamento:</strong><br>
+• <strong>Voriconazol 6 mg/kg IV 12h D1 → 4 mg/kg 12h</strong> (1ª linha — IDSA 2016)<br>
+  Monitoramento de nível: trough 1–5 µg/mL · Interações CYP2C19 (metabolizador lento) · TGP · fotossensibilidade<br>
+• <strong>Isavuconazol 200 mg 3×/dia × 2 dias → 200 mg 1×/dia</strong>: alternativa com menos interações e menor hepatotoxicidade (SECURE trial: não-inferior a voriconazol)<br>
+• <strong>Anfotericina B lipossomal 3 mg/kg/dia:</strong> alternativa em refratários ou intolerantes<br>
+• <strong>Caspofungina:</strong> terapia de resgate · NÃO 1ª linha<br>
+• Duração: ≥6–12 semanas ou até resolução da imunossupressão<br><br>
+<strong>Mucormicose (Mucor, Rhizopus):</strong><br>
+Rino-orbito-cerebral (DM descompensado) · Pulmonar (neutropenia)<br>
+• Anfotericina B lipossomal 5–10 mg/kg/dia + Desbridamento cirúrgico IMEDIATO<br>
+• Step-down: isavuconazol ou posaconazol LP 300 mg 1×/dia após estabilização<br>
+• Azoles NÃO cobrem mucormicose: voriconazol e fluconazol INEFICAZES`,
+     note:'Profilaxia em transplante TMO: posaconazol LP 300 mg/dia (1ª linha em neutropenia prolongada e GvHD grave). Voriconazol: menos eficaz contra Mucor — NÃO usar como profilaxia primária em receptores de TMO. CAPA (COVID-19-Associated Pulmonary Aspergillosis): alta mortalidade; suspeitar em pacientes críticos com COVID-19 que deterioram apesar de melhora viral.'},
+  ];
+  document.getElementById('fungoList').innerHTML=CARDS.map(c=>`<div class="inh-card" style="border-color:${c.col}"><div class="inh-nome" style="color:${c.col}">${c.nome}</div><div class="inh-body">${c.body}</div>${c.note?`<div style="font-size:.7rem;color:#64748b;margin-top:6px">💡 ${c.note}</div>`:''}</div>`).join('');
+}
+</script>
+</body>
+</html>
