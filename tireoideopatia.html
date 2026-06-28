@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Tireoideopatia — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .ti-hdr{background:linear-gradient(135deg,#4c1d95,#0f766e);color:#fff;border-radius:14px;padding:18px;margin-bottom:14px}
+    .ti-title{font-size:1rem;font-weight:800;margin-bottom:4px}
+    .ti-sub{font-size:.73rem;opacity:.8}
+    label{font-size:.75rem;font-weight:700;color:#1e3a5f;display:block;margin-bottom:4px}
+    input[type=number]{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:10px;padding:10px 12px;font-size:.85rem;background:#fff;outline:none;margin-bottom:10px}
+    input:focus{border-color:#4c1d95}
+    select{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:10px;padding:10px 12px;font-size:.85rem;background:#fff;margin-bottom:10px}
+    .input-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .checkbox-group{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
+    .checkbox-item{display:flex;align-items:center;gap:8px;font-size:.8rem;cursor:pointer}
+    .checkbox-item input[type=checkbox]{width:18px;height:18px;accent-color:#4c1d95;cursor:pointer}
+    .btn-calc{width:100%;background:#4c1d95;color:#fff;border:none;border-radius:12px;padding:13px;font-size:.87rem;font-weight:700;cursor:pointer;margin:8px 0}
+    .btn-auto{background:#0f766e;color:#fff;border:none;border-radius:10px;padding:10px 16px;font-size:.8rem;font-weight:700;cursor:pointer;margin-bottom:10px}
+    .tab-bar{display:flex;gap:6px;margin-bottom:14px}
+    .tab-btn{flex:1;padding:10px;border-radius:10px;border:2px solid #e2e8f0;background:#fff;font-size:.78rem;font-weight:700;cursor:pointer;color:#64748b}
+    .tab-btn.active{border-color:#4c1d95;background:#f5f3ff;color:#4c1d95}
+    .dose-card{border-radius:14px;border:4px solid;padding:16px;margin-bottom:10px;text-align:center}
+    .dose-num{font-size:2.2rem;font-weight:900;line-height:1}
+    .dose-lbl{font-size:.85rem;font-weight:800;margin-top:4px}
+    .dose-sub{font-size:.73rem;margin-top:8px;opacity:.85}
+    .rec-card{border-radius:12px;border:2px solid;padding:14px;margin-bottom:10px}
+    .rec-hdr{font-size:.64rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+    .rec-nome{font-size:.88rem;font-weight:800;margin-bottom:6px}
+    .rec-badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:.65rem;font-weight:800;color:#fff;margin:2px}
+    .rec-drugs{font-size:.78rem;margin-top:6px;line-height:1.7}
+    .rec-note{font-size:.71rem;color:#64748b;margin-top:6px;padding-top:6px;border-top:1px solid #f1f5f9}
+    .mon-row{padding:8px 0;border-bottom:1px solid #f1f5f9;font-size:.77rem}
+    .mon-row:last-child{border-bottom:none}
+    .mon-lbl{font-weight:800;color:#1e3a5f;margin-bottom:2px}
+    .mon-when{font-size:.7rem;color:#64748b;margin-bottom:2px}
+    .mon-meta{font-size:.72rem;color:#4c1d95;font-weight:700}
+    .inter-row{padding:6px 0;border-bottom:1px dashed #e2e8f0;font-size:.75rem}
+    .inter-row:last-child{border-bottom:none}
+  </style>
+</head>
+<body>
+<header class="top-bar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <span class="top-title">Tireoideopatias — Algoritmo</span>
+  <div class="top-right"></div>
+</header>
+<main class="container" style="padding-bottom:90px">
+
+  <div class="ti-hdr">
+    <div class="ti-title">🦋 Tireoideopatias — Manejo Farmacológico</div>
+    <div class="ti-sub">Hipotireoidismo · Hipertireoidismo · Monitoramento TSH/T4L · Interações da Levotiroxina</div>
+  </div>
+
+  <div class="tab-bar">
+    <button class="tab-btn active" id="tb0" onclick="showTab(0)">Hipotireoidismo</button>
+    <button class="tab-btn" id="tb1" onclick="showTab(1)">Hipertireoidismo</button>
+    <button class="tab-btn" id="tb2" onclick="showTab(2)">Monitoramento</button>
+  </div>
+
+  <!-- TAB 0 – HIPOTIREOIDISMO -->
+  <div id="tab0">
+    <button class="btn-auto" onclick="autoFill()">⚡ Auto-preencher do paciente ativo</button>
+    <div class="card" style="padding:12px 14px">
+      <label>Tipo de hipotireoidismo</label>
+      <select id="h_tipo">
+        <option value="primario">Primário (tireoidite de Hashimoto, pós-cirurgia, pós-radioiodo)</option>
+        <option value="subclínico">Subclínico (TSH elevado + T4L normal + assintomático)</option>
+        <option value="central">Central / Secundário (hipófise ou hipotálamo)</option>
+        <option value="gestacao">Hipotireoidismo na Gestação</option>
+      </select>
+      <label>Perfil clínico</label>
+      <select id="h_perfil">
+        <option value="jovem">Adulto jovem saudável (&lt;60 anos, sem comorbidade)</option>
+        <option value="idoso">Idoso (&gt;60 anos ou fragilidade)</option>
+        <option value="ic">IC / DAC — Cardiopata</option>
+        <option value="drc">DRC (TFG &lt;30)</option>
+        <option value="pos_tireoid">Pós-tireoidectomia total</option>
+      </select>
+      <div class="input-row">
+        <div><label>Peso (kg)</label><input type="number" id="h_peso" placeholder="ex.: 70" min="20" max="200"></div>
+        <div><label>TSH atual (mUI/L)</label><input type="number" id="h_tsh" placeholder="ex.: 8.4" step="0.1" min="0"></div>
+      </div>
+      <div class="input-row">
+        <div><label>Dose atual de Levotiroxina (mcg/dia)</label><input type="number" id="h_dose" placeholder="0 = sem tratamento" min="0" step="12.5"></div>
+        <div><label>T4 Livre (ng/dL)</label><input type="number" id="h_t4l" placeholder="ex.: 0.7" step="0.01" min="0"></div>
+      </div>
+    </div>
+    <button class="btn-calc" onclick="calcHipo()">💊 Calcular dose de levotiroxina</button>
+    <div id="hipoResult" style="display:none"></div>
+  </div>
+
+  <!-- TAB 1 – HIPERTIREOIDISMO -->
+  <div id="tab1" style="display:none">
+    <div class="card" style="padding:12px 14px">
+      <label>Etiologia do hipertireoidismo</label>
+      <select id="ht_etiol">
+        <option value="graves">Doença de Graves (bócio difuso, TRAb +)</option>
+        <option value="nodular">Bócio Nodular Tóxico / Adenoma Tóxico</option>
+        <option value="tireoidite">Tireoidite Subaguda / Silenciosa / Hashitoxicose</option>
+        <option value="facticia">Tireotoxicose Factícia (excesso de levotiroxina)</option>
+      </select>
+      <label>Gravidade clínica</label>
+      <select id="ht_grav">
+        <option value="lm">Leve a moderada (TSH indetectável, T4L 1,5–3× LSN, sintomático mas estável)</option>
+        <option value="grave">Grave (T4L &gt;3× LSN, taquicardia &gt;120, IC, FA)</option>
+        <option value="crise">Crise tireoidiana / Tempestade tireoidiana (Burch-Wartofsky &gt;45)</option>
+      </select>
+      <label>Perfil especial</label>
+      <div class="checkbox-group">
+        <label class="checkbox-item"><input type="checkbox" id="ht_gest"> Gestação (1T, 2T, 3T)</label>
+        <label class="checkbox-item"><input type="checkbox" id="ht_oftalmo"> Oftalmopatia de Graves ativa</label>
+        <label class="checkbox-item"><input type="checkbox" id="ht_fa"> Fibrilação atrial por tireotoxicose</label>
+        <label class="checkbox-item"><input type="checkbox" id="ht_alergia"> Alergia / intolerância a tionamidas</label>
+      </div>
+    </div>
+    <button class="btn-calc" onclick="calcHiper()">🔥 Gerar algoritmo de tratamento</button>
+    <div id="hiperResult" style="display:none"></div>
+  </div>
+
+  <!-- TAB 2 – MONITORAMENTO -->
+  <div id="tab2" style="display:none">
+    <div class="card" style="padding:10px 14px;margin-bottom:10px">
+      <div style="font-size:.78rem;font-weight:800;color:#4c1d95;margin-bottom:10px">📋 Monitoramento Laboratorial</div>
+      <div id="monList"></div>
+    </div>
+    <div class="card" style="padding:10px 14px">
+      <div style="font-size:.78rem;font-weight:800;color:#b45309;margin-bottom:10px">⚠️ Interações com Levotiroxina (reduzem absorção)</div>
+      <div id="interList"></div>
+    </div>
+  </div>
+
+</main>
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+<script src="js/db.js"></script>
+<script>
+const pid=localStorage.getItem('vd_active');
+
+function showTab(n){
+  [0,1,2].forEach(i=>{document.getElementById('tab'+i).style.display=i===n?'block':'none';document.getElementById('tb'+i).classList.toggle('active',i===n);});
+  if(n===2){renderMon();renderInter();}
+}
+
+async function autoFill(){
+  if(!pid){alert('Nenhum paciente ativo.');return;}
+  const pac=await dbGet('pacientes',parseInt(pid));
+  if(!pac) return;
+  if(pac.pesoPac) document.getElementById('h_peso').value=pac.pesoPac;
+  if(pac.idadePac&&parseInt(pac.idadePac)>=60) document.getElementById('h_perfil').value='idoso';
+}
+
+/* ── HIPOTIREOIDISMO ────────────────────────────────────────────────── */
+function calcHipo(){
+  const tipo   = document.getElementById('h_tipo').value;
+  const perfil = document.getElementById('h_perfil').value;
+  const peso   = parseFloat(document.getElementById('h_peso').value)||0;
+  const tsh    = parseFloat(document.getElementById('h_tsh').value)||0;
+  const dose   = parseFloat(document.getElementById('h_dose').value)||0;
+  const t4l    = parseFloat(document.getElementById('h_t4l').value)||0;
+
+  const recs=[];
+  let doseAlvo=0, doseInicial=0, cor='#4c1d95', meta='TSH 0,5–2,5 mUI/L';
+
+  // Hipotireoidismo subclínico
+  if(tipo==='subclínico'){
+    let tratar=false, razao='';
+    if(tsh>10){tratar=true;razao='TSH >10: tratar independente de sintomas';}
+    else if(tsh>=4.5&&tsh<=10){razao='TSH 4,5–10: tratar se sintomático, gestante, ou >50 anos com sintomas';}
+    recs.push({hdr:'Hipotireoidismo Subclínico',col:tratar?'#d97706':'#16a34a',
+      nome:tratar?'Tratar com Levotiroxina':'Avaliação individualizada',
+      badges:[{t:`TSH ${tsh?tsh:'?'} mUI/L`,c:tratar?'#d97706':'#16a34a'}],
+      drugs:tratar?`<strong>Iniciar Levotiroxina:</strong><br>${perfil==='idoso'?'Idoso: 12,5–25 mcg/dia; aumentar 12,5 mcg a cada 4–6 semanas':'Adulto jovem: 25–50 mcg/dia; aumentar conforme TSH a cada 6–8 semanas'}<br>Meta: TSH 0,5–2,5 mUI/L (conforme perfil)`
+        :`<strong>TSH 4,5–10 e assintomático:</strong><br>Opção 1: Observar — repetir TSH em 3–6 meses<br>Opção 2: Tratar se: sintomas atribuíveis, gestação, &gt;50 anos, TRAb +, dislipidemia responsiva<br>Opção 3: Não tratar em idoso &gt;70 anos com TSH &lt;10 e sem sintomas (TSH sobe com idade)`,
+      note:'Em gestação: TSH >2,5 mUI/L no 1T = hipotireoidismo gestacional → tratar imediatamente.'});
+    if(!tratar){document.getElementById('hipoResult').style.display='block';document.getElementById('hipoResult').innerHTML=recs.map(recHTML).join('');return;}
+  }
+
+  // Dose inicial e alvo
+  if(peso){
+    if(perfil==='jovem') doseAlvo=Math.round(peso*1.6/12.5)*12.5;
+    else if(perfil==='idoso') { doseInicial=25; doseAlvo=Math.round(peso*1.0/12.5)*12.5; meta='TSH 1–4 mUI/L (idoso)'; }
+    else if(perfil==='ic') { doseInicial=12.5; doseAlvo=Math.round(peso*1.2/12.5)*12.5; meta='TSH 1–3 mUI/L (cardiopata)'; }
+    else if(perfil==='pos_tireoid') { doseAlvo=Math.round(peso*2.0/12.5)*12.5; meta='TSH supresso &lt;0,1 mUI/L se tumor diferenciado alto risco'; }
+    else if(tipo==='gestacao') { doseAlvo=Math.round(peso*2.0/12.5)*12.5; meta='TSH &lt;2,5 mUI/L (1T) · &lt;3,0 (2T/3T)'; }
+    else doseAlvo=Math.round(peso*1.6/12.5)*12.5;
+    if(!doseInicial) doseInicial=perfil==='jovem'?50:25;
+  }
+
+  // Resultado: dose inicial ou ajuste
+  if(!dose && doseAlvo){
+    const dc=document.getElementById('hipoResult');
+    dc.style.display='block';
+    dc.innerHTML=`<div class="dose-card" style="border-color:${cor};background:${cor}15">
+      <div class="dose-num" style="color:${cor}">${doseInicial} mcg/dia</div>
+      <div class="dose-lbl">Dose inicial recomendada</div>
+      <div class="dose-sub">Alvo estimado: ${doseAlvo} mcg/dia · ${meta}</div>
+      <div class="dose-sub" style="margin-top:4px">⚠️ Rever TSH em 6–8 semanas e titular +12,5–25 mcg/dia até atingir meta</div>
+    </div>`+recs.map(recHTML).join('');
+    addLevoRecs(recs,perfil,tipo,peso,tsh,0,t4l,meta,doseAlvo);
+    dc.innerHTML=`<div class="dose-card" style="border-color:${cor};background:${cor}15">
+      <div class="dose-num" style="color:${cor}">${doseInicial} mcg/dia</div>
+      <div class="dose-lbl">Dose inicial recomendada</div>
+      <div class="dose-sub">Alvo estimado: ${doseAlvo} mcg/dia · ${meta}</div>
+      <div class="dose-sub" style="margin-top:4px">⚠️ Rever TSH em 6–8 semanas; titular +12,5–25 mcg a cada revisão</div>
+    </div>`+recs.map(recHTML).join('');
+    return;
+  }
+
+  // Ajuste com dose atual + TSH atual
+  if(dose && tsh){
+    let ajuste=0, ajusteText='', ajusteCor='#16a34a';
+    const metaMin=tipo==='gestacao'?0.1:perfil==='pos_tireoid'?0.01:perfil==='idoso'?1.0:0.5;
+    const metaMax=tipo==='gestacao'?2.5:perfil==='pos_tireoid'?0.1:perfil==='idoso'?4.0:2.5;
+    if(tsh>metaMax){ajuste=25;ajusteText=`Aumentar ${ajuste} mcg/dia`;ajusteCor='#d97706';}
+    else if(tsh<metaMin){ajuste=-12.5;ajusteText=`Reduzir 12,5 mcg/dia`;ajusteCor='#dc2626';}
+    else{ajusteText='Dose atual adequada — manter';ajusteCor='#16a34a';}
+    document.getElementById('hipoResult').style.display='block';
+    document.getElementById('hipoResult').innerHTML=`<div class="dose-card" style="border-color:${ajusteCor};background:${ajusteCor}15">
+      <div class="dose-num" style="color:${ajusteCor}">${ajuste>=0?(dose+ajuste):dose+ajuste} mcg/dia</div>
+      <div class="dose-lbl">${ajusteText}</div>
+      <div class="dose-sub">Dose atual: ${dose} mcg/dia · TSH atual: ${tsh} mUI/L · Meta: ${meta}</div>
+    </div>`+recs.map(recHTML).join('');
+    addLevoRecs(recs,perfil,tipo,peso,tsh,dose,t4l,meta,doseAlvo);
+    document.getElementById('hipoResult').innerHTML=`<div class="dose-card" style="border-color:${ajusteCor};background:${ajusteCor}15">
+      <div class="dose-num" style="color:${ajusteCor}">${dose+ajuste} mcg/dia</div>
+      <div class="dose-lbl">${ajusteText}</div>
+      <div class="dose-sub">Dose atual: ${dose} mcg · TSH: ${tsh} mUI/L · Meta: ${meta}</div>
+    </div>`+recs.map(recHTML).join('');
+    return;
+  }
+
+  addLevoRecs(recs,perfil,tipo,peso,tsh,dose,t4l,meta,doseAlvo);
+  document.getElementById('hipoResult').style.display='block';
+  document.getElementById('hipoResult').innerHTML=recs.map(recHTML).join('');
+}
+
+function addLevoRecs(recs,perfil,tipo,peso,tsh,dose,t4l,meta,doseAlvo){
+  if(perfil==='idoso') recs.push({hdr:'Idoso — início lento',col:'#d97706',nome:'Iniciar devagar para evitar eventos cardíacos',badges:[{t:'Idoso / Cardiopata',c:'#d97706'}],
+    drugs:'Iniciar 12,5–25 mcg/dia · Aumentar 12,5–25 mcg a cada 4–8 semanas · Alvo TSH 1–4 mUI/L<br>Em cardiopatas: iniciar 12,5 mcg/dia; aumentar somente após estabilidade CV por 4 semanas',
+    note:'Início rápido em idoso ou cardiopata pode precipitar arritmia, angina ou IAM.'});
+  if(perfil==='ic') recs.push({hdr:'Cardiopata — cautela máxima',col:'#dc2626',nome:'Iniciar 12,5 mcg/dia; titular muito lentamente',badges:[{t:'DAC / IC',c:'#dc2626'}],
+    drugs:'12,5 mcg/dia · Aumentar 12,5 mcg a cada 6–8 semanas · Sempre com ECG de controle antes do ajuste<br>Se angina piorar: manter dose atual e tratar angina',
+    note:'Hipotireoidismo grave pré-existente: pode revelar DAC ao restaurar metabolismo. Coordenar com cardiologista.'});
+  if(tipo==='gestacao') recs.push({hdr:'Gestação — aumentar dose imediatamente',col:'#9d174d',nome:'Aumentar Levotiroxina em 25–30% ao confirmar gravidez',badges:[{t:'Gestação',c:'#9d174d'}],
+    drugs:`Ao confirmar gravidez: aumentar dose habitual em 25–30% imediatamente (ex.: 100 mcg → 125 mcg)<br>Prática alternativa: tomar dose extra 2 dias/semana<br>Meta: TSH &lt;2,5 mUI/L (1T); &lt;3,0 mUI/L (2T/3T)`,
+    note:'Hipotireoidismo gestacional não tratado: maior risco de abortamento, RCIU, prétermos, déficit neurológico fetal. Checar TSH a cada 4 semanas no 1T e 2T.'});
+  recs.push({hdr:'Levotiroxina — como tomar corretamente',col:'#4c1d95',nome:'Administração: em jejum 30–60 min antes do café da manhã',badges:[{t:'Importante: absorção',c:'#4c1d95'}],
+    drugs:'Tomar em jejum (30–60 min antes de comer) ou ao deitar (2–3h após última refeição — bioequivalente ao jejum matinal)<br>Comprimido: não partir ao meio (desuniforme); usar dose inteira ou comprimidos de doses menores combinados<br>Apresentação: 25 / 50 / 75 / 88 / 100 / 112 / 125 / 150 / 175 / 200 mcg',
+    note:'Ver interações na aba Monitoramento (cálcio, ferro, café, IBP — separar ≥4h).'});
+}
+
+function recHTML(r){return `<div class="rec-card" style="border-color:${r.col}"><div class="rec-hdr" style="color:${r.col}">${r.hdr}</div><div class="rec-nome">${r.nome}</div><div>${r.badges.map(b=>`<span class="rec-badge" style="background:${b.c}">${b.t}</span>`).join('')}</div><div class="rec-drugs">${r.drugs}</div><div class="rec-note">${r.note}</div></div>`;}
+
+/* ── HIPERTIREOIDISMO ───────────────────────────────────────────────── */
+function calcHiper(){
+  const etiol  = document.getElementById('ht_etiol').value;
+  const grav   = document.getElementById('ht_grav').value;
+  const gest   = document.getElementById('ht_gest').checked;
+  const oftalmo= document.getElementById('ht_oftalmo').checked;
+  const fa     = document.getElementById('ht_fa').checked;
+  const alergia= document.getElementById('ht_alergia').checked;
+  const recs=[];
+
+  // Crise tireoidiana
+  if(grav==='crise'){
+    recs.push({hdr:'🚨 CRISE TIREOIDIANA — URGÊNCIA MÉDICA',col:'#7f1d1d',nome:'Tempestade Tireoidiana — Tratamento Emergencial (UTI)',badges:[{t:'Internação / UTI',c:'#7f1d1d'}],
+      drugs:`<strong>Passo 1 — Bloqueio de síntese:</strong><br>PTU 500–1000 mg VO/SNG imediatamente → 250 mg 4/4h<br>(PTU preferido na crise: bloqueia também conversão T4→T3)<br>
+<strong>Passo 2 — Bloqueio de liberação (após 1h do PTU):</strong><br>Solução de Lugol 10 gotas 6/6h VO ou Iodeto de potássio (SSKI) 5 gotas 6/6h<br>
+<strong>Passo 3 — Controle adrenérgico:</strong><br>Propranolol 60–80 mg VO 4/4h ou 0,5–1 mg IV lento (se não puder VO); Atenolol se broncoespasmo<br>
+<strong>Passo 4 — Corticoide (bloqueio conversão T4→T3):</strong><br>Hidrocortisona 300 mg IV dose única → 100 mg 8/8h<br>
+<strong>Passo 5 — Suporte:</strong><br>Controle da febre (paracetamol; NÃO AAS — libera T4 da TBG) · Hidratação · Tratar fator desencadeante`,
+      note:'Burch-Wartofsky >45 = crise confirmada. Fatores desencadeantes: cirurgia, infecção, contraste iodado, parto, suspensão de tionamida. Mortalidade 10–30% sem tratamento adequado.'});
+    document.getElementById('hiperResult').style.display='block';
+    document.getElementById('hiperResult').innerHTML=recs.map(recHTML).join('');
+    return;
+  }
+
+  if(etiol==='tireoidite'){
+    recs.push({hdr:'Tireoidite — Geralmente autolimitada',col:'#d97706',nome:'Tratamento sintomático; não usar tionamidas',badges:[{t:'Tireoidite subaguda',c:'#d97706'}],
+      drugs:`<strong>Propranolol</strong> 20–40 mg 3–4×/dia para sintomas adrenérgicos (tremor, palpitações, taquicardia)<br>Tireoidite dolorosa (subaguda): Ibuprofeno 400–600 mg 3×/dia; se grave: prednisolona 30–40 mg/dia × 2–4 semanas<br>Tireoidite indolor/silenciosa: apenas sintomático com beta-bloqueador<br>Duração da fase tireotóxica: 2–8 semanas → evolui para eutireoidismo → hipotireoidismo transitório → resolução`,
+      note:'⚠️ NÃO usar tionamidas em tireoidite — a tireotoxicose é por liberação de T4 pré-formado, não por hipersecreção. Beta-bloqueador é o único tratamento farmacológico útil na fase tireotóxica.'});
+  }
+
+  if(etiol==='facticia'){
+    recs.push({hdr:'Tireotoxicose Factícia',col:'#64748b',nome:'Reduzir ou suspender levotiroxina',badges:[{t:'Excesso de levotiroxina',c:'#64748b'}],
+      drugs:'Reduzir dose de levotiroxina gradualmente (ou suspender se uso não intencional)<br>Sintomas adrenérgicos: propranolol 20–40 mg 3–4×/dia temporariamente<br>TSH normal em 4–8 semanas após ajuste de dose',
+      note:'Distinguir de Graves: tireoglobulina baixa + captação de radioiodo baixa = factícia. Tireoglobulina elevada = doença intrínseca.'});
+  }
+
+  if(etiol==='graves'||etiol==='nodular'){
+    const drug = gest && etiol==='graves' ? 'PTU (1T) → Metimazol (2T/3T)' : alergia ? 'Alternativas (ver nota)' : 'Metimazol (preferido)';
+    recs.push({hdr:`${etiol==='graves'?'Doença de Graves':'Bócio Nodular Tóxico'} — Tionamidas`,col:'#dc2626',nome:`${drug} — Controle da tireotoxicose`,
+      badges:[{t:grav==='grave'?'Grave':'Leve-moderada',c:grav==='grave'?'#dc2626':'#d97706'}],
+      drugs:alergia?`Alergia a tionamidas: Opções limitadas<br>• Radioiodo ¹³¹I (se não gestante, sem oftalmopatia grave)<br>• Tireoidectomia (definitivo)<br>• Iodeto de potássio temporariamente (bloqueia síntese por semanas — efeito Wolff-Chaikoff)<br>• Colestiramina 4 g 3×/dia (reduz circulação entero-hepática de T4) — adjuvante`
+        :`<strong>Metimazol</strong> (preferido): 15–40 mg/dia (dose única ou dividida 2×) → manutenção 5–10 mg/dia por 18–24 meses<br><strong>PTU</strong> (1T gestação, crise, falha metimazol): 100–200 mg 3×/dia → manutenção 50–100 mg 3×/dia<br><strong>Bloquear sintomas adrenérgicos:</strong> Propranolol 20–40 mg 3–4×/dia ou Atenolol 50–100 mg/dia<br><br><em>Duração do tratamento (Graves):</em> 18–24 meses para remissão em ~50% dos casos<br><em>Titulação:</em> Checar T4L em 4–6 semanas; ajustar metimazol para manter T4L normal; TSH leva 3–6 meses para normalizar`,
+      note:alergia?'Todos os casos de alergia a tionamidas: encaminhar para endocrinologista urgente para radioiodo ou cirurgia.':
+        `RAM tionamidas: agranulocitose (0,1–0,5% — urgência médica: febre + dor de garganta → hemograma imediato + suspender). Hepatite (PTU: mais frequente, grave). Exantema: trocar metimazol ↔ PTU pode funcionar. ⚠️ Checar hemograma e TGP basalmente.`});
+
+    const radioOk = !gest && !oftalmo;
+    recs.push({hdr:'Tratamento Definitivo',col:'#0369a1',nome:etiol==='nodular'?'Radioiodo ou Cirurgia (preferidos no nodular tóxico)':'Radioiodo ¹³¹I ou Tireoidectomia (após controle clínico)',
+      badges:[{t:'Definitivo',c:'#0369a1'}],
+      drugs:`<strong>Radioiodo ¹³¹I:</strong>${radioOk?' Primeira escolha em Graves (exceto oftalmopatia ativa) e bócio nodular tóxico. Dose única ablativa. Hipotireoidismo esperado e desejado em 6–12 semanas.':' Contraindicado em gestação. Oftalmopatia de Graves: exacerba — usar corticoide protetor se necessário.'}<br><br><strong>Tireoidectomia:</strong> Indicada em bócio grande (compressão), suspeita de malignidade, oftalmopatia grave, gestação (2T), recusa de outras opções<br>Pré-operatório: controle completo de tireotoxicose + Lugol 10 gotas 3×/dia × 10–14 dias (reduz vascularização)`,
+      note:'Graves: TRAb (TSAb) negativo após 18–24 meses de tionamida = bom prognóstico para remissão. TRAb persistente = radioiodo ou cirurgia.'});
+  }
+
+  if(fa) recs.push({hdr:'FA por Tireotoxicose',col:'#7c3aed',nome:'Controle de FC + anticoagulação',badges:[{t:'FA',c:'#7c3aed'}],
+    drugs:'<strong>Controle de FC:</strong> Beta-bloqueador (propranolol IV/VO em urgência); atenolol 50–100 mg/dia<br><strong>Anticoagulação:</strong> FA tireotóxica tem alto risco tromboembólico — anticoagular (warfarina ou NOAC, conforme valvulopatia)<br><strong>Reversão espontânea:</strong> 50–70% revertem a RS em 6–8 semanas após atingir eutireoidismo',
+    note:'CHA₂DS₂-VASc ≥2 (♂) / ≥3 (♀): anticoagular. Cardioversão: somente após 3–4 semanas de eutireoidismo (menor risco de recorrência).'});
+
+  if(oftalmo) recs.push({hdr:'Oftalmopatia de Graves Ativa',col:'#9d174d',nome:'Graves orbitopatia — tratamento específico',badges:[{t:'CAS ≥3 = ativa',c:'#9d174d'}],
+    drugs:'<strong>Selenito de sódio</strong> 200 mcg/dia × 6 meses (doença leve ativa — única intervenção com evidência em mild GO)<br><strong>Metilprednisolona IV</strong> 500 mg/sem × 6 sem → 250 mg/sem × 6 sem (doença moderada-grave ativa)<br><strong>Teprotumumabe</strong> (anticorpo anti-IGF1R): para oftalmopatia grave refratária<br><strong>Radioiodo:</strong> pode exacerbar GO — usar com corticoide oral profilático se necessário',
+    note:'Encaminhar para oftalmologista especializado em orbitopatia. Tabagismo é o principal fator de risco para GO grave — cessação obrigatória.'});
+
+  document.getElementById('hiperResult').style.display='block';
+  document.getElementById('hiperResult').innerHTML=recs.map(recHTML).join('');
+}
+
+/* ── MONITORAMENTO ──────────────────────────────────────────────────── */
+function renderMon(){
+  const MON=[
+    {lbl:'TSH após início / ajuste de Levotiroxina',when:'6–8 semanas após qualquer mudança de dose',meta:'TSH 0,5–2,5 mUI/L (adulto) · 1–4 (idoso) · <2,5 (gestação 1T)'},
+    {lbl:'TSH após estabilização do hipotireoidismo',when:'A cada 6–12 meses se dose estável e assintomático',meta:'TSH no alvo do perfil. Aumentar frequência se muda peso, gestação, novo medicamento interagente'},
+    {lbl:'T4 Livre (T4L)',when:'Junto ao TSH se TSH supresso ou central/hipotálamo (TSH não confiável)',meta:'T4L 0,8–1,8 ng/dL. Pós-tireoidectomia com supressão: TSH <0,1 + T4L normal/alta'},
+    {lbl:'TSH + T4L após início de tionamida (Graves)',when:'4–6 semanas após início; depois a cada 4–8 semanas',meta:'T4L normal · TSH pode permanecer supresso por 3–6 meses'},
+    {lbl:'TRAb (TSAb) — anticorpo estimulante de TSH',when:'Diagnóstico de Graves · Após 18–24 meses de tionamida (prediz remissão)',meta:'TRAb negativo = remissão mais provável. TRAb positivo ao final do tratamento = recidiva esperada (~70%)'},
+    {lbl:'Hemograma + TGP com tionamidas',when:'Basalmente e se febre/dor de garganta (agranulocitose!) ou icterícia',meta:'Leucócitos >3.500/mm³. Se suspeita de agranulocitose: hemograma urgente + suspender droga'},
+    {lbl:'Antitireoperoxidase (anti-TPO)',when:'Diagnóstico de Hashimoto / antes da gestação em mulheres com TSH normal',meta:'Anti-TPO + = maior risco de hipotireoidismo gestacional → monitorar TSH na gestação'},
+    {lbl:'TSH na gestação',when:'Idealmente antes da concepção; 1T: a cada 4 semanas; 2T/3T: a cada 6–8 semanas',meta:'<2,5 mUI/L no 1T · <3,0 no 2T/3T · Reduzir dose após parto (retornar à dose pré-gestacional)'},
+  ];
+  document.getElementById('monList').innerHTML=MON.map(m=>`<div class="mon-row"><div class="mon-lbl">${m.lbl}</div><div class="mon-when">⏱ ${m.when}</div><div class="mon-meta">🎯 ${m.meta}</div></div>`).join('');
+}
+
+function renderInter(){
+  const INTER=[
+    {drug:'Carbonato de cálcio / Citrato de cálcio',ef:'↓ absorção de Levo em 20–40%',int:'Separar por ≥4 horas'},
+    {drug:'Sulfato ferroso / Ferro',ef:'Quelação de Levo → ↓ absorção',int:'Separar por ≥4 horas'},
+    {drug:'Sucralfato',ef:'Adsorção de Levo → ↓ absorção',int:'Separar por ≥4 horas'},
+    {drug:'Hidróxido de alumínio / Antiácidos',ef:'↓ absorção por efeito tampão',int:'Separar por ≥4 horas'},
+    {drug:'Colestiramina / Colestipol',ef:'Sequestra T4 no intestino → ↓ absorção',int:'Separar por ≥4 horas (preferir Levo antes de qualquer refeição)'},
+    {drug:'IBP (Omeprazol, Pantoprazol)',ef:'↑ pH gástrico → possível ↓ absorção de Levo',int:'Efeito pequeno; monitorar TSH se associados. Tomar Levo em jejum antes do IBP'},
+    {drug:'Café preto',ef:'↓ absorção em 36% se tomado simultaneamente',int:'Aguardar ≥30 min após Levo para tomar café'},
+    {drug:'Alimentos (fibras, soja)',ef:'Fibras e soja quelam T4 → ↓ absorção',int:'Tomar Levo em jejum 30–60 min antes de qualquer alimento ou fibra'},
+    {drug:'Via sonda enteral (NE)',ef:'Interação com cálcio/fibras da fórmula → ↓ absorção 30–40%',int:'Suspender NE 1h antes e 1h após Levo (ver Sondas Enteral)'},
+    {drug:'Rifampicina / Fenitoína / Carbamazepina',ef:'Indutores CYP → ↑ metabolismo de T4 → necessita dose maior de Levo',int:'Monitorar TSH e aumentar dose de Levo conforme necessário'},
+    {drug:'Estrogênios (ACO, TRH)',ef:'↑ TBG → mais T4 ligado → pode necessitar dose maior',int:'Checar TSH 4–6 semanas após início de estrogênio em hipotireoidea'},
+    {drug:'Amiodarona',ef:'Complexo: bloqueia conversão T4→T3 + interfere com receptor tireoidiano + contém 37% de iodo por peso',int:'Monitorar TSH e T4L a cada 3–6 meses. Amiodarona pode causar hipo OU hiper (amiodarona-induced thyrotoxicosis)'},
+  ];
+  document.getElementById('interList').innerHTML=INTER.map(i=>`<div class="inter-row"><div style="font-weight:700;color:#1e3a5f">${i.drug}</div><div style="color:#dc2626;font-size:.72rem;margin-top:1px">Efeito: ${i.ef}</div><div style="color:#065f46;font-size:.72rem;margin-top:1px">Conduta: ${i.int}</div></div>`).join('');
+}
+</script>
+</body>
+</html>
