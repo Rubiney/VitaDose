@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Farmacogenética — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .fgx-hdr{background:linear-gradient(135deg,#1a0533,#6b21a8);color:#fff;border-radius:14px;padding:18px;margin-bottom:14px}
+    .fgx-title{font-size:1rem;font-weight:800;margin-bottom:4px}
+    .fgx-sub{font-size:.73rem;opacity:.8}
+    label{font-size:.75rem;font-weight:700;color:#1e3a5f;display:block;margin-bottom:4px}
+    select{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:10px;padding:10px 12px;font-size:.85rem;background:#fff;margin-bottom:10px}
+    select:focus{border-color:#6b21a8;outline:none}
+    .btn-calc{width:100%;background:#6b21a8;color:#fff;border:none;border-radius:12px;padding:13px;font-size:.87rem;font-weight:700;cursor:pointer;margin:8px 0}
+    .tab-bar{display:flex;gap:6px;margin-bottom:14px}
+    .tab-btn{flex:1;padding:9px 4px;border-radius:10px;border:2px solid #e2e8f0;background:#fff;font-size:.72rem;font-weight:700;cursor:pointer;color:#64748b}
+    .tab-btn.active{border-color:#6b21a8;background:#faf5ff;color:#6b21a8}
+    .fgx-card{border-radius:10px;border-left:5px solid;padding:10px 14px;margin-bottom:8px;background:#fff}
+    .fgx-nome{font-size:.83rem;font-weight:800;margin-bottom:4px}
+    .fgx-body{font-size:.76rem;line-height:1.7;color:#374151}
+    .rec-card{border-radius:12px;border:2px solid;padding:14px;margin-bottom:10px}
+    .rec-hdr{font-size:.63rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+    .rec-nome{font-size:.88rem;font-weight:800;margin-bottom:6px}
+    .rec-body{font-size:.78rem;margin-top:6px;line-height:1.7}
+    .rec-note{font-size:.71rem;color:#64748b;margin-top:6px;padding-top:6px;border-top:1px solid #f1f5f9}
+    .alerta{background:#fef2f2;border:2px solid #dc2626;border-radius:10px;padding:8px;margin:6px 0;font-size:.75rem;color:#7f1d1d;font-weight:700}
+    table{width:100%;border-collapse:collapse;font-size:.73rem;margin-top:6px}
+    th{background:#1a0533;color:#fff;padding:5px 8px;text-align:left}
+    td{padding:5px 8px;border-bottom:1px solid #f1f5f9}
+    tr:nth-child(even) td{background:#faf5ff}
+    .chip{display:inline-block;padding:2px 8px;border-radius:999px;font-size:.65rem;font-weight:800;color:#fff;margin:2px}
+    .pm{background:#dc2626}.im{background:#b45309}.nm{background:#16a34a}.um{background:#1d4ed8}.uur{background:#7c3aed}
+  </style>
+</head>
+<body>
+<header class="top-bar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <span class="top-title">Farmacogenética Clínica</span>
+  <div class="top-right"></div>
+</header>
+<main class="container" style="padding-bottom:90px">
+  <div class="fgx-hdr">
+    <div class="fgx-title">🧬 Farmacogenética Clínica</div>
+    <div class="fgx-sub">CYP2D6 · CYP2C19 · CYP2C9/VKORC1 · HLA · DPYD · TPMT · G6PD</div>
+  </div>
+  <div class="tab-bar">
+    <button class="tab-btn active" id="tb0" onclick="showTab(0)">CYP2D6 & CYP2C19</button>
+    <button class="tab-btn" id="tb1" onclick="showTab(1)">CYP2C9 · HLA · G6PD</button>
+    <button class="tab-btn" id="tb2" onclick="showTab(2)">DPYD · TPMT · UGT1A1</button>
+  </div>
+
+  <!-- TAB 0 — CYP2D6 & CYP2C19 -->
+  <div id="tab0">
+    <div style="background:#faf5ff;border-radius:10px;padding:10px 12px;margin-bottom:10px;font-size:.75rem;color:#374151">
+      <strong>Fenótipos metabólicos (nomenclatura CPIC):</strong><br>
+      <span class="chip pm">PM</span> Metabolizador Pobre (Poor) — enzima ausente/inativa<br>
+      <span class="chip im">IM</span> Metabolizador Intermediário — atividade reduzida<br>
+      <span class="chip nm">NM</span> Metabolizador Normal (Extensive) — referência<br>
+      <span class="chip um">UM</span> Metabolizador Rápido — atividade aumentada<br>
+      <span class="chip uur">UUR</span> Metabolizador Ultrarrápido — gene duplicado ou triplicado<br>
+    </div>
+
+    <div class="card" style="padding:12px 14px">
+      <label>Gene / Fármaco de Interesse</label>
+      <select id="fgx_gene">
+        <option value="cyp2d6_cod">CYP2D6 — Codeína / Tramadol / Oxicodona</option>
+        <option value="cyp2d6_tam">CYP2D6 — Tamoxifeno (câncer de mama)</option>
+        <option value="cyp2d6_ad">CYP2D6 — Antidepressivos / Antipsicóticos</option>
+        <option value="cyp2c19_clop">CYP2C19 — Clopidogrel (antiagregação)</option>
+        <option value="cyp2c19_ibp">CYP2C19 — Inibidores de Bomba de Prótons</option>
+        <option value="cyp2c19_ad">CYP2C19 — Antidepressivos (citalopram, escitalopram, sertralina)</option>
+      </select>
+    </div>
+    <button class="btn-calc" onclick="calcFGX()">🧬 Ver implicações clínicas</button>
+    <div id="fgxResult" style="display:none"></div>
+  </div>
+
+  <!-- TAB 1 — CYP2C9 · HLA · G6PD -->
+  <div id="tab1" style="display:none">
+    <div id="hlaList"></div>
+  </div>
+
+  <!-- TAB 2 — DPYD · TPMT · UGT1A1 -->
+  <div id="tab2" style="display:none">
+    <div id="dpydList"></div>
+  </div>
+</main>
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+<script src="js/db.js"></script>
+<script>
+function showTab(n){[0,1,2].forEach(i=>{document.getElementById('tab'+i).style.display=i===n?'block':'none';document.getElementById('tb'+i).classList.toggle('active',i===n);});if(n===1)renderHLA();if(n===2)renderDPYD();}
+
+const PROTO_FGX={
+  cyp2d6_cod:{hdr:'CYP2D6 — Codeína, Tramadol e Oxicodona',col:'#dc2626',nome:'Risco de sobredosagem (UUR) ou ineficácia (PM)',
+   body:`<strong>Codeína — Pró-fármaco convertido em morfina por CYP2D6:</strong><br>
+<div class="alerta">⚠️ FDA BLACK BOX: Codeína CONTRAINDICADA em crianças pós-adenotonsilectomia e em amamentação se mãe for metabolizadora ultrarrápida (UUR). Mortes relatadas por morfina em lactentes.</div>
+<table>
+  <tr><th>Fenótipo</th><th>Frequência</th><th>Consequência na Codeína</th><th>Recomendação CPIC</th></tr>
+  <tr><td><span class="chip uur">UUR</span> Ultrarrápido</td><td>1–28% (etíopes/sauditas: 29%)</td><td>Conversão excessiva → toxicidade opioide: sedação, apneia, coma</td><td><strong>USAR ALTERNATIVA: ibuprofeno, paracetamol, morfina em dose ajustada</strong></td></tr>
+  <tr><td><span class="chip nm">NM</span> Normal</td><td>~60–70%</td><td>Analgesia adequada</td><td>Dose padrão</td></tr>
+  <tr><td><span class="chip im">IM</span> Intermediário</td><td>~10–15%</td><td>Analgesia reduzida</td><td>Considerar alternativa</td></tr>
+  <tr><td><span class="chip pm">PM</span> Pobre</td><td>5–10% (caucasianos)</td><td>Sem conversão → ANALGESIA NENHUMA + metabólitos tóxicos (codeína-6-glicuronídeo acumula)</td><td><strong>USAR ALTERNATIVA: tramadol contraindicado também; usar ibuprofeno/paracetamol/morfina</strong></td></tr>
+</table>
+<br>
+<strong>Tramadol — também metabolizado por CYP2D6 em O-desmetiltramadol (ativo):</strong><br>
+• <span class="chip pm">PM</span>: analgesia insuficiente · <span class="chip uur">UUR</span>: risco de síndrome serotoninérgica e toxicidade opioide<br>
+• CPIC: tramadol contraindicado em PM e UUR<br><br>
+<strong>Oxicodona — parcialmente metabolizada por CYP2D6 em oximorfona:</strong><br>
+• Efeito menor que codeína · <span class="chip pm">PM</span>: analgesia ligeiramente reduzida (mas não tão crítico)<br>
+• Alternativa segura em PM/IM para dor moderada (diferente de codeína/tramadol)`,
+   note:'Inibidores de CYP2D6 "fenotipam" o paciente como PM: fluoxetina, paroxetina, bupropiona, duloxetina, haloperidol, quinidina, terbinafina, metadona. Prescrever codeína/tramadol em paciente em uso dessas drogas é equivalente a prescrever para um PM. "Drug-gene" vs "drug-drug-gene" interaction — considerar sempre o contexto medicamentoso completo.'},
+  cyp2d6_tam:{hdr:'CYP2D6 — Tamoxifeno (Câncer de Mama HR+)',col:'#be185d',nome:'PM de CYP2D6: tamoxifeno ineficaz — trocar para inibidor de aromatase',
+   body:`<strong>Mecanismo:</strong> Tamoxifeno → endoxifeno (principal metabólito ativo) por CYP2D6 → endoxifeno é 100× mais potente que tamoxifeno na inibição do receptor de estrogênio<br><br>
+<table>
+  <tr><th>Fenótipo</th><th>Nível de Endoxifeno</th><th>Consequência</th><th>Recomendação CPIC</th></tr>
+  <tr><td><span class="chip pm">PM</span></td><td>&lt;5 nM (muito baixo)</td><td>Risco de recidiva significativamente maior (OR 1,98)</td><td><strong>Pós-menopausa: trocar para inibidor de aromatase (letrozol, anastrozol). Pré-menopausa: considerar IA + supressão ovariana. Monitorar nível de endoxifeno se continuar tamoxifeno</strong></td></tr>
+  <tr><td><span class="chip im">IM</span></td><td>5–16 nM</td><td>Eficácia reduzida</td><td>Considerar aumento de dose para 40 mg/dia OU IA (nível-guiado)</td></tr>
+  <tr><td><span class="chip nm">NM</span>/<span class="chip uur">UUR</span></td><td>&gt;16 nM</td><td>Eficácia adequada</td><td>Tamoxifeno 20 mg/dia padrão</td></tr>
+</table>
+<br>
+<strong>Interação droga-gene crítica:</strong><br>
+Inibidores fortes de CYP2D6 + tamoxifeno = PM farmacológico:<br>
+• <strong>CONTRAINDICADOS com tamoxifeno:</strong> Paroxetina (mais potente), Fluoxetina (meia-vida muito longa), Bupropiona<br>
+• <strong>ALTERNATIVAS para depressão em paciente em tamoxifeno:</strong> Venlafaxina, Desvenlafaxina, Citalopram, Escitalopram, Mirtazapina (sem efeito CYP2D6)<br><br>
+<strong>Nível sérico de endoxifeno (TDM farmacogenético):</strong><br>
+Alvo terapêutico: &gt;16 nM · Disponível em centros de referência · Melhor estratégia que apenas genótipo`,
+   note:'Tamoxifeno em PM: alguns oncologistas duplicam a dose (40 mg/dia) para compensar menor conversão. Evidências mistas — o ensaio CYPTAM não confirmou benefício em PM mas estudos observacionais mostram benefício. Genótipo CYP2D6 + fenótipo de endoxifeno: abordagem mais precisa que genótipo isolado (inibidores concomitantes alteram muito o fenótipo). Decisão compartilhada com oncologia.'},
+  cyp2d6_ad:{hdr:'CYP2D6 — Antidepressivos e Antipsicóticos',col:'#7c3aed',nome:'Ajuste de dose por fenótipo para minimizar toxicidade ou falha terapêutica',
+   body:`<strong>Antidepressivos substrato de CYP2D6:</strong><br>
+<table>
+  <tr><th>Fármaco</th><th>PM</th><th>IM</th><th>NM</th><th>UUR</th></tr>
+  <tr><td>Tricíclicos (nortriptilina, amitriptilina)</td><td>↑↑↑ nível → toxicidade (arritmia, convulsão)</td><td>↑ nível → RAM</td><td>Dose padrão</td><td>↓ nível → ineficácia</td></tr>
+  <tr><td>Venlafaxina</td><td>↑ nível venlafaxina; ↓ desvenlafaxina (ativo)</td><td>↑ leve</td><td>Normal</td><td>↓ nível</td></tr>
+  <tr><td>Duloxetina</td><td>↑ exposição → náusea/tontura</td><td>↑ leve</td><td>Normal</td><td>—</td></tr>
+  <tr><td>Fluoxetina/Paroxetina (substratos E inibidores)</td><td>Acúmulo paradoxal + inibem CYP2D6 de outros</td><td>—</td><td>Normal</td><td>—</td></tr>
+</table>
+<br>
+<strong>Antipsicóticos substrato de CYP2D6:</strong><br>
+• Haloperidol, Risperidona, Aripiprazol, Clozapina (parcialmente), Tioridazina<br>
+• <span class="chip pm">PM</span>: acúmulo → EPS aumentado, QTc prolongado (haloperidol/tioridazina — Tioridazina contraindicada em PM)<br>
+• <span class="chip uur">UUR</span>: dose maior necessária para nível terapêutico<br><br>
+<strong>Codeinômio — fenomenologia:</strong><br>
+Recomendação CPIC 2021 para antidepressivos TCAs: iniciar com 50% da dose em PM e IM; ajustar por TDM (nível sérico).<br>
+Alternativas sem metabolismo CYP2D6: Sertralina (CYP2C19), Escitalopram (CYP2C19+3A4), Mirtazapina (CYP1A2+3A4), Bupropiona (CYP2B6)`,
+   note:'CYP2D6 e metadona: metadona é inibidor fraco de CYP2D6 AND substrato de CYP3A4 principalmente — cuidado com CYP3A4 inibidores (fluconazol, claritromicina) mais do que CYP2D6. Propafenona: substrato E inibidor de CYP2D6. PM de CYP2D6 → 5× menor depuração de propafenona → dose reduzir. Betabloqueadores (metoprolol, carvedilol): substrato CYP2D6 — PM tem bradicardia mais intensa.'},
+  cyp2c19_clop:{hdr:'CYP2C19 — Clopidogrel (Antiagregação Plaquetária)',col:'#0369a1',nome:'PM de CYP2C19: clopidogrel ineficaz — USAR TICAGRELOR OU PRASUGREL',
+   body:`<div class="alerta">⚠️ FDA BLACK BOX (2010): clopidogrel tem eficácia reduzida em metabolizadores pobres de CYP2C19. Considerar teste genético OU uso alternativo.</div>
+<strong>Mecanismo:</strong> clopidogrel é pró-fármaco → CYP2C19 converte em metabólito ativo tiol → inibe receptor P2Y12 das plaquetas<br><br>
+<table>
+  <tr><th>Fenótipo</th><th>Frequência</th><th>Implicação no Clopidogrel</th><th>Recomendação CPIC 2022</th></tr>
+  <tr><td><span class="chip pm">PM</span></td><td>Asiáticos: 14–24% · Caucasianos: 2–3%</td><td>Sem conversão → sem efeito antiagregante → alto risco de trombose de stent</td><td><strong>CONTRAINDICADO em ICP/SCA · Usar Ticagrelor 90 mg 2×/dia OU Prasugrel 10 mg/dia</strong></td></tr>
+  <tr><td><span class="chip im">IM</span></td><td>~26–40%</td><td>Antiagregação reduzida (~25% menos)</td><td>Preferir ticagrelor/prasugrel em ICP · Clopidogrel aceitável em anticoagulação AF (dupla terapia)</td></tr>
+  <tr><td><span class="chip nm">NM</span></td><td>~35–50%</td><td>Resposta adequada</td><td>Clopidogrel dose padrão</td></tr>
+  <tr><td><span class="chip uur">UUR</span></td><td>Raros</td><td>Conversão aumentada → tendência a sangramento (dados limitados)</td><td>Dose padrão; monitorar sangramento</td></tr>
+</table>
+<br>
+<strong>Interações droga-fármaco que inibem CYP2C19 (fenotipam como PM):</strong><br>
+• <strong>Omeprazol e Esomeprazol:</strong> inibidores moderados de CYP2C19 · FDA: usar pantoprazol ou rabeprazol em pacientes em clopidogrel<br>
+• Fluconazol (inibidor forte) · Fluvoxamina · Cimetidina · Ticlopidina · Modafinil (indutor) · Rifampicina (indutor → ↑ conversão, mas ↑ risco de sangramento é incerto)<br><br>
+<strong>Aplicação prática — quando testar CYP2C19?</strong><br>
+Recomendado: ICP (stent) em SCA de alto risco (síndrome coronária aguda) · Stent de alto risco trombótico (bifurcação, etc.) · Custo do teste ~USD 100–300 vs stent trombosado`,
+   note:'VerifyNow P2Y12 assay (teste funcional de plaquetas): alternativa ao teste genético para avaliar eficácia do clopidogrel em tempo real. Reactivity Units >208 PRU = HPR (High Platelet Reactivity) = mesmo prognóstico que PM genotípico. Genótipo vs fenótipo: genótipo não capta inibidores concomitantes — teste funcional plaquetário pode ser mais útil clinicamente.'},
+  cyp2c19_ibp:{hdr:'CYP2C19 — Inibidores de Bomba de Prótons (IBPs)',col:'#059669',nome:'UUR de CYP2C19: IBP menos eficaz → dose dupla ou trocar para rabeprazol',
+   body:`<strong>Substrato de CYP2C19:</strong> Omeprazol, Esomeprazol, Lansoprazol, Pantoprazol (fraco) · Rabeprazol (não-enzimático)<br><br>
+<table>
+  <tr><th>Fenótipo</th><th>Implicação no IBP</th><th>Recomendação</th></tr>
+  <tr><td><span class="chip pm">PM</span></td><td>Nível 4–10× maior · pH gástrico mais suprimido · ↑ risco RAM (infecção C. diff, pneumonia, hipoMg crônica)</td><td>Dose menor (omeprazol 10–20 mg) · Monitorar RAM · Considerar H2-bloqueador alternativo</td></tr>
+  <tr><td><span class="chip im">IM</span></td><td>Nível 2× maior · Boa supressão ácida</td><td>Dose padrão (20–40 mg)</td></tr>
+  <tr><td><span class="chip nm">NM</span></td><td>Nível padrão · Supressão adequada</td><td>Dose padrão</td></tr>
+  <tr><td><span class="chip uur">UUR</span></td><td>Metabolização muito rápida · pH menos suprimido · Menor taxa de erradicação de H. pylori</td><td><strong>Dobrar a dose (omeprazol 40 mg 2×/dia) OU usar Rabeprazol (metabolismo não-CYP2C19) OU Vonoprazan (P-CAB — não dependente de CYP)</strong></td></tr>
+</table>
+<br>
+<strong>Relevância em erradicação de H. pylori (UUR):</strong><br>
+Taxa de erradicação da terapia tríplice convencional (IBP + claritromicina + amoxicilina): 70–80% em NM → 45–60% em UUR<br>
+Soluções:<br>
+• Rabeprazol 20 mg 2×/dia (não afetado por CYP2C19) · Vonoprazan 20 mg 2×/dia (bloqueador potássio competitivo — independente de genótipo)<br>
+• Terapia quádrupla com bismuto (PBMT: IBP + bismuto + tetraciclina + metronidazol): menor dependência de supressão ácida<br>
+• Considerar genotipagem de H. pylori para clarigo (CYP2C19 da bactéria não afeta resistência — mas genotipagem da resistência bacteriana sim)`,
+   note:'CYP2C19 e escitalopram/citalopram: ver tab0 seleção "antidepressivos CYP2C19". Clopidogrel + omeprazol: além do CYP2C19 competitivo, FDA recomenda pantoprazol ou rabeprazol como IBP de escolha em pacientes em clopidogrel — mesmo NMs têm redução de ~10–15% na atividade do clopidogrel com omeprazol. Dexlansoprazol: metabolismo misto CYP2C19 + CYP3A4 — menor impacto de CYP2C19 que omeprazol.'},
+  cyp2c19_ad:{hdr:'CYP2C19 — Antidepressivos (Citalopram, Escitalopram, Sertralina)',col:'#7c3aed',nome:'Ajuste de dose por fenótipo CYP2C19 + monitorar QTc',
+   body:`<strong>Citalopram e Escitalopram — Substrato principal de CYP2C19:</strong><br>
+<table>
+  <tr><th>Fenótipo</th><th>Implicação</th><th>Recomendação CPIC</th></tr>
+  <tr><td><span class="chip pm">PM</span></td><td>Nível 2–3× mais alto · Prolongamento de QTc (dose-dependente) · Risco de Torsades</td><td><strong>Citalopram: máximo 20 mg/dia (padrão é 40 mg) · Escitalopram: máximo 10 mg/dia · Monitorar QTc</strong></td></tr>
+  <tr><td><span class="chip im">IM</span></td><td>Nível intermediariamente elevado</td><td>Iniciar com dose menor; ajustar por resposta + QTc</td></tr>
+  <tr><td><span class="chip nm">NM</span></td><td>Normal</td><td>Dose padrão</td></tr>
+  <tr><td><span class="chip uur">UUR</span></td><td>Metabolismo rápido → nível menor</td><td>Dose maior pode ser necessária para eficácia; ou trocar de ISRS</td></tr>
+</table>
+<br>
+<strong>Sertralina — substrato secundário de CYP2C19 (também CYP2D6, 3A4):</strong><br>
+• PM CYP2C19: nível ~1,5× maior · Efeito menos pronunciado que citalopram<br>
+• CPIC: sertralina considerada alternativa farmacogenomicamente favorável (menor impacto de CYP)<br><br>
+<strong>Citalopram e QTc — limite FDA:</strong><br>
+• Máximo absoluto 40 mg/dia (qualquer genótipo) · PM CYP2C19: máximo 20 mg/dia<br>
+• Citalopram 40 mg em PM = exposição equivalente a 80+ mg em NM → QTc risco<br>
+• Alternativas em PM: Sertralina 50–200 mg OU Bupropiona (não substrato CYP2C19) OU Mirtazapina`,
+   note:'Síntese CYP2C19 + clopidogrel + ISRS: paciente em clopidogrel + citalopram/escitalopram = dupla interação relevante. 1) Escitalopram inibe levemente CYP2C19 → reduz ativação do clopidogrel. 2) PM de CYP2C19 = clopidogrel ineficaz + escitalopram tóxico. Em paciente em clopidogrel: preferir sertralina (sem inibição de CYP2C19) e monitorar plaquetas.'},
+};
+
+function calcFGX(){
+  const g=document.getElementById('fgx_gene').value;
+  const p=PROTO_FGX[g];
+  document.getElementById('fgxResult').style.display='block';
+  document.getElementById('fgxResult').innerHTML=`<div class="rec-card" style="border-color:${p.col}"><div class="rec-hdr" style="color:${p.col}">FARMACOGENÉTICA — ${p.hdr}</div><div class="rec-nome">${p.nome}</div><div class="rec-body">${p.body}</div>${p.note?`<div class="rec-note">${p.note}</div>`:''}</div>`;
+  document.getElementById('fgxResult').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+/* ─── HLA · CYP2C9 · G6PD ─────────────────────────────────────── */
+function renderHLA(){
+  if(document.getElementById('hlaList').innerHTML) return;
+  const CARDS=[
+    {col:'#dc2626',nome:'HLA — Hipersensibilidades Graves Farmacogenéticas',
+     body:`<strong>HLA-B*5701 — Abacavir (ABC):</strong><br>
+<div class="alerta">⚠️ Abacavir CONTRAINDICADO em HLA-B*5701 positivo — risco de hipersensibilidade grave (potencialmente fatal em reexposição)</div>
+• Prevalência HLA-B*5701: caucasianos 5–8% · Afrodescendentes 2–3% · Asiáticos &lt;1%<br>
+• Teste obrigatório antes de prescrever abacavir (ABC/3TC — Kivexa; ABC/3TC/DTG — Triumeq)<br>
+• Síndrome de hipersensibilidade: febre + exantema + sintomas GI/respiratórios · Início 6–8 sem · Reexposição: reação grave e rápida com colapso cardiovascular<br>
+• B*5701+: substituir por tenofovir (TDF 300 mg OU TAF 25 mg) no regime antirretroviral<br><br>
+<strong>HLA-B*1502 — Carbamazepina/Oxcarbazepina (Asiáticos):</strong><br>
+• Prevalência: Han-chineses 6–8% · Tailandeses 8% · Malaios 3% · Coreanos/Japoneses &lt;0,2% · Caucasianos &lt;0,1%<br>
+• HLA-B*1502+: carbamazepina → risco de SJS/TEN (Steven-Johnson/Necrólise Epidérmica Tóxica) — mortalidade 10–30%<br>
+• FDA: testar ANTES de carbamazepina em todos pacientes de ascendência asiática<br>
+• Alternativas: Levetiracetam (sem associação HLA), Lamotrigina (HLA-A*3101 em europeus), Valproato, Oxcarbazepina (menor — mas mesma associação HLA)<br>
+• CPIC: oxcarbazepina e B*1502 — mesma contraindicação que carbamazepina em alto risco<br><br>
+<strong>HLA-B*5801 — Alopurinol (Asiáticos):</strong><br>
+• Prevalência: Han-chineses 6–8% · Tailandeses 8,8% · Coreanos 12% · Europeus 0,1%<br>
+• HLA-B*5801+: alopurinol → SJS/TEN/DRESS com mortalidade alta<br>
+• FDA/CPIC: testar ANTES de alopurinol em pacientes de ascendência asiática (especialmente chineses, tailandeses, coreanos)<br>
+• B*5801+: usar febuxostate (não depende de HLA-B) OU benzobromarona (disponibilidade limitada)<br><br>
+<strong>HLA-A*3101 — Carbamazepina (Europeus do Norte):</strong><br>
+• Frequência: 5–10% em europeus, 2–5% em japoneses<br>
+• Associado a exantema e DRESS (menos grave que SJS) · CPIC: triagem recomendada em europeus`,
+     note:'DRESS (Drug Reaction with Eosinophilia and Systemic Symptoms): síndrome de hipersensibilidade grave tardia (2–8 semanas). Febre + exantema maculopapular + eosinofilia + linfócitos atípicos + envolvimento visceral (hepatite, nefrite, pneumonite). Mortalidade: 10–20%. Tratamento: corticoide sistêmico 1–2 mg/kg/dia × semanas a meses + suspensão do fármaco. Reativação viral (HHV-6, EBV) está implicada na patogênese.'},
+    {col:'#1d4ed8',nome:'CYP2C9 e VKORC1 — Varfarina (Anticoagulação Oral)',
+     body:`<strong>Farmacogenética da Varfarina — dois genes principais:</strong><br>
+1. <strong>CYP2C9</strong>: metaboliza varfarina-S (mais potente) · *2 e *3 reduzem atividade → dose menor<br>
+2. <strong>VKORC1</strong>: alvo da varfarina (Vitamina K epóxido redutase) · -1639G>A: menor expressão → maior sensibilidade à varfarina → dose menor<br><br>
+<strong>Tabela de frequências genotípicas:</strong><br>
+<table>
+  <tr><th>Genótipo</th><th>Europeus</th><th>Africanos</th><th>Asiáticos</th><th>Dose de varfarina</th></tr>
+  <tr><td>CYP2C9 *1/*1 + VKORC1 GG</td><td>Mais comum</td><td>Mais comum</td><td>—</td><td>Dose padrão (~5 mg/dia)</td></tr>
+  <tr><td>CYP2C9 *1/*2</td><td>10–15%</td><td>1–3%</td><td>Raro</td><td>Reduzir ~25%</td></tr>
+  <tr><td>CYP2C9 *1/*3</td><td>5–8%</td><td>1–3%</td><td>3–5%</td><td>Reduzir ~40%</td></tr>
+  <tr><td>CYP2C9 *2/*2, *2/*3, *3/*3</td><td>2–5%</td><td>&lt;1%</td><td>Raro</td><td>Reduzir 50–75%</td></tr>
+  <tr><td>VKORC1 -1639 AA</td><td>~14%</td><td>~5%</td><td>~90%</td><td>Reduzir ~30–35%</td></tr>
+</table>
+<br>
+<strong>Algoritmo IWPC (International Warfarin Pharmacogenetics Consortium):</strong><br>
+Calcula dose de varfarina incorporando: genótipo CYP2C9+VKORC1 + idade + estatura + peso + raça + amiodarona + fluconazol + uso de vitamina K<br>
+Disponível em warfarindosing.org · Diferença de ±30–50% na dose comparado ao peso isolado<br><br>
+<strong>FDA: teste genético opcional mas recomendado</strong> antes de iniciar varfarina, especialmente:<br>
+• Dose muito baixa esperada (&lt;3 mg/dia) → maior risco de superdosagem na indução · Variante CYP4F2 (V433M): metaboliza Vit K — presença → aumenta dose necessária · VKORC1 -1639 AA em asiáticos: muito comum → frequentemente precisam de &lt;2 mg/dia`,
+     note:'DOACs (rivaroxabana, apixabana, dabigatrana, edoxabana): sem necessidade de teste farmacogenético para dosagem (não metabolismo CYP2C9/VKORC1). Dabigatrana e P-gp (ABCB1): variantes de P-glicoproteína podem afetar absorção — significância clínica menor. CYP3A4 e rivaroxabana/apixabana: inibidores fortes (cetoconazol, ritonavir) aumentam nível 50–160% → contraindicados.'},
+    {col:'#b45309',nome:'G6PD — Deficiência de Glicose-6-Fosfato Desidrogenase',
+     body:`<strong>Mecanismo:</strong> G6PD protege eritrócitos contra estresse oxidativo · Deficiência → hemólise com fármacos oxidantes<br>
+Prevalência: 4–8% da população mundial · Mais comum em afrodescendentes, mediterrâneos, asiáticos (regiões endêmicas de malária — vantagem heterozigótica)<br>
+Herança: ligada ao X → homens afetados (1 alelo) · Mulheres portadoras (2 alelos)<br><br>
+<strong>Fármacos que causam hemólise em deficientes de G6PD:</strong><br>
+<table>
+  <tr><th>Risco</th><th>Fármacos</th><th>Conduta</th></tr>
+  <tr><td style="color:#dc2626;font-weight:800">ALTO RISCO</td><td>Primaquina, Tafenoquina (anti-malárico 8-aminoquinolinas) · Rasburicase · Dapsona · Azul de Metileno · Nitrofurantoína (hemólise grave)</td><td>CONTRAINDICADOS em G6PD grave · Testar ANTES em zonas endêmicas</td></tr>
+  <tr><td style="color:#b45309;font-weight:800">RISCO MODERADO</td><td>Ciprofloxacino, Norfloxacino · Cloroquina · Sulfametoxazol (TMP-SMX) · Quinina · Vitamina C IV alta dose (&gt;1 g/dia) · Glibenclamida</td><td>Usar com cautela · Monitorar hemoglobina/bilirrubina · Evitar em G6PD grave</td></tr>
+  <tr><td style="color:#16a34a;font-weight:800">SEGURO</td><td>Penicilinas, Cefalosporinas · Cloranfenicol · Tetraciclina · Eritromicina · Codeína · AAS (em dose baixa) · Paracetamol · Metformina</td><td>Usar sem restrições</td></tr>
+</table>
+<br>
+<strong>Primaquina e G6PD:</strong><br>
+• Primaquina necessária para erradicação de hipnozoítas de P. vivax (formas dormentes hepáticas)<br>
+• G6PD: testar ANTES em todo paciente com malária por P. vivax<br>
+• Alternativa em G6PD grave: primaquina 0,75 mg base/kg semanal × 8 semanas (regime semanal — menos hemólise) com supervisão<br>
+• Tafenoquina (dose única) → CONTRAINDICADA em G6PD &lt;70% da normal`,
+     note:'Triagem de G6PD: teste semi-quantitativo (mancha fluorescente) — rápido e barato. Confirmar com método quantitativo (espectrofotométrico) antes de regimes de rasburicase ou primaquina. Hemólise por G6PD: autolimitada em leve (células G6PD maduras mais resistentes) — mas pode ser grave se exposição maciça ou em alelos graves (G6PD A-: afrodescendentes = leve; G6PD B-mediterrânea: grave). Neonato G6PD: fotossensibilidade e hemólise → icterícia grave ao nascimento — rastreio no Teste do Pezinho em alguns estados.'},
+  ];
+  document.getElementById('hlaList').innerHTML=CARDS.map(c=>`<div class="fgx-card" style="border-color:${c.col}"><div class="fgx-nome" style="color:${c.col}">${c.nome}</div><div class="fgx-body">${c.body}</div>${c.note?`<div style="font-size:.7rem;color:#64748b;margin-top:6px">💡 ${c.note}</div>`:''}</div>`).join('');
+}
+
+/* ─── DPYD · TPMT · UGT1A1 ─────────────────────────────────────── */
+function renderDPYD(){
+  if(document.getElementById('dpydList').innerHTML) return;
+  const CARDS=[
+    {col:'#dc2626',nome:'DPYD — Fluorouracila (5-FU) e Capecitabina',
+     body:`<strong>Diidropirimidina Desidrogenase (DPD/DPYD):</strong> enzima que degrada 80% do 5-FU · DPYD deficiente → acúmulo de 5-FU → toxicidade grave<br><br>
+<div class="alerta">⚠️ EMA 2020: Teste DPYD obrigatório ANTES de 5-FU/capecitabina/tegafur na Europa. No Brasil: recomendado mas não obrigatório.</div>
+<strong>Variantes DPYD clinicamente relevantes (CPIC/DPWG):</strong><br>
+<table>
+  <tr><th>Variante</th><th>Atividade</th><th>Frequência</th><th>Conduta</th></tr>
+  <tr><td>DPYD*2A (c.1905+1G>A)</td><td>Inativa (0%)</td><td>~1% caucasianos</td><td>CONTRAINDICADO (sem alternativa: reduzir 50% com TDM intensivo)</td></tr>
+  <tr><td>DPYD c.1679T>G (*13)</td><td>Inativa (0%)</td><td>Raro</td><td>CONTRAINDICADO</td></tr>
+  <tr><td>DPYD c.2846A>T</td><td>Reduzida (50%)</td><td>~1% caucasianos</td><td>Reduzir dose 50% + TDM</td></tr>
+  <tr><td>DPYD HapB3 (c.1236G>A/HapB3)</td><td>Reduzida (50%)</td><td>~2–3% caucasianos</td><td>Reduzir dose 25%</td></tr>
+</table>
+<br>
+<strong>Toxicidade por DPYD deficiente:</strong><br>
+Mucosita grave grau 3–4 · Diarreia hemorrágica · Neutropenia profunda · Síndrome mão-pé grave · Neurotoxicidade · Mortalidade: 0,5–1% dos casos sem triagem<br><br>
+<strong>Monitoramento terapêutico de 5-FU (TDM):</strong><br>
+• AUC-guiado: alvo 20–30 mg·h/L · AUC &gt;30: toxicidade; &lt;20: ineficácia<br>
+• Bomba de infusão 46h (FOLFOX, FOLFIRI): grande variabilidade inter-individual (5–10×)<br>
+• Ajuste por AUC permite dose personalizada independente do genótipo<br><br>
+<strong>Capecitabina (pró-fármaco oral → 5-FU):</strong> mesma farmacogenética do DPYD · Síndrome mão-pé mais frequente`,
+     note:'DPYD e dieta: uracila alimentar não afeta DPD. Uridina (piridoxilato, Welireg: uridina triaceato) é antídoto aprovado FDA para overdose de 5-FU ou deficiência de DPYD não-diagnosticada (uridina compete com 5-FU pelas enzimas). Disponível por acesso especial no Brasil. 5-FU + sorivudina/brivudina (antiviral): sorivudina inibe DPYD irreversivelmente → 5-FU FATAL mesmo em dose baixa. Combinação PROIBIDA.'},
+    {col:'#7c3aed',nome:'TPMT e NUDT15 — Azatioprina, 6-Mercaptopurina (6-MP) e Tiopurinas',
+     body:`<strong>Tiopurina metiltransferase (TPMT) e Nudix Hydrolase 15 (NUDT15):</strong><br>
+Ambas enzimas inativam metabólitos ativos das tiopurinas · Deficiência → acúmulo de 6-TGN → mielosupressão grave<br><br>
+<strong>Variantes TPMT:</strong><br>
+• TPMT*3A, *3C: mais comuns em caucasianos · TPMT*3C: mais comum em asiáticos/afros<br>
+<strong>Variantes NUDT15:</strong><br>
+• NUDT15 c.415C>T (*3): muito mais prevalente em asiáticos (5–16%) que caucasianos (&lt;0,5%)<br>
+• Em asiáticos: NUDT15 é frequentemente mais relevante que TPMT<br><br>
+<strong>Fenótipos e condutas:</strong><br>
+<table>
+  <tr><th>Atividade (TPMT ou NUDT15)</th><th>Fenótipo</th><th>Conduta (6-MP / AZA / Tioguanina)</th></tr>
+  <tr><td>Normal (ambas)</td><td>NM</td><td>Dose padrão (AZA 2–2,5 mg/kg/dia; 6-MP 75 mg/m²/dia)</td></tr>
+  <tr><td>Reduzida em 1 gene</td><td>IM</td><td>Reduzir dose 30–50% · Iniciar com dose baixa e titular por leucócitos</td></tr>
+  <tr><td>Reduzida em ambos OU ausente em 1</td><td>PM</td><td>Reduzir dose 90% (AZA 0,2–0,5 mg/kg/dia) OU usar alternativa (micofenolato para AZA; 6-TG reduzida para 6-MP)</td></tr>
+  <tr><td>Nula em ambos</td><td>PM Duplo</td><td>CONTRAINDICADO · Alternativa não-tiopurina obrigatória</td></tr>
+</table>
+<br>
+<strong>Alopurinol e 6-MP / AZA — interação farmacológica crítica:</strong><br>
+Alopurinol inibe xantina oxidase → ↑↑ nível de 6-MP → toxicidade grave · <strong>Dose de 6-MP ÷ 4 quando usar alopurinol concomitante</strong><br><br>
+<strong>Monitoramento de TPMT funcional:</strong><br>
+• Fenótipo enzimático (atividade TPMT em eritrócitos): pode ser feito antes de genótipo · Mais acessível<br>
+• Transfusão recente invalida o teste fenotípico (eritrócitos do doador)<br>
+• TDM de 6-TGN (6-tioguanina nucleotídeos): alvo 230–450 pmol/8×10⁸ eritrócitos para DII`,
+     note:'Azatioprina e DII (Crohn/CU): monitoramento de TPMT/NUDT15 antes de iniciar. Hemograma na semana 2, 4, 8 e depois mensal × 6 meses → trimestral. Linfocitopenia CD4: marcador de imunossupressão excessiva em azatioprina crônica → risco de infecções oportunistas e linfoma. Mercaptopurina e metotrexato: combinação synergística em leucemia linfoblástica aguda (MTX inibe diidrofolato redutase → ↑ intracelular de 6-MP ativo).'},
+    {col:'#b45309',nome:'UGT1A1 — Irinotecano, Sacituzumabe e Síndrome de Gilbert',
+     body:`<strong>UDP-Glucuronosiltransferase 1A1 (UGT1A1):</strong><br>
+Glucuronida SN-38 (metabólito ativo do irinotecano) e bilirrubina indireta para excreção biliar<br><br>
+<strong>UGT1A1*28 (TA7 — repetição 7× no promotor):</strong><br>
+• Frequência: caucasianos 10–15% homozigotos (*28/*28); africanos 25–35%<br>
+• Efeito: menor expressão de UGT1A1 → menor glucuronidação de SN-38 → acúmulo<br>
+• Síndrome de Gilbert: UGT1A1*28 homoizigoto → bilirrubina indireta elevada sem doença hepática (icterícia fisiológica + jeju)<br><br>
+<strong>Irinotecano e UGT1A1*28:</strong><br>
+<table>
+  <tr><th>Genótipo UGT1A1</th><th>Implicação</th><th>Conduta CPIC</th></tr>
+  <tr><td>*1/*1 (normal)</td><td>Depuração normal de SN-38</td><td>Dose padrão (125–180 mg/m²)</td></tr>
+  <tr><td>*1/*28 (heterozigoto)</td><td>Risco intermediário</td><td>Dose padrão; monitorar diarreia e neutropenia</td></tr>
+  <tr><td><strong>*28/*28 (Gilbert)</strong></td><td>Neutropenia grau 3–4 em 50% · Diarreia grave</td><td><strong>Reduzir dose 1 nível (ex: 125 → 100 mg/m²) OU intensificar monitoramento de SN-38</strong></td></tr>
+</table>
+<br>
+<strong>Sacituzumabe Govitecan e UGT1A1*28:</strong><br>
+• Payload = SN-38 (mesmo metabólito ativo) · *28/*28: mesma implicação que irinotecano<br>
+• FDA: considerar dose reduzida (7,5 mg/kg vs 10 mg/kg) em *28/*28 homozigotos<br><br>
+<strong>Síndrome de Gilbert e anestesia:</strong><br>
+• Propofol: não contraindicado (hiperbilirrubinemia transitória é benigna)<br>
+• Transfusão: hiperbilirrubinemia pós-transfusional mais pronunciada<br>
+• Atazanavir (antirretroviral): inibe UGT1A1 → icterícia em *28/*28 (visível, mas benigna)`,
+     note:'Irinotecan e diarreia tardia: tratamento de DIARREIA tardia (D3+) por irinotecan = loperamida 4 mg inicial + 2 mg após cada evacuação (máx 16 mg/dia) + hidratação IV · NÃO esperar pedir orientação médica — protocolo autoadministrado. Diarreia precoce (durante infusão): atropina 0,25 mg IV/SC (colinérgica). UGT1A1 e bilirrubina: qualquer icterícia + histórico de bilirrubina indireta elevada em jejum/doença → triagem de Gilbert (pesquisar UGT1A1*28).'},
+  ];
+  document.getElementById('dpydList').innerHTML=CARDS.map(c=>`<div class="fgx-card" style="border-color:${c.col}"><div class="fgx-nome" style="color:${c.col}">${c.nome}</div><div class="fgx-body">${c.body}</div>${c.note?`<div style="font-size:.7rem;color:#64748b;margin-top:6px">💡 ${c.note}</div>`:''}</div>`).join('');
+}
+</script>
+</body>
+</html>

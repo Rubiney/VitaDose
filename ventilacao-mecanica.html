@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Ventilação Mecânica — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .vm-hdr{background:linear-gradient(135deg,#0c1a2e,#0f4c81);color:#fff;border-radius:14px;padding:18px;margin-bottom:14px}
+    .vm-title{font-size:1rem;font-weight:800;margin-bottom:4px}
+    .vm-sub{font-size:.73rem;opacity:.8}
+    label{font-size:.75rem;font-weight:700;color:#1e3a5f;display:block;margin-bottom:4px}
+    select,input[type=number]{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:10px;padding:10px 12px;font-size:.85rem;background:#fff;margin-bottom:10px}
+    .btn-calc{width:100%;background:#0f4c81;color:#fff;border:none;border-radius:12px;padding:13px;font-size:.87rem;font-weight:700;cursor:pointer;margin:8px 0}
+    .tab-bar{display:flex;gap:6px;margin-bottom:14px}
+    .tab-btn{flex:1;padding:9px 4px;border-radius:10px;border:2px solid #e2e8f0;background:#fff;font-size:.72rem;font-weight:700;cursor:pointer;color:#64748b}
+    .tab-btn.active{border-color:#0f4c81;background:#eff6ff;color:#0f4c81}
+    .vm-card{border-radius:10px;border-left:5px solid;padding:10px 14px;margin-bottom:8px;background:#fff}
+    .vm-nome{font-size:.83rem;font-weight:800;margin-bottom:4px}
+    .vm-body{font-size:.76rem;line-height:1.7;color:#374151}
+    .alerta{background:#fef2f2;border:2px solid #dc2626;border-radius:10px;padding:8px;margin:6px 0;font-size:.75rem;color:#7f1d1d;font-weight:700}
+    .atencao{background:#fffbeb;border:2px solid #d97706;border-radius:10px;padding:8px;margin:6px 0;font-size:.75rem;color:#78350f;font-weight:700}
+    .ok-box{background:#f0fdf4;border:2px solid #16a34a;border-radius:10px;padding:8px;margin:6px 0;font-size:.75rem;color:#14532d;font-weight:700}
+    table{width:100%;border-collapse:collapse;font-size:.73rem;margin-top:6px}
+    th{background:#0f4c81;color:#fff;padding:5px 8px;text-align:left}
+    td{padding:5px 8px;border-bottom:1px solid #f1f5f9}
+    tr:nth-child(even) td{background:#eff6ff}
+    .result-box{background:#eff6ff;border-radius:10px;padding:14px;margin-top:8px}
+    .result-val{font-size:1.4rem;font-weight:900;color:#0f4c81}
+    .result-label{font-size:.7rem;color:#475569;margin-top:2px}
+    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  </style>
+</head>
+<body>
+<header class="top-bar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <span class="top-title">Ventilação Mecânica</span>
+  <div class="top-right"></div>
+</header>
+<main class="container" style="padding-bottom:90px">
+  <div class="vm-hdr">
+    <div class="vm-title">🫁 Ventilação Mecânica & Suporte Ventilatório</div>
+    <div class="vm-sub">VM Protetora SARA · Desmame · VNI/HFNC · Sedação-Analgesia UTI</div>
+  </div>
+  <div class="tab-bar">
+    <button class="tab-btn active" id="tb0" onclick="showTab(0)">VM Protetora & Modos</button>
+    <button class="tab-btn" id="tb1" onclick="showTab(1)">Desmame & VNI</button>
+    <button class="tab-btn" id="tb2" onclick="showTab(2)">Sedação · Analgesia · Delírio</button>
+  </div>
+
+  <!-- TAB 0 — VM Protetora & Modos -->
+  <div id="tab0">
+    <div class="card" style="padding:12px 14px;margin-bottom:10px">
+      <div style="font-size:.8rem;font-weight:800;color:#0f4c81;margin-bottom:8px">Calculadora SARA — Volume Corrente Protetor (6 mL/kg PI)</div>
+      <div class="grid2">
+        <div>
+          <label>Sexo</label>
+          <select id="vm_sex"><option value="M">Masculino</option><option value="F">Feminino</option></select>
+        </div>
+        <div>
+          <label>Altura (cm)</label>
+          <input type="number" id="vm_alt" placeholder="170" min="130" max="220">
+        </div>
+      </div>
+      <label>Condição clínica</label>
+      <select id="vm_cond">
+        <option value="sara">SARA (ARDS)</option>
+        <option value="prot">VM Protetora (sem SARA)</option>
+        <option value="dpoc">DPOC em exacerbação</option>
+        <option value="ob">Obeso (IMC > 40)</option>
+      </select>
+      <button class="btn-calc" onclick="calcVM()">🫁 Calcular parâmetros</button>
+    </div>
+    <div id="vmResult" style="display:none"></div>
+
+    <div class="vm-card" style="border-color:#0f4c81">
+      <div class="vm-nome" style="color:#0f4c81">Modos Ventilatórios — Escolha Clínica</div>
+      <div class="vm-body">
+        <table>
+          <tr><th>Modo</th><th>Controla</th><th>Vantagens</th><th>Indicação Principal</th></tr>
+          <tr><td><strong>VCV</strong><br>Volume Control</td><td>Volume e fluxo</td><td>Volume corrente garantido; mecânica pulmonar fácil de monitorar</td><td>SARA (volume protetor preciso), IOT imediata</td></tr>
+          <tr><td><strong>PCV</strong><br>Pressure Control</td><td>Pressão inspiratória</td><td>Pico de pressão limitado; melhor sincronia</td><td>Pulmão com complacência muito reduzida; paciente com esforço respiratório</td></tr>
+          <tr><td><strong>PRVC/VC+</strong><br>Pressure Regulated Volume Control</td><td>Volume alvo com pressão variável</td><td>Volume garantido + pressão mínima necessária</td><td>Alternativa ao PCV quando volume protetor é prioridade com melhor sincronia</td></tr>
+          <tr><td><strong>PSV</strong><br>Pressure Support</td><td>Suporte à demanda do paciente</td><td>Conforto; exercício muscular durante desmame</td><td>Desmame ventilatório (paciente acordado, triggerando)</td></tr>
+          <tr><td><strong>SIMV</strong><br>Sync. Intermittent Mandatory</td><td>FR mandatória + PSV espontânea</td><td>—</td><td>Pouco usado — sem vantagem sobre T-piece/PSV isolado para desmame</td></tr>
+          <tr><td><strong>APRV</strong><br>Airway Pressure Release</td><td>2 pressões (P-alta/P-baixa) com tempo longo em P-alta</td><td>Recrutamento alveolar com respiração espontânea</td><td>SARA grave (posição prona insuficiente) — uso restrito</td></tr>
+        </table>
+        <br>
+        <strong>Disparo (trigger):</strong> Por fluxo (−1 a −3 L/min) preferível a pressão em SARA (reduz trabalho); em obstrução grave: trigger pode ser ineficaz (auto-PEEP)<br>
+        <strong>Relação I:E:</strong> Padrão 1:2 · DPOC: 1:3 (mais tempo expiratório) · SARA grave (APRV): I:E invertida 4:1
+      </div>
+    </div>
+
+    <div class="vm-card" style="border-color:#7f1d1d;margin-top:8px">
+      <div class="vm-nome" style="color:#7f1d1d">Tabela PEEP/FiO₂ — ARDSnet (Low PEEP)</div>
+      <div class="vm-body">
+        <table>
+          <tr><th>FiO₂</th><th>0,3</th><th>0,4</th><th>0,5</th><th>0,6</th><th>0,7</th><th>0,8</th><th>0,9</th><th>1,0</th></tr>
+          <tr><td><strong>PEEP (cmH₂O)</strong></td><td>5</td><td>5–8</td><td>8–10</td><td>10</td><td>10–12</td><td>12–14</td><td>14–18</td><td>18–24</td></tr>
+        </table>
+        <br>
+        <strong>Tabela High PEEP:</strong> FiO₂ 0,5 → PEEP 12; 0,6 → PEEP 14; 0,7 → PEEP 14–16; 0,8 → PEEP 16–18; 0,9–1,0 → PEEP 18–24<br>
+        <strong>Titulação por incremento PEEP:</strong> Eleve PEEP em 2 cmH₂O cada vez → monitorar SpO₂ e pressão arterial → se SpO₂ ↑ e PA estável = recrutamento positivo; se PA ↓ = hiperinsuflação → retroceder<br>
+        <strong>Alvo de oxigenação SARA:</strong> SpO₂ 88–95% OU PaO₂ 55–80 mmHg (hipoxemia permissiva — evitar FiO₂ &gt;0,6 cronicamente)
+      </div>
+    </div>
+
+    <div class="vm-card" style="border-color:#b45309;margin-top:8px">
+      <div class="vm-nome" style="color:#b45309">Monitoramento de Mecânica Pulmonar na VM</div>
+      <div class="vm-body">
+        <table>
+          <tr><th>Parâmetro</th><th>Fórmula / Medição</th><th>Normal</th><th>SARA Leve</th><th>SARA Grave</th></tr>
+          <tr><td><strong>Pressão de Plateau (P-plat)</strong></td><td>Pausa inspiratória ≥0,5s</td><td>&lt;28 cmH₂O</td><td>≤30</td><td>&lt;30 (crítico)</td></tr>
+          <tr><td><strong>Driving Pressure (ΔP)</strong></td><td>P-plat − PEEP</td><td>&lt;15 cmH₂O</td><td>≤15</td><td>Alvo ≤14 (melhor prognóstico)</td></tr>
+          <tr><td><strong>Complacência Estática (Cst)</strong></td><td>VC / (P-plat − PEEP)</td><td>60–80 mL/cmH₂O</td><td>20–40</td><td>&lt;20</td></tr>
+          <tr><td><strong>Mechanical Power (MP)</strong></td><td>≈ 0,098 × FR × VC × (P-plat + PEEP + ΔP/2)</td><td>—</td><td>&lt;17 J/min</td><td>Alvo &lt;17 J/min</td></tr>
+          <tr><td><strong>P0.1</strong></td><td>Queda pressão nos primeiros 100 ms (medição automática)</td><td>—</td><td>&lt;3,5 cmH₂O = esforço adequado</td><td>&gt;3,5 = esforço excessivo → P-SILI risco</td></tr>
+          <tr><td><strong>Stress Index (SI)</strong></td><td>Curva pressão vs tempo em VCV (concavidade)</td><td>SI = 1,0</td><td>&lt;1 = sob-distensão; &gt;1 = superdistensão</td><td>Alvo 0,9–1,1</td></tr>
+        </table>
+        <br>
+        <div class="atencao">⚠️ P-SILI (Patient Self-Inflicted Lung Injury): esforço inspiratório muito intenso de paciente → pressão transpulmonar excessiva → lesão pulmonar mesmo com ΔP aparentemente baixo. Monitorar P0.1 e esforço. Indicação de sedação mais profunda OU bloqueio neuromuscular se P0.1 &gt; 5 cmH₂O e SARA grave.</div>
+        <br>
+        <strong>Bloqueio Neuromuscular (BNM) precoce:</strong><br>
+        ACURASYS trial: cisatracúrio × 48h nas primeiras 48h de SARA grave (P/F &lt;150) → melhora mortalidade · ROSE trial 2019: refutou em parte (melhor quando sedação profunda era padronizada no grupo controle)<br>
+        Consenso atual: BNM 48h em SARA grave SOMENTE se assincronia grave, P-SILI, FiO₂ &gt;0,9 e PEEP ≥15 (não rotineiro)
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 1 — Desmame & VNI/HFNC -->
+  <div id="tab1" style="display:none">
+    <div id="desmaList"></div>
+  </div>
+
+  <!-- TAB 2 — Sedação · Analgesia · Delírio -->
+  <div id="tab2" style="display:none">
+    <div id="sedaList"></div>
+  </div>
+</main>
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+<script src="js/db.js"></script>
+<script>
+function showTab(n){[0,1,2].forEach(i=>{document.getElementById('tab'+i).style.display=i===n?'block':'none';document.getElementById('tb'+i).classList.toggle('active',i===n);});if(n===1)renderDesmame();if(n===2)renderSeda();}
+
+function calcVM(){
+  const sex=document.getElementById('vm_sex').value;
+  const alt=parseFloat(document.getElementById('vm_alt').value);
+  const cond=document.getElementById('vm_cond').value;
+  if(!alt||alt<100){alert('Informe a altura.');return;}
+  const pi=sex==='M'?50+0.91*(alt-152.4):45.5+0.91*(alt-152.4);
+  const vc6=Math.round(pi*6);
+  const vc8=Math.round(pi*8);
+  let plat=cond==='sara'?'≤ 28–30 cmH₂O':cond==='dpoc'?'≤ 25 cmH₂O (auto-PEEP risk)':'≤ 30 cmH₂O';
+  let peepInfo=cond==='sara'?'Iniciar PEEP 5–8 cmH₂O → ajustar pela tabela ARDSnet (tab0)':cond==='dpoc'?'PEEP extrínseco < auto-PEEP (0 a 5 cmH₂O) · medir auto-PEEP (pausa expiratória)':cond==='ob'?'PEEP 10–12 cmH₂O (recrutamento ativas de atelectasias por obesidade)':'PEEP 5 cmH₂O';
+  let frInfo=cond==='dpoc'?'FR 10–14 ipm (↑ tempo expiratório, evitar auto-PEEP)':'FR 14–20 ipm (ajustar pH/PaCO₂)';
+  let obs=cond==='sara'?'<div class="atencao">⚠️ SARA: VT 6 mL/kg PI com P-plat ≤ 30 cmH₂O. Hipercapnia permissiva aceitável (pH ≥ 7,20). Nunca aumentar VT para corrigir CO₂ se P-plat > 28 cmH₂O.</div>':cond==='dpoc'?'<div class="atencao">⚠️ DPOC: principal risco = auto-PEEP (air trapping). Avaliar após 30 min: pausa expiratória para medir auto-PEEP. Objetivo: evitar hiperinsuflação dinâmica.</div>':cond==='ob'?'<div class="atencao">⚠️ Obesidade: usar PESO IDEAL (não real) para cálculo do VT. PEEP mais alto para reverter atelectasias. Posição reversa de Trendelenburg melhora oxigenação.</div>':'';
+  document.getElementById('vmResult').style.display='block';
+  document.getElementById('vmResult').innerHTML=`
+  <div class="result-box">
+    <div class="grid2">
+      <div><div class="result-val">${pi.toFixed(1)} kg</div><div class="result-label">Peso Ideal</div></div>
+      <div><div class="result-val">${vc6} mL</div><div class="result-label">Volume Corrente (6 mL/kg)</div></div>
+    </div>
+    <div style="margin-top:10px;font-size:.75rem">
+      <strong>Faixa VT permitida:</strong> ${vc6} – ${vc8} mL (6–8 mL/kg PI)<br>
+      <strong>P-plateau alvo:</strong> ${plat}<br>
+      <strong>Driving pressure:</strong> ≤ 14–15 cmH₂O (P-plat − PEEP)<br>
+      <strong>FR:</strong> ${frInfo}<br>
+      <strong>PEEP:</strong> ${peepInfo}<br>
+      <strong>FiO₂ inicial:</strong> 1,0 → desmame até SpO₂ 88–95%
+    </div>
+    ${obs}
+    <div style="font-size:.7rem;color:#64748b;margin-top:8px">Fórmula Peso Ideal — Homem: 50 + 0,91×(Alt−152,4) · Mulher: 45,5 + 0,91×(Alt−152,4)</div>
+  </div>`;
+  document.getElementById('vmResult').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+function renderDesmame(){
+  if(document.getElementById('desmaList').innerHTML) return;
+  document.getElementById('desmaList').innerHTML=`
+  <div class="vm-card" style="border-color:#0f4c81">
+    <div class="vm-nome" style="color:#0f4c81">Desmame Ventilatório — ABCDEF Bundle (PAD Guidelines 2018)</div>
+    <div class="vm-body">
+      <table>
+        <tr><th>Letra</th><th>Intervenção</th><th>Detalhe</th></tr>
+        <tr><td><strong>A</strong></td><td>Analgesia first (Analgesia antes de sedação)</td><td>Escalas de dor: BPS (intubado) ou NRS (acordado) · Priorizar opioide IV para dor, sedar apenas se necessário</td></tr>
+        <tr><td><strong>B</strong></td><td>Despertar espontâneo (SAT) + Respiração espontânea (SBT)</td><td>SAT: suspender sedação diariamente · SBT: PSV 5+5 ou T-piece × 30–120 min · Combinação SAT+SBT reduz VM em 3 dias (ABC trial)</td></tr>
+        <tr><td><strong>C</strong></td><td>Coordenação SAT + SBT</td><td>SAT primeiro → SBT logo após se critérios atendidos</td></tr>
+        <tr><td><strong>D</strong></td><td>Delírio — Avaliar e tratar</td><td>CAM-ICU 2× por turno · RASS alvo: −1 a 0 · Evitar BZD</td></tr>
+        <tr><td><strong>E</strong></td><td>Early mobilization (Mobilização precoce)</td><td>Fisioterapia motora desde D1: sentar, pedalar, deambular com suporte · Reduz fraqueza adquirida na UTI</td></tr>
+        <tr><td><strong>F</strong></td><td>Family engagement</td><td>Família como parceira de cuidado; presença reduz delírio e agitação</td></tr>
+      </table>
+    </div>
+  </div>
+  <div class="vm-card" style="border-color:#059669;margin-top:8px">
+    <div class="vm-nome" style="color:#059669">Critérios para Tentativa de Desmame (SBT)</div>
+    <div class="vm-body">
+      <strong>Pré-requisitos (todos necessários):</strong><br>
+      ✅ Causa da VM em resolução<br>
+      ✅ FiO₂ ≤ 0,4 e PEEP ≤ 8 cmH₂O com SpO₂ ≥ 90%<br>
+      ✅ Hemodinâmica estável (sem vasopressor ativo ou dose mínima)<br>
+      ✅ Paciente acordado e responsivo (RASS ≥ −1)<br>
+      ✅ Tosse efetiva (expelir secreções)<br>
+      ✅ FR &lt; 35 ipm; Vt ≥ 5 mL/kg PI espontâneo<br><br>
+      <strong>Índice de Tobin (RSBI = FR/Vt):</strong><br>
+      • RSBI &lt; 105: prediz sucesso de extubação (sensibilidade 97%, especificidade 64%)<br>
+      • RSBI &gt; 105: alto risco de falha de desmame<br><br>
+      <strong>SBT — Modalidade:</strong><br>
+      • <strong>T-piece:</strong> retira suporte completamente → ambiente ar/O₂ · Mais fisiológico mas trabalhoso<br>
+      • <strong>PSV 5+5 (PSV 5 cmH₂O + PEEP 5 cmH₂O):</strong> mantém pequeno suporte → mais tolerado<br>
+      • Duração: 30 min (maioria recupera em 30 min) · Até 120 min em DPOC/fraqueza<br><br>
+      <strong>Falha do SBT — Critérios de interrupção:</strong><br>
+      • FR &gt; 35 ipm · SpO₂ &lt; 90% · FC ↑ &gt; 20% ou &gt; 140 bpm · PA sistólica &lt; 90 ou &gt; 180 mmHg · Uso de musculatura acessória · Agitação intensa · Alteração do nível de consciência
+    </div>
+  </div>
+  <div class="vm-card" style="border-color:#b45309;margin-top:8px">
+    <div class="vm-nome" style="color:#b45309">Extubação e Falha de Extubação</div>
+    <div class="vm-body">
+      <strong>Critérios adicionais para extubação após SBT bem-sucedido:</strong><br>
+      • Deglutição: teste de deglutição com 3 mL de água (mini cuff test) · Se falha → considerar via aérea protegida antes<br>
+      • Secreções: volume manejável pelo paciente (tosse eficaz = pico de fluxo &gt; 60 L/min no cuff test)<br>
+      • Stridor pós-extubação: adrenalina 0,5 mL nebulizada + dexametasona 10 mg IV · Preditores: cuff leak test (&lt;10% = risco de edema)<br><br>
+      <strong>Suporte pós-extubação:</strong><br>
+      • <strong>HFNC (High-Flow Nasal Cannula):</strong> O₂ umidificado 37°C, 20–60 L/min, FiO₂ 0,21–1,0<br>
+        — Indicações: extubação de alto risco (VM &gt;7 dias, ICC, DPOC, hipersecretivos) · FLORALI trial: VNI + HFNC + O₂ convencional → HFNC melhor sobrevida em insuficiência respiratória hipoxêmica moderada<br>
+      • <strong>VNI pós-extubação:</strong> insuficiência respiratória aguda após extubação + DPOC ou imunossuprimidos · Não reduz reintubação em falha tardia mas reduz em profilaxia pós-extubação programada<br><br>
+      <strong>Reintubação:</strong><br>
+      • Taxa aceitável: 10–20% · &lt;5% = critérios de extubação muito conservadores (perdendo dias de VM desnecessária)<br>
+      • Reintubação emergencial: VSR (video laringoscópio) ou fibroscópio em via aérea difícil
+    </div>
+  </div>
+  <div class="vm-card" style="border-color:#6d28d9;margin-top:8px">
+    <div class="vm-nome" style="color:#6d28d9">VNI — Ventilação Não-Invasiva (BiPAP/CPAP)</div>
+    <div class="vm-body">
+      <table>
+        <tr><th>Indicação</th><th>Modalidade</th><th>Parâmetros Iniciais</th><th>Evidência</th></tr>
+        <tr><td>DPOC em exacerbação (PaCO₂ &gt;45, pH &lt;7,35)</td><td>BiPAP</td><td>IPAP 10–14 cmH₂O / EPAP 4–6 cmH₂O → titular pH</td><td>Classe I — reduz intubação e mortalidade</td></tr>
+        <tr><td>Edema agudo de pulmão cardiogênico</td><td>CPAP 5–10 cmH₂O</td><td>CPAP 5 → 10 cmH₂O conforme SpO₂</td><td>Classe I — melhora SpO₂ e reduz intubação</td></tr>
+        <tr><td>Imunossuprimidos com IRA hipoxêmica</td><td>BiPAP ou HFNC</td><td>FiO₂ mínima necessária; HFNC preferida (FLORALI)</td><td>Evitar intubação (↑ infecções em imunossuprimidos)</td></tr>
+        <tr><td>Pós-extubação (profilaxia)</td><td>BiPAP</td><td>IPAP 8–12 / EPAP 4–6 cmH₂O × 24–48h</td><td>Reduz reintubação em DPOC e alto risco</td></tr>
+      </table>
+      <br>
+      <strong>Contraindicações absolutas da VNI:</strong><br>
+      • Parada cardiorrespiratória · Trauma ou cirurgia facial recente · Obstrução de via aérea superior · Sangramento digestivo alto com instabilidade · Vômitos incoercíveis · Glasgow &lt;10 sem cooperação · Secreção maciça sem tosse eficaz
+    </div>
+  </div>`;
+}
+
+function renderSeda(){
+  if(document.getElementById('sedaList').innerHTML) return;
+  document.getElementById('sedaList').innerHTML=`
+  <div class="vm-card" style="border-color:#0f4c81">
+    <div class="vm-nome" style="color:#0f4c81">Escalas de Avaliação — RASS, CAM-ICU, BPS</div>
+    <div class="vm-body">
+      <strong>RASS (Richmond Agitation-Sedation Scale):</strong><br>
+      <table>
+        <tr><th>Score</th><th>Estado</th></tr>
+        <tr><td>+4</td><td>Combativo — violento, risco imediato</td></tr>
+        <tr><td>+3</td><td>Muito agitado — puxa acesso venoso, tubo</td></tr>
+        <tr><td>+2</td><td>Agitado — movimentos frequentes e não-intencionais</td></tr>
+        <tr><td>+1</td><td>Inquieto — ansioso mas não agitado</td></tr>
+        <tr><td style="background:#f0fdf4">0</td><td>Alerta e calmo — <strong>alvo padrão</strong></td></tr>
+        <tr><td style="background:#eff6ff">−1</td><td>Sonolento — responde a voz, abre olhos &gt;10s — <strong>alvo em VM</strong></td></tr>
+        <tr><td>−2</td><td>Leve sedação — abre olhos &lt;10s à voz</td></tr>
+        <tr><td>−3</td><td>Sedação moderada — sem abertura ocular à voz, movimento ao estímulo físico</td></tr>
+        <tr><td>−4</td><td>Sedação profunda — sem resposta à voz; movimento à estímulo físico</td></tr>
+        <tr><td>−5</td><td>Não-desperto — sem resposta a qualquer estímulo</td></tr>
+      </table>
+      <br>
+      <strong>CAM-ICU (Confusion Assessment Method for ICU):</strong><br>
+      Delírio = RASS ≥−3 + (1+2) + (3 OU 4):<br>
+      1. Início agudo ou flutuação de estado mental<br>
+      2. Desatenção (sequência de letras: "ATENÇÃO" — erro &gt;2 = positivo)<br>
+      3. Pensamento desorganizado (perguntas simples + sequência de comandos)<br>
+      4. Alteração do nível de consciência (RASS ≠ 0)<br>
+      <div class="atencao">⚠️ CAM-ICU positivo = delírio presente. Prevalência UTI: 50–80% de ventilados. Fator de risco independente para mortalidade e disfunção cognitiva pós-UTI.</div><br>
+      <strong>BPS (Behavioral Pain Scale) — dor em paciente intubado não-comunicativo:</strong><br>
+      3 domínios (expressão facial, movimentos braços, sincronia ventilatória) · Escores 1–4 cada · BPS 3 = sem dor; BPS &gt;5 = dor inaceitável (tratar)
+    </div>
+  </div>
+  <div class="vm-card" style="border-color:#dc2626;margin-top:8px">
+    <div class="vm-nome" style="color:#dc2626">Sedativos em UTI — Comparação e Escolha (PAD Guidelines 2018)</div>
+    <div class="vm-body">
+      <div class="alerta">⚠️ PAD Guidelines: ANALGESIA-FIRST. Tratar dor antes de sedação. Sedação superficial (RASS −1 a 0) é alvo — não RASS −4 ou −5 (salvo exceções: SARA grave, BNM, hipertensão intracraniana).</div>
+      <table>
+        <tr><th>Fármaco</th><th>Mecanismo</th><th>Dose / Infusão</th><th>Vantagens</th><th>Desvantagens / CI</th></tr>
+        <tr><td><strong>Propofol</strong></td><td>GABA-A potenciador</td><td>5–50 mcg/kg/min IV contínuo</td><td>Início imediato, duração curta, permite avaliação neurológica rápida · Broncodilatação leve · Antiemético</td><td>Síndrome de infusão de propofol (PRIS): dose &gt;4 mg/kg/h por &gt;48h → acidose lática + CK elevada + arritmia + insuficiência renal · Hipertrigliceridemia · Hipotensão · Contraindicado em alergia a ovo/soja</td></tr>
+        <tr><td><strong>Midazolam</strong></td><td>Benzodiazepínico (GABA-A)</td><td>0,02–0,1 mg/kg/h IV · Bolus 1–5 mg</td><td>Barato · Amnésia · Anticonvulsivante</td><td>Acúmulo e sedação prolongada (metabólito 1-OH-midazolam) · ↑ delírio (OR 1,7×) · Evitar em desmame · Depressão respiratória · Não como sedativo de 1ª linha em VM prolongada</td></tr>
+        <tr><td><strong>Dexmedetomidina</strong></td><td>Agonista α₂-adrenérgico</td><td>0,2–1,4 mcg/kg/h IV (sem bolus habitual)</td><td>Sedação que permite acordar e comunicar · Reduz delírio vs midazolam (MENDS trial) · Não deprime respiração · Melhora desmame · Dor reduzida por mecanismo α₂</td><td>Bradicardia e hipotensão (monitorar FC/PA) · Custo maior · Não para convulsões · CI: BAV 2°/3° grau · Efeito pode ser insuficiente em agitação grave</td></tr>
+        <tr><td><strong>Ketamina</strong></td><td>Antagonista NMDA</td><td>0,1–0,5 mg/kg/h (analgossedação) · 0,5–2 mg/kg bolus (procedimentos)</td><td>Broncodilatador (↑ catecolaminas) · Mantém reflexos protetores · Analgesia potente · Status asmático refratário</td><td>↑ Secreções (atropina profilática, 0,4 mg IM) · Alucinações/disforia (dose-dependente, minimizar com BZD ou dexmedetomidina) · ↑ PIC em neurocríticos (relativo — contestado)</td></tr>
+      </table>
+      <br>
+      <strong>Protocolo de sedação analgesia-first (PAD 2018):</strong><br>
+      1. Avaliar dor (BPS ou NRS) → se dor: Fentanil 25–50 mcg IV bolus OU Morfina OU Remifentanil (curta duração)<br>
+      2. Se RASS &gt; alvo após analgesia: iniciar Propofol ou Dexmedetomidina<br>
+      3. Avaliar RASS e CAM-ICU 2× por turno · SAT diária (suspender sedação, avaliar se extubação possível)<br>
+      4. Midazolam: reservar para convulsões, abstinência alcoólica, procedimentos, imobilidade necessária
+    </div>
+  </div>
+  <div class="vm-card" style="border-color:#6d28d9;margin-top:8px">
+    <div class="vm-nome" style="color:#6d28d9">Delírio em UTI — Prevenção e Tratamento</div>
+    <div class="vm-body">
+      <strong>THINK (mnemônico de causas de delírio em UTI):</strong><br>
+      <strong>T</strong>óxicos (opioides, BZD, anticolinérgicos, esteroides) · <strong>H</strong>ipoxemia · <strong>I</strong>nfecção/sepse · <strong>N</strong>eurológico (AVC, MNSD) · <strong>K</strong>–electrólitos (hipoNa, hipoMg, hipoCa)<br><br>
+      <strong>Estratégias não-farmacológicas (HELP Protocol adaptado para UTI):</strong><br>
+      • Reorientação frequente (nome, data, local, razão da UTI) · Luz natural durante dia, escuridão à noite<br>
+      • Mobilização precoce (abcdeF bundle) · Otimizar óculos e aparelho auditivo<br>
+      • Evitar contenção física (↑ agitação e delírio) · Promover ciclo sono-vigília<br><br>
+      <strong>Farmacológico (controvérso — dados fracos para PREVENÇÃO):</strong><br>
+      • Haloperidol: 0,5–5 mg IV ou IM · Não reduz duração do delírio (MIND-USA trial) mas controla agitação<br>
+        — Atenção: ↑ QTc (monitorar) · CI absoluto: Parkinson, DLB · Não para delírio hipoativo<br>
+      • Quetiapina: 12,5–50 mg 2×/dia (mais sedativo; útil em insônia + delírio) · Sem evidência de redução de mortalidade<br>
+      • Dexmedetomidina: 0,2–0,7 mcg/kg/h · MENDS-2 trial: dexmedetomidina superior a lorazepam em dias livres de delírio em sépticos<br>
+      • Melatonina 3–5 mg ao deitar: melhora ciclo sono-vigília, possível redução de delírio (dados observacionais)<br><br>
+      <strong>Analgesia e delírio — opioides em VM:</strong><br>
+      <table>
+        <tr><th>Opioide</th><th>Duração</th><th>Uso em VM</th><th>Observação</th></tr>
+        <tr><td>Fentanil</td><td>Curta</td><td>Bolus + infusão contínua mais usada</td><td>Contexto-sensível em infusão prolongada (acumula em tecido adiposo)</td></tr>
+        <tr><td>Remifentanil</td><td>Curtíssima (3–5 min)</td><td>Infusão 0,05–0,2 mcg/kg/min</td><td>Ideal para analgossedação + avaliação neurológica frequente · Não acumula (esterase plasmática) · Hiperalgesia pós-VM</td></tr>
+        <tr><td>Morfina</td><td>Prolongada</td><td>Bolus 2–4 mg · Infusão: acumula</td><td>Liberação histamina → broncoespasmo · Metabólito ativo (M6G) acumula em IRC</td></tr>
+      </table>
+    </div>
+  </div>`;
+}
+</script>
+</body>
+</html>

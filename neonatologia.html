@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Neonatologia — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .neo-hdr{background:linear-gradient(135deg,#1a3a1a,#15803d);color:#fff;border-radius:14px;padding:18px;margin-bottom:14px}
+    .neo-title{font-size:1rem;font-weight:800;margin-bottom:4px}
+    .neo-sub{font-size:.73rem;opacity:.8}
+    label{font-size:.75rem;font-weight:700;color:#1e3a5f;display:block;margin-bottom:4px}
+    select,input[type=number]{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:10px;padding:10px 12px;font-size:.85rem;background:#fff;margin-bottom:10px}
+    .btn-calc{width:100%;background:#15803d;color:#fff;border:none;border-radius:12px;padding:13px;font-size:.87rem;font-weight:700;cursor:pointer;margin:8px 0}
+    .tab-bar{display:flex;gap:6px;margin-bottom:14px}
+    .tab-btn{flex:1;padding:9px 4px;border-radius:10px;border:2px solid #e2e8f0;background:#fff;font-size:.72rem;font-weight:700;cursor:pointer;color:#64748b}
+    .tab-btn.active{border-color:#15803d;background:#f0fdf4;color:#15803d}
+    .neo-card{border-radius:10px;border-left:5px solid;padding:10px 14px;margin-bottom:8px;background:#fff}
+    .neo-nome{font-size:.83rem;font-weight:800;margin-bottom:4px}
+    .neo-body{font-size:.76rem;line-height:1.7;color:#374151}
+    .alerta{background:#fef2f2;border:2px solid #dc2626;border-radius:10px;padding:8px;margin:6px 0;font-size:.75rem;color:#7f1d1d;font-weight:700}
+    .atencao{background:#fffbeb;border:2px solid #d97706;border-radius:10px;padding:8px;margin:6px 0;font-size:.75rem;color:#78350f;font-weight:700}
+    .ok-box{background:#f0fdf4;border:2px solid #15803d;border-radius:10px;padding:8px;margin:6px 0;font-size:.75rem;color:#14532d;font-weight:700}
+    table{width:100%;border-collapse:collapse;font-size:.73rem;margin-top:6px}
+    th{background:#15803d;color:#fff;padding:5px 8px;text-align:left}
+    td{padding:5px 8px;border-bottom:1px solid #f1f5f9}
+    tr:nth-child(even) td{background:#f0fdf4}
+    .result-box{background:#f0fdf4;border-radius:10px;padding:14px;margin-top:8px}
+    .result-val{font-size:1.3rem;font-weight:900;color:#15803d}
+    .result-label{font-size:.7rem;color:#475569;margin-top:2px}
+    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  </style>
+</head>
+<body>
+<header class="top-bar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <span class="top-title">Neonatologia</span>
+  <div class="top-right"></div>
+</header>
+<main class="container" style="padding-bottom:90px">
+  <div class="neo-hdr">
+    <div class="neo-title">👶 Neonatologia Clínica</div>
+    <div class="neo-sub">Icterícia · Hipoglicemia · SDR/Surfactante · Sepse Neonatal · Convulsão · Triagem</div>
+  </div>
+  <div class="tab-bar">
+    <button class="tab-btn active" id="tb0" onclick="showTab(0)">Icterícia & Hipoglicemia</button>
+    <button class="tab-btn" id="tb1" onclick="showTab(1)">SDR · Sepse · Convulsão</button>
+    <button class="tab-btn" id="tb2" onclick="showTab(2)">Triagem Neonatal</button>
+  </div>
+
+  <!-- TAB 0 — Icterícia & Hipoglicemia -->
+  <div id="tab0">
+    <div class="card" style="padding:12px 14px;margin-bottom:10px">
+      <div style="font-size:.8rem;font-weight:800;color:#15803d;margin-bottom:8px">Calculadora — Indicação de Fototerapia (Nomograma Bhutani)</div>
+      <div class="grid2">
+        <div>
+          <label>Idade gestacional (sem)</label>
+          <input type="number" id="neo_ig" placeholder="38" min="22" max="42">
+        </div>
+        <div>
+          <label>Hora de vida do RN</label>
+          <input type="number" id="neo_hv" placeholder="36" min="1" max="168">
+        </div>
+      </div>
+      <label>Bilirrubina Total (mg/dL)</label>
+      <input type="number" id="neo_bili" placeholder="10.0" step="0.1">
+      <label>Fatores de risco para encefalopatia bilirrubínica</label>
+      <select id="neo_risco">
+        <option value="0">Sem fatores de risco (≥38 semanas, saudável)</option>
+        <option value="1">1 fator (36–37 sem OU isoimunização OU déficit G6PD OU asfixia OU hipotermia OU albumina &lt;3 g/dL)</option>
+        <option value="2">2+ fatores ou IG ≤ 35 semanas</option>
+      </select>
+      <button class="btn-calc" onclick="calcBili()">🌟 Avaliar necessidade de fototerapia</button>
+    </div>
+    <div id="biliResult" style="display:none"></div>
+
+    <div class="neo-card" style="border-color:#d97706;margin-top:6px">
+      <div class="neo-nome" style="color:#d97706">Icterícia Neonatal — Diagnóstico e Manejo</div>
+      <div class="neo-body">
+        <strong>Causas de hiperbilirrubinemia neonatal:</strong><br>
+        <table>
+          <tr><th>Causa</th><th>Onset</th><th>Característica</th><th>Diagnóstico</th></tr>
+          <tr><td>Fisiológica</td><td>D2–D3 → resolve D7–D14</td><td>Bilirrubina indireta &lt;12 (a termo); &lt;15 (prematuro)</td><td>Diagnóstico de exclusão</td></tr>
+          <tr><td>Aleitamento materno</td><td>D4–D7</td><td>Leve, autolimitada; aporte adequado → passa</td><td>Ganho ponderal + aporte</td></tr>
+          <tr><td>Leite materno (breast milk)</td><td>D7–D14</td><td>Prolongada, bilirrubina moderada, RN saudável</td><td>Suspender AM 48h → bili cai 50% confirma</td></tr>
+          <tr><td>Isoimunização Rh/ABO</td><td>D1–D2 (precoce)</td><td>Hiperbilirrubinemia grave · Anemia hemolítica</td><td>Coombs direto, tipagem sanguínea · Imunoglobulina IV 0,5 g/kg × 1–2h (isoimunização Rh)</td></tr>
+          <tr><td>Deficiência G6PD</td><td>D2–D7 (exposição)</td><td>Hemólise grave ao exposição oxidante</td><td>Dosagem G6PD · Evitar oxidantes</td></tr>
+          <tr><td>Atresia de vias biliares</td><td>&gt;D14 (colestase)</td><td>Icterícia prolongada + acolia + colúria</td><td>Gama-GT elevada + USG + biópsia · Kasai antes de 8 semanas melhora prognóstico</td></tr>
+        </table>
+        <br>
+        <strong>Fototerapia — técnica e monitoramento:</strong><br>
+        • Fototerapia convencional: lâmpada azul 430–490 nm, 25–30 mW/cm²/nm; RN desnudo (olhos protegidos)<br>
+        • Fototerapia intensiva (bililumi): múltiplas fontes (&gt;30 mW/cm²/nm) → redução de bili 30–40% em 4–6h<br>
+        • Controlar bili a cada 4–6h durante fototerapia intensiva · Medir 12–24h após suspensão (rebote)<br>
+        • Hidratação: +10–15 mL/kg/dia de hidratação via oral durante fototerapia (perdas insensíveis)<br><br>
+        <strong>Exsanguíneotransfusão (EST):</strong><br>
+        <div class="alerta">⚠️ EST indicada: bilirrubina atingindo limites de EST no nomograma OU sinais de encefalopatia aguda (hipertonia, arqueamento, choro agudo, febre, convulsão — kernícterus iminente)</div>
+        • Volume: 2 × volemia (2 × 85 mL/kg = 170 mL/kg) → sangue O Rh negativo irradiado/CMV negativo<br>
+        • Reduz bili em ~50% em uma EST · Monitorar: glicemia, Ca, K, plaquetas, coagulação durante procedimento<br><br>
+        <strong>Imunoglobulina IV (Rh/ABO isoimunização):</strong><br>
+        • 0,5–1 g/kg IV em 2–4h → reduz hemólise e necessidade de EST em até 40% (Cochrane)
+      </div>
+    </div>
+
+    <div class="neo-card" style="border-color:#dc2626;margin-top:8px">
+      <div class="neo-nome" style="color:#dc2626">Hipoglicemia Neonatal</div>
+      <div class="neo-body">
+        <strong>Definição:</strong> Glicose capilar &lt;45 mg/dL nas primeiras 24–48h · &lt;50 mg/dL após 48h (grupos de risco: confirmar com glicose venosa)<br><br>
+        <strong>Grupos de RISCO para triagem obrigatória (1, 2, 3, 4h):</strong><br>
+        • Filho de mãe diabética (FMD) · Macrossômico (PN &gt;4 kg) · Prematuro tardio (34–36⁶⁄₇ sem) · PIG (PN &lt;P10) · Asfixia · Hipotermia · Policitemia · Gemelar discordante (&gt;20%)<br><br>
+        <strong>Algoritmo de manejo:</strong><br>
+        <table>
+          <tr><th>Glicose capilar</th><th>RN sintomático?</th><th>Conduta</th></tr>
+          <tr><td>&lt;25 mg/dL</td><td>Qualquer</td><td><strong>Gel de dextrose 40% 0,5 mL/kg (200 mg/kg) bucal + oferta de leite imediata OU glicose IV 200 mg/kg em bolus (2 mL/kg SG10%) → manutenção SG10% 80 mL/kg/dia</strong></td></tr>
+          <tr><td>25–45 mg/dL</td><td>Sim (trêmulo, cianótico, apneia, convulsão)</td><td>Glicose IV: bolus SG10% 2 mL/kg + manutenção + tratar causa</td></tr>
+          <tr><td>25–45 mg/dL</td><td>Não (assintomático)</td><td>Gel de dextrose 40% 0,5 mL/kg bucal + amamentação/SNE + repetir glicemia em 30 min</td></tr>
+          <tr><td>45–60 mg/dL</td><td>Não</td><td>Estimular amamentação precoce · Repetir glicemia 1–2h</td></tr>
+        </table>
+        <br>
+        <strong>Hipoglicemia refratária — causas:</strong><br>
+        Hiperinsulinismo (FMD, nesidioblastose congênita, síndrome de Beckwith-Wiedemann) · Hipopituitarismo · Galactosemia · GSD (glicogenose)<br>
+        <strong>Glucagon:</strong> 0,02–0,03 mg/kg IM/SC (máx 1 mg) · Útil em hiperinsulinismo até acesso venoso · Efeito temporário<br>
+        <strong>Diazóxido:</strong> 5–15 mg/kg/dia ÷ 3 doses → hiperinsulinismo congênito persistente · RAM: retenção hídrica, hirsutismo
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 1 — SDR · Sepse · Convulsão -->
+  <div id="tab1" style="display:none">
+    <div id="sdrList"></div>
+  </div>
+
+  <!-- TAB 2 — Triagem Neonatal -->
+  <div id="tab2" style="display:none">
+    <div id="triagemList"></div>
+  </div>
+</main>
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+<script src="js/db.js"></script>
+<script>
+function showTab(n){[0,1,2].forEach(i=>{document.getElementById('tab'+i).style.display=i===n?'block':'none';document.getElementById('tb'+i).classList.toggle('active',i===n);});if(n===1)renderSDR();if(n===2)renderTriagem();}
+
+/* Nomograma de Bhutani simplificado — limiares de fototerapia por hora de vida e fatores de risco */
+function calcBili(){
+  const ig=parseInt(document.getElementById('neo_ig').value)||0;
+  const hv=parseInt(document.getElementById('neo_hv').value)||0;
+  const bili=parseFloat(document.getElementById('neo_bili').value)||0;
+  const risco=parseInt(document.getElementById('neo_risco').value);
+  if(!ig||!hv||!bili){alert('Preencha todos os campos.');return;}
+  if(ig<22||ig>42){alert('IG fora de faixa (22–42 semanas).');return;}
+  /* Limiares de fototerapia (simplificados — baseado em Bhutani et al. 1999 + AAP 2022) */
+  /* Linha sem risco: hv → bilirrubina limiar fototerapia */
+  const L0=[
+    {h:0,b:0},{h:12,b:8},{h:24,b:10},{h:36,b:13},{h:48,b:15},{h:60,b:17},
+    {h:72,b:18},{h:84,b:19},{h:96,b:20},{h:108,b:20.5},{h:120,b:21},{h:144,b:21},{h:168,b:21}
+  ];
+  /* Ajuste por fatores de risco: −1 mg/dL por fator; prematuro tardio (≤36): −2 */
+  function lerLimiar(tabela,horas){
+    for(let i=1;i<tabela.length;i++){
+      if(horas<=tabela[i].h){
+        const frac=(horas-tabela[i-1].h)/(tabela[i].h-tabela[i-1].h);
+        return tabela[i-1].b+frac*(tabela[i].b-tabela[i-1].b);
+      }
+    }
+    return tabela[tabela.length-1].b;
+  }
+  let limFoto=lerLimiar(L0,Math.min(hv,168));
+  /* Ajuste por IG e fatores de risco */
+  if(ig<=35) limFoto-=3;
+  else if(ig<=37) limFoto-=2;
+  else if(ig<=38) limFoto-=1;
+  limFoto-=risco*1.5;
+  const limEST=limFoto+5; // EST ~5 mg/dL acima de fototerapia
+  const precisaFoto=bili>=limFoto;
+  const precisaEST=bili>=limEST;
+  const encefaloRisco=bili>25;
+  let cor=precisaEST?'#dc2626':precisaFoto?'#d97706':'#15803d';
+  let status=precisaEST?'⚠️ EXSANGUÍNEOTRANSFUSÃO INDICADA':precisaFoto?'💡 FOTOTERAPIA INDICADA':'✅ Observação — fototerapia não indicada no momento';
+  let detail=precisaEST?`<div class="alerta">EMERGÊNCIA NEONATAL: Bili ${bili} mg/dL ≥ limiar EST (${limEST.toFixed(1)} mg/dL). Iniciar fototerapia intensiva IMEDIATAMENTE enquanto prepara EST. Avaliar sinais de encefalopatia (hipertonia, arqueamento, choro agudo).</div>`
+    :precisaFoto?`<div class="atencao">Bili ${bili} mg/dL ≥ limiar fototerapia (${limFoto.toFixed(1)} mg/dL) para ${hv}h de vida. Iniciar fototerapia. Repetir bili em 4–6h. Garantir hidratação +10 mL/kg/dia.</div>`
+    :`<div class="ok-box">Bili ${bili} mg/dL abaixo do limiar (${limFoto.toFixed(1)} mg/dL) para ${hv}h de vida. Manter amamentação e reavaliação clínica. Repetir bili conforme evolução clínica.</div>`;
+  document.getElementById('biliResult').style.display='block';
+  document.getElementById('biliResult').innerHTML=`
+  <div class="result-box">
+    <div style="font-size:.9rem;font-weight:800;color:${cor};margin-bottom:8px">${status}</div>
+    <div class="grid2">
+      <div><div class="result-val" style="color:${cor}">${bili} mg/dL</div><div class="result-label">Bilirrubina atual</div></div>
+      <div><div class="result-val">${limFoto.toFixed(1)} mg/dL</div><div class="result-label">Limiar fototerapia (${hv}h)</div></div>
+    </div>
+    <div style="font-size:.74rem;margin-top:8px"><strong>Limiar EST nesta hora de vida:</strong> ${limEST.toFixed(1)} mg/dL · <strong>IG:</strong> ${ig} sem · <strong>Fatores de risco:</strong> ${risco}</div>
+    ${detail}
+    ${encefaloRisco&&!precisaEST?'<div class="atencao">⚠️ Bili &gt;25 mg/dL: avaliar sinais neurológicos de kernícterus (hipertonia, arqueamento, choro agudo, febre) — EST se presentes.</div>':''}
+    <div style="font-size:.68rem;color:#64748b;margin-top:8px">Baseado em Bhutani et al. 1999 + AAP Clinical Practice Guideline 2022 (PMID 35363875). Valores são estimativas — decisão clínica considera evolução e contexto.</div>
+  </div>`;
+  document.getElementById('biliResult').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+function renderSDR(){
+  if(document.getElementById('sdrList').innerHTML) return;
+  document.getElementById('sdrList').innerHTML=`
+  <div class="neo-card" style="border-color:#0369a1">
+    <div class="neo-nome" style="color:#0369a1">Síndrome de Angústia Respiratória (SDR) — Surfactante e Suporte</div>
+    <div class="neo-body">
+      <strong>SDR = Doença da Membrana Hialina:</strong> Deficiência de surfactante em prematuro (&lt;37 sem) → colapso alveolar + hipoxemia + shunt intrapulmonar<br><br>
+      <strong>Critérios para surfactante terapêutico (pós-natal):</strong><br>
+      • FiO₂ &gt;0,30 para SpO₂ 88–95% em CPAP nasal OU<br>
+      • Prematuridade grave (&lt;30 semanas) — considerar profilático imediato ao nascimento<br>
+      • Radiografia: vidro fosco bilateral, broncograma aéreo<br><br>
+      <strong>Tipos de surfactante e doses:</strong><br>
+      <table>
+        <tr><th>Surfactante</th><th>Origem</th><th>Dose</th><th>Via</th></tr>
+        <tr><td><strong>Poractant alfa (Curosurf)</strong></td><td>Porcino</td><td>100–200 mg/kg (1,25–2,5 mL/kg) × 1; repetir 100 mg/kg em 6–12h se necessário (máx 3 doses)</td><td>Intratraqueal</td></tr>
+        <tr><td><strong>Beractant (Survanta)</strong></td><td>Bovino</td><td>100 mg/kg (4 mL/kg) × 1; repetir 4 vezes em 6h</td><td>Intratraqueal</td></tr>
+        <tr><td><strong>Calfactant (Infasurf)</strong></td><td>Bovino</td><td>105 mg/kg (3 mL/kg)</td><td>Intratraqueal</td></tr>
+      </table>
+      <br>
+      <strong>Técnicas de administração:</strong><br>
+      • <strong>INSURE (Intubate-Surfactant-Extubate):</strong> intuba, administra surfactante, extubar para CPAP em minutos — reduz VM prolongada<br>
+      • <strong>LISA/MIST (Less Invasive Surfactant Administration):</strong> sonda fina em traqueia com RN em CPAP espontâneo → sem intubação formal → melhor em RN respirando espontaneamente<br>
+        — Meta-análise 2019: LISA superior a INSURE na redução de displasia broncopulmonar e mortalidade<br><br>
+      <strong>Corticoide antenatal (mãe):</strong><br>
+      • Betametasona 12 mg IM × 2 doses em 24h (mãe) → 34–36 semanas · Reduz SDR em 50%, HIV em 40%, mortalidade em 30%<br>
+      • Cursos de resgate: 1 ciclo adicional se &gt;7 dias do ciclo inicial e &lt;34 semanas ainda em risco de parto prematuro<br><br>
+      <strong>Suporte Ventilatório no Prematuro:</strong><br>
+      • <strong>CPAP nasal (nCPAP):</strong> 5–8 cmH₂O · 1ª linha em SDR leve-moderada (COIN trial)<br>
+      • <strong>VNI bi-nível (NIPPV):</strong> superior a CPAP para reduzir intubação em algumas séries<br>
+      • <strong>VM convencional:</strong> PCV com volume corrente 4–5 mL/kg PI (não 6 mL/kg dos adultos — pulmão neonatal) · FR 40–60 ipm · Ti 0,3–0,4s<br>
+      • <strong>VAFO (Ventilação de Alta Frequência Oscilatória):</strong> frequência 8–15 Hz, MAP 1–2 cmH₂O acima da VM convencional · Indicada em SDR grave ou sem resposta
+    </div>
+  </div>
+  <div class="neo-card" style="border-color:#dc2626;margin-top:8px">
+    <div class="neo-nome" style="color:#dc2626">Sepse Neonatal — Precoce vs Tardia</div>
+    <div class="neo-body">
+      <table>
+        <tr><th>Parâmetro</th><th>Sepse Precoce (≤72h)</th><th>Sepse Tardia (&gt;72h)</th></tr>
+        <tr><td>Principal agente</td><td>Streptococcus agalactiae (GBS) · E. coli · Listeria</td><td>Estafilococos coagulase-negativo (CONS) · S. aureus · Klebsiella · Candida</td></tr>
+        <tr><td>Fatores de risco</td><td>Colonização materna por GBS · RPM &gt;18h · Parto prematuro · Corioamnionite</td><td>CVC de longa data · Prematuro extremo · NPT prolongada · Cirurgia</td></tr>
+        <tr><td>Esquema empírico 1ª linha</td><td><strong>Ampicilina 50 mg/kg IV 12/12h (D0–D7) ou 8/8h (D7+) + Gentamicina 4–5 mg/kg IV 24/24h</strong></td><td><strong>Vancomicina 15 mg/kg IV 6–12h (por peso/IG) + Gentamicina ou Ampicilina</strong></td></tr>
+        <tr><td>Cobertura Listeria</td><td>Ampicilina cobre</td><td>Geralmente não relevante</td></tr>
+        <tr><td>Cobertura Candida</td><td>Não rotineiro</td><td>Fluconazol 6–12 mg/kg/dia OU anfotericina B lipossomal se Candida confirmada ou suspeita forte em prematuro extremo</td></tr>
+      </table>
+      <br>
+      <strong>Triagem GBS materna e profilaxia intraparto:</strong><br>
+      • Pesquisa de GBS no swab vaginal-retal entre 36–37 semanas<br>
+      • Profilaxia intraparto: penicilina G 5 milhões U IV + 2,5–3 milhões U IV 4/4h<br>
+      • Alergia penicilina (baixo risco): cefazolina · Alto risco de anafilaxia: clindamicina (se sensível) OU vancomicina<br><br>
+      <strong>Calculadora NBS (Newborn Sepsis Screening — Kaiser):</strong><br>
+      Online: kaiserpermanente.org/GBSrisk · Combina: IG + temperatura materna + status GBS + antibiótico intraparto + membranas<br><br>
+      <strong>Marcadores laboratoriais de sepse neonatal:</strong><br>
+      PCR: eleva em 12–24h (não precoce) · Procalcitonina: eleva em 3–6h · IL-6 e IL-8: mais precoces · Hemograma: neutrófilos imaturos (I:T &gt;0,2 = razão imaturos:total) · Hemocultura: padrão-ouro (coleta antes do ATB), sensibilidade 30–60% em sepse precoce
+    </div>
+  </div>
+  <div class="neo-card" style="border-color:#7c3aed;margin-top:8px">
+    <div class="neo-nome" style="color:#7c3aed">Convulsão Neonatal</div>
+    <div class="neo-body">
+      <strong>Diagnóstico:</strong> Clínico (movimentos oculares, mastigação, apneia com cianose, movimentos focais/tônicos) + EEG confirmatório<br>
+      <div class="atencao">⚠️ Convulsão sutil (a mais comum em prematuros): movimentos oculares rotatórios, sucção/mastigação, pedalagem — difícil diagnóstico clínico sem EEG.</div>
+      <br>
+      <strong>Causas por frequência (HIPOCALCEMIA — mnemônico):</strong><br>
+      • <strong>H</strong>iporglicemia (tratar primeiro — glicemia cabeceira imediata) · <strong>I</strong>njúria hipóxico-isquêmica (HIE) · <strong>P</strong>iridoxina deficiência (raro) · <strong>O</strong>utras metabólicas (hipocalcemia, hipomagnesiemia, hiponatremia) · <strong>C</strong>ongênitas (displasia cortical, malformações) · <strong>A</strong>cidente vascular neonatal · <strong>L</strong>esão por trauma/hemorragia · <strong>C</strong>erebrite/meningite · <strong>E</strong>rros inatos do metabolismo · <strong>M</strong>edicamentos maternas (abstinência neonatal, narcóticos)<br><br>
+      <strong>Tratamento farmacológico:</strong><br>
+      <table>
+        <tr><th>Fármaco</th><th>Dose</th><th>Observações</th></tr>
+        <tr><td><strong>Fenobarbital (1ª linha)</strong></td><td>Carga: 20 mg/kg IV lento (15–30 min) · Pode repetir 5–10 mg/kg até 40 mg/kg total · Manutenção: 3–5 mg/kg/dia</td><td>Eficácia 45% em dose padrão · Mais eficaz que benzodiazepínico no neonato · Depressão respiratória ao superdosagem</td></tr>
+        <tr><td><strong>Levetiracetam (2ª linha)</strong></td><td>20–60 mg/kg IV · Manutenção 40–60 mg/kg/dia</td><td>Alternativa crescente · Menor depressão respiratória · NEOLEV2 trial 2020: eficácia similar a fenobarbital · Aprovação off-label</td></tr>
+        <tr><td><strong>Fenitoína / Fosfenitoína</strong></td><td>Fenitoína: 15–20 mg/kg IV (máx 1 mg/kg/min) · Fosfenitoína: 15–20 PE/kg</td><td>Arritmia (infusão rápida) · Monitorar QRS · Depósito em tecido · Opção quando PB falha</td></tr>
+        <tr><td><strong>Midazolam</strong></td><td>0,05–0,1 mg/kg IV bolus ou infusão 0,1–0,2 mg/kg/h</td><td>Status epilepticus refratário · Depressão respiratória</td></tr>
+        <tr><td><strong>Piridoxina (Vit B6)</strong></td><td>100 mg IV (dose diagnóstica e terapêutica)</td><td>Dependência de piridoxina: convulsão para em minutos após administração · Rara mas tratável</td></tr>
+      </table>
+      <br>
+      <strong>HIE (Encefalopatia Hipóxico-Isquêmica) — Hipotermia Terapêutica:</strong><br>
+      • Critérios: RN ≥36 semanas + pH &lt;7,0 ou BE &lt;−16 OU Apgar &lt;5 em 10 min OU necessidade de reanimação<br>
+      • Hipotermia: 33–34°C por 72h iniciada em &lt;6h de vida · Reduz morte/sequela neurológica em 25% (NNT=7)<br>
+      • Excluir: prematuro &lt;36 sem, anomalia congênita grave
+    </div>
+  </div>`;
+}
+
+function renderTriagem(){
+  if(document.getElementById('triagemList').innerHTML) return;
+  document.getElementById('triagemList').innerHTML=`
+  <div class="neo-card" style="border-color:#15803d">
+    <div class="neo-nome" style="color:#15803d">Triagem Neonatal — Teste do Pezinho (Programa Nacional)</div>
+    <div class="neo-body">
+      <strong>Coleta:</strong> 3°–5° dia de vida (idealmente 48–72h após início de mamadas) · Papel filtro · Pré-natal: coleta pode ser D2 com repetição D7 se necessário · Prematuros &lt;32 sem: D3 + repetição D28 + com 3 meses<br><br>
+      <strong>Doenças rastreadas no PNTN (Programa Nacional de Triagem Neonatal — PORTARIA MS/GM 2829/2014):</strong><br>
+      <table>
+        <tr><th>Fase/Doença</th><th>Marcador</th><th>Confirmatório</th><th>Tratamento</th></tr>
+        <tr><td><strong>PKU (Fenilcetonúria)</strong></td><td>Fenilalanina &gt;2 mg/dL</td><td>Dosagem Phe sérica + genotipagem PAH</td><td>Dieta low-Phe com substituintes proteicos · Sapropterina (BH4) em responsivos</td></tr>
+        <tr><td><strong>Hipotireoidismo Congênito</strong></td><td>TSH &gt;20 mUI/L (papel filtro)</td><td>TSH + T4 livre séricos</td><td>Levotiroxina 10–15 mcg/kg/dia · Iniciar &lt;2 semanas de vida para prognóstico neurológico</td></tr>
+        <tr><td><strong>Anemia Falciforme e Hemoglobinopatias</strong></td><td>HPLC (isoeletrofocalização) — padrão FS, FSA, FSC</td><td>Eletroforese de hemoglobina</td><td>Penicilina V profilática desde D60–D90; vacinas; hidroxiureia a partir de 9 meses (BABY HUG)</td></tr>
+        <tr><td><strong>Fibrose Cística</strong></td><td>IRT (imunoreativo tripsina) &gt;70 ng/mL → 2ª amostra D21</td><td>Teste do suor (cloreto &gt;60 mEq/L) + genotipagem CFTR</td><td>Ivacaftor/tezacaftor/elexacaftor (moduladores CFTR) por genotipagem</td></tr>
+        <tr><td><strong>HAC (Hiperplasia Adrenal Congênita)</strong></td><td>17-OH-progesterona (17-OHP) &gt;90 nmol/L</td><td>17-OHP sérica + eletrólitos + cortisol + ACTH</td><td>Hidrocortisona + fludrocortisona (forma perdedora de sal) · Cirurgia genitália ambígua</td></tr>
+        <tr><td><strong>Deficiência de Biotinidase</strong></td><td>Atividade enzimática &lt;30% do normal</td><td>Dosagem biotinidase sérica</td><td>Biotina 5–20 mg/dia VO (simples e eficaz)</td></tr>
+      </table>
+      <br>
+      <strong>Triagens adicionais (estados variados — CONITEC 2019):</strong><br>
+      • <strong>Toxoplasmose congênita</strong>: IgM + IgA específica · Tratamento: pirimetamina + sulfadiazina + ácido folínico × 12 meses<br>
+      • <strong>Galactosemia</strong>: galactose-1-fosfato uridiltransferase (GALT) · Dieta sem galactose/lactose imediatamente<br>
+      • <strong>Doenças da urina do xarope de bordo (MSUD)</strong>: aminoácidos ramificados (leucina &gt;400 µmol/L) · Dieta especial<br><br>
+      <strong>Triagem Auditiva Neonatal Universal (TANU):</strong><br>
+      • OEAT (Emissões Otoacústicas Evocadas Transientes) → D1–D2 antes da alta<br>
+      • Falha → PEATE (Potencial Evocado Auditivo de Tronco Encefálico) em &lt;1 mês<br>
+      • Diagnóstico audiológico: &lt;3 meses · Intervenção (AASI/IC): &lt;6 meses<br>
+      • Fatores de risco: prematuridade · UTI neonatal &gt;5 dias · Aminoglicosídeos · CMV congênito · Meningite bacteriana · Hiperbilirrubinemia que necessitou EST<br><br>
+      <strong>Teste do Coraçãozinho (Triagem Cardiopatias Congênitas Críticas):</strong><br>
+      • Oximetria de pulso pré-ductal (mão direita) + pós-ductal (qualquer pé) em RN saudável entre 24–48h de vida<br>
+      • Falha: SpO₂ &lt;95% OU diferença &gt;3% entre pré e pós-ductal em 3 medições com 1h de intervalo<br>
+      • Falha → ECO antes da alta (cardiopatia crítica: coarctação, DTGA, HLHS, TAPVC, TeF, AP, ToF grave)<br>
+      • Sensibilidade 77%, especificidade 99,9% para cardiopatia crítica<br><br>
+      <strong>Teste do Reflexo Vermelho (TRV):</strong><br>
+      • Oftalmoscópio direto a 40–50 cm · Ausência ou assimetria = catarata congênita, retinoblastoma, glaucoma congênito<br>
+      • Antes da alta e nas consultas de puericultura (1, 4, 8, 12 meses)<br><br>
+      <strong>Rastreio de ROP (Retinopatia da Prematuridade):</strong><br>
+      • Indicado: &lt;32 semanas OU &lt;1500g OU 32–36 semanas com evolução clínica instável<br>
+      • 1ª exame: 4–6 semanas de vida (não após 31 dias de vida cronológica se ≥28 semanas)<br>
+      • Laser (ROP zona I/II estágio 3+ ou plus disease) · Anti-VEGF (bevacizumabe/ranibizumabe) em zona I
+    </div>
+  </div>`;
+}
+</script>
+</body>
+</html>
