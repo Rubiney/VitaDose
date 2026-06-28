@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Neurologia — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .neu-hdr{background:linear-gradient(135deg,#1e3a8a,#1d4ed8);color:#fff;border-radius:14px;padding:18px;margin-bottom:14px}
+    .neu-title{font-size:1rem;font-weight:800;margin-bottom:4px}
+    .neu-sub{font-size:.73rem;opacity:.8}
+    label{font-size:.75rem;font-weight:700;color:#1e3a5f;display:block;margin-bottom:4px}
+    select{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:10px;padding:10px 12px;font-size:.85rem;background:#fff;margin-bottom:10px}
+    select:focus{border-color:#1e3a8a;outline:none}
+    input[type=number]{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:10px;padding:10px 12px;font-size:.85rem;background:#fff;outline:none;margin-bottom:10px}
+    input:focus{border-color:#1e3a8a}
+    .checkbox-group{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
+    .checkbox-item{display:flex;align-items:center;gap:8px;font-size:.8rem;cursor:pointer}
+    .checkbox-item input[type=checkbox]{width:18px;height:18px;accent-color:#1e3a8a;cursor:pointer}
+    .btn-calc{width:100%;background:#1e3a8a;color:#fff;border:none;border-radius:12px;padding:13px;font-size:.87rem;font-weight:700;cursor:pointer;margin:8px 0}
+    .btn-auto{background:#0f766e;color:#fff;border:none;border-radius:10px;padding:10px 16px;font-size:.8rem;font-weight:700;cursor:pointer;margin-bottom:10px}
+    .tab-bar{display:flex;gap:6px;margin-bottom:14px}
+    .tab-btn{flex:1;padding:9px 4px;border-radius:10px;border:2px solid #e2e8f0;background:#fff;font-size:.76rem;font-weight:700;cursor:pointer;color:#64748b}
+    .tab-btn.active{border-color:#1e3a8a;background:#eff6ff;color:#1e3a8a}
+    .rec-card{border-radius:12px;border:2px solid;padding:14px;margin-bottom:10px}
+    .rec-hdr{font-size:.63rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+    .rec-nome{font-size:.88rem;font-weight:800;margin-bottom:6px}
+    .rec-badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:.65rem;font-weight:800;color:#fff;margin:2px}
+    .rec-body{font-size:.78rem;margin-top:6px;line-height:1.7}
+    .rec-note{font-size:.71rem;color:#64748b;margin-top:6px;padding-top:6px;border-top:1px solid #f1f5f9}
+    .input-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .park-card{border-radius:10px;border-left:5px solid;padding:10px 14px;margin-bottom:8px;background:#fff}
+    .park-nome{font-size:.83rem;font-weight:800;margin-bottom:4px}
+    .park-body{font-size:.76rem;line-height:1.7;color:#374151}
+  </style>
+</head>
+<body>
+<header class="top-bar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <span class="top-title">Neurologia — Algoritmo</span>
+  <div class="top-right"></div>
+</header>
+<main class="container" style="padding-bottom:90px">
+  <div class="neu-hdr">
+    <div class="neu-title">🧠 Neurologia — Algoritmo Clínico-Farmacêutico</div>
+    <div class="neu-sub">AVC agudo & prevenção secundária · Enxaqueca · Parkinson · Demência</div>
+  </div>
+  <div class="tab-bar">
+    <button class="tab-btn active" id="tb0" onclick="showTab(0)">AVC</button>
+    <button class="tab-btn" id="tb1" onclick="showTab(1)">Enxaqueca</button>
+    <button class="tab-btn" id="tb2" onclick="showTab(2)">Parkinson & Demência</button>
+  </div>
+
+  <!-- TAB 0 — AVC -->
+  <div id="tab0">
+    <button class="btn-auto" onclick="autoFill()">⚡ Auto-preencher do paciente ativo</button>
+    <div class="card" style="padding:12px 14px">
+      <label>Fase / cenário</label>
+      <select id="avc_fase">
+        <option value="agudo_isq">AVC Isquêmico Agudo — dentro da janela terapêutica</option>
+        <option value="prev_card">Prevenção 2ª — AVC cardioembólico (FA ou cardiopatia)</option>
+        <option value="prev_atero">Prevenção 2ª — AVC aterotrombótico / lacunar</option>
+        <option value="prev_cript">Prevenção 2ª — AVC criptogênico (causa indefinida)</option>
+        <option value="hemor">AVC Hemorrágico — manejo agudo</option>
+      </select>
+      <div id="avc_extras"></div>
+    </div>
+    <button class="btn-calc" onclick="calcAVC()">🧠 Gerar protocolo</button>
+    <div id="avcResult" style="display:none"></div>
+  </div>
+
+  <!-- TAB 1 — ENXAQUECA -->
+  <div id="tab1" style="display:none">
+    <div class="card" style="padding:12px 14px">
+      <label>Frequência e impacto</label>
+      <select id="enx_freq">
+        <option value="epis">Episódica leve (≤3 crises/mês, sem incapacidade significativa)</option>
+        <option value="mod">Episódica moderada (4–8 crises/mês ou MIDAS grau II–III)</option>
+        <option value="freq">Frequente / Alta frequência (≥8 crises/mês ou MIDAS grau IV)</option>
+        <option value="cronica">Crônica (≥15 dias de cefaleia/mês, ≥8 com feições de enxaqueca)</option>
+      </select>
+      <label>Perfil</label>
+      <div class="checkbox-group">
+        <label class="checkbox-item"><input type="checkbox" id="enx_gest"> Gestante</label>
+        <label class="checkbox-item"><input type="checkbox" id="enx_card"> Cardiopata / HAS grave</label>
+        <label class="checkbox-item"><input type="checkbox" id="enx_aura"> Com aura (visual, sensitiva ou motora)</label>
+        <label class="checkbox-item"><input type="checkbox" id="enx_abuso"> Uso excessivo de analgésicos (≥10 dias/mês)</label>
+        <label class="checkbox-item"><input type="checkbox" id="enx_depre"> Depressão ou epilepsia comórbida</label>
+      </div>
+    </div>
+    <button class="btn-calc" onclick="calcEnx()">💊 Gerar plano de tratamento</button>
+    <div id="enxResult" style="display:none"></div>
+  </div>
+
+  <!-- TAB 2 — PARKINSON & DEMÊNCIA -->
+  <div id="tab2" style="display:none">
+    <div id="parkList"></div>
+  </div>
+</main>
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+<script src="js/db.js"></script>
+<script>
+const pid=localStorage.getItem('vd_active');
+function showTab(n){[0,1,2].forEach(i=>{document.getElementById('tab'+i).style.display=i===n?'block':'none';document.getElementById('tb'+i).classList.toggle('active',i===n);});if(n===2)renderPark();}
+async function autoFill(){if(!pid){alert('Nenhum paciente ativo.');return;}const pac=await dbGet('pacientes',parseInt(pid));if(!pac)return;const conds=pac.condicoes||[];if(conds.includes('has')){};}
+function recHTML(r){return `<div class="rec-card" style="border-color:${r.col}"><div class="rec-hdr" style="color:${r.col}">${r.hdr}</div><div class="rec-nome">${r.nome}</div><div>${(r.badges||[]).map(b=>`<span class="rec-badge" style="background:${b.c}">${b.t}</span>`).join('')}</div><div class="rec-body">${r.body}</div>${r.note?`<div class="rec-note">${r.note}</div>`:''}</div>`;}
+
+function calcAVC(){
+  const fase=document.getElementById('avc_fase').value;
+  const recs=[];
+
+  if(fase==='agudo_isq'){
+    recs.push({hdr:'AVC Isquêmico Agudo — Trombólise e Trombectomia',col:'#dc2626',
+      nome:'Alteplase IV (tPA) + Trombectomia mecânica — janelas de tempo críticas',badges:[{t:'Emergência',c:'#dc2626'},{t:'AHA/ASA 2023',c:'#7f1d1d'}],
+      body:`<strong>⏱ "Tempo é cérebro" — 1,9 milhões de neurônios morrem por minuto no AVC</strong><br><br>
+<strong>Trombólise IV — Alteplase (tPA):</strong><br>
+Janela: ≤4,5h do início dos sintomas (ou do "last seen normal")<br>
+Dose: 0,9 mg/kg IV (máx 90 mg) → 10% em bolus em 1 min → 90% em infusão de 60 min<br>
+<strong>Contraindicações absolutas:</strong> AVC hemorrágico prévio · Sangramento ativo · TC com hemorragia · Cirurgia grande ≤14 dias · PA >185/110 (tratar antes com labetalol/nicardipino) · Glicemia <50 ou >400 · Anticoagulante terapêutico (INR >1,7; DOAC nas últimas 48h)<br>
+Monitorar: PA a cada 15 min × 2h; escala neurológica (NIHSS) a cada 1h × 24h<br><br>
+<strong>Trombectomia Mecânica (intervenção endovascular):</strong><br>
+• Indicada se: oclusão de grande vaso (ACI, M1, M2 proximal, basilar) + ASPECTS ≥6 em TC<br>
+• Janela: ≤24h com seleção por perfusão (DAWN/DEFUSE-3) · Ideal: <6h<br>
+• Pode ser combinada com tPA (bridging) ou isolada se CI ao tPA<br><br>
+<strong>Medidas gerais nas primeiras 24h:</strong><br>
+• PA: NÃO tratar se <220/120 (exceto se for usar tPA: meta <185/110) · Nicardipino ou labetalol IV<br>
+• Glicemia: alvo 140–180 mg/dL (insulina SE >180) · Evitar hipoglicemia (lesão isquêmica)<br>
+• Temperatura: paracetamol se febre (cada 1°C ↑ piora desfecho) · Hidratação com SF 0,9%<br>
+• Antiagregação: AAS 300 mg VO — iniciar 24h após tPA (ou imediatamente se não recebeu tPA)`,
+      note:'Após 24h sem sangramento em TC: AAS 100 mg/dia + estatina de alta intensidade (atorvastatina 40–80 mg). Profilaxia TVP: HNF 5000 UI SC 12/12h ou enoxaparina 40 mg SC/dia (após 24–48h e imagem de exclusão de sangramento).'});
+  }
+
+  if(fase==='prev_card'){
+    recs.push({hdr:'Prevenção 2ª — AVC Cardioembólico (FA / Cardiopatia)',col:'#7c3aed',
+      nome:'Anticoagulação oral — DOAC preferido à warfarina em FA',badges:[{t:'Anticoagulação',c:'#7c3aed'},{t:'FA / Cardioembólico',c:'#4c1d95'}],
+      body:`<strong>Fibrilação Atrial — Anticoagulação obrigatória após AVC/AIT isquêmico:</strong><br>
+Escore CHA₂DS₂-VASc: ≥2 homens / ≥3 mulheres → anticoagular<br><br>
+<strong>DOACs (preferidos à warfarina — menor sangramento intracraniano, mais convenientes):</strong><br>
+• <strong>Apixabana</strong> 5 mg 2×/dia (ARISTOTLE) — preferida em DRC moderada e idoso<br>
+• <strong>Rivaroxabana</strong> 20 mg 1×/dia com jantar<br>
+• <strong>Dabigatrana</strong> 150 mg 2×/dia (110 mg em ≥80 anos ou risco hemorrágico alto)<br>
+• <strong>Edoxabana</b> 60 mg/dia (30 mg se ClCr 15–50 ou peso ≤60 kg)<br><br>
+<strong>Quando iniciar após AVC isquêmico + FA:</strong><br>
+• AIT: iniciar DOAC imediatamente<br>
+• AVC leve (NIHSS <8): iniciar em 3–5 dias<br>
+• AVC moderado (NIHSS 8–15): iniciar em 6–8 dias<br>
+• AVC grave (NIHSS >15 ou infarto grande): iniciar em 12–14 dias<br>
+• Regra prática: "1-3-6-12" (AIT-leve-moderado-grave em dias)<br><br>
+<strong>Warfarina:</strong> reservar para estenose mitral reumática, prótese valvar mecânica, DRC avançada (TFG <15) · INR alvo 2,0–3,0 · Monitoramento frequente no início`,
+      note:'Contraindicação a anticoagulante (sangramento ativo, recusa): AAS + clopidogrel (CHANCE/POINT) — inferior à anticoagulação em FA. Foramen oval patente (FOP) + AVC jovem: fechamento percutâneo + DOAC.'});
+  }
+
+  if(fase==='prev_atero'){
+    recs.push({hdr:'Prevenção 2ª — AVC Aterotrombótico / Lacunar',col:'#0369a1',
+      nome:'Antiagregação dual + Estatina de alta intensidade + Controle de FRC',badges:[{t:'Antiagregação',c:'#0369a1'},{t:'Estatina alta dose',c:'#1e3a8a'}],
+      body:`<strong>Antiagregação (primeiras 21 dias — CHANCE/POINT trial):</strong><br>
+• <strong>AAS 100 mg + Clopidogrel 75 mg</strong> por 21 dias → AAS 100 mg em monoterapia indefinidamente<br>
+• AVC leve-moderado (NIHSS ≤3) ou AIT de alto risco: dupla antiagregação benéfica (reduz recorrência 25%)<br>
+• AVC grave ou grande território: evitar DAPT (↑ sangramento) → AAS em monoterapia<br><br>
+<strong>Alternativas e casos especiais:</strong><br>
+• Clopidogrel 75 mg/dia em monoterapia: se intolerância ao AAS<br>
+• AVC por estenose de artéria intracraniana (WASID): AAS 1300 mg/dia ou clopidogrel (Warfarin inferior)<br>
+• Dissecção de artéria cervical: AAS OU anticoagulação curta × 3–6 meses (sem consenso)<br><br>
+<strong>Estatina de alta intensidade (INICIAIR independente de LDL):</strong><br>
+• <strong>Atorvastatina 40–80 mg/dia</strong> ou Rosuvastatina 20–40 mg/dia<br>
+• Meta LDL: <55 mg/dL (AVC aterotrombótico) ou <70 mg/dL (lacunar)<br>
+• Ezetimiba 10 mg: adicionar se LDL não atingir meta<br><br>
+<strong>Controle de PA:</strong> meta <130/80 mmHg (iniciar 24–48h após estabilização) · IECA ou BRA + tiazídico (PROGRESS trial)`,
+      note:'Ticagrelor 90 mg 2×/dia: alternativa ao clopidogrel em AVC leve (THALES trial) — maior redução de recorrência mas mais sangramento. Prasugrel: sem evidência em AVC; não usar. Profilaxia de TVP: enoxaparina ou HNF se imobilidade.'});
+  }
+
+  if(fase==='prev_cript'){
+    recs.push({hdr:'Prevenção 2ª — AVC Criptogênico',col:'#065f46',
+      nome:'Investigação de FA oculta + ESUS — DOAC ou antiagregação',badges:[{t:'Criptogênico',c:'#065f46'},{t:'ESUS',c:'#0f766e'}],
+      body:`<strong>ESUS (Embolic Stroke of Undetermined Source):</strong><br>
+AVC isquêmico não-lacunar sem causa identificada após investigação completa<br><br>
+<strong>Investigação obrigatória:</strong><br>
+• Holter 24–72h (detector implantável subcutâneo se negativo e suspeita alta — detecta FA oculta em 30% em 3 anos)<br>
+• Ecocardiograma transesofágico (FOP, trombo atrial, ateroma de aorta)<br>
+• Angiotomografia de carótidas + vertebrais + polígono de Willis<br>
+• Pesquisa de trombofilia (em jovem: anti-fosfolipídeos, proteína C/S, fator V Leiden)<br><br>
+<strong>Tratamento empírico enquanto investigação:</strong><br>
+• AAS 100 mg/dia (enquanto sem diagnóstico de FA)<br>
+• Se FOP confirmado + AVC jovem: fechamento percutâneo (≤60 anos, FOP grande ou com septo aneurismático) + DOAC<br>
+• Se anti-fosfolipídeos (SAF): warfarina INR 2–3 (DOAC inferior no SAF — TRAPS trial)`,
+      note:'FA oculta em AVC criptogênico: 25–30% têm FA detectada com monitoramento prolongado. Monitor implantável subcutâneo (Reveal LINQ): detecta FA com >80% de sensibilidade em 3 anos. NAVIGATE ESUS e RESPECT ESUS: rivaroxabana e dabigatrana não superiores ao AAS em ESUS — aguardar causa antes de anticoagular.'});
+  }
+
+  if(fase==='hemor'){
+    recs.push({hdr:'AVC Hemorrágico — Manejo Agudo',col:'#dc2626',
+      nome:'Controle de PA, reversão de anticoagulação e neuroproteção',badges:[{t:'Hemorrágico',c:'#dc2626'},{t:'Emergência',c:'#7f1d1d'}],
+      body:`<strong>Controle pressórico (evidência INTERACT2/ATACH-2):</strong><br>
+PA sistólica alvo: <140 mmHg nas primeiras 6h (seguro e reduz hematoma)<br>
+Nicardipino IV 5 mg/h → titular · Labetalol 10–20 mg IV · Esmolol IV<br>
+Evitar: nitroprussiato (↑ PIC), hidralazina (imprevisível)<br><br>
+<strong>Reversão de anticoagulação:</strong><br>
+• Warfarina (INR elevado): CCP (Concentrado de Complexo Protrombínico) 25–50 UI/kg IV + Vitamina K 10 mg IV<br>
+• Dabigatrana: Idarucizumabe (Praxbind) 5 g IV<br>
+• Rivaroxabana / Apixabana: Andexanet alfa IV (dose por fármaco e intervalo) ou CCP 4 fatores 50 UI/kg<br>
+• HNF: Sulfato de protamina 1 mg por 100 UI de HNF (nas últimas 2–3h)<br><br>
+<strong>Monitoramento e suporte:</strong><br>
+• TC crânio seriada (6h e 24h) para avaliação de expansão do hematoma<br>
+• Glicemia: alvo 140–180 · Temperatura: paracetamol se febre<br>
+• Profilaxia de convulsões: não rotineiramente (apenas se convulsão clínica ou EEG)<br>
+• Cirurgia: hematoma cerebelar >3 cm ou compressão de tronco · Hematoma supratentorial: casos selecionados<br><br>
+<strong>Reinício de anticoagulação após hemorrágico em FA:</strong><br>
+• Risco-benefício individualizado · Geralmente após 4–8 semanas · Discutir com neurologia`,
+      note:'AVC hemorrágico: NÃO usar tPA, AAS ou anticoagulante na fase aguda. Sulfato de protamina: 1 mg reverte 100 UI de HNF nas últimas 2–3h (titulação decrescente pelo tempo de última dose). CCP 4 fatores: disponível como Octaplex ou Beriplex.'});
+  }
+
+  document.getElementById('avcResult').style.display='block';
+  document.getElementById('avcResult').innerHTML=recs.map(recHTML).join('');
+  document.getElementById('avcResult').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+/* ── ENXAQUECA ───────────────────────────────────────────────────────── */
+function calcEnx(){
+  const freq  =document.getElementById('enx_freq').value;
+  const gest  =document.getElementById('enx_gest').checked;
+  const card  =document.getElementById('enx_card').checked;
+  const aura  =document.getElementById('enx_aura').checked;
+  const abuso =document.getElementById('enx_abuso').checked;
+  const depre =document.getElementById('enx_depre').checked;
+  const recs=[];
+
+  recs.push({hdr:'Tratamento Abortivo (Crise Aguda)',col:'#1e3a8a',
+    nome:gest?'Paracetamol + metoclopramida — seguros na gestação':'Triptano como 1ª linha se crise moderada-grave',badges:[{t:'Abortivo',c:'#1e3a8a'},{t:gest?'Gestação':'Triptano',c:gest?'#9d174d':'#0369a1'}],
+    body:gest
+      ?`<strong>Gestação (seguros):</strong><br>
+• <strong>Paracetamol</strong> 1 g VO + <strong>Metoclopramida</strong> 10 mg VO (também trata náusea e melhora absorção de analgésico)<br>
+• AINE (ibuprofeno, naproxeno): 1T e 2T com cautela; CONTRAINDICADO no 3T (fechamento ducto arterioso)<br>
+• Triptanos: dados de segurança limitados — sumatriptano tem mais dados, uso em caso de necessidade após discussão<br>
+• Evitar: ergotamina (vasoconstrição, aborto), opioides (cefaleia por abuso, neonatal)`
+      :`<strong>Crise leve:</strong> AINE (naproxeno 500 mg, ibuprofeno 400–600 mg, AAS 1000 mg) + metoclopramida 10 mg VO<br>
+<strong>Crise moderada-grave — Triptano (1ª linha):</strong><br>
+• <strong>Sumatriptano</strong> 50–100 mg VO · 10 mg nasal · 6 mg SC (mais rápido — SC para vômito)<br>
+• <strong>Rizatriptano</strong> 10 mg VO ou bucodispersível (meia-vida curta — atuação rápida)<br>
+• <strong>Eletriptano</strong> 40 mg VO (maior eficácia, mais duradouro — para crises longas)<br>
+• <strong>Zolmitriptano</strong> 2,5 mg VO ou nasal<br>
+${card?'<br><strong>⚠️ Cardiopata:</strong> triptanos CONTRAINDICADOS (vasoconstrição coronariana) e ergotamina — usar lasmiditan 100–200 mg VO (gepante ou ditano — sem vasoconstrição)':''}
+<strong>Combinações:</strong> triptano + naproxeno 500 mg (superior a cada um isolado)<br>
+<strong>Antiemético:</strong> sempre associar metoclopramida 10 mg ou domperidona 10 mg (gastroparesia da crise)`,
+    note:`${aura?'Com aura: triptano pode ser tomado no início da dor (NÃO durante a aura — não eficaz nessa fase). Ergotamina: evitar em aura (risco de AVC em enxaqueca com aura + anticoncepcional estrogênico — contraindicação absoluta).':''}${abuso?'⚠️ Cefaleia por uso excessivo de medicamento (CUEM): usar analgésico ≥10 dias/mês → detox (retirada programada do analgésico abusado + amitriptilina para prevenção). Qualquer analgésico abortivo pode causar CUEM.':''}`});
+
+  if(freq==='mod'||freq==='freq'||freq==='cronica'){
+    recs.push({hdr:'Tratamento Profilático — Indicação',col:'#7c3aed',
+      nome:'≥4 crises/mês ou incapacitante → iniciar profilaxia',badges:[{t:'Profilaxia',c:'#7c3aed'},{t:freq==='cronica'?'Crônica':'Episódica frequente',c:'#4c1d95'}],
+      body:gest
+        ?`<strong>Profilaxia na Gestação:</strong><br>
+• <strong>Propranolol</strong> 40–80 mg/dia (opção mais segura; monitorar bradicardia neonatal no 3T)<br>
+• <strong>Amitriptilina</b> 25–75 mg/noite (dados razoáveis de segurança)<br>
+• <strong>Magnésio</strong> 400–600 mg/dia (citrato ou óxido) — seguro, evidência moderada<br>
+• Evitar: valproato (teratogênico — espinha bífida), topiramato (fissura palatina)`
+        :`<strong>1ª linha:</strong><br>
+• <strong>Propranolol</strong> 40–160 mg/dia (ou metoprolol 50–200 mg/dia) — eficaz, barato, boa evidência<br>
+• <strong>Amitriptilina</strong> 25–75 mg/noite — dupla indicação se depressão/insônia comórbida<br>
+• <strong>Topiramato</strong> 50–100 mg/dia — eficaz; RAM: parestesias, perda de peso, névoa cognitiva ("dopiramato"); teratogênico<br>
+• <strong>Valproato</strong> 500–1500 mg/dia — eficaz; teratogênico (CONTRAINDICADO em mulheres em idade fértil sem contracepção dupla)<br>
+<strong>2ª linha:</strong><br>
+• Candesartana 16 mg/dia (BRA — perfil favorável, boa tolerabilidade)<br>
+• Flunarizina 5–10 mg/noite (bloqueador de Ca — sedação e ganho de peso)<br>
+• Venlafaxina 75–150 mg/dia (útil em depressão comórbida)<br>
+<strong>Anticorpos anti-CGRP (3ª linha — alto custo):</strong><br>
+• <strong>Erenumabe</strong> 70–140 mg SC/mês (anti-receptor CGRP)<br>
+• <strong>Fremanezumabe</strong> 225 mg SC/mês ou 675 mg SC/trimestre<br>
+• <strong>Galcanezumabe</b> 120 mg SC/mês (dose de carga 240 mg)<br>
+Indicação: ≥4 crises/mês + falha de ≥2 profiláticos orais · Início de ação em 4 semanas · Sem interações relevantes`,
+      note:`${depre?'Depressão comórbida: amitriptilina ou venlafaxina — dupla indicação. Valproato e topiramato: podem piorar humor — evitar se depressão ativa.':''}${freq==='cronica'?'Enxaqueca crônica: onabotulinumtoxina A (Botox) 155–195 U IM/trimestre (aprovada FDA para crônica — PREEMPT protocol). Indicação: falha de ≥2 profiláticos orais.':''}`});
+  }
+
+  document.getElementById('enxResult').style.display='block';
+  document.getElementById('enxResult').innerHTML=recs.map(recHTML).join('');
+  document.getElementById('enxResult').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+/* ── PARKINSON & DEMÊNCIA ────────────────────────────────────────────── */
+function renderPark(){
+  if(document.getElementById('parkList').innerHTML) return;
+  const CARDS=[
+    {nome:'Doença de Parkinson — Farmacoterapia por Estágio',col:'#1e3a8a',
+     body:`<strong>Critérios para iniciar tratamento:</strong> funcionalidade comprometida, sintomas incomodando paciente<br>
+(Não existe neuroproteção comprovada — tratar para qualidade de vida)<br><br>
+<strong>Jovem (&lt;60 anos, sem demência) — preferir agonistas dopaminérgicos:</strong><br>
+• <strong>Pramipexol</b> 0,125 mg 3×/dia → 0,5–1 mg 3×/dia (agonista D3; XR 1×/dia disponível)<br>
+• <strong>Rotigotina</strong> patch 2 mg/24h → 8 mg/24h (comodidade, sem wearing-off)<br>
+• Agonistas: menores discinesias a longo prazo; RAM: sonolência, impulso compulsivo (jogo, compras, hipersexualidade — alertar!) · Edema periférico · Náusea<br><br>
+<strong>Idoso (&gt;65 anos) ou demência — Levodopa preferida:</strong><br>
+• <strong>Levodopa/Carbidopa</b> 25/100 mg 3×/dia (iniciar 1 comp 3×/dia → titular) · Carbidopa inibe degradação periférica → reduz náusea<br>
+• Dopaminérgicos em idoso: alucinações, hipotensão ortostática — risco ↑<br><br>
+<strong>Combinações frequentes:</strong><br>
+• Levodopa + Agonista: quando levodopa isolada não controla<br>
+• Inibidor MAO-B: Rasagilina 1 mg/dia ou Selegilina 5 mg 2×/dia — em monoterapia leve ou adjuvante; interação com antidepressivos serotoninérgicos (síndrome serotoninérgica)<br>
+• Inibidor COMT: Entacapona 200 mg com cada dose de levodopa (↑ duração da levodopa) ou Opicapona 50 mg/noite`,
+     note:'Interação tiramina (queijo curado, vinho tinto, embutidos) com selegilina: mínima com baixas doses orais (diferente do MAOi não seletivo). Com rasagilina: mesma precaução leve. Amantadina 100 mg 2×/dia: opção adicional — leve efeito dopaminérgico + reduz discinesias.'},
+    {nome:'Complicações Motoras do Parkinson (tratamento avançado)',col:'#7c3aed',
+     body:`<strong>Wearing-off ("fim de dose" — efeito diminui antes da próxima dose):</strong><br>
+• Fracionamento: aumentar frequência das doses de levodopa (4–6×/dia ao invés de 3×)<br>
+• Reduzir intervalo entre doses · Levodopa LP (liberação prolongada) à noite · Entacapona · Rasagilina<br>
+• <strong>Apomorfina SC</b> (agonista D1/D2): resgate rápido em episódios off graves · Bomba de infusão SC contínua<br><br>
+<strong>Discinesias (movimentos involuntários no pico da dose):</strong><br>
+• Reduzir dose individual de levodopa (menor pico) + fracionamento<br>
+• Amantadina 200–400 mg/dia (reduz discinesias)<br>
+• <strong>Safinamida</b> 50–100 mg/dia: adjuvante com efeito em discinesias<br><br>
+<strong>DBS (Deep Brain Stimulation — Estimulação Cerebral Profunda):</strong><br>
+Indicação: flutuações motoras incapacitantes refratárias ao tratamento oral · Núcleo subtalâmico (STN) ou globo pálido interno (GPi)<br>
+Reduz tempo off e discinesias significativamente · Cognição: contraindicação relativa se demência`,
+     note:'Infusão duodenal de levodopa (DUODOPA): para pacientes com flutuações graves não candidatos ao DBS — cateter duodenal com bomba portátil de levodopa/carbidopa em gel. Alternativa ao DBS em idoso ou com contraindicação cirúrgica.'},
+    {nome:'Sintomas Não-Motores do Parkinson',col:'#065f46',
+     body:`<strong>Depressão (40–50% dos casos):</strong><br>
+• <strong>Sertralina ou Citalopram:</strong> seguras (ISRS de menor interação com dopaminérgicos)<br>
+• Amitriptilina 25–50 mg/noite: útil se insônia e dor comórbidos<br>
+• Evitar: fluoxetina (interação com selegilina — síndrome serotoninérgica)<br><br>
+<strong>Psicose/Alucinações (induzida por dopaminérgico):</strong><br>
+1. Reduzir/suspender (nesta ordem): anticolinérgico → amantadina → selegilina → agonista → levodopa<br>
+2. Se necessário antipsicótico: apenas <strong>Quetiapina</strong> 12,5–50 mg/noite ou <strong>Clozapina</strong> 6,25–50 mg/noite<br>
+Haloperidol, risperidona, olanzapina, metoclopramida: PROIBIDOS (bloqueio dopaminérgico → piora motora grave)<br><br>
+<strong>Hipotensão ortostática:</strong> elevar cabeceira + meias compressivas + fludrocortisona 0,1 mg/dia + midodrina 5–10 mg 3×/dia<br>
+<strong>Constipação:</strong> macrogol + dieta rica em fibras + hidratação<br>
+<strong>Sialorreia:</strong> toxina botulínica nas glândulas salivares (glicopirrolato oral alternativa)`,
+     note:'Demência de Parkinson vs Demência com Corpos de Lewy: diferença de 1 ano (demência antes ou depois do parkinsonismo). Rivastigmina (Exelon) 1,5→6 mg 2×/dia: único inibidor de colinesterase aprovado para demência de Parkinson. Memantina: opção adicional.'},
+    {nome:'Demências — Farmacoterapia Sintomática',col:'#b45309',
+     body:`<strong>Alzheimer — Leve a Moderada (MEEM 10–26):</strong><br>
+• <strong>Donepezila</b> 5 mg/noite × 4 semanas → 10 mg/noite (inibidor de acetilcolinesterase — 1ª linha)<br>
+• <strong>Rivastigmina</b> 1,5 mg 2×/dia → 6 mg 2×/dia VO ou patch 4,6/9,5/13,3 mg/24h (menor RAM GI com patch)<br>
+• <strong>Galantamina</b> 8 mg/dia → 24 mg/dia (menos usado que donepezila)<br><br>
+<strong>Alzheimer Moderada a Grave:</strong><br>
+• <strong>Memantina</b> 10 mg 2×/dia (antagonista NMDA) + inibidor de colinesterase (combinação superior em moderada-grave)<br><br>
+<strong>Lecanemabe (Leqembi):</strong> anticorpo anti-amiloide IV — aprovado FDA 2023 para Alzheimer inicial; reduz 27% da progressão clínica. ARIA (inflamação/edema cerebral) em ~35% — monitorar RM. Alto custo; não disponível amplamente<br><br>
+<strong>BPSD — Sintomas comportamentais e psicológicos da demência:</strong><br>
+• <strong>Agitação:</strong> abordagem não-farmacológica primeiro · Citalopram 10–20 mg (evidência) · Quetiapina 12,5–50 mg<br>
+• <strong>Psicose:</strong> risperidona 0,5–1 mg (menor dose por menor tempo) — black box risco CV em idoso<br>
+• <strong>Depressão:</strong> sertralina ou escitalopram<br>
+• <strong>Insônia:</strong> melatonina 3–5 mg · Mirtazapina 7,5–15 mg`,
+     note:'Inibidores de colinesterase: RAM GI (náusea, diarreia) — iniciar com baixa dose, tomar com alimento. RAM cardiovascular: bradicardia (cuidado com betabloqueador), síncope. Interação: anticolinérgicos antagonizam efeito (evitar bexiga hiperativa com oxibutinina em demência — usar mirabegrona).'},
+  ];
+  document.getElementById('parkList').innerHTML=CARDS.map(c=>`<div class="park-card" style="border-color:${c.col}"><div class="park-nome" style="color:${c.col}">${c.nome}</div><div class="park-body">${c.body}</div>${c.note?`<div style="font-size:.7rem;color:#64748b;margin-top:6px">💡 ${c.note}</div>`:''}</div>`).join('');
+}
+</script>
+</body>
+</html>

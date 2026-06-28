@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Ginecologia & Climatério — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .gin-hdr{background:linear-gradient(135deg,#9d174d,#be185d);color:#fff;border-radius:14px;padding:18px;margin-bottom:14px}
+    .gin-title{font-size:1rem;font-weight:800;margin-bottom:4px}
+    .gin-sub{font-size:.73rem;opacity:.8}
+    label{font-size:.75rem;font-weight:700;color:#1e3a5f;display:block;margin-bottom:4px}
+    select{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:10px;padding:10px 12px;font-size:.85rem;background:#fff;margin-bottom:10px}
+    select:focus{border-color:#9d174d;outline:none}
+    input[type=number]{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:10px;padding:10px 12px;font-size:.85rem;background:#fff;outline:none;margin-bottom:10px}
+    input:focus{border-color:#9d174d}
+    .checkbox-group{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
+    .checkbox-item{display:flex;align-items:center;gap:8px;font-size:.8rem;cursor:pointer}
+    .checkbox-item input[type=checkbox]{width:18px;height:18px;accent-color:#9d174d;cursor:pointer}
+    .btn-calc{width:100%;background:#9d174d;color:#fff;border:none;border-radius:12px;padding:13px;font-size:.87rem;font-weight:700;cursor:pointer;margin:8px 0}
+    .tab-bar{display:flex;gap:6px;margin-bottom:14px}
+    .tab-btn{flex:1;padding:9px 4px;border-radius:10px;border:2px solid #e2e8f0;background:#fff;font-size:.76rem;font-weight:700;cursor:pointer;color:#64748b}
+    .tab-btn.active{border-color:#9d174d;background:#fdf2f8;color:#9d174d}
+    .rec-card{border-radius:12px;border:2px solid;padding:14px;margin-bottom:10px}
+    .rec-hdr{font-size:.63rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+    .rec-nome{font-size:.88rem;font-weight:800;margin-bottom:6px}
+    .rec-badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:.65rem;font-weight:800;color:#fff;margin:2px}
+    .rec-body{font-size:.78rem;margin-top:6px;line-height:1.7}
+    .rec-note{font-size:.71rem;color:#64748b;margin-top:6px;padding-top:6px;border-top:1px solid #f1f5f9}
+    .ist-card{border-radius:10px;border-left:5px solid;padding:10px 14px;margin-bottom:8px;background:#fff}
+    .ist-nome{font-size:.83rem;font-weight:800;margin-bottom:4px}
+    .ist-body{font-size:.76rem;line-height:1.7;color:#374151}
+  </style>
+</head>
+<body>
+<header class="top-bar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <span class="top-title">Ginecologia & Climatério</span>
+  <div class="top-right"></div>
+</header>
+<main class="container" style="padding-bottom:90px">
+  <div class="gin-hdr">
+    <div class="gin-title">♀ Ginecologia & Climatério — Algoritmo Farmacoterapêutico</div>
+    <div class="gin-sub">TRH · SOP · Endometriose · Candidíase · Vaginose · IST · Anticoncepção</div>
+  </div>
+  <div class="tab-bar">
+    <button class="tab-btn active" id="tb0" onclick="showTab(0)">Climatério & TRH</button>
+    <button class="tab-btn" id="tb1" onclick="showTab(1)">SOP & Endometriose</button>
+    <button class="tab-btn" id="tb2" onclick="showTab(2)">Infecções & IST</button>
+  </div>
+
+  <!-- TAB 0 — TRH -->
+  <div id="tab0">
+    <div class="card" style="padding:12px 14px">
+      <label>Perfil da paciente</label>
+      <select id="trh_perfil">
+        <option value="peri">Perimenopausa — ciclos irregulares, fogachos, alterações de humor</option>
+        <option value="pos">Pós-menopausa (≤10 anos ou &lt;60 anos) — sem útero ou com útero</option>
+        <option value="tardio">Pós-menopausa tardia (&gt;10 anos ou &gt;60 anos)</option>
+        <option value="preco">Insuficiência ovariana prematura (IOP &lt;40 anos)</option>
+        <option value="ci">Contraindicação à TRH — buscar alternativa não-hormonal</option>
+      </select>
+      <label>Útero presente?</label>
+      <select id="trh_utero">
+        <option value="sim">Sim — útero intacto</option>
+        <option value="nao">Não — histerectomizada</option>
+      </select>
+      <div class="checkbox-group">
+        <label style="font-size:.75rem;font-weight:800;margin:8px 0 4px">Contraindicações (marcar se presentes):</label>
+        <label class="checkbox-item"><input type="checkbox" id="trh_ca"> Câncer de mama ativo ou prévio (CI absoluta)</label>
+        <label class="checkbox-item"><input type="checkbox" id="trh_tvp"> TVP/TEP ativo ou prévio (CI relativa — transdérmico menos risco)</label>
+        <label class="checkbox-item"><input type="checkbox" id="trh_avc"> AVC isquêmico ou doença arterial coronariana ativa</label>
+        <label class="checkbox-item"><input type="checkbox" id="trh_hep"> Hepatopatia ativa (CI à via oral — transdérmico possível)</label>
+        <label class="checkbox-item"><input type="checkbox" id="trh_sang"> Sangramento vaginal de causa desconhecida</label>
+      </div>
+    </div>
+    <button class="btn-calc" onclick="calcTRH()">💊 Gerar recomendação de TRH</button>
+    <div id="trhResult" style="display:none"></div>
+  </div>
+
+  <!-- TAB 1 — SOP & ENDOMETRIOSE -->
+  <div id="tab1" style="display:none">
+    <div class="card" style="padding:12px 14px">
+      <label>Diagnóstico</label>
+      <select id="sop_dx">
+        <option value="sop">SOP — Síndrome dos Ovários Policísticos</option>
+        <option value="endo">Endometriose</option>
+        <option value="anti">Anticoncepção — Seleção de método</option>
+      </select>
+    </div>
+    <button class="btn-calc" onclick="calcSOP()">💊 Gerar protocolo</button>
+    <div id="sopResult" style="display:none"></div>
+  </div>
+
+  <!-- TAB 2 — INFECÇÕES & IST -->
+  <div id="tab2" style="display:none">
+    <div id="istList"></div>
+  </div>
+</main>
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+<script src="js/db.js"></script>
+<script>
+function showTab(n){[0,1,2].forEach(i=>{document.getElementById('tab'+i).style.display=i===n?'block':'none';document.getElementById('tb'+i).classList.toggle('active',i===n);});if(n===2)renderIST();}
+function recHTML(r){return `<div class="rec-card" style="border-color:${r.col}"><div class="rec-hdr" style="color:${r.col}">${r.hdr}</div><div class="rec-nome">${r.nome}</div><div>${(r.badges||[]).map(b=>`<span class="rec-badge" style="background:${b.c}">${b.t}</span>`).join('')}</div><div class="rec-body">${r.body}</div>${r.note?`<div class="rec-note">${r.note}</div>`:''}</div>`;}
+
+/* ── TRH ─────────────────────────────────────────────────────────────── */
+function calcTRH(){
+  const perfil=document.getElementById('trh_perfil').value;
+  const utero =document.getElementById('trh_utero').value;
+  const ca    =document.getElementById('trh_ca').checked;
+  const tvp   =document.getElementById('trh_tvp').checked;
+  const avc   =document.getElementById('trh_avc').checked;
+  const hep   =document.getElementById('trh_hep').checked;
+  const sang  =document.getElementById('trh_sang').checked;
+  const recs=[];
+  const temCI=ca||avc||sang;
+
+  if(temCI||perfil==='ci'){
+    recs.push({hdr:'TRH — Contraindicação Presente',col:'#dc2626',
+      nome:'Alternativas não-hormonais para sintomas vasomotores',badges:[{t:'Não-hormonal',c:'#dc2626'}],
+      body:`<strong>Contraindicações absolutas à TRH:</strong><br>
+• Câncer de mama ativo ou prévio (ER/PR+) — TRH absolutamente CI<br>
+• AVC isquêmico recente / DAC ativa<br>
+• Sangramento vaginal de causa desconhecida<br>
+• Porfiria<br><br>
+<strong>Alternativas farmacológicas para fogachos (vasomotores):</strong><br>
+• <strong>Fezolinetant (Veoza)</b> 45 mg/dia — antagonista de neurocinina 3 (NK3R); não-hormonal; aprovado FDA 2023; reduz fogachos em ~75% · Sem impacto em mama ou endométrio<br>
+• <strong>Venlafaxina</b> 37,5–75 mg/dia (ISRSN — reduz fogachos 40–60%; dupla indicação se depressão)<br>
+• <strong>Desvenlafaxina</b> 50–100 mg/dia<br>
+• <strong>Paroxetina</b> 7,5 mg/dia (único ISRS com aprovação FDA para vasomotores — dose baixa; menor efeito sexual que doses antidepressivas) — CI em pacientes usando tamoxifeno (inibe CYP2D6 → reduz tamoxifeno ativo)<br>
+• <strong>Gabapentina</b> 300–900 mg/noite (eficaz para fogachos noturnos e insônia)<br>
+• <strong>Clonidina</b> 0,1–0,2 mg/dia (eficácia modesta; hipotensão)<br>
+• Isoflavonas (fitoestrogênios): evidência fraca — não recomendar como primeira opção<br>
+<strong>Atrofia vaginal (sem TRH sistêmica):</strong><br>
+• Estrogênio tópico local (creme, supositório, anel vaginal): absorção mínima — geralmente seguro mesmo em CA mama (exceto ER+ em tamoxifeno — discutir com oncologista)<br>
+• Ospemifeno 60 mg/dia (SERM oral — sem efeito uterino adverso)<br>
+• Lubricantes/hidratantes vaginais sem hormônio`,note:tvp?'TVP/TEP: via transdérmica tem menor risco tromboembólico que oral (sem efeito de primeira passagem hepática — não eleva fatores de coagulação). Discutir TRH transdérmica com especialista se TEP antigo + sintomas graves.':''});
+    document.getElementById('trhResult').style.display='block';
+    document.getElementById('trhResult').innerHTML=recs.map(recHTML).join('');
+    return;
+  }
+
+  // TRH indicada
+  const transd=tvp||hep||perfil==='tardio';
+  const progestogenio=utero==='sim';
+
+  recs.push({hdr:`TRH — ${perfil==='preco'?'IOP — Reposição Obrigatória':perfil==='peri'?'Perimenopausa':perfil==='tardio'?'Pós-menopausa tardia (>10 anos / >60 anos)':'Pós-menopausa ≤10 anos ou <60 anos'}`,
+    col:'#9d174d',
+    nome:`${transd?'Via transdérmica preferida':'Estrogênio oral ou transdérmico'} ${progestogenio?'+ Progestogênio obrigatório (útero intacto)':'— Estrogênio isolado (sem útero)'}`,
+    badges:[{t:transd?'Transdérmico':'Oral ou TD',c:'#9d174d'},{t:progestogenio?'E + P':'E isolado',c:'#be185d'}],
+    body:perfil==='preco'
+      ?`<strong>Insuficiência Ovariana Prematura (IOP &lt;40 anos):</strong><br>
+Reposição é OBRIGATÓRIA até pelo menos a idade da menopausa natural (51 anos)<br>
+Benefício cardiovascular, ósseo e neurológico — não associar ao CA mama (diferente da menopausa natural)<br>
+Dose: doses jovens (maiores que as da pós-menopausa)<br>
+• Estradiol transdérmico 100 mcg/24h (patch 2×/sem) ou Estradiol oral 2 mg/dia<br>
+${progestogenio?'• Progesterona micronizada 200 mg/noite × 12 dias/mês ou SIU-LNG (DIU Mirena — proteção endometrial contínua)':''}`
+      :perfil==='tardio'
+      ?`<strong>Risco-benefício mais cuidadoso após 10 anos de menopausa / >60 anos:</strong><br>
+Janela de oportunidade já passada — ↑ risco CV e cognitivo se iniciar tarde (timing hypothesis)<br>
+Se indicar: preferir via transdérmica + progestogênio de menor risco (progesterona micronizada natural)<br>
+• <strong>Estradiol transdérmico</b> 25–50 mcg/24h patch 2×/sem<br>
+${progestogenio?'• <strong>Progesterona micronizada</b> 100–200 mg/noite (natural — menor risco tromboembólico que sintética; menor efeito no CA mama vs MPA)':''}
+Benefício: sintomas persistentes, atrofia urogenital grave, prevenção de osteoporose`
+      :`<strong>Janela de oportunidade (&lt;60 anos / ≤10 anos pós-menopausa):</strong><br>
+Benefício-risco favorável nessa faixa · Reduz fogachos, transpirações, ressecamento vaginal, insônia, humor, libido · Previne osteoporose · Possível benefício cardiovascular<br><br>
+${transd?`<strong>Via transdérmica (preferida em TVP, hepatopatia ou risco CV):</strong><br>
+• Estradiol transdérmico gel 0,5–1 mg/dia (Oestrogel, Estreva Gel) OU<br>
+• Estradiol patch 25–100 mcg/24h trocado 2×/sem (Estraderm, Climara)<br>`
+:`<strong>Via oral:</strong><br>
+• Estradiol 1–2 mg/dia (Estradot, Estrofem)<br>
+• Via transdérmica: alternativa equivalente com menor risco trombótico<br>`}
+${progestogenio?`<strong>Progestogênio (obrigatório para proteção endometrial):</strong><br>
+• <strong>Progesterona micronizada</b> (Utrogestan) 200 mg/noite × 12 dias/mês (cíclica) ou 100 mg/noite contínua — mais segura (natural; menor ↑ risco mama e trombose vs sintética)<br>
+• <strong>Medroxiprogesterona (MPA)</b> 2,5 mg/dia contínuo ou 5–10 mg cíclico (maior risco CA mama e TVP que micronizada — evitar em alto risco)<br>
+• <strong>Drospirenona</b> 2 mg/dia + estradiol: combinação fixa (Angeliq) — efeito anti-mineralocorticoide<br>
+• <strong>SIU-LNG (DIU Mirena)</b>: proteção endometrial com progestogênio local mínimo — permite estrogênio sistêmico`:'Sem útero: estrogênio isolado · Sem necessidade de progestogênio · Menor risco vs terapia combinada'}`,
+    note:`Duração da TRH: mínimo eficaz pelo tempo necessário · Reavaliar anualmente benefício-risco · Não há limite máximo definido se sintomas persistem e sem novos fatores de risco<br>
+Monitoramento: mamografia anual · USG endometrial se sangramento fora do esperado · PA · Perfil lipídico<br>
+Fezolinetant: alternativa não-hormonal com eficácia similar à TRH para fogachos em pacientes com CI`});
+
+  document.getElementById('trhResult').style.display='block';
+  document.getElementById('trhResult').innerHTML=recs.map(recHTML).join('');
+  document.getElementById('trhResult').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+/* ── SOP & ENDOMETRIOSE ──────────────────────────────────────────────── */
+function calcSOP(){
+  const dx=document.getElementById('sop_dx').value;
+  const recs=[];
+
+  if(dx==='sop'){
+    recs.push({hdr:'SOP — Síndrome dos Ovários Policísticos',col:'#7c3aed',
+      nome:'Tratamento por manifestação dominante: ciclo, hiperandrogenismo, fertilidade, metabólico',badges:[{t:'SOP',c:'#7c3aed'},{t:'Rotterdam 2003',c:'#4c1d95'}],
+      body:`<strong>Critérios Rotterdam (≥2 de 3):</strong> Oligo/anovulação · Hiperandrogenismo clínico/laboratorial · Ovários policísticos ao US<br><br>
+<strong>Base universal (todas as pacientes):</strong><br>
+• Mudança de estilo de vida: perda de 5–10% do peso → restaura ciclos em 50–70% com sobrepeso<br>
+• Exercício aeróbico 150 min/semana<br><br>
+<strong>Irregularidade menstrual + hiperandrogenismo (acne, hirsutismo):</strong><br>
+• <strong>Anticoncepcional hormonal combinado (AHC)</b>: regula ciclo + reduz androgênios · Preferir contendo progestogênio antiandrogênico:<br>
+  - Ciproterona 2 mg + Etinilestradiol 35 mcg (Diana-35 / Selene) — progestogênio mais antiandrogênico<br>
+  - Drospirenona 3 mg + Etinilestradiol 20–30 mcg (Yaz, Yasmin) — atividade anti-aldosterona<br>
+  - Dienogeste 2 mg + Estradiol (Qlaira): menor trombose<br><br>
+<strong>Hirsutismo refratário (além do AHC):</strong><br>
+• <strong>Espironolactona</b> 100–200 mg/dia (antiandrogênico + anti-mineralocorticoide) — SEMPRE com contracepção (↑ K+ em gestação, feminilização fetal) · Monitorar K+ e PA<br>
+• Finasterida 2,5–5 mg/dia: bloqueio 5α-redutase — alternativa<br>
+• Flutamida 125–250 mg/dia: antiandrogênico não-esteroidal — hepatotoxicidade → monitorar TGP<br><br>
+<strong>Resistência à insulina / risco metabólico / fertilidade:</strong><br>
+• <strong>Metformina</b> 1500–2000 mg/dia (reduz insulinemia, restaura ovulação, melhora perfil metabólico) — indicar se sobrepeso/obesa, DM2 ou pré-DM, falha de AHC, desejo de gestação<br>
+• Inositol (mio-inositol + D-chiro-inositol 40:1): evidência crescente para resistência insulínica em SOP<br><br>
+<strong>Indução de ovulação (fertilidade):</strong><br>
+• <strong>Letrozol 2,5–7,5 mg</b> D3–D7 do ciclo (inibidor de aromatase — melhor que clomifeno em SOP: NEJM 2014)<br>
+• Clomifeno 50–150 mg D3–D7 (alternativa — menor taxa gêmeos que gonadotrofinas)`,
+      note:'Rastreio metabólico em SOP: glicemia de jejum + TOTG 75 g (resistência insulínica), perfil lipídico, PA. Risco de DM2 é 4× maior. Atenção: acne em SOP — espironolactona mais eficaz que ATB tópicos para componente hormonal. Rastreio de CA endométrio: oligomenorreia longa (>3 meses) → induzir menstruação periodicamente (progestogênio ou AHC) para proteger endométrio.'});
+  }
+
+  if(dx==='endo'){
+    recs.push({hdr:'Endometriose — Tratamento Hormonal e Cirúrgico',col:'#dc2626',
+      nome:'Supressão hormonal + Analgesia · Cirurgia para infertilidade ou refratária',badges:[{t:'Endometriose',c:'#dc2626'},{t:'ESHRE 2022',c:'#7f1d1d'}],
+      body:`<strong>Dor (dismenorreia, dispareunia, dor pélvica crônica):</strong><br>
+1ª linha: <strong>AINE</strong> + AHC ou progestogênio isolado (supressão do endométrio ectópico)<br><br>
+<strong>Progestogênios (mais eficazes que AHC para endometriose):</strong><br>
+• <strong>Dienogeste</b> 2 mg/dia (Visanne/Zinaclara) — progestogênio específico para endometriose; amenorreia em maioria; sem efeito antiandrogênico significativo<br>
+• <strong>Acetato de medroxiprogesterona depot (DMPA)</b> 150 mg IM/trimestre: supressão ovulatória + amenorreia<br>
+• Levonorgestrel SIU (DIU Mirena): reduz dor de endometriose e protege endométrio<br>
+• Noretisterona 5 mg/dia: alternativa oral<br><br>
+<strong>Análogos de GnRH (2ª linha — uso curto ≤6 meses):</strong><br>
+• <strong>Leuprolida</b> 3,75 mg IM/mês ou 11,25 mg IM/trimestre<br>
+• <strong>Goserrelina</b> 3,6 mg SC/mês<br>
+• Hipoestrogenismo profundo → fogachos, ressecamento vaginal, perda óssea<br>
+• <strong>Add-back therapy</b> OBRIGATÓRIA: estradiol 0,5–1 mg + noretisterona 0,5–1 mg (previne perda óssea sem perder eficácia analgésica; permite uso >6 meses)<br><br>
+<strong>Elagolix 150–200 mg 1–2×/dia</strong> (antagonista GnRH oral — início de ação rápido vs análogos depô; add-back possível)<br><br>
+<strong>Cirurgia laparoscópica:</strong><br>
+• Endometriomas >4 cm: cistectomia ovariana (ablação do cisto por cistectomia preserva mais folículos que drenagem)<br>
+• Infertilidade refratária: remoção cirúrgica de aderências e lesões<br>
+• Endometriose profunda (DIE): cirurgia especializada em centro de referência`,
+      note:'Gravidez e endometriose: gestação melhora dor temporariamente (supressão de estrogênio). Após parto: reiniciar hormonal para prevenir recorrência. Recorrência após cirurgia: >50% em 5 anos → manutenção hormonal pós-operatória (dienogeste) é essencial.'});
+  }
+
+  if(dx==='anti'){
+    recs.push({hdr:'Anticoncepção — Seleção de Método',col:'#065f46',
+      nome:'Eficácia, perfil e contraindicações — OMS/MEC 2015',badges:[{t:'Anticoncepção',c:'#065f46'},{t:'MEC OMS',c:'#0f766e'}],
+      body:`<strong>Altamente eficazes (Índice de Pearl <1/100 mulheres-ano):</strong><br>
+• <strong>SIU-LNG (DIU Mirena / Kyleena)</b>: 99,9% · 3–7 anos · Indicado em nulíparas e multíparas · Reduz dismenorreia e fluxo<br>
+• <strong>DIU de cobre</b>: 99,2% · 10 anos · Sem hormônio · Opção na amamentação · Pode ↑ fluxo<br>
+• <strong>Implante subcutâneo (etonogestrel)</b>: 99,9% · 3 anos · Conveniente · Amenorreia em 20%<br>
+• <strong>Injeção trimestral DMPA</b>: 99,7% · Amenorreia frequente · ↓ DMO (reversível)<br><br>
+<strong>Contraceptivos hormonais combinados (CHC):</strong><br>
+• AHC oral: 99,7% com uso perfeito; 91% uso típico · Diária · RAM: náusea, cefaleia, ↑ risco TVP (especialmente com desogestrel/gestodeno)<br>
+• Adesivo semanal (Evra): mesma eficácia · Maior exposição a estrogênio<br>
+• Anel vaginal mensal (Nuvaring): menor dose estrogênio · Ciclo controlável<br><br>
+<strong>Contraindicações ao estrogênio (usar progestogênio isolado):</strong><br>
+HAS grave · Enxaqueca com aura · TVP/TEP prévios · Tabagismo >35 anos · Amamentação <6 sem · Hepatopatia<br><br>
+<strong>Pílula apenas de progestogênio (POP):</strong><br>
+• Desogestrel 75 mcg/dia: eficaz mesmo sem rigidez de horário (janela 12h) · Indicada em amamentação e CI ao estrogênio<br><br>
+<strong>Anticoncepção de emergência (AE):</strong><br>
+• Levonorgestrel 1,5 mg dose única: até 72h (eficaz até 120h — ↓ eficácia) · Sem CI absolutas<br>
+• DIU de cobre: até 5 dias (mais eficaz — 99,9%) · Opção em obesidade (LNG menos eficaz em IMC >75 kg)`,
+      note:'Obesidade e anticoncepção: CHC oral: eficácia reduzida (IMC >30 — considerar DIU/implante). DIU e implante: eficácia independente do peso. AE: DIU cobre supera LNG em obesas. Amamentação: evitar estrogênio nas primeiras 6 semanas (suprime lactação). DMPA, progestogênio isolado ou DIU: compatíveis com amamentação.'});
+  }
+
+  document.getElementById('sopResult').style.display='block';
+  document.getElementById('sopResult').innerHTML=recs.map(recHTML).join('');
+  document.getElementById('sopResult').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+/* ── IST & INFECÇÕES GENITAIS ────────────────────────────────────────── */
+function renderIST(){
+  if(document.getElementById('istList').innerHTML) return;
+  const IST=[
+    {col:'#9d174d',nome:'Candidíase Vulvovaginal (CVV)',body:`<strong>Esporádica (≤3 episódios/ano):</strong><br>
+Tópico: Miconazol 2% creme vaginal × 7 dias ou clotrimazol 500 mg comprimido vaginal dose única<br>
+Oral: <strong>Fluconazol 150 mg VO dose única</strong> (sem diferença vs tópico; mais conveniente)<br>
+Gestação: apenas tópico (fluconazol oral CI — estudo 2016 associou a aborto em doses altas)<br><br>
+<strong>CVV Recorrente (≥3 episódios/ano):</strong><br>
+• Fase de indução: Fluconazol 150 mg D1, D4, D7 (3 doses)<br>
+• Manutenção supressiva: Fluconazol 150 mg 1×/semana × 6 meses (reduz recorrências em 90%)<br>
+• C. glabrata (resistente a azol): Ácido bórico 600 mg cápsula vaginal × 14 dias (preparo magistral)<br><br>
+Fatores de risco: DM, antibioticoterapia recente, imunossupressão, AHC, gestação`},
+    {col:'#0369a1',nome:'Vaginose Bacteriana (VB)',body:`<strong>Critérios de Amsel (≥3 de 4):</strong> pH vaginal >4,5 · Secreção branca-acinzentada homogênea · "Clue cells" ao microscópio · Odor de aminas com KOH 10% (teste das aminas positivo)<br><br>
+<strong>Tratamento:</strong><br>
+• <strong>Metronidazol 400–500 mg 2×/dia × 7 dias VO</strong> (1ª linha)<br>
+• Metronidazol gel 0,75% intravaginal 1×/dia × 5 noites (igual eficácia, menos RAM sistêmica)<br>
+• <strong>Clindamicina</b> 300 mg 2×/dia × 7 dias VO (alternativa; CI metronidazol)<br>
+• Clindamicina creme 2% vaginal × 7 noites<br>
+Gestação: metronidazol oral seguro após 1T · Clindamicina vaginal: associada a parto prematuro — evitar no 2T/3T<br>
+Recorrente: metronidazol gel × 5 dias/mês por 3–6 meses · Ácido bórico vaginal após tratamento`},
+    {col:'#dc2626',nome:'IST — Gonorreia, Clamídia e Sífilis',body:`<strong>Gonorreia (Neisseria gonorrhoeae):</strong><br>
+• <strong>Ceftriaxona 500 mg IM dose única</strong> (1ª linha — resistência a quinolonas elevada; ceftriaxona 1 g se peso >150 kg)<br>
+• Associar azitromicina se clamídia não excluída<br><br>
+<strong>Clamídia (Chlamydia trachomatis):</strong><br>
+• <strong>Doxiciclina 100 mg 2×/dia × 7 dias</strong> (1ª linha — superior à azitromicina em endocervicite)<br>
+• <strong>Azitromicina 1 g VO dose única</strong> (DOT — supervisão — em contexto de adesão difícil ou gravidez)<br>
+• Gestação: Azitromicina 1 g dose única ou amoxicilina 500 mg 3×/dia × 7 dias<br><br>
+<strong>Sífilis:</strong><br>
+• Primária/Secundária: <strong>Penicilina G benzatina 2,4 milhões UI IM dose única</strong> (1,2 milhão em cada nádega)<br>
+• Latente tardia ou duração desconhecida: Penicilina G benzatina 2,4 MUI IM semanal × 3 semanas<br>
+• Neurossífilis: Penicilina G cristalina 3–4 MUI IV 4/4h × 10–14 dias<br>
+• Alergia à penicilina: doxiciclina 100 mg 2×/dia × 14 dias (exceto gestante → dessensibilização à penicilina)<br>
+• Gestação: apenas penicilina é segura e eficaz (cura a sífilis congênita)<br>
+Reação de Jarisch-Herxheimer: febre, calafrio, cefaleia 2–8h após 1ª dose → paracetamol (não interromper tratamento)`},
+    {col:'#7c3aed',nome:'Herpes Genital (HSV-2) e Tricomoníase',body:`<strong>Herpes Genital — 1º episódio:</strong><br>
+• <strong>Valaciclovir 1 g 2×/dia × 10 dias</strong> (ou Aciclovir 400 mg 3×/dia × 7–10 dias)<br>
+• Iniciar assim que possível (não aguardar confirmação laboratorial em quadro clínico típico)<br>
+<strong>Recorrência:</strong><br>
+• Terapia episódica: Valaciclovir 500 mg 2×/dia × 3–5 dias (iniciar nos primeiros sintomas/prodromos)<br>
+• Terapia supressiva (≥6 recorrências/ano): Valaciclovir 500 mg/dia contínuo<br>
+• Gestação: Aciclovir/Valaciclovir: seguros a partir do 2T. A partir de 36 sem: Valaciclovir 500 mg 2×/dia para reduzir transmissão vertical<br><br>
+<strong>Tricomoníase (Trichomonas vaginalis):</strong><br>
+• <strong>Metronidazol 2 g VO dose única</strong> (tratar parceiro simultaneamente — reinfecção frequente)<br>
+• Alternativa: Metronidazol 400 mg 2×/dia × 7 dias (menor taxa de falha)<br>
+• Gestação: Metronidazol 2 g dose única após 1T (tratamento reduz sintomas e pode ↓ parto prematuro — tratar quando sintomática)`},
+  ];
+  document.getElementById('istList').innerHTML=IST.map(i=>`<div class="ist-card" style="border-color:${i.col}"><div class="ist-nome" style="color:${i.col}">${i.nome}</div><div class="ist-body">${i.body}</div></div>`).join('');
+}
+</script>
+</body>
+</html>

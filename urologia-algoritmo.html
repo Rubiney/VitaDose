@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Urologia — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .uro-hdr{background:linear-gradient(135deg,#0369a1,#0284c7);color:#fff;border-radius:14px;padding:18px;margin-bottom:14px}
+    .uro-title{font-size:1rem;font-weight:800;margin-bottom:4px}
+    .uro-sub{font-size:.73rem;opacity:.8}
+    label{font-size:.75rem;font-weight:700;color:#1e3a5f;display:block;margin-bottom:4px}
+    select{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:10px;padding:10px 12px;font-size:.85rem;background:#fff;margin-bottom:10px}
+    select:focus{border-color:#0369a1;outline:none}
+    input[type=number]{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:10px;padding:10px 12px;font-size:.85rem;background:#fff;outline:none;margin-bottom:10px}
+    input:focus{border-color:#0369a1}
+    .checkbox-group{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
+    .checkbox-item{display:flex;align-items:center;gap:8px;font-size:.8rem;cursor:pointer}
+    .checkbox-item input[type=checkbox]{width:18px;height:18px;accent-color:#0369a1;cursor:pointer}
+    .btn-calc{width:100%;background:#0369a1;color:#fff;border:none;border-radius:12px;padding:13px;font-size:.87rem;font-weight:700;cursor:pointer;margin:8px 0}
+    .btn-auto{background:#0f766e;color:#fff;border:none;border-radius:10px;padding:10px 16px;font-size:.8rem;font-weight:700;cursor:pointer;margin-bottom:10px}
+    .tab-bar{display:flex;gap:6px;margin-bottom:14px}
+    .tab-btn{flex:1;padding:9px 4px;border-radius:10px;border:2px solid #e2e8f0;background:#fff;font-size:.76rem;font-weight:700;cursor:pointer;color:#64748b}
+    .tab-btn.active{border-color:#0369a1;background:#e0f2fe;color:#0369a1}
+    .rec-card{border-radius:12px;border:2px solid;padding:14px;margin-bottom:10px}
+    .rec-hdr{font-size:.63rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+    .rec-nome{font-size:.88rem;font-weight:800;margin-bottom:6px}
+    .rec-badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:.65rem;font-weight:800;color:#fff;margin:2px}
+    .rec-body{font-size:.78rem;margin-top:6px;line-height:1.7}
+    .rec-note{font-size:.71rem;color:#64748b;margin-top:6px;padding-top:6px;border-top:1px solid #f1f5f9}
+    .ipss-row{padding:5px 0;border-bottom:1px dashed #e0f2fe;font-size:.76rem}
+    .ipss-row:last-child{border-bottom:none}
+    .input-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .score-box{border-radius:12px;border:3px solid;padding:12px;text-align:center;margin:8px 0}
+    .score-num{font-size:2rem;font-weight:900;line-height:1}
+    .score-lbl{font-size:.82rem;font-weight:800;margin-top:4px}
+  </style>
+</head>
+<body>
+<header class="top-bar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <span class="top-title">Urologia — Algoritmo</span>
+  <div class="top-right"></div>
+</header>
+<main class="container" style="padding-bottom:90px">
+  <div class="uro-hdr">
+    <div class="uro-title">🫁 Urologia — Algoritmo Farmacoterapêutico</div>
+    <div class="uro-sub">HPB · Disfunção Erétil · Bexiga Hiperativa · Cálculos Renais · Incontinência</div>
+  </div>
+  <div class="tab-bar">
+    <button class="tab-btn active" id="tb0" onclick="showTab(0)">HPB</button>
+    <button class="tab-btn" id="tb1" onclick="showTab(1)">DE & Bexiga</button>
+    <button class="tab-btn" id="tb2" onclick="showTab(2)">Cálculos Renais</button>
+  </div>
+
+  <!-- TAB 0 — HPB -->
+  <div id="tab0">
+    <button class="btn-auto" onclick="autoFill()">⚡ Auto-preencher do paciente ativo</button>
+    <div class="card" style="padding:12px 14px">
+      <label>Pontuação IPSS (International Prostate Symptom Score)</label>
+      <select id="hpb_ipss">
+        <option value="leve">Leve (IPSS 1–7) — sintomas leves, sem impacto significativo</option>
+        <option value="mod">Moderado (IPSS 8–19) — sintomas incomodando; qualidade de vida afetada</option>
+        <option value="grave">Grave (IPSS 20–35) — sintomas intensos; impacto importante</option>
+      </select>
+      <label>Volume prostático estimado (US ou PSA)</label>
+      <select id="hpb_vol">
+        <option value="pequena">Pequena (&lt;30 g / PSA &lt;1,5 ng/mL)</option>
+        <option value="media">Média (30–50 g / PSA 1,5–4 ng/mL)</option>
+        <option value="grande">Grande (&gt;50 g / PSA &gt;4 ng/mL)</option>
+      </select>
+      <label>Comorbidades relevantes</label>
+      <div class="checkbox-group">
+        <label class="checkbox-item"><input type="checkbox" id="hpb_has"> Hipertensão arterial (risco hipotensão ortostática com alfa-bloqueador)</label>
+        <label class="checkbox-item"><input type="checkbox" id="hpb_cir"> Cirurgia de catarata planejada (IFIS — síndrome da íris flácida)</label>
+        <label class="checkbox-item"><input type="checkbox" id="hpb_de"> Disfunção erétil associada</label>
+        <label class="checkbox-item"><input type="checkbox" id="hpb_retn"> Retenção urinária aguda prévia ou esvaziamento incompleto significativo</label>
+      </div>
+    </div>
+    <button class="btn-calc" onclick="calcHPB()">💊 Gerar protocolo HPB</button>
+    <div id="hpbResult" style="display:none"></div>
+  </div>
+
+  <!-- TAB 1 — DE & BEXIGA -->
+  <div id="tab1" style="display:none">
+    <div class="card" style="padding:12px 14px">
+      <label>Condição a tratar</label>
+      <select id="de_cond">
+        <option value="de">Disfunção Erétil</option>
+        <option value="bh">Bexiga Hiperativa / Urgência miccional</option>
+        <option value="incont">Incontinência Urinária de Esforço (IUE)</option>
+      </select>
+    </div>
+    <button class="btn-calc" onclick="calcDE()">💊 Gerar protocolo</button>
+    <div id="deResult" style="display:none"></div>
+  </div>
+
+  <!-- TAB 2 — CÁLCULOS RENAIS -->
+  <div id="tab2" style="display:none">
+    <div id="calcList"></div>
+  </div>
+</main>
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+<script src="js/db.js"></script>
+<script>
+const pid=localStorage.getItem('vd_active');
+function showTab(n){[0,1,2].forEach(i=>{document.getElementById('tab'+i).style.display=i===n?'block':'none';document.getElementById('tb'+i).classList.toggle('active',i===n);});if(n===2)renderCalc();}
+async function autoFill(){if(!pid){alert('Nenhum paciente ativo.');return;}const pac=await dbGet('pacientes',parseInt(pid));if(!pac)return;const conds=pac.condicoes||[];if(conds.includes('hpb')){document.getElementById('hpb_ipss').value='mod';}}
+function recHTML(r){return `<div class="rec-card" style="border-color:${r.col}"><div class="rec-hdr" style="color:${r.col}">${r.hdr}</div><div class="rec-nome">${r.nome}</div><div>${(r.badges||[]).map(b=>`<span class="rec-badge" style="background:${b.c}">${b.t}</span>`).join('')}</div><div class="rec-body">${r.body}</div>${r.note?`<div class="rec-note">${r.note}</div>`:''}</div>`;}
+
+/* ── HPB ─────────────────────────────────────────────────────────────── */
+function calcHPB(){
+  const ipss =document.getElementById('hpb_ipss').value;
+  const vol  =document.getElementById('hpb_vol').value;
+  const has  =document.getElementById('hpb_has').checked;
+  const cir  =document.getElementById('hpb_cir').checked;
+  const de   =document.getElementById('hpb_de').checked;
+  const retn =document.getElementById('hpb_retn').checked;
+  const recs=[];
+  const grande=vol==='grande';
+
+  if(ipss==='leve'){
+    recs.push({hdr:'HPB Leve — Conduta Expectante',col:'#16a34a',
+      nome:'Watchful waiting + medidas comportamentais',badges:[{t:'IPSS 1–7',c:'#16a34a'}],
+      body:`Sem medicamento necessário em IPSS leve sem impacto na qualidade de vida<br>
+<strong>Medidas comportamentais:</strong><br>
+• Restrição de líquidos à noite (2h antes de dormir)<br>
+• Reduzir cafeína e álcool (irritantes vesicais)<br>
+• Técnica de esvaziamento duplo (urinar, esperar, urinar novamente)<br>
+• Exercícios do assoalho pélvico<br>
+• Evitar descongestionantes nasais (alfa-agonistas → contração uretral)<br>
+Reavaliação anual com PSA e IPSS`,note:'Iniciar medicamento SE piora do IPSS para moderado OU impacto na qualidade de vida OU retenção urinária aguda OU infecções recorrentes.'});
+  }
+
+  if(ipss==='mod'||ipss==='grave'){
+    const alfaBlock=cir?
+      `<strong>⚠️ Cirurgia de catarata planejada:</strong> comunicar ao oftalmologista antes de iniciar alfa-bloqueador (IFIS — pupila dilata inadequadamente durante cirurgia → complicação). SE já em uso: NÃO suspender (sem benefício na suspensão). Preferir alfuzosina (menor IFIS) se possível`
+      :'';
+
+    recs.push({hdr:`HPB ${ipss==='mod'?'Moderada':'Grave'} — Farmacoterapia`,col:'#0369a1',
+      nome:grande?'Combinação Alfa-bloqueador + 5-ARI (próstata grande)':'Alfa-bloqueador como 1ª linha',
+      badges:[{t:`IPSS ${ipss==='mod'?'8–19':'20–35'}`,c:'#0369a1'},{t:grande?'Combinação':'Alfa-bloqueador',c:'#0284c7'}],
+      body:`<strong>Alfa-bloqueadores (alívio rápido em 1–2 semanas):</strong><br>
+• <strong>Tansulosina</strong> 0,4 mg/dia após refeição (uroselativa α1A — menor hipotensão ortostática; 1ª escolha)<br>
+• <strong>Silodosina</strong> 8 mg/dia (altamente uroselativa; menos hipotensão; ejaculação retrógrada frequente)<br>
+• <strong>Alfuzosina</strong> 10 mg LP/dia (não-seletiva; menor IFIS em catarata; mais hipotensão que tamsulosina)<br>
+• <strong>Doxazosina</strong> 1→8 mg/dia (não-seletiva; reduz PA — útil se HAS associada)<br>
+${alfaBlock?'<br>'+alfaBlock:''}<br><br>
+${grande?`<strong>5-ARI (inibidores da 5α-redutase) — reduzem volume ≥20–25% em 6–12 meses:</strong><br>
+• <strong>Finasterida</b> 5 mg/dia (tipo 2 — reduz PSA em 50% após 6 meses; teratogênico — mulheres grávidas não devem manusear comprimidos partidos)<br>
+• <strong>Dutasterida</b> 0,5 mg/dia (tipos 1 e 2 — maior redução de volume; preferida em próstata muito grande)<br>
+• Indicação de 5-ARI: próstata >30 mL ou PSA >1,5 ng/mL · Reduzem risco de retenção e cirurgia<br>
+• Início de efeito: 3–6 meses de uso contínuo<br><br>
+<strong>Combinação (MTOPS/CombAT trials) — superior a cada um isolado em próstata grande:</strong><br>
+• Tamsulosina 0,4 mg/dia + Dutasterida 0,5 mg/dia`
+:''}
+${de?'<br><strong>Disfunção erétil associada: Tadalafila 5 mg/dia</strong> trata AMBAS as condições (HPB + DE) com um único fármaco — aprovado para essa indicação (LUTS + DE)':''}`,
+      note:retn?`⚠️ Retenção urinária aguda: sondagem vesical de alívio urgente · Tamsulosina 0,4 mg/dia (melhora chance de remoção da sonda) + Finasterida (próstata grande) · Se refratário: RTUP (ressecção transuretral)`:has?'Hipotensão ortostática com alfa-bloqueador: maior risco com doxazosina e prazosina. Orientar: levantar devagar, hidratação adequada, meias compressivas se necessário.':''});
+
+    recs.push({hdr:'Monitoramento da HPB',col:'#065f46',
+      nome:'PSA e resposta sintomática a cada 3–6 meses',badges:[{t:'Follow-up',c:'#065f46'}],
+      body:`• IPSS a cada 6 meses (comparativo)<br>
+• PSA: 5-ARI reduz PSA em ~50% após 6 meses → "PSA corrigido" = PSA medido × 2 (para rastreio de CA próstata)<br>
+• Fluxometria urinária + volume residual (VR): VR >300 mL → investigar obstrução significativa<br>
+• Creatinina: HPB pode causar uropatia obstrutiva → monitorar função renal<br>
+• RAM alfa-bloqueador: hipotensão ortostática, ejaculação retrógrada (silodosina), cefaleia<br>
+• RAM 5-ARI: queda de libido, DE, ginecomastia (em ~1% — reversíveis com suspensão)<br>
+<strong>Indicação de cirurgia (RTUP ou técnicas a laser):</strong><br>
+Falha farmacológica · Retenção recorrente · ITU recorrente por HPB · Hematúria refratária · Litíase vesical por HPB · IRA por uropatia obstrutiva`,note:''});
+  }
+
+  document.getElementById('hpbResult').style.display='block';
+  document.getElementById('hpbResult').innerHTML=recs.map(recHTML).join('');
+  document.getElementById('hpbResult').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+/* ── DE & BEXIGA ─────────────────────────────────────────────────────── */
+function calcDE(){
+  const cond=document.getElementById('de_cond').value;
+  const recs=[];
+
+  if(cond==='de'){
+    recs.push({hdr:'Disfunção Erétil — Inibidores de PDE-5',col:'#1e3a8a',
+      nome:'Sildenafila, Tadalafila ou Vardenafila — 1ª linha farmacológica',badges:[{t:'PDE-5i',c:'#1e3a8a'},{t:'1ª linha',c:'#0369a1'}],
+      body:`<strong>⚠️ CONTRAINDICAÇÃO ABSOLUTA com NITRATOS:</strong> risco de hipotensão grave (sinérgica) — sildenafila: intervalo mínimo 24h; tadalafila: 48h<br>
+Outros CI: hipotensão grave (PA <90/50), AVC/IAM recente <6 meses, retinite pigmentosa<br><br>
+<strong>Sildenafila (Viagra) 25–100 mg VO:</strong><br>
+• Tomar 30–60 min ANTES da atividade sexual · Duração 4–6h<br>
+• Efeito máximo em jejum · Alimento gorduroso reduz absorção<br>
+• Dose inicial: 50 mg (25 mg em idoso ou hepatopata · 25 mg se ritonavir — inibidor CYP3A4)<br><br>
+<strong>Tadalafila (Cialis) 10–20 mg VO (uso sob demanda):</strong><br>
+• Tomar 30 min antes · Duração ≥36h ("fim de semana")<br>
+• Sem restrição alimentar · Indicado se relações não programadas<br>
+• Dose diária: 5 mg/dia (HPB + DE — aprovado para ambos)<br><br>
+<strong>Vardenafila 10–20 mg VO:</strong><br>
+• Similar à sildenafila · Início ligeiramente mais rápido<br>
+• Evitar em arritmia grave (prolongamento QT)<br><br>
+<strong>Avanafila 100–200 mg:</strong> início em 15 min (mais rápido) — opção conveniente<br><br>
+<strong>Causas a investigar:</strong> hipogonadismo (testosterona total), hiperprolactinemia, DM, HAS, aterosclerose, medicamentos (antidepressivos, betabloqueadores, antiandrógenos)`,
+      note:'Falha de PDE-5i: verificar técnica de uso (em jejum, estimulação adequada, dose correta). Testosterona baixa: reposição melhora resposta aos PDE-5i. Tratamento 2ª linha: alprostadil intracavernoso 5–20 mcg (injeção) ou MUSE intrauretral. 3ª linha: prótese peniana.'});
+  }
+
+  if(cond==='bh'){
+    recs.push({hdr:'Bexiga Hiperativa (BH) — Urgência + Frequência ± Incontinência',col:'#7c3aed',
+      nome:'Medidas comportamentais → Antimuscarínico ou Mirabegrona',badges:[{t:'BH',c:'#7c3aed'},{t:'Urgência',c:'#4c1d95'}],
+      body:`<strong>1ª etapa — Não-farmacológico (obrigatório em qualquer grau):</strong><br>
+• Treino vesical (aumento progressivo do intervalo entre micções)<br>
+• Diário miccional · Restrição de cafeína e álcool<br>
+• Exercícios do assoalho pélvico (Kegel)<br>
+• Perda de peso (↓10% → ↓50% das perdas em obesas)<br><br>
+<strong>2ª etapa — Farmacológico:</strong><br>
+<strong>Antimuscarínicos (M3 bloqueadores):</strong><br>
+• <strong>Solifenacina</strong> 5→10 mg/dia (maior seletividade vesical; menor boca seca)<br>
+• <strong>Tolterodina</b> 2 mg 2×/dia ou LP 4 mg/dia<br>
+• <strong>Oxibutinina</b> 5 mg 2–3×/dia — mais RAM anticolinérgica (boca seca, constipação, confusão em idoso — EVITAR em idoso com risco cognitivo)<br>
+• Todos contraindicados em: glaucoma de ângulo fechado, retenção urinária, miastenia<br><br>
+<strong>Mirabegrona (Betmiga) 50 mg/dia:</strong><br>
+Agonista β3-adrenérgico — SEM efeito anticolinérgico (preferível em idoso, demência, boca seca grave)<br>
+RAM: ↑ PA (5 mmHg) — monitorar em HAS; contraindicado em PA >180/110 não controlada<br>
+Combinação solifenacina 5 mg + mirabegrona 50 mg: superior a monoterapia (SYNERGY trial)<br><br>
+<strong>Toxina botulínica intravesical (3ª linha):</strong><br>
+Onabotulinumtoxina A 100 U injetada em cistoscopia · Duração 6–9 meses · Indicada após falha de 2 antimuscarínicos · Risco de retenção (5–6%): sondagem intermitente`,
+      note:'EVITAR antimuscarínicos em idoso com comprometimento cognitivo (lista de Beers). Oxibutinina transdérmica (patch): menor RAM sistêmica que oral. Tratamento de urgência aguda: oxibutinina IV ou IM em ambiente hospitalar (não disponível no Brasil).'});
+  }
+
+  if(cond==='incont'){
+    recs.push({hdr:'Incontinência Urinária de Esforço (IUE)',col:'#d97706',
+      nome:'Fisioterapia pélvica + Duloxetina (OFF-label) → Cirurgia',badges:[{t:'IUE',c:'#d97706'}],
+      body:`<strong>1ª linha — Fisioterapia do Assoalho Pélvico:</strong><br>
+Exercícios de Kegel supervisionados por fisioterapeuta: eficácia comprovada (↓70% das perdas em 3 meses)<br>
+Biofeedback perineal: auxilia no aprendizado da contração correta<br>
+Eletroestimulação transvaginal: estimula contração involuntária<br><br>
+<strong>Farmacológico (adjuvante):</strong><br>
+• <strong>Duloxetina</b> 40 mg 2×/dia — IRSN; aumenta tônus do esfíncter uretral externo via serotonina/noradrenalina<br>
+(Aprovado EMA para IUE — no Brasil: uso OFF-label; reduz episódios em ~50% vs placebo)<br>
+RAM: náusea (principais semanas), insônia, constipação<br>
+• <strong>Estrogênio tópico vaginal</b>: útil na pós-menopausa com atrofia vaginal associada (creme de estrogênio local)<br><br>
+<strong>Cirurgia (gold standard para IUE moderada-grave):</strong><br>
+• Sling médio-uretral (TVT, TOT): taxa de cura 80–90% · Tratamento definitivo`,
+      note:'IUE vs BH vs mista: diagnóstico diferencial pelo diário miccional. IUE: perde ao esforço (tosse, espirro). BH: urgência antes da perda. Mista: ambos. Tratamento diferenciado: IUE → fisio + duloxetina + cirurgia; BH → antimuscarínico ou mirabegrona.'});
+  }
+
+  document.getElementById('deResult').style.display='block';
+  document.getElementById('deResult').innerHTML=recs.map(recHTML).join('');
+  document.getElementById('deResult').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+/* ── CÁLCULOS RENAIS ─────────────────────────────────────────────────── */
+function renderCalc(){
+  if(document.getElementById('calcList').innerHTML) return;
+  const cards=[
+    {col:'#0369a1',nome:'Cálculo Ureteral Agudo — Manejo da Crise',body:`<strong>Dor aguda (cólica nefrética):</strong><br>
+Cetorolaco 30 mg IV/IM (AINE — mais eficaz que opioides para cólica) ou Cetoprofeno 100 mg IV<br>
+AINE VO: ibuprofeno 400–600 mg 3×/dia + metoclopramida 10 mg SOS<br>
+Dipirona 1–2 g IV (antiespasmódico + analgésico) + hioscina 20 mg IV<br>
+Evitar: morfina (piora espasmo ureteral)<br><br>
+<strong>Expulsão espontânea — Tamsulosina 0,4 mg/dia:</strong><br>
+Cálculo ≤5 mm: 80% de expulsão espontânea sem intervenção em 4 semanas<br>
+Cálculo 5–10 mm: tamsulosina 0,4 mg/dia × 4 semanas → ↑ taxa de expulsão em 44% (relaxamento do ureter distal)<br>
+Cálculo >10 mm ou obstrução com febre: urologia urgente (litotripsia ou ureteroscopia)<br><br>
+<strong>Indicação de intervenção urgente:</strong><br>
+• Febre + obstrução (urossepse iminente) → drenagem urgente (nefrostomia)<br>
+• Cálculo único ou rim único<br>
+• Dor refratária ou vômitos intratáveis`,note:'Hidratação: controversa para expulsão — não forçar além do conforto. Hidratação excessiva não acelera expulsão mas dilui urina (previne novos cálculos). Tamis: tomografia helicoidal sem contraste — padrão-ouro para diagnóstico (sensibilidade 98%)'},
+    {col:'#b45309',nome:'Prevenção de Cálculos — Por Composição',body:`<strong>Oxalato de cálcio (70–80% dos cálculos):</strong><br>
+• <strong>Hidratação:</strong> diurese ≥2,5 L/dia (principal medida — mais eficaz que qualquer medicamento)<br>
+• <strong>Citrato de potássio</b> 20–30 mEq 2×/dia: alcaliniza urina, inibe cristalização de oxalato; também indicado em hipocitratura<br>
+• Cálcio na dieta: NÃO restringir (cálcio intestinal liga oxalato → reduz absorção); restringir cálcio ↑ risco de cálculo<br>
+• Restringir: oxalato (espinafre, beterraba, amendoim, chocolate) · Sal (<5 g/dia — ↓ calciúria) · Proteína animal (<0,8–1 g/kg/dia)<br>
+• Hiperoxalúria: colestiramina ou cálcio (quelante de oxalato intestinal)<br>
+• Hipercalciúria absortiva: hidroclorotiazida 25 mg/dia (↓ calciúria)<br><br>
+<strong>Ácido úrico (5–10%):</strong><br>
+• Alcalinizar urina: <strong>Citrato de potássio/sódio</b> — pH urina 6,5–7 (dissolve cálculos de ácido úrico)<br>
+• Alopurinol 300 mg/dia (hiperuricosúria ou hiperuricemia associada)<br>
+• Reduzir proteína animal e álcool<br><br>
+<strong>Fosfato de cálcio:</strong> hidratação + citrato de potássio<br>
+<strong>Estruvita (infecciosos):</strong> tratar ITU + litotripsia cirúrgica (não respondem a dissolução)<br>
+<strong>Cistina:</strong> alcalinizar urina pH >7,5 + D-penicilamina ou tiopronina (quelantes)`,note:'Avaliação metabólica após 2º cálculo ou 1º cálculo em jovem: cálcio urinário 24h, oxalato, citrato, ácido úrico, sódio, creatinina. Cálcio sérico + PTH: excluir hiperparatireoidismo primário (principal causa de hipercalcemia+nefrolitíase).'},
+  ];
+  document.getElementById('calcList').innerHTML=cards.map(c=>`<div class="rec-card" style="border-color:${c.col}"><div class="rec-nome" style="color:${c.col}">${c.nome}</div><div class="rec-body">${c.body}</div>${c.note?`<div class="rec-note">${c.note}</div>`:''}</div>`).join('');
+}
+</script>
+</body>
+</html>
