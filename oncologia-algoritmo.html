@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Oncologia — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .onc-hdr{background:linear-gradient(135deg,#312e81,#6d28d9);color:#fff;border-radius:14px;padding:18px;margin-bottom:14px}
+    .onc-title{font-size:1rem;font-weight:800;margin-bottom:4px}
+    .onc-sub{font-size:.73rem;opacity:.8}
+    label{font-size:.75rem;font-weight:700;color:#1e3a5f;display:block;margin-bottom:4px}
+    select{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:10px;padding:10px 12px;font-size:.85rem;background:#fff;margin-bottom:10px}
+    select:focus{border-color:#6d28d9;outline:none}
+    .btn-calc{width:100%;background:#6d28d9;color:#fff;border:none;border-radius:12px;padding:13px;font-size:.87rem;font-weight:700;cursor:pointer;margin:8px 0}
+    .tab-bar{display:flex;gap:6px;margin-bottom:14px}
+    .tab-btn{flex:1;padding:9px 4px;border-radius:10px;border:2px solid #e2e8f0;background:#fff;font-size:.72rem;font-weight:700;cursor:pointer;color:#64748b}
+    .tab-btn.active{border-color:#6d28d9;background:#f5f3ff;color:#6d28d9}
+    .onc-card{border-radius:10px;border-left:5px solid;padding:10px 14px;margin-bottom:8px;background:#fff}
+    .onc-nome{font-size:.83rem;font-weight:800;margin-bottom:4px}
+    .onc-body{font-size:.76rem;line-height:1.7;color:#374151}
+    .rec-card{border-radius:12px;border:2px solid;padding:14px;margin-bottom:10px}
+    .rec-hdr{font-size:.63rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+    .rec-nome{font-size:.88rem;font-weight:800;margin-bottom:6px}
+    .rec-body{font-size:.78rem;margin-top:6px;line-height:1.7}
+    .rec-note{font-size:.71rem;color:#64748b;margin-top:6px;padding-top:6px;border-top:1px solid #f1f5f9}
+    .alerta{background:#fef2f2;border:2px solid #dc2626;border-radius:10px;padding:8px;margin:6px 0;font-size:.75rem;color:#7f1d1d;font-weight:700}
+    table{width:100%;border-collapse:collapse;font-size:.73rem;margin-top:6px}
+    th{background:#312e81;color:#fff;padding:5px 8px;text-align:left}
+    td{padding:5px 8px;border-bottom:1px solid #f1f5f9}
+    tr:nth-child(even) td{background:#f5f3ff}
+    .chip{display:inline-block;padding:2px 8px;border-radius:999px;font-size:.65rem;font-weight:800;color:#fff;margin:2px}
+  </style>
+</head>
+<body>
+<header class="top-bar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <span class="top-title">Oncologia Clínica</span>
+  <div class="top-right"></div>
+</header>
+<main class="container" style="padding-bottom:90px">
+  <div class="onc-hdr">
+    <div class="onc-title">🎗️ Oncologia — Protocolos de 1ª Linha</div>
+    <div class="onc-sub">NSCLC · Ca Mama · Ca Cólon · Linfomas · irAEs · SLT</div>
+  </div>
+  <div class="tab-bar">
+    <button class="tab-btn active" id="tb0" onclick="showTab(0)">Tumor Sólido</button>
+    <button class="tab-btn" id="tb1" onclick="showTab(1)">Hemato & Linfomas</button>
+    <button class="tab-btn" id="tb2" onclick="showTab(2)">Imunoterapia & SLT</button>
+  </div>
+
+  <!-- TAB 0 — TUMORES SÓLIDOS -->
+  <div id="tab0">
+    <div class="card" style="padding:12px 14px">
+      <label>Tumor de Interesse</label>
+      <select id="onc_tumor">
+        <option value="nsclc">NSCLC — Câncer de Pulmão Não-Pequenas Células</option>
+        <option value="mama_hr">Ca Mama HR+ / HER2- Metastático</option>
+        <option value="mama_her2">Ca Mama HER2+ Metastático</option>
+        <option value="mama_tnbc">Ca Mama Triple Negativo Metastático</option>
+        <option value="colon">Ca Colorretal Metastático (mCRC)</option>
+        <option value="prostata">Ca Próstata Resistente à Castração</option>
+        <option value="gastrico">Ca Gástrico / Esôfago Metastático</option>
+      </select>
+    </div>
+    <button class="btn-calc" onclick="calcOnc()">🎗️ Ver protocolo de 1ª linha</button>
+    <div id="oncResult" style="display:none"></div>
+  </div>
+
+  <!-- TAB 1 — HEMATO & LINFOMAS -->
+  <div id="tab1" style="display:none">
+    <div id="hematoList"></div>
+  </div>
+
+  <!-- TAB 2 — IMUNOTERAPIA & SLT -->
+  <div id="tab2" style="display:none">
+    <div id="imunList"></div>
+  </div>
+</main>
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+<script src="js/db.js"></script>
+<script>
+function showTab(n){[0,1,2].forEach(i=>{document.getElementById('tab'+i).style.display=i===n?'block':'none';document.getElementById('tb'+i).classList.toggle('active',i===n);});if(n===1)renderHemato();if(n===2)renderImun();}
+
+/* ─── TUMORES SÓLIDOS ─────────────────────────────────────────────── */
+const PROTO_ONC={
+  nsclc:{hdr:'NSCLC — Câncer de Pulmão Não-Pequenas Células',col:'#0369a1',nome:'Imunoterapia ± Quimioterapia por perfil molecular',
+   body:`<strong>Estadiamento obrigatório pré-tratamento:</strong><br>
+TC tórax/abdômen/pelve com contraste · RM crânio · PET-CT (se ressecável) · Biópsia para histologia + painel molecular<br><br>
+<strong>Painel molecular obrigatório (NSCLC não-escamoso / adenocarcinoma):</strong><br>
+EGFR (exon 19 del, exon 21 L858R, exon 20 ins) · ALK · ROS1 · BRAF V600E · MET exon 14 skip · RET · NTRK · PD-L1 (TPS %)<br><br>
+<strong>Estadio IV — Escolha por perfil molecular:</strong><br>
+<table>
+  <tr><th>Biomarcador</th><th>1ª Linha</th><th>Trial / Evidência</th></tr>
+  <tr><td><strong>EGFR mutado</strong> (ex19del / L858R)</td><td><strong>Osimertinibe 80 mg/dia</strong> (3ª geração — cruza BHE)</td><td>FLAURA: SLP 18,9 vs 10,2 m · FLAURA2: + quimio adicional em T3b/4 (40,1 m SLP)</td></tr>
+  <tr><td>EGFR exon 20 inserção</td><td>Amivantamabe + lazertinibe (PAPILLON)</td><td>PAPILLON: SLP 11,4 vs 6,7 m vs quimio</td></tr>
+  <tr><td><strong>ALK rearranjo</strong></td><td><strong>Alectinibe 600 mg 2×/dia</strong></td><td>ALEX: SLP 34,8 vs 10,9 m vs crizotinibe</td></tr>
+  <tr><td>ROS1</td><td>Entrectinibe 600 mg/dia OU crizotinibe 250 mg 2×/dia</td><td>STARTRK-2</td></tr>
+  <tr><td>BRAF V600E</td><td>Dabrafenibe 150 mg 2×/dia + trametinibe 2 mg/dia</td><td>BRF113928</td></tr>
+  <tr><td>MET exon 14 skip</td><td>Capmatinibe 400 mg 2×/dia OU tepotinibe 500 mg/dia</td><td>GEOMETRY-m1, VISION</td></tr>
+  <tr><td>RET</td><td>Selpercatinibe 160 mg 2×/dia OU pralsetinibe 400 mg/dia</td><td>LIBRETTO-001</td></tr>
+  <tr><td>NTRK</td><td>Larotrectinibe 100 mg 2×/dia OU entrectinibe 600 mg/dia</td><td>Histologia-agnóstica</td></tr>
+  <tr><td><strong>PD-L1 ≥50%</strong> (sem driver)</td><td><strong>Pembrolizumabe 200 mg IV q3sem</strong></td><td>KEYNOTE-024: OS 26,3 vs 13,4 m</td></tr>
+  <tr><td>PD-L1 1–49% (sem driver)</td><td>Pembrolizumabe + carboplatina + pemetrexede q3sem × 4 → pembro manutenção</td><td>KEYNOTE-189</td></tr>
+  <tr><td>PD-L1 &lt;1% / escamoso</td><td>Pembrolizumabe + carboplatina + nab-paclitaxel OU paclitaxel</td><td>KEYNOTE-407</td></tr>
+</table>
+<br><strong>Resistência ao osimertinibe:</strong> biópsia de re-biopsia líquida (ctDNA) → amplificação MET (amivantamabe + lazertinibe em MARIPOSA-2), mutação EGFR C797S`,
+   note:'TMB (Tumor Mutational Burden): tmb-h ≥10 mut/Mb → pembrolizumabe histologia-agnóstica (KEYNOTE-158). MSI-H: pembrolizumabe em qualquer tumor sólido MSI-H (KEYNOTE-158 + aprovação FDA). Osimertinibe adjuvante (ADAURA): estádio IB-IIIA ressecado com EGFR mutado → 3 anos de osimertinibe reduz recidiva em 83%.'},
+  mama_hr:{hdr:'Ca Mama HR+ / HER2- Metastático',col:'#be185d',nome:'CDK4/6 inibidor + Inibidor de Aromatase — 1ª linha padrão',
+   body:`<strong>Pré-menopausa:</strong> suprimir ovários (goserelina 3,6 mg SC mensal ou ooforectomia) + esquema pós-menopáusico<br><br>
+<strong>CDK4/6 inibidor + IA — Padrão de 1ª linha (Pós-menopausa / Pré-menopáusica suprimida):</strong><br>
+<table>
+  <tr><th>CDK4/6 inibidor</th><th>Dose</th><th>Trial</th><th>SLP mediana</th></tr>
+  <tr><td><strong>Abemaciclib (Verzenio)</strong></td><td>150 mg 2×/dia contínuo + letrozol 2,5 mg/dia</td><td>MONARCH-3</td><td>28,2 m</td></tr>
+  <tr><td>Palbociclibe (Ibrance)</td><td>125 mg/dia 3sem ON/1sem OFF + letrozol 2,5 mg</td><td>PALOMA-2</td><td>24,8 m</td></tr>
+  <tr><td>Ribociclibe (Kisqali)</td><td>600 mg/dia 3sem ON/1sem OFF + letrozol/anastrozol</td><td>MONALEESA-2</td><td>25,3 m · Único com OS significativa</td></tr>
+</table>
+<br>
+<strong>Mutação PIK3CA (30% dos HR+):</strong><br>
+• <strong>Alpelisibe (Piqray) 300 mg/dia + fulvestranto 500 mg IM:</strong> SOLAR-1: SLP 11 vs 5,7 m · Hiperglicemia: pré-tratar com metformina 500 mg 2×/dia 1 semana antes<br>
+• Capivasertibe (Truqap) 400 mg 2×/dia 4d ON/3d OFF + fulvestranto: CAPItello-291 — sem seleção de PIK3CA<br><br>
+<strong>Mutação BRCA1/2 (germinal):</strong><br>
+• <strong>Olaparibe 300 mg 2×/dia</strong> (PARP inibidor): OlympiAD: SLP 7 vs 4,2 m vs quimio<br>
+• Talazoparibe 1 mg/dia: EMBRACA — similar eficácia<br><br>
+<strong>Progressão após CDK4/6:</strong><br>
+• Everolimo 10 mg/dia + exemestano (BOLERO-2) · Fulvestranto · Quimio (capecitabina, vinorelbina, eribulina)`,
+   note:'ESR1 mutação (mutação de receptor de estrogênio): adquirida em 20–40% após inibidor de aromatase → fulvestranto ou camizestrant. Monitoramento abemaciclib: hemograma (neutropenia — diferente: pode ser contínuo por menor neutropenia que palbociclibe). Diarreia (abemaciclib): loperamida 4 mg na 1ª evacuação diarreica.'},
+  mama_her2:{hdr:'Ca Mama HER2+ Metastático',col:'#0f766e',nome:'Trastuzumabe + Pertuzumabe + Docetaxel — CLEOPATRA regime',
+   body:`<strong>1ª Linha HER2+:</strong><br>
+• <strong>Pertuzumabe 840 mg IV (ataque) → 420 mg q3sem + Trastuzumabe 8 mg/kg (ataque) → 6 mg/kg q3sem + Docetaxel 75–100 mg/m² × 6 ciclos</strong><br>
+  CLEOPATRA trial: OS 57,1 vs 40,8 m · Manutenção: pertuzumabe + trastuzumabe indefinidamente<br><br>
+<strong>2ª Linha HER2+ (após progressão):</strong><br>
+• <strong>Trastuzumabe deruxtecana (T-DXd / Enhertu) 5,4 mg/kg IV q3sem</strong>: ADC (Antibody-Drug Conjugate) HER2-direciona · DESTINY-Breast03: SLP 28,8 vs 6,8 m vs T-DM1 · Doença interstiticial pulmonar (ILD) em 10–15% — monitorar dispneia<br>
+• T-DM1 (trastuzumabe emtansina 3,6 mg/kg IV q3sem): alternativa menos eficaz que T-DXd<br><br>
+<strong>3ª Linha:</strong><br>
+• Tucatinibe 300 mg 2×/dia + capecitabina + trastuzumabe: HER2CLIMB — doença cerebral ativa (único aprovado para metástase cerebral HER2)<br>
+• Lapatinibe + capecitabina · Neratinibe + capecitabina<br><br>
+<strong>HER2 de baixa expressão (HER2-low — IHC 1+ ou IHC 2+/ISH-):</strong><br>
+• <strong>T-DXd 5,4 mg/kg IV q3sem:</strong> DESTINY-Breast04 — HR+/HER2-low e TNBC/HER2-low após quimio · SLP 9,9 vs 5,1 m · Revolucionou: HER2-low agora é categoria tratável<br>
+<strong>Monitoramento cardíaco:</strong> FE (ecocardiograma) basal + cada 3 meses (trastuzumabe → cardiotoxicidade reversível)`,
+   note:'T-DXd e pneumonite: ILD/pneumonite em 10–15% (1–2% grau ≥3). Sintomas: dispneia, tosse, febre. Manejo: grau 1 = observação; grau 2 = pausar + prednisolona 0,5 mg/kg; grau 3–4 = suspender permanentemente + prednisona 1 mg/kg. T-DXd e êmese: potencial emetogênico moderado — antiemético 5-HT3 + dexametasona preventivo. Trastuzumabe e gravidez: categoria X (contra-indicado) — contracepção durante e 7 meses após.'},
+  mama_tnbc:{hdr:'Ca Mama Triple Negativo Metastático (TNBC)',col:'#7f1d1d',nome:'Pembrolizumabe + Quimio (PD-L1+) OU Sacituzumabe Govitecan',
+   body:`<strong>PD-L1 positivo (CPS ≥10 — Combined Positive Score):</strong><br>
+• <strong>Pembrolizumabe 200 mg IV q3sem + Albumin-bound paclitaxel (nab-paclitaxel) 100 mg/m² d1,8,15 q4sem</strong><br>
+  KEYNOTE-522 (neoadjuvante) · KEYNOTE-355 (metastático): SLP 9,7 vs 5,6 m em CPS ≥10<br>
+• Atezolizumabe + nab-paclitaxel: IMpassion130 (aprovação acelerada FDA, depois retirada por não-confirmação em IMpassion131)<br><br>
+<strong>PD-L1 negativo / progressão após imunoterapia:</strong><br>
+• <strong>Sacituzumabe govitecan (Trodelvy) 10 mg/kg IV d1,d8 q3sem</strong>: ADC anti-Trop-2 · ASCENT: SLP 5,6 vs 1,7 m vs quimio do médico após 2ª linha · Diarreia e neutropenia: principais toxicidades<br><br>
+<strong>BRCA1/2 germinal mutado:</strong><br>
+• Olaparibe 300 mg 2×/dia (OlympiAD) OU talazoparibe 1 mg/dia (EMBRACA): PARP inibidores — também eficazes em TNBC BRCA+<br><br>
+<strong>Quimioterapia sequencial clássica (opção ou progressão):</strong><br>
+• Capecitabina 1000–1250 mg/m² 2×/dia d1–14 q3sem · Vinorelbina · Eribulina · Gencitabina + carboplatina<br>
+<strong>HER2-ultra-low (IHC 0 com faint):</strong> T-DXd aprovado FDA 2024 (DESTINY-Breast06)`,
+   note:'TNBC e BRCA1/2: 15–20% dos TNBC têm mutação BRCA germinal → todos TNBC devem ter teste genético. Pembrolizumabe adjuvante (KEYNOTE-522): 18 ciclos de pembrolizumabe perioperatório em TNBC estádio II–III (+ quimio neoadjuvante) → pCR 64,8 vs 51,2% e EFS melhorado. Sacituzumabe govitecan e neutropenia: G-CSF profilático recomendado (filgrastim 300 mcg SC d3–13 ou pegfilgrastim d3). Síndrome de Gilbert (UGT1A1*28): metabolismo reduzido do irinotecano (SN-38 — payload do sacituzumabe) → toxicidade aumentada.'},
+  colon:{hdr:'Ca Colorretal Metastático (mCRC)',col:'#065f46',nome:'FOLFOX / FOLFIRI ± Bevacizumabe ou Anti-EGFR (por RAS/BRAF)',
+   body:`<strong>Requisitos pré-tratamento:</strong><br>
+Status de RAS (KRAS + NRAS exon 2–4) · BRAF V600E · MSI-H / dMMR · HER2 amplificação<br><br>
+<strong>Esquemas de 1ª linha — Dupla quimio obrigatória:</strong><br>
+• <strong>FOLFOX:</strong> Oxaliplatina 85 mg/m² IV d1 + Leucovorina 400 mg/m² IV d1 + 5-FU 400 mg/m² IV bolus d1 + 5-FU 2400 mg/m² IV 46h<br>
+• <strong>FOLFIRI:</strong> Irinotecano 180 mg/m² IV d1 + Leucovorina + 5-FU (mesmo esquema)<br>
+• <strong>CAPEOX/XELOX:</strong> Oxaliplatina 130 mg/m² d1 + Capecitabina 1000 mg/m² 2×/dia d1–14 q3sem<br><br>
+<strong>Agente biológico por perfil molecular:</strong><br>
+<table>
+  <tr><th>Perfil</th><th>Biológico de 1ª linha</th><th>Trial</th></tr>
+  <tr><td>RAS wt / BRAF wt (lado esquerdo)</td><td><strong>Cetuximabe</strong> 400 mg/m² IV ataque → 250 mg/m² semanal + FOLFIRI (FIRE-3) OU panitumumabe + FOLFOX (PRIME)</td><td>OS 33,1 vs 25,6 m (esquerdo)</td></tr>
+  <tr><td>RAS wt (qualquer lado)</td><td><strong>Bevacizumabe</strong> 5 mg/kg IV q2sem + FOLFOX/FOLFIRI</td><td>Hurwitz 2004: SLP 10,6 vs 6,2 m</td></tr>
+  <tr><td>RAS mutado</td><td>Bevacizumabe (anti-EGFR ineficaz em RAS mut)</td><td>KRAS mut: sem benefício de cetuximabe</td></tr>
+  <tr><td><strong>BRAF V600E</strong></td><td>Encorafenibe + binimetinibe + cetuximabe (BEACON-CRC: OS 9 vs 5,4 m)</td><td>Ou tripla quimio FOLFOXIRI + bevacizumabe</td></tr>
+  <tr><td><strong>MSI-H / dMMR</strong></td><td><strong>Pembrolizumabe 200 mg IV q3sem</strong> MONOTERAPIA (KEYNOTE-177: SLP 16,5 vs 8,2 m)</td><td>Ou nivolumabe + ipilimumabe (CheckMate-142)</td></tr>
+  <tr><td>HER2 amp (RAS wt)</td><td>Trastuzumabe + pertuzumabe OU T-DXd OU tucatinibe + trastuzumabe</td><td>MyPathway, MOUNTAINEER</td></tr>
+</table>
+<br><strong>Metástases hepáticas ressecáveis:</strong> FOLFOX → avaliação cirúrgica · Objetivo de conversão para cirurgia · Bevacizumabe → suspender 6 semanas antes da hepatectomia`,
+   note:'Toxicidade da oxaliplatina: neuropatia periférica cumulativa (dose-dependente, geralmente após 8–12 ciclos) → "paurar" após 6 ciclos e reiniciar (stop-and-go). Capecitabina e síndrome mão-pé (eritrodisestesia palmo-plantar): grau 3 → pausar + hidratante (ureia 20–30%) + vitamina B6 50–150 mg/dia (evidência limitada). Cetuximabe e rash acneiforme: marcador de resposta ao tratamento (quanto mais rash, mais resposta). Grau ≥3: pausar + doxiciclina 100 mg 2×/dia.'},
+  prostata:{hdr:'Ca Próstata Resistente à Castração (mCRPC)',col:'#1e3a8a',nome:'Enzalutamida / Abiraterona + Castração hormonal contínua',
+   body:`<strong>Castração androgênica:</strong> manter testosterona &lt;50 ng/dL em TODOS os estágios do mCRPC<br>
+Análogo LHRH: leuprorelida 7,5 mg IM/mês OU 22,5 mg IM/3meses OU gosserelina 3,6 mg SC/mês<br><br>
+<strong>mCRPC sem quimioterapia prévia (1ª linha):</strong><br>
+<table>
+  <tr><th>Agente</th><th>Dose</th><th>Trial</th><th>OS mediana</th></tr>
+  <tr><td><strong>Enzalutamida</strong></td><td>160 mg/dia VO</td><td>AFFIRM, PREVAIL</td><td>35,3 m vs 31,3 m (placebo)</td></tr>
+  <tr><td><strong>Abiraterona + Prednisona</strong></td><td>Abiraterona 1000 mg/dia em jejum + Prednisona 5 mg 2×/dia</td><td>COU-AA-302</td><td>34,7 vs 30,3 m</td></tr>
+  <tr><td>Darolutamida</td><td>600 mg 2×/dia</td><td>ARAMIS</td><td>—</td></tr>
+  <tr><td>Apalutamida</td><td>240 mg/dia</td><td>SPARTAN (M0-CRPC)</td><td>—</td></tr>
+</table>
+<br>
+<strong>mCRPC com quimioterapia (docetaxel) ou após NHA:</strong><br>
+• <strong>Docetaxel 75 mg/m² IV q3sem × 6–10 ciclos + prednisona 5 mg 2×/dia</strong><br>
+• Cabazitaxel 25 mg/m² IV q3sem: pós-docetaxel (TROPIC trial)<br>
+• PARP inibidores (mutação HRR — BRCA1/2, ATM):<br>
+  Olaparibe 300 mg 2×/dia (PROfound) · Rucaparibe 600 mg 2×/dia · Niraparibe + abiraterona (BRCA1/2)<br>
+• <strong>Lutetium-177 PSMA (Pluvicto) 7,4 GBq IV q6sem × 6 ciclos</strong>: VISION trial — OS 15,3 vs 11,3 m em PSMA+ após NHA + docetaxel · Terapia com radionuclídeo<br><br>
+<strong>Cuidados de suporte esquelético:</strong><br>
+• Ácido zoledrônico 4 mg IV/3–4 meses: metástase óssea · Denosumabe 120 mg SC/mês: superior ao ácido zoledrônico (RANK-L)`,
+   note:'Abiraterona: mecanismo inhibidor CYP17A1 (bloqueia síntese androgênica adrenal e intratumoral). Toxicidade: HAS, hipoK, retenção hídrica por ativação mineralocorticoide — prednisona compensa. Enzalutamida e convulsão: risco &lt;1% (rebaixa limiar convulsivante em alta dose). CI em epilepsia ativa. Interação enzalutamida: indutor CYP3A4 forte — reduz nível de warfarina, estatinas, muitos fármacos.'},
+  gastrico:{hdr:'Ca Gástrico / Esofagogástrico Metastático',col:'#78350f',nome:'Pembrolizumabe + Quimio Doublet (CPS ≥1) OU Trastuzumabe se HER2+',
+   body:`<strong>Avaliação molecular obrigatória:</strong> HER2 (IHC + FISH) · PD-L1 CPS · MSI-H · FGFR2b amplificação · EBV<br><br>
+<strong>HER2- (CPS ≥1):</strong><br>
+• <strong>Pembrolizumabe 200 mg IV q3sem + Oxaliplatina 130 mg/m² q3sem + Capecitabina 1000 mg/m² 2×/dia d1–14 (XELOX)</strong><br>
+  KEYNOTE-811 (HER2-): SLP 10 vs 7,4 m; OS 15,7 vs 11,8 m (CPS ≥1)<br>
+• Nivolumabe + XELOX OU FOLFOX (CheckMate-649): OS 14,4 vs 11,1 m em CPS ≥5<br><br>
+<strong>HER2+ (IHC 3+ OU IHC 2+ com ISH+):</strong><br>
+• <strong>Trastuzumabe 8 mg/kg IV ataque → 6 mg/kg q3sem + Pembrolizumabe + XELOX (KEYNOTE-811 HER2+)</strong><br>
+  OS 20 vs 16 m em HER2+ com pembrolizumabe<br>
+• Antes de pembrolizumabe era: Trastuzumabe + XELOX (ToGA trial: OS 13,8 vs 11,1 m)<br><br>
+<strong>2ª Linha:</strong><br>
+• Ramucirumabe (anti-VEGFR2) + paclitaxel (RAINBOW): OS 9,6 vs 7,4 m<br>
+• T-DXd em HER2+ (DESTINY-Gastric02): ORR 41%<br>
+• MSI-H/dMMR: pembrolizumabe 2ª linha (KEYNOTE-059 ORR 57,1%)`,
+   note:'Ca gástrico difuso (células em anel de sinete): pior prognóstico · Menos responsivo a quimio · Claudin-18.2: alvo emergente (zolbetuximab + XELOX — SPOTLIGHT/GLOW: OS benefício em CLDN18.2+). Bevacizumabe em gástrico: NÃO aprovado (AVAGAST trial negativo). Câncer gástrico e aspirina: H. pylori é 1° passo; erradicação reduz risco de Ca gástrico em 30% (metanálise Cochrane).'},
+};
+
+function calcOnc(){
+  const t=document.getElementById('onc_tumor').value;
+  const p=PROTO_ONC[t];
+  document.getElementById('oncResult').style.display='block';
+  document.getElementById('oncResult').innerHTML=`<div class="rec-card" style="border-color:${p.col}"><div class="rec-hdr" style="color:${p.col}">ONCOLOGIA — ${p.hdr}</div><div class="rec-nome">${p.nome}</div><div class="rec-body">${p.body}</div>${p.note?`<div class="rec-note">${p.note}</div>`:''}</div>`;
+  document.getElementById('oncResult').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+/* ─── HEMATO & LINFOMAS ─────────────────────────────────────────── */
+function renderHemato(){
+  if(document.getElementById('hematoList').innerHTML) return;
+  const CARDS=[
+    {col:'#1e3a8a',nome:'Linfoma Difuso de Grandes Células B (LDGCB) — R-CHOP',
+     body:`<strong>Diagnóstico:</strong> biópsia + imunohistoquímica (CD20+, CD3-, Ki-67) · PET-CT estadiamento · LDH · β2-microglobulina · Biópsia de medula óssea<br>
+<strong>IPI (International Prognostic Index):</strong> Idade &gt;60 + LDH elevado + PS ECOG ≥2 + Estádio III-IV + &gt;1 sítio extranodal (0–5 pontos)<br><br>
+<strong>1ª Linha (CD20+):</strong><br>
+• <strong>R-CHOP-21 × 6–8 ciclos:</strong><br>
+  Rituximabe 375 mg/m² IV d1 + Ciclofosfamida 750 mg/m² d1 + Doxorrubicina 50 mg/m² d1 + Vincristina 1,4 mg/m² (máx 2 mg) d1 + Prednisona 100 mg/dia d1–5 · Ciclo a cada 21 dias<br>
+• Pola-R-CHP (polatuzumabe vedotina 1,8 mg/kg + R-CHP): POLARIX trial — SLP 76,7 vs 70,2% em 2 anos · Preferível em IPI 2–5<br><br>
+<strong>Profilaxia do SNC:</strong> IPI alto + envolvimento testicular, renal, adrenal, epidural → MTX IT × 4 OU MTX IV 3,5 g/m²<br><br>
+<strong>Linfoma de Hodgkin Clássico (LHC):</strong><br>
+• ABVD × 2–4 ciclos: Doxorrubicina 25 mg/m² + Bleomicina 10 U/m² + Vinblastina 6 mg/m² + Dacarbazina 375 mg/m² d1+15 q4sem<br>
+• Brentuximabe vedotina + AVD (sem bleomicina): ECHELON-1 — superior em estádio avançado (FFS 82,1 vs 77,2%)<br>
+• Nivolumabe/pembrolizumabe: recaída refratária`,
+     note:'Rituximabe e reativação de hepatite B: triagem obrigatória de HBsAg e anti-HBc antes de rituximabe. HBsAg+: profilaxia com entecavir 0,5 mg/dia DURANTE + 18 meses após. Anti-HBc+ (HBsAg-): monitoramento mensal de HBsAg ou profilaxia. Rituximabe e hipogamaglobulinemia: com tratamentos prolongados → infecções oportunistas → IVIG se IgG &lt;400 mg/dL com infecções recorrentes.'},
+    {col:'#0f766e',nome:'Leucemia Mieloide Crônica (LMC) — Inibidores de Tirosina Quinase',
+     body:`<strong>BCR-ABL1 (cromossomo Philadelphia):</strong> produto da translocação t(9;22) → proteína de fusão com atividade constitutiva de tirosina quinase<br><br>
+<strong>Inibidores de BCR-ABL1 (ITK):</strong><br>
+<table>
+  <tr><th>ITK</th><th>Dose</th><th>Geração</th><th>Considerações</th></tr>
+  <tr><td><strong>Imatinibe</strong></td><td>400 mg/dia com alimento</td><td>1ª</td><td>Padrão-ouro histórico · Menor toxicidade · Interação: cetoconazol, rifampicina, warfarina</td></tr>
+  <tr><td><strong>Dasatinibe</strong></td><td>100 mg/dia</td><td>2ª</td><td>Derrame pleural (30%) · Hipertensão pulmonar · Cruza BHE</td></tr>
+  <tr><td>Nilotinibe</td><td>300 mg 2×/dia em jejum (2h antes, 1h depois)</td><td>2ª</td><td>Doença arterial periférica + hiperglicemia · Não em jejum = toxicidade</td></tr>
+  <tr><td>Bosutinibe</td><td>400 mg/dia com alimento</td><td>2ª</td><td>Diarreia frequente · Menor doença arterial que nilotinibe</td></tr>
+  <tr><td>Ponatinibe</td><td>45 mg → 15 mg (RMM)</td><td>3ª</td><td>Mutação T315I · Doença arterial +++</td></tr>
+  <tr><td>Asciminibe</td><td>40 mg 2×/dia</td><td>STAMP</td><td>Mutação T315I: 200 mg 2×/dia · Menor toxicidade cardiovascular</td></tr>
+</table>
+<br>
+<strong>Monitoramento:</strong> PCR quantitativa BCR-ABL1 a cada 3 meses<br>
+Resposta hematológica completa &lt;3 meses · Resposta citogenética major &lt;12 meses · Remissão molecular maior (RMM ≤0,1%) &lt;12–18 meses<br>
+Falha ou intolerância: trocar ITK · Avaliar mutação de resistência<br><br>
+<strong>Descontinuação de ITK (Treatment-Free Remission — TFR):</strong><br>
+Após ≥5 anos de ITK + ≥2 anos em RMM estável → tentar descontinuação com monitoramento mensal · 50% mantém RMM (STIM, EURO-SKI trials)`,
+     note:'Leucemia Linfocítica Crônica (LLC): ibrutinibe 420 mg/dia (BTK inibidor) OU acalabrutinibe 100 mg 2×/dia + obinutuzumabe (ELEVATE-RR) — 1ª linha. Venetoclax 400 mg + obinutuzumabe × 12 ciclos (CLL14): opção com duração definida. Mutação TP53/del(17p): evitar quimio → IBK ou venetoclax. CLL e HBV: mesma triagem que rituximabe.'},
+    {col:'#be185d',nome:'Leucemia Mieloide Aguda (LMA) — Protocolo 7+3 e Terapias Alvo',
+     body:`<strong>Protocolo 7+3 — Indução (LMA sem mutações específicas):</strong><br>
+• <strong>Citarabina (AraC) 100–200 mg/m²/dia CI × 7 dias + Daunorrubicina 60–90 mg/m²/dia × 3 dias</strong><br>
+  (Idarrubicina 12 mg/m² × 3 dias: alternativa com melhor penetração tecidual)<br>
+• Avaliação de resposta no D14–16 (punção de medula) · Remissão completa: &lt;5% blastos<br>
+• Consolidação: 3–4 ciclos de AraC alta dose (3 g/m²/12h d1,3,5) OU transplante alogênico (alto risco)<br><br>
+<strong>Terapias alvo por mutação:</strong><br>
+<table>
+  <tr><th>Mutação</th><th>Inibidor</th><th>Dose</th><th>Trial</th></tr>
+  <tr><td>FLT3-ITD ou TKD</td><td>Midostaurina (+ 7+3 indução/consolid.)</td><td>50 mg 2×/dia d8–21</td><td>RATIFY: OS 74,7 vs 25,6 m</td></tr>
+  <tr><td>FLT3 (relapsed)</td><td>Gilteritinibe</td><td>120 mg/dia</td><td>ADMIRAL</td></tr>
+  <tr><td>IDH1</td><td>Ivosidenibe</td><td>500 mg/dia</td><td>AG-120-C-001</td></tr>
+  <tr><td>IDH2</td><td>Enasidenibe</td><td>100 mg/dia</td><td>AG221-C-001</td></tr>
+  <tr><td>NPM1 ou IDH1/2 (idoso)</td><td>Venetoclax + azacitidina</td><td>400 mg/dia + 75 mg/m² SC d1–7</td><td>VIALE-A: CR+CRi 66,4% em idoso</td></tr>
+</table>
+<br>
+<strong>LMA M3 (Leucemia Promielocítica Aguda — LPA):</strong><br>
+• <strong>ATRA (tretinoína) 45 mg/m²/dia + ATO (trióxido de arsênio) 0,15 mg/kg/dia IV</strong>: regime APML4 · CR ~95% · Sem quimio em baixo risco<br>
+• Síndrome de diferenciação (síndrome do ATRA): febre + infiltrado pulmonar + edema + ganho ponderal em 5–27% → dexametasona 10 mg IV 2×/dia imediatamente + pausar ATRA se grave`,
+     note:'Nêutropenia febril em LMA: internação + cefepima/pip-tazo IV imediatos + cobertura antifúngica empírica (equinocandina/anfotericina) se febre persistente &gt;96h. G-CSF (filgrastim/lenograstim): não recomendado durante indução da LMA (pode aumentar blastos circulantes). Reservar para pós-consolidação ou pré-transplante.'},
+  ];
+  document.getElementById('hematoList').innerHTML=CARDS.map(c=>`<div class="onc-card" style="border-color:${c.col}"><div class="onc-nome" style="color:${c.col}">${c.nome}</div><div class="onc-body">${c.body}</div>${c.note?`<div style="font-size:.7rem;color:#64748b;margin-top:6px">💡 ${c.note}</div>`:''}</div>`).join('');
+}
+
+/* ─── IMUNOTERAPIA irAE & SLT ─────────────────────────────────────── */
+function renderImun(){
+  if(document.getElementById('imunList').innerHTML) return;
+  const CARDS=[
+    {col:'#6d28d9',nome:'Toxicidade de Imunoterapia (irAE) — Diagnóstico e Manejo',
+     body:`<strong>Mecanismo:</strong> ICI (inibidores de checkpoint) bloqueiam PD-1/PD-L1 ou CTLA-4 → desbloqueio de imunidade antitumoral → auto-imunidade tecidual<br><br>
+<strong>irAE por sistema e manejo (graus CTCAE):</strong><br>
+<table>
+  <tr><th>Sistema</th><th>Apresentação</th><th>Grau 1–2</th><th>Grau 3–4</th></tr>
+  <tr><td><strong>Colite</strong></td><td>Diarreia, dor abdominal, sangue nas fezes</td><td>Pausar ICI + loperamida + hidratação</td><td>Suspender permanentemente + prednisolona 1–2 mg/kg → infliximabe 5 mg/kg IV se refratário a 72h de corticoide</td></tr>
+  <tr><td><strong>Pneumonite</strong></td><td>Tosse, dispneia, infiltrado TC</td><td>Pausar ICI + prednisona 0,5 mg/kg + broncoscopia</td><td>Suspender + prednisolona 1–2 mg/kg + micofenolato ou infliximabe se refratário · Monitorar 4–8 sem</td></tr>
+  <tr><td><strong>Hepatite</strong></td><td>↑TGO/TGP (AST/ALT &gt;3× LSN)</td><td>Pausar + prednisolona 0,5–1 mg/kg</td><td>Suspender + prednisolona 1–2 mg/kg; se refratário: micofenolato mofetil 1 g 2×/dia (NÃO infliximabe — hepatotóxico)</td></tr>
+  <tr><td><strong>Endocrinopatias</strong></td><td>Hipofisita (cefaleia, fadiga, pan-hipo), tireoidite, DM1 tipo 3c</td><td>Manter ICI + reposição hormonal</td><td>Hipofisita: hidrocortisona 100 mg IV urgente se adrenal</td></tr>
+  <tr><td><strong>Nefrite</strong></td><td>↑creatinina (≥1,5× basal)</td><td>Pausar + prednisona 0,5 mg/kg</td><td>Suspender + prednisona 1–2 mg/kg + biópsia renal</td></tr>
+  <tr><td><strong>Artrite</strong></td><td>Artralgia, artrite, tenossinovite</td><td>AINE + manter ICI</td><td>Prednisona 0,5–1 mg/kg · Metotrexato/hidroxicloroquina se persistente</td></tr>
+  <tr><td><strong>Miocardite</strong></td><td>Dor torácica, ↑troponina, bloqueio AV</td><td colspan="2">SUSPENDER IMEDIATAMENTE + prednisolona 1–2 mg/kg IV + cardiologia · Alta mortalidade</td></tr>
+</table>
+<br>
+<strong>Princípio geral:</strong><br>
+Grau 1: manter ICI, tratar sintomas · Grau 2: pausar ICI + iniciar corticoide · Grau 3–4: suspender permanentemente + corticoide imunossupressor<br>
+Desmame do corticoide: lento (≥4 semanas) para evitar recaída do irAE · Anti-CTLA4 (ipilimumabe): irAE mais frequentes e graves que anti-PD-1`,
+     note:'Infliximabe e colite por ICI: 5 mg/kg IV dose única → repetir em 2 sem se necessário. NÃO usar em pneumonite ou hepatite irAE (piora inflamação). Vedolizumabe 300 mg IV: alternativa a infliximabe em colite grave (seletivo para GI, menos imunossupressão sistêmica). Reiniciar ICI após irAE grave: apenas em tumores altamente responsivos, após resolução completa e corticoide desmamado, com monitoramento apertado.'},
+    {col:'#dc2626',nome:'Síndrome de Lise Tumoral (SLT) — Prevenção e Manejo',
+     body:`<strong>Critérios de Cairo-Bishop (SLT Laboratorial):</strong><br>
+≥2 dos seguintes em 3 dias antes ou 7 dias após início do tratamento:<br>
+• Ácido úrico ≥8 mg/dL (ou ↑25% do basal) · Potássio ≥6 mEq/L (ou ↑25%) · Fósforo ≥4,5 mg/dL (adulto) · Cálcio ≤7 mg/dL (hipocalcemia)<br><br>
+<strong>Risco de SLT por tumor:</strong><br>
+<span style="color:#dc2626;font-weight:800">ALTO RISCO:</span> LNH Burkitt · LLA · LMA M5 · LLC (após ibrutinibe/venetoclax) · LNH DLBCL bulky · Leucemia com &gt;25.000/mm³<br>
+<span style="color:#b45309;font-weight:800">RISCO INTERMEDIÁRIO:</span> DLBCL não-bulky · LH avançado · MM · Ca sólido altamente proliferativo (tumor grande + sensível)<br>
+<span style="color:#16a34a;font-weight:800">BAIXO RISCO:</span> Ca sólido padrão · Tumores indolentes<br><br>
+<strong>Prevenção (antes de iniciar quimio):</strong><br>
+<strong>Alto risco:</strong><br>
+• <strong>Rasburicase 0,2 mg/kg IV/dia × 5–7 dias</strong>: uricorredutase recombinante · Converte ácido úrico em alantoína (excretada facilmente) · Início 4–24h antes da quimio · CI: deficiência de G6PD (hemólise)<br>
+• Hidratação IV agressiva: SF ou SG 200–300 mL/h (débito urinário ≥80–100 mL/h) · SEM bicarbonato de rotina (precipita fosfato)<br>
+• Monitoramento: eletrólitos + ácido úrico + creatinina a cada 4–6h<br><br>
+<strong>Risco intermediário:</strong><br>
+• Alopurinol 300 mg/dia (inicia 24–48h antes): inibidor de xantina oxidase · NÃO converte AU já formado (só previne produção) · Interação com 6-MP/azatioprina (dose ÷4)<br>
+• Hidratação 2–3 L/dia VO + monitoramento eletrólitos diário<br><br>
+<strong>Manejo da SLT estabelecida:</strong><br>
+Hiperuricemia: rasburicase · Hiperkalemia: resinas, kayexalate, insulina+glicose (ver urgências) · Hiperfosforemia: sevelamer 800 mg 3×/dia com refeições, quelantes de fósforo · Hipocalcemia sintomática: gluconato de Ca IV (cuidado — precipita fosfato se hiperfosfatemia) · Insuficiência renal grave: hemodiálise`,
+     note:'Rasburicase e G6PD: hemólise grave (hemoglobinúria maciça) em deficientes de G6PD — triagem ou interrogação de histórico antes de usar. Alopurinol e 6-mercaptopurina / azatioprina: ambas metabolizadas por xantina oxidase → rasburicase aumenta nível de 6-MP e azatioprina em 4× → dose ÷4 ou trocar por 6-TG. Venetoclax e SLT: monitoramento rigoroso — iniciar com 20 mg/dia e titulação semanal muito lenta + hospitalização no ramp-up de alto risco.'},
+  ];
+  document.getElementById('imunList').innerHTML=CARDS.map(c=>`<div class="onc-card" style="border-color:${c.col}"><div class="onc-nome" style="color:${c.col}">${c.nome}</div><div class="onc-body">${c.body}</div>${c.note?`<div style="font-size:.7rem;color:#64748b;margin-top:6px">💡 ${c.note}</div>`:''}</div>`).join('');
+}
+</script>
+</body>
+</html>

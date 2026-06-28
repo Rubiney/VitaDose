@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Geriatria Avançada — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .ger-hdr{background:linear-gradient(135deg,#1e3a5f,#1d4ed8);color:#fff;border-radius:14px;padding:18px;margin-bottom:14px}
+    .ger-title{font-size:1rem;font-weight:800;margin-bottom:4px}
+    .ger-sub{font-size:.73rem;opacity:.8}
+    label{font-size:.75rem;font-weight:700;color:#1e3a5f;display:block;margin-bottom:4px}
+    select,input[type=number]{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:10px;padding:10px 12px;font-size:.85rem;background:#fff;margin-bottom:10px}
+    select:focus,input:focus{border-color:#1d4ed8;outline:none}
+    .btn-calc{width:100%;background:#1d4ed8;color:#fff;border:none;border-radius:12px;padding:13px;font-size:.87rem;font-weight:700;cursor:pointer;margin:8px 0}
+    .tab-bar{display:flex;gap:6px;margin-bottom:14px}
+    .tab-btn{flex:1;padding:9px 4px;border-radius:10px;border:2px solid #e2e8f0;background:#fff;font-size:.72rem;font-weight:700;cursor:pointer;color:#64748b}
+    .tab-btn.active{border-color:#1d4ed8;background:#eff6ff;color:#1d4ed8}
+    .ger-card{border-radius:10px;border-left:5px solid;padding:10px 14px;margin-bottom:8px;background:#fff}
+    .ger-nome{font-size:.83rem;font-weight:800;margin-bottom:4px}
+    .ger-body{font-size:.76rem;line-height:1.7;color:#374151}
+    .result-box{background:#eff6ff;border:2px solid #1d4ed8;border-radius:12px;padding:14px;margin-top:8px}
+    .result-line{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #dbeafe;font-size:.8rem}
+    .result-val{font-weight:800;color:#1d4ed8}
+    .alerta{background:#fef2f2;border:2px solid #dc2626;border-radius:10px;padding:8px;margin:6px 0;font-size:.75rem;color:#7f1d1d;font-weight:700}
+    .warn{background:#fffbeb;border:2px solid #f59e0b;border-radius:10px;padding:8px;margin:6px 0;font-size:.75rem;color:#78350f;font-weight:700}
+    table{width:100%;border-collapse:collapse;font-size:.73rem;margin-top:6px}
+    th{background:#1e3a5f;color:#fff;padding:5px 8px;text-align:left}
+    td{padding:5px 8px;border-bottom:1px solid #f1f5f9}
+    tr:nth-child(even) td{background:#eff6ff}
+    .chip{display:inline-block;padding:2px 8px;border-radius:999px;font-size:.65rem;font-weight:800;color:#fff;margin:2px}
+    .sarco-row{display:flex;gap:8px;margin-bottom:8px}
+    .sarco-row input{margin-bottom:0}
+  </style>
+</head>
+<body>
+<header class="top-bar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <span class="top-title">Geriatria Avançada</span>
+  <div class="top-right"></div>
+</header>
+<main class="container" style="padding-bottom:90px">
+  <div class="ger-hdr">
+    <div class="ger-title">👴 Geriatria Avançada — Avaliação & Intervenção</div>
+    <div class="ger-sub">AGA · Sarcopenia · Delírio · Beers 2023 · Hipotensão Ortostática</div>
+  </div>
+  <div class="tab-bar">
+    <button class="tab-btn active" id="tb0" onclick="showTab(0)">AGA & Sarcopenia</button>
+    <button class="tab-btn" id="tb1" onclick="showTab(1)">Delírio & Demência</button>
+    <button class="tab-btn" id="tb2" onclick="showTab(2)">Beers 2023 & Outros</button>
+  </div>
+
+  <!-- TAB 0 — AGA & SARCOPENIA -->
+  <div id="tab0">
+    <div style="font-size:.78rem;font-weight:800;color:#1d4ed8;margin-bottom:8px">📊 Triagem SARC-F — Sarcopenia</div>
+    <div class="card" style="padding:12px 14px">
+      <label>Força: Dificuldade para levantar 4,5 kg? (0=nenhuma, 1=alguma, 2=muita/incapaz)</label>
+      <select id="sf_forca"><option value="0">0 — Nenhuma</option><option value="1">1 — Alguma</option><option value="2">2 — Muita / incapaz</option></select>
+      <label>Assistência para caminhar: precisa de assistência? (0=nenhuma, 1=alguma, 2=incapaz)</label>
+      <select id="sf_cami"><option value="0">0 — Nenhuma</option><option value="1">1 — Alguma</option><option value="2">2 — Incapaz</option></select>
+      <label>Levantar da cadeira sem apoio dos braços? (0=sem dificuldade, 1=alguma, 2=muita/incapaz)</label>
+      <select id="sf_levanta"><option value="0">0 — Sem dificuldade</option><option value="1">1 — Alguma</option><option value="2">2 — Muita / incapaz</option></select>
+      <label>Subir 10 degraus sem dificuldade? (0=nenhuma, 1=alguma, 2=muita/incapaz)</label>
+      <select id="sf_escada"><option value="0">0 — Nenhuma</option><option value="1">1 — Alguma</option><option value="2">2 — Muita / incapaz</option></select>
+      <label>Quedas no último ano? (0=nenhuma, 1=1–3 quedas, 2=≥4 quedas)</label>
+      <select id="sf_quedas"><option value="0">0 — Nenhuma</option><option value="1">1 — 1–3 quedas</option><option value="2">2 — ≥4 quedas</option></select>
+    </div>
+    <button class="btn-calc" onclick="calcSarcF()">💪 Calcular SARC-F</button>
+    <div id="sarcoResult" style="display:none"></div>
+
+    <div style="margin-top:12px" id="agaCards"></div>
+  </div>
+
+  <!-- TAB 1 — DELÍRIO & DEMÊNCIA -->
+  <div id="tab1" style="display:none">
+    <div id="delirioList"></div>
+  </div>
+
+  <!-- TAB 2 — BEERS & OUTROS -->
+  <div id="tab2" style="display:none">
+    <div id="beersList"></div>
+  </div>
+</main>
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+<script src="js/db.js"></script>
+<script>
+function showTab(n){[0,1,2].forEach(i=>{document.getElementById('tab'+i).style.display=i===n?'block':'none';document.getElementById('tb'+i).classList.toggle('active',i===n);});if(n===0&&!document.getElementById('agaCards').innerHTML)renderAGA();if(n===1)renderDelirio();if(n===2)renderBeers();}
+
+/* ─── SARC-F ─────────────────────────────────────────────────────── */
+function calcSarcF(){
+  const ids=['sf_forca','sf_cami','sf_levanta','sf_escada','sf_quedas'];
+  const score=ids.reduce((s,id)=>s+parseInt(document.getElementById(id).value),0);
+  let cat,cor,rec;
+  if(score<4){cat='Triagem negativa (sarcopenia improvável)';cor='#16a34a';rec='Reavaliar anualmente ou se mudança clínica. Manter atividade física e ingestão proteica adequada (≥1,2 g/kg/dia).';}
+  else{cat='Triagem POSITIVA — investigar sarcopenia (EWGSOP2)';cor='#dc2626';rec=`<strong>Critérios EWGSOP2 para confirmar sarcopenia:</strong><br>
+1. <strong>Força muscular reduzida</strong> (critério obrigatório): Dinamometria de preensão palmar &lt;27 kg (H) / &lt;16 kg (M) OU teste de sentar-levantar 5× &gt;15 seg<br>
+2. <strong>Quantidade/qualidade muscular reduzida</strong>: DEXA — Massa muscular apendicular / altura² &lt;7,0 kg/m² (H) / &lt;5,5 kg/m² (M) OU bioimpedância (equações validadas)<br>
+3. <strong>Desempenho físico reduzido</strong> (gravidade): velocidade de marcha ≤0,8 m/s OU SPPB ≤8 pontos OU teste TUG &gt;20 seg<br>
+<br><strong>Sarcopenia:</strong> 1+2 · <strong>Sarcopenia grave:</strong> 1+2+3<br>
+<br><strong>Tratamento da Sarcopenia:</strong><br>
+• <strong>Exercício resistido:</strong> 2–3×/sem, 8–12 repetições a 70–80% 1RM — intervenção mais eficaz disponível<br>
+• <strong>Proteína:</strong> ≥1,2–1,5 g/kg/dia · Leucina 3 g por refeição (aminoácido essencial para síntese proteica) · Whey protein pós-treino<br>
+• <strong>Vitamina D:</strong> 25-OH-D3 &lt;30 ng/mL → suplementar 1000–2000 UI/dia (preferível colecalciferol) · Reduz quedas<br>
+• Creatina 3–5 g/dia: evidência modesta em idosos como adjuvante ao treino<br>
+• <strong>Testosterona</strong> em homens hipogonadais (TL &lt;8 nmol/L): testosterona gel 50 mg/dia (aumento de massa muscular, mas sem redução de quedas em meta-análise)<br>
+• Inibidor de miostatina (bimagrumabe 10 mg/kg IV): em pesquisa clínica; sem aprovação`;}
+  document.getElementById('sarcoResult').style.display='block';
+  document.getElementById('sarcoResult').innerHTML=`<div class="result-box"><div class="result-line"><span>SARC-F</span><span class="result-val">${score}/10</span></div><div style="margin-top:6px;font-weight:800;color:${cor}">${cat}</div><div style="margin-top:6px;font-size:.78rem">${rec}</div></div>`;
+  if(!document.getElementById('agaCards').innerHTML) renderAGA();
+}
+
+/* ─── AGA ─────────────────────────────────────────────────────── */
+function renderAGA(){
+  const CARDS=[
+    {col:'#1d4ed8',nome:'Avaliação Geriátrica Ampla (AGA) — Instrumentos Validados',
+     body:`<strong>Domínio Cognitivo:</strong><br>
+• <strong>Mini-Mental State Examination (MMSE):</strong> 30 pontos · Pontos de corte por escolaridade (analfabeto ≤13, 1–4 anos ≤18, 5–8 ≤21, 9–11 ≤24, ≥12 ≤26) · Triagem rápida<br>
+• <strong>MoCA (Montreal Cognitive Assessment):</strong> 30 pontos · Superior ao MMSE para comprometimento cognitivo leve (CCL) · &lt;26 = suspeita de CCL<br>
+• Teste do Relógio: 3 pontos (esfera + números + ponteiros) · Sensível a disfunção executiva<br><br>
+<strong>Domínio Funcional:</strong><br>
+• <strong>AVDs Básicas (Katz/Barthel):</strong> banho, vestuário, higiene, transferência, continência, alimentação (cada item 0 ou 1) · Barthel &lt;90 = dependência significativa<br>
+• <strong>AVDs Instrumentais (IADL — Lawton-Brody):</strong> telefone, compras, cozinha, limpeza doméstica, roupa, transporte, medicamentos, finanças (0–8) · &lt;6 mulher / &lt;4 homem = dependência<br><br>
+<strong>Domínio Afetivo:</strong><br>
+• <strong>GDS-15 (Escala de Depressão Geriátrica):</strong> 15 perguntas sim/não · ≥6 = depressão provável · Sem referência a sintomas somáticos (não confunde com doenças físicas)<br>
+• PHQ-9: alternativa — ≥10 = depressão moderada (menos validada em idosos muito velhos)<br><br>
+<strong>Triagem de Risco / Vulnerabilidade:</strong><br>
+• <strong>ISAR (Identification of Seniors at Risk):</strong> 6 perguntas · ≥2 = alto risco de desfechos adversos na emergência<br>
+• <strong>VES-13 (Vulnerable Elders Survey):</strong> 13 itens · ≥3 = idoso vulnerável · Prediz declínio funcional e mortalidade em 2 anos<br>
+• <strong>CGA-7 (Comprehensive Geriatric Assessment — versão rápida):</strong> 7 domínios em &lt;5 min<br><br>
+<strong>Avaliação Nutricional:</strong><br>
+• <strong>Mini-Nutritional Assessment (MNA):</strong> triagem 6 itens (≤11 = risco) → avaliação 18 itens (≤17 = desnutrição) · Específica para idosos<br>
+• IMC ideal no idoso: 22–27 kg/m² (diferente de adultos jovens — IMC 20–25) · Abaixo de 22: mau prognóstico<br>
+• Circunferência de panturrilha: &lt;31 cm = marcador de sarcopenia<br><br>
+<strong>Velocidade de Marcha:</strong><br>
+• &lt;0,8 m/s: preditor poderoso de mortalidade, hospitalização e institucionalização · Medir em 4–6 metros`,
+     note:'Avaliação de polifarmácia geriátrica: Critérios de START/STOPP (idosos em polifarmácia), Critérios de Beers AGS 2023 (medicamentos potencialmente inapropriados). Reconciliação medicamentosa: revisar TODOS os medicamentos (prescritos + automedicação + fitoterápicos) em toda consulta geriátrica. Prevenção primária em idosos ≥85 anos: discutir objetivos de tratamento individualmente — metas agressivas de LDL e PA podem não trazer benefício em pacientes com expectativa de vida &lt;5 anos.'},
+    {col:'#059669',nome:'Hipotensão Ortostática & Prevenção de Quedas',
+     body:`<strong>Hipotensão Ortostática (HO):</strong><br>
+Definição: queda de PA ≥20 mmHg sistólica OU ≥10 mmHg diastólica em 3 min de ortostatismo<br>
+Prevalência: 15% em 65–75 anos · 30% em &gt;85 anos · Sintomas: tontura, pré-síncope, síncope, queda, confusão<br><br>
+<strong>Causas e tratamento etiológico:</strong><br>
+• Medicamentos (mais comum): antihipertensivos, diuréticos, alfa-bloqueadores (tansulosina, prazosina), tricíclicos, trazodona, antipsicóticos · Revisar e reduzir doses<br>
+• Hipovolemia: hidratação oral (2–2,5 L/dia) · Adicionar sal na dieta (2–4 g/dia se sem IC/DRC)<br>
+• Neuropatia autonômica (DM, Parkinson, MSA): mais difícil de tratar<br><br>
+<strong>Tratamento farmacológico da HO:</strong><br>
+• <strong>Midodrina 2,5–10 mg 3×/dia (última dose 18h — evitar HAS supina noturna):</strong> agonista α1 → vasoconstrição · Contraindicado em DCC grave, retenção urinária, tireotoxicose<br>
+• <strong>Fludrocortisona 0,1–0,3 mg/dia:</strong> mineralocorticoide → retém Na e expande volemia · RAM: edema de MMII, hipoK, HAS supina · Monitorar PA em decúbito<br>
+• Piridostigmina 30–60 mg 3×/dia: inibidor de acetilcolinesterase → facilita transmissão ganglionar (sem efeito em HAS supina)<br>
+• Domperidona, droxidopa (norepinefrina oral — não disponível no Brasil)<br><br>
+<strong>Medidas não-farmacológicas (sempre primeiro):</strong><br>
+Levantar lentamente (pronar pés antes) · Meias de compressão (30–40 mmHg) · Cabeceira elevada 30° à noite · Evitar álcool · Hidratação 500 mL antes de levantar<br><br>
+<strong>Prevenção de Quedas (multifatorial):</strong><br>
+• Revisão de medicamentos (psicotrópicos, sedativos, anti-hipertensivos) · Suplementar vitamina D se &lt;30 ng/mL<br>
+• Exercício de equilíbrio (Tai Chi: reduz quedas 28–45% — meta-análise Cochrane) · Fisioterapia<br>
+• Avaliação domiciliar: tapetes, iluminação, barras de apoio banheiro<br>
+• Calcanhares de sapato baixos · Órteses tornozelo se instabilidade`,
+     note:'Síncope vs Queda em idosos: diferenciação difícil — muitos idosos não lembram de ter perdido a consciência. Sempre investigar síncope cardiogênica (Holter, tilt-test) em quedas sem explicação aparente. Protocolo SUA (Standard Upright Assessment): PA deitado + PA após 1 min ortostático + PA após 3 min ortostático — mais sensível para detectar HO transitória.'},
+  ];
+  document.getElementById('agaCards').innerHTML=CARDS.map(c=>`<div class="ger-card" style="border-color:${c.col}"><div class="ger-nome" style="color:${c.col}">${c.nome}</div><div class="ger-body">${c.body}</div>${c.note?`<div style="font-size:.7rem;color:#64748b;margin-top:6px">💡 ${c.note}</div>`:''}</div>`).join('');
+}
+
+/* ─── DELÍRIO & DEMÊNCIA ─────────────────────────────────────────── */
+function renderDelirio(){
+  if(document.getElementById('delirioList').innerHTML) return;
+  const CARDS=[
+    {col:'#dc2626',nome:'Delírio — CAM, Diagnóstico Diferencial e Manejo (HELP Protocol)',
+     body:`<strong>CAM (Confusion Assessment Method) — 4 critérios:</strong><br>
+<strong>Diagnóstico de delírio se 1+2 + (3 ou 4):</strong><br>
+1. Início agudo com flutuação ao longo do dia<br>
+2. Desatenção (incapacidade de manter atenção)<br>
+3. Pensamento desorganizado (discurso incoerente, não segue comandos)<br>
+4. Nível de consciência alterado (qualquer coisa além de alerta — agitado, letárgico, sonolento, coma)<br>
+CAM-ICU: adaptada para UTI (usa sinais não-verbais) · CAM-S: versão com escore de gravidade<br><br>
+<strong>Diagnóstico diferencial Delírio vs Demência vs Depressão:</strong><br>
+<table>
+  <tr><th>Característica</th><th>Delírio</th><th>Demência</th><th>Depressão</th></tr>
+  <tr><td>Início</td><td>Agudo (horas-dias)</td><td>Insidioso (meses-anos)</td><td>Semanas a meses</td></tr>
+  <tr><td>Flutuação</td><td>Sim (pior à noite)</td><td>Não (relativamente estável)</td><td>Não</td></tr>
+  <tr><td>Atenção</td><td>Muito reduzida</td><td>Relativamente preservada (inicio)</td><td>Preservada</td></tr>
+  <tr><td>Nível de consciência</td><td>Alterado</td><td>Normal (início)</td><td>Normal</td></tr>
+  <tr><td>Alucinações</td><td>Frequentes (visuais)</td><td>Tardias</td><td>Raras</td></tr>
+</table>
+<br>
+<strong>Causas (Mnemônico DELIRIUM):</strong><br>
+<strong>D</strong>rugs (medicamentos — mais comum) · <strong>E</strong>lectrolytes (Na, K, Ca, glicose) · <strong>L</strong>ack of drugs (abstinência — álcool, BZD) · <strong>I</strong>nfection (ITU, pneumonia, sepse) · <strong>R</strong>etention (urina ou fezes) · <strong>I</strong>ctal (convulsão subclínica) · <strong>U</strong>nderoxygenation (hipóxia, IC) · <strong>M</strong>yocardial (IAM silencioso)<br><br>
+<strong>HELP Protocol (Hospital Elder Life Program) — Prevenção:</strong><br>
+1. Reorientação (calendário/relógio visível, explicar onde está) · Estimulação cognitiva<br>
+2. Mobilização precoce (sentar na poltrona, fisioterapia)<br>
+3. Correção sensorial (óculos, prótese auditiva)<br>
+4. Hidratação adequada (evitar desidratação)<br>
+5. Sono não-farmacológico (ambiente tranquilo, regularizar ciclo) · Melatonina 0,5–5 mg à noite<br>
+6. Revisão de medicamentos psicoativos (reduzir/suspender se possível)<br><br>
+<strong>Farmacoterapia do delírio agitado:</strong><br>
+• <strong>Haloperidol 0,5–1 mg VO/IM</strong>: 1ª linha para agitação grave · Repetir a cada 30–60 min PRN (máx 3 mg/dia em idosos) · Monitorar QTc · CI em DLB (demência com corpos de Lewy)<br>
+• Quetiapina 12,5–25 mg: alternativa (menor EPS) · Mais sedativa · Preferir em Parkinson e DLB<br>
+• <strong>Dexmedetomidina IV:</strong> alfa-2 agonista · UTI · Sedação com preservação de cooperação · Menor delírio que propofol/midazolam (MENDS-2 trial)`,
+     note:'Delírio subsindromático: 1–2 critérios do CAM presentes — mesmo assim associado a pior prognóstico. Delírio pós-cirúrgico: risco máximo em cirurgia ortopédica maior (30–50% após artroplastia de quadril). Profilaxia peri-operatória: HELP protocol + manter anestesia com BIS 40–60 (reduz necessidade de analgésico) + evitar anticolinérgicos peri-operatórios + correção de anemia. Melatonina 0,5–5 mg: reduz incidência de delírio em UTI — meta-análise positiva 2022.'},
+    {col:'#7c3aed',nome:'Demência — Estadiamento, Farmacoterapia e Cuidados Avançados',
+     body:`<strong>Estadiamento CDR (Clinical Dementia Rating):</strong><br>
+CDR 0 = Normal · CDR 0,5 = CCL (Comprometimento Cognitivo Leve) · CDR 1 = Leve · CDR 2 = Moderado · CDR 3 = Grave<br><br>
+<strong>Inibidores de Colinesterase (donepezila, rivastigmina, galantamina):</strong><br>
+• Indicação: DA leve-moderada (CDR 1–2) · DV (demência vascular) · DLB · DFT NÃO é indicação<br>
+• <strong>Donepezila 5 mg/dia → 10 mg (após 4–6 sem):</strong> 1ª linha · Dose única noturna · RAM: náusea, bradicardia, pesadelos<br>
+• Rivastigmina adesivo (Exelon Patch) 4,6 mg/24h → 9,5 mg: menos RAM GI que cápsula · Preferível em DA + PD<br>
+• Galantamina LP 8 mg → 16 mg → 24 mg/dia: alternativa<br><br>
+<strong>Memantina 10 mg 2×/dia (início 5 mg/dia):</strong><br>
+• Antagonista NMDA · DA moderada-grave (CDR 2–3) · Pode combinar com inibidor de colinesterase<br>
+• RAM: tontura, constipação, cefaleia (raros) · Dose ajustar em DRC (TFG 5–29: máx 10 mg/dia)<br><br>
+<strong>Imunoterapia anti-amiloide (2023–2024):</strong><br>
+• <strong>Lecanemabe (Leqembi) 10 mg/kg IV 2 semanas:</strong> anticorpo monoclonal anti-protofibrilas amiloide-β · CLARITY-AD (NEJM 2023): redução de 27% no declínio em 18 meses em DA precoce · Aprovado FDA 2023<br>
+• <strong>Donanemabe:</strong> TRAILBLAZER-ALZ2: redução 35% em DA inicial com TAU baixo-médio · Aprovado FDA 2024<br>
+• RAM ARIA (Amyloid-Related Imaging Abnormalities): edema e hemorragias por RM — monitoramento obrigatório<br>
+• Indicação: DA leve com confirmação de amiloide por PET ou LCR<br><br>
+<strong>Demência Avançada (CDR 3) — Cuidados Paliativos:</strong><br>
+• Discussão de DAV/diretivas antecipadas precocemente (enquanto capaz)<br>
+• NÃO inserir SNG em DA grave (evidência de dano: aspiração, desconforto, sem benefício de sobrevida — AMDA guidelines)<br>
+• Infecções recorrentes: decisão compartilhada sobre ATB (conforto vs cura) · Antibiótico VO para sintomas, não IV para cura<br>
+• Agitação em demência avançada: não-farmacológico 1ª linha; haloperidol PRN (menor dose); cuidado com quetiapina (sedação excessiva)<br>
+• Cuidados de fim de vida: morfina SC para dispneia/dor, midazolam SC para agitação terminal`,
+     note:'Black box da FDA para antipsicóticos em demência: aumento de mortalidade ~1,6× em idosos com demência (AVC, infecção, IC). Uso only se sintomas graves, após discussão com família, documentação e reavaliação mensal. Quetiapina em demência: frequentemente prescrita off-label para "agitação noturna" — evidência fraca, risco de sedação/queda/AVC. SSRI (sertralina, citalopram) para agitação em DA: evidência positiva modesta (CitAD trial) com menor risco que antipsicóticos.'},
+  ];
+  document.getElementById('delirioList').innerHTML=CARDS.map(c=>`<div class="ger-card" style="border-color:${c.col}"><div class="ger-nome" style="color:${c.col}">${c.nome}</div><div class="ger-body">${c.body}</div>${c.note?`<div style="font-size:.7rem;color:#64748b;margin-top:6px">💡 ${c.note}</div>`:''}</div>`).join('');
+}
+
+/* ─── BEERS 2023 ─────────────────────────────────────────────────── */
+function renderBeers(){
+  if(document.getElementById('beersList').innerHTML) return;
+  const CARDS=[
+    {col:'#dc2626',nome:'Critérios de Beers AGS 2023 — Medicamentos Potencialmente Inapropriados (MPI)',
+     body:`<div class="alerta">⚠️ Critérios de Beers: lista de medicamentos POTENCIALMENTE inapropriados em idosos ≥65 anos. Não significa proibição absoluta — avaliar risco/benefício individualmente.</div>
+<strong>SNC — Anticolinérgicos (MAIS PERIGOSOS em idosos):</strong><br>
+Efeitos de anticolinérgicos em idosos: confusão mental, delírio, retenção urinária, constipação, queda, xerostomia, fotofobia, taquicardia<br>
+<table>
+  <tr><th>Categoria</th><th>Medicamentos</th><th>Alternativa</th></tr>
+  <tr><td>Anti-H1 1ª geração</td><td>Difenidramina, Prometazina, Clorfeniramina, Hidroxizina</td><td>Loratadina, Cetirizina (menores riscos cognitivos)</td></tr>
+  <tr><td>Antiespasmódico urinário</td><td>Oxibutinina, Tolterodina (altos anticolinérgicos)</td><td>Mirabegrona (β3 agonista — sem anticolinérgico)</td></tr>
+  <tr><td>Musculorrelaxante</td><td>Ciclobenzaprina, Carisoprodol, Metaxalona</td><td>Baclofeno tópico, fisioterapia</td></tr>
+  <tr><td>GI antiespasmódico</td><td>Escopolamina, Hioscina, Atropina oral</td><td>Domperidona (menor ação central)</td></tr>
+  <tr><td>Antidepressivo TCA</td><td>Amitriptilina, Imipramina, Clomipramina</td><td>ISRS (sertralina, escitalopram)</td></tr>
+</table>
+<br>
+<strong>SNC — Benzodiazepínicos e Z-drugs (SEMPRE evitar em idosos):</strong><br>
+• Risco: quedas, fratura de quadril, cognição, delirio, dependência<br>
+• Todos os BZD: alprazolam, clonazepam, lorazepam, diazepam, bromazepam<br>
+• Z-drugs: zolpidem, zaleplon, eszopiclona<br>
+• Alternativas insônia: CBT-I (1ª linha), melatonina 0,5–5 mg, doxepina 3–6 mg (DORA: suvorexante 10 mg), trazodona 25–50 mg<br><br>
+<strong>Cardiovascular:</strong><br>
+• <strong>Digoxina &gt;0,125 mg/dia:</strong> toxicidade aumentada (menor VD, TFG reduzida) · Manter nível 0,5–0,9 ng/mL<br>
+• <strong>Amiodarona:</strong> múltiplos órgãos afetados em idosos · Prefer outros AAF se possível<br>
+• <strong>Alfa-1 bloqueadores (doxazosina, terazosina) para HAS:</strong> HO, queda · Preferir outros anti-hipertensivos<br>
+• <strong>Nifedipino de ação curta (Adalat SL):</strong> hipotensão reflexa, IAM · Usar apenas LP<br>
+• <strong>Espironolactona &gt;25 mg/dia</strong> em IC: hiperK em idosos com TFG reduzida<br><br>
+<strong>Analgesia:</strong><br>
+• <strong>AINE não-seletivos</strong> (ibuprofeno, naproxeno, diclofenaco): úlcera GI, HAS, IC, DRC · Evitar; usar COX-2 + IBP se necessário<br>
+• <strong>Meperidina (petidina):</strong> metabólito normeperidina acumula → convulsão e delírio · NÃO USAR<br>
+• <strong>Tramadol:</strong> hiponatremia, convulsão, serotonina, muitas interações · Evitar em &gt;75 anos<br><br>
+<strong>Hipoglicemiantes:</strong><br>
+• <strong>Glibenclamida (gliburide):</strong> meia-vida longa + metabólitos ativos → hipoglicemia grave e prolongada · Usar glipizida (meia-vida menor) ou gliclazida<br>
+• Insulina NPH + esquemas complexos: risco de hipoglicemia · Preferir análogos de longa duração (glargina, degludeca)`,
+     note:'Escore de Carga Anticolinérgica (ACB — Anticholinergic Cognitive Burden): cada medicamento tem escore 0–3. Total &gt;3 associado a declínio cognitivo e mortalidade. Ferramentas online: calcalcb.com. Revisão semestral da medicação em idoso: objetivo de reduzir para &lt;5 medicamentos sempre que possível (polifarmácia absoluta: ≥5; polifarmácia excessiva: ≥10). STOPPFrail criteria: mais permissivos para idosos muito velhos com expectativa de vida &lt;1 ano (muitos tratamentos preventivos têm risco &gt; benefício).'},
+    {col:'#b45309',nome:'Constipação Crônica no Idoso — Protocolo Escalonado',
+     body:`<strong>Causas específicas em idosos (investigar sempre):</strong><br>
+Medicamentos (mais comum): opioides, anticolinérgicos, cálcio, ferro, BZD, antipsicóticos · Hipotireoidismo · Hipercalcemia · DM (neuropatia autonômica) · Diverticulose · Estenose colônica (Ca) · Doença de Parkinson (disfunção autonômica)<br><br>
+<strong>Protocolo escalonado (Ordem de escolha):</strong><br>
+<strong>1. Medidas não-farmacológicas (semanas 1–2):</strong><br>
+• Fibras ≥25 g/dia (aumento gradual para evitar flatulência) · Hidratação 1,5–2 L/dia · Caminhada diária<br>
+• Posição de cócoras (escadinha sob os pés no banheiro) · Horário regular<br><br>
+<strong>2. Laxativo osmótico (1ª linha farmacológica):</strong><br>
+• <strong>Macrogol (Polyethylene Glycol — Lactulon/Forlanax) 17–34 g/dia em água:</strong> superior à lactulose em evidência · Sem fermentação → menos flatulência<br>
+• Lactulose 30–60 mL/dia: alternativa · Fermentada por bactérias → flatulência e distensão<br><br>
+<strong>3. Estimulante (se osmótico insuficiente):</strong><br>
+• Senósida A+B 12,5–25 mg/dia à noite · Bisacodil 5–10 mg à noite<br>
+• Uso contínuo: seguro (ao contrário do mito de "intestino preguiçoso")<br><br>
+<strong>4. Constipação por opioides (OIC — Opioid-Induced Constipation):</strong><br>
+• <strong>Naloxegol 25 mg/manhã (antagonista μ periférico — PAMORA):</strong> não cruza BHE → não reverte analgesia · Aprovado Brasil<br>
+• Metilnaltrexona SC 8 mg (≤62 kg) ou 12 mg (>62 kg): alternativa SC<br>
+• Naldemedine 0,2 mg/dia: aprovado Japão/EUA (não no Brasil)<br>
+• NÃO aumentar macrogol indefinidamente — tratar a causa (OIC específica)<br><br>
+<strong>5. Fecaloma (impactação fecal):</strong><br>
+Desimpactação manual (ou enema de fosfato) → lavagem retal → manutenção com macrogol · Não dar laxativo oral em impactação`,
+     note:'Constipação e quedas noturnas: idosos que se levantam à noite para o banheiro têm risco 5× maior de queda. Horário regular (pós-café da manhã) de evacuação + laxativo matinal reduz urgências noturnas. Supositório de glicerina: útil como "gatilho reflexo" em idosos com reflexo de evacuação embotado. Enema de fosfato sódico: RISCO de hiperfosfatemia grave em idosos com DRC — evitar; usar enema de SF em vez disso.'},
+  ];
+  document.getElementById('beersList').innerHTML=CARDS.map(c=>`<div class="ger-card" style="border-color:${c.col}"><div class="ger-nome" style="color:${c.col}">${c.nome}</div><div class="ger-body">${c.body}</div>${c.note?`<div style="font-size:.7rem;color:#64748b;margin-top:6px">💡 ${c.note}</div>`:''}</div>`).join('');
+}
+</script>
+</body>
+</html>

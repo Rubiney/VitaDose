@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Medicina do Trabalho — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .trab-hdr{background:linear-gradient(135deg,#431407,#9a3412);color:#fff;border-radius:14px;padding:18px;margin-bottom:14px}
+    .trab-title{font-size:1rem;font-weight:800;margin-bottom:4px}
+    .trab-sub{font-size:.73rem;opacity:.8}
+    label{font-size:.75rem;font-weight:700;color:#1e3a5f;display:block;margin-bottom:4px}
+    select{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:10px;padding:10px 12px;font-size:.85rem;background:#fff;margin-bottom:10px}
+    select:focus{border-color:#9a3412;outline:none}
+    .btn-calc{width:100%;background:#9a3412;color:#fff;border:none;border-radius:12px;padding:13px;font-size:.87rem;font-weight:700;cursor:pointer;margin:8px 0}
+    .tab-bar{display:flex;gap:6px;margin-bottom:14px}
+    .tab-btn{flex:1;padding:9px 4px;border-radius:10px;border:2px solid #e2e8f0;background:#fff;font-size:.72rem;font-weight:700;cursor:pointer;color:#64748b}
+    .tab-btn.active{border-color:#9a3412;background:#fff7ed;color:#9a3412}
+    .trab-card{border-radius:10px;border-left:5px solid;padding:10px 14px;margin-bottom:8px;background:#fff}
+    .trab-nome{font-size:.83rem;font-weight:800;margin-bottom:4px}
+    .trab-body{font-size:.76rem;line-height:1.7;color:#374151}
+    .rec-card{border-radius:12px;border:2px solid;padding:14px;margin-bottom:10px}
+    .rec-hdr{font-size:.63rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+    .rec-nome{font-size:.88rem;font-weight:800;margin-bottom:6px}
+    .rec-body{font-size:.78rem;margin-top:6px;line-height:1.7}
+    .rec-note{font-size:.71rem;color:#64748b;margin-top:6px;padding-top:6px;border-top:1px solid #f1f5f9}
+    .alerta{background:#fef2f2;border:2px solid #dc2626;border-radius:10px;padding:8px;margin:6px 0;font-size:.75rem;color:#7f1d1d;font-weight:700}
+    table{width:100%;border-collapse:collapse;font-size:.73rem;margin-top:6px}
+    th{background:#431407;color:#fff;padding:5px 8px;text-align:left}
+    td{padding:5px 8px;border-bottom:1px solid #f1f5f9}
+    tr:nth-child(even) td{background:#fff7ed}
+  </style>
+</head>
+<body>
+<header class="top-bar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <span class="top-title">Medicina do Trabalho</span>
+  <div class="top-right"></div>
+</header>
+<main class="container" style="padding-bottom:90px">
+  <div class="trab-hdr">
+    <div class="trab-title">🏭 Medicina do Trabalho & Ocupacional</div>
+    <div class="trab-sub">Doenças Ocupacionais · LER/DORT · Intoxicações · Burnout · CAT</div>
+  </div>
+  <div class="tab-bar">
+    <button class="tab-btn active" id="tb0" onclick="showTab(0)">Doenças Ocupacionais</button>
+    <button class="tab-btn" id="tb1" onclick="showTab(1)">LER/DORT & PAIR</button>
+    <button class="tab-btn" id="tb2" onclick="showTab(2)">Saúde Mental & CAT</button>
+  </div>
+
+  <!-- TAB 0 — DOENÇAS OCUPACIONAIS -->
+  <div id="tab0">
+    <div class="card" style="padding:12px 14px">
+      <label>Doença / Agente de Interesse</label>
+      <select id="trab_cond">
+        <option value="silicose">Silicose — Exposição a Sílica</option>
+        <option value="asbestose">Asbestose / Mesotelioma — Amianto</option>
+        <option value="dermatite">Dermatite Ocupacional de Contato</option>
+        <option value="asma_oc">Asma Ocupacional</option>
+        <option value="pb">Intoxicação por Chumbo (Pb)</option>
+        <option value="hg">Intoxicação por Mercúrio (Hg)</option>
+        <option value="of">Intoxicação por Organofosforados</option>
+        <option value="co">Intoxicação por Monóxido de Carbono (CO)</option>
+      </select>
+    </div>
+    <button class="btn-calc" onclick="calcTrab()">🏭 Ver protocolo</button>
+    <div id="trabResult" style="display:none"></div>
+  </div>
+
+  <!-- TAB 1 — LER/DORT & PAIR -->
+  <div id="tab1" style="display:none">
+    <div id="lerdList"></div>
+  </div>
+
+  <!-- TAB 2 — SAÚDE MENTAL & CAT -->
+  <div id="tab2" style="display:none">
+    <div id="mentList"></div>
+  </div>
+</main>
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+<script src="js/db.js"></script>
+<script>
+function showTab(n){[0,1,2].forEach(i=>{document.getElementById('tab'+i).style.display=i===n?'block':'none';document.getElementById('tb'+i).classList.toggle('active',i===n);});if(n===1)renderLERD();if(n===2)renderMent();}
+
+/* ─── DOENÇAS OCUPACIONAIS ─────────────────────────────────────── */
+const PROTO_TRAB={
+  silicose:{hdr:'Silicose — Pneumoconiose por Sílica Cristalina',col:'#431407',nome:'Afastamento imediato + suporte respiratório + vigilância de TB',
+   body:`<strong>Agentes e ocupações de risco:</strong><br>
+Mineração (ouro, carvão, quartzo) · Construção civil (corte de granito/mármore/concreto) · Fundição · Fabricação de cerâmicas/tijolos · Jateamento de areia · Produção de vidro<br><br>
+<strong>Tipos clínicos:</strong><br>
+• <strong>Silicose crônica:</strong> exposição ≥10 anos a baixas concentrações · Mais comum · Assintomática por anos · Nódulos bilaterais apicais e para-hilares na TC<br>
+• <strong>Silicose acelerada:</strong> exposição 5–10 anos a concentrações moderadas · Progressão mais rápida<br>
+• <strong>Silicose aguda (silicoproteinose):</strong> exposição intensa e curta (&lt;5 anos) · DPOC grave + opacidades alveolares na TC · Alta mortalidade<br><br>
+<strong>Diagnóstico:</strong><br>
+• História ocupacional (nexo causal) + TC de tórax (nódulos bem definidos, bilaterais, zona superior) · Espirometria (padrão restritivo ou misto)<br>
+• NÃO é necessária biópsia se quadro clínico-radiológico típico + nexo causal<br><br>
+<strong>Tratamento:</strong><br>
+• <strong>Afastamento imediato da exposição à sílica (principal medida)</strong> — mesmo que não reverta, impede progressão<br>
+• Broncodilatadores (se componente obstrutivo/DPOC coexistente) · Oxigenoterapia (se hipoxemia)<br>
+• <strong>Vigilância de tuberculose:</strong> silicose aumenta risco de TB em 3× · ILTB (Infecção latente por TB): SEMPRE tratar (isoniazida 300 mg/dia × 6 meses) · Teste tuberculínico (PPD) anual<br>
+• Vacina pneumocócica + influenza<br>
+• Sem tratamento modificador de doença aprovado · Pesquisa: tetraciclina, N-acetilcisteína (sem evidência robusta)`,
+   note:'Silicose e CAT: doença ocupacional → emite Comunicação de Acidente de Trabalho (CAT) → benefício B91 (acidente do trabalho) no INSS. Silicose e Ca de pulmão: sílica cristalina respirável é carcinógeno Grupo 1 (IARC). Trabalhador com silicose tem 2–3× mais risco de Ca de pulmão. Insalubridade: trabalho com sílica = insalubridade grau máximo (40% adicional sobre salário mínimo).'},
+  asbestose:{hdr:'Asbestose e Mesotelioma — Amianto (Asbesto)',col:'#1e3a8a',nome:'Não há tratamento específico — prevenção e vigilância são fundamentais',
+   body:`<strong>Ocupações de risco:</strong><br>
+Instalação/remoção de telhas de fibrocimento · Construção civil (pré-2018) · Isolamento térmico/acústico · Indústria naval · Freios e embreagens (veículos)<br>
+<strong>Brasil:</strong> Uso de amianto PROIBIDO desde 2018 (Lei 9.055/95 liberava crisotila até proibição estadual progressiva → STF proibiu crisotila em 2017 e confirmou em 2023)<br><br>
+<strong>Doenças associadas ao amianto:</strong><br>
+• <strong>Asbestose:</strong> fibrose intersticial pulmonar · Latência &gt;10 anos · Crepitações bibasais + distorção arquitetural na TC · Espirometria restritiva<br>
+• <strong>Placas pleurais:</strong> calcificações pleurais benignas · Latência &gt;20 anos · Diagnóstico incidental · Não é asbestose<br>
+• <strong>Mesotelioma maligno pleural:</strong> latência 30–50 anos após exposição · Ca muito agressivo<br>
+  Tratamento: nivolumabe + ipilimumabe (CheckMate-743: OS 18,1 vs 14,1 m vs quimio) · Cisplatina + pemetrexede (1ª linha prévia)<br>
+• <strong>Ca brôncico (pulmão):</strong> sinergia com tabagismo (risco 50× vs 5× isolado)<br><br>
+<strong>Conduta:</strong><br>
+• Afastamento + reabilitação pulmonar · Vacinas · Espirometria a cada 1–2 anos<br>
+• Vigilância radiológica/TC: TC de baixa dose de tórax anual (rastreio de Ca pulmão em ex-expostos de alto risco + tabagistas)`,
+   note:'Mesotelioma e amianto: nexo causal legal praticamente automático — 80% dos mesoteliomas têm exposição a amianto. Perícia trabalhista e indenizações. NR-15 (Norma Regulamentadora 15): atividades insalubres — exposição a agentes químicos como amianto = insalubridade grau máximo. Mesmo sem exposição ativa, resíduos de amianto em obras antigas (telhas, pisos vinílicos) são fonte de risco durante reforma sem EPI adequado.'},
+  dermatite:{hdr:'Dermatite Ocupacional de Contato',col:'#059669',nome:'Irritativa: mais comum · Alérgica: patch test para confirmar',
+   body:`<strong>Tipos:</strong><br>
+<strong>Dermatite de Contato Irritativa (DCI — 80%):</strong><br>
+Mecanismo não-imune · Dano físico/químico direto à pele · Qualquer pessoa exposta suficientemente<br>
+Agentes: solventes, ácidos, álcalis, água/sabão (dermatite da lavagem), detergentes, óleos de corte<br>
+Apresentação: eritema + descamação + fissuras, localização no sítio de contato · Melhora ao afastar<br><br>
+<strong>Dermatite de Contato Alérgica (DCA — 20%):</strong><br>
+Mecanismo de hipersensibilidade tipo IV (Th1 mediado) · Apenas sensibilizados · Latência 12–48h<br>
+Agentes mais comuns: <strong>Sulfato de Níquel</strong> (bijuterias, ferramentas) · <strong>Resinas epóxi</strong> (vernizes, adesivos) · <strong>Borracha/látex</strong> (acelerador de mercaptobenzotiazol) · <strong>Cromato</strong> (cimento, couro curtido) · Fragrâncias · Conservantes (parabenos, isotiazolinas)<br><br>
+<strong>Diagnóstico de DCA:</strong><br>
+• <strong>Patch test (teste de contato — padrão-ouro):</strong> aplicar alérgenos em câmaras (Finn Chambers) nas costas × 48h → leitura D2 e D4<br>
+• Resultado: +1 (eritema leve) · +2 (eritema + pápula) · +3 (eritema + vesículas) · +4 (bolhas/necroses) → 2+ ou mais = relevante<br><br>
+<strong>Tratamento:</strong><br>
+• <strong>Afastamento do agente (essencial):</strong> mudar de função ou EPI adequado<br>
+• Fase aguda: corticoide tópico (dipropionato de betametasona 0,05% ou clobetasol 0,05% × 1–2 semanas)<br>
+• Manutenção: emoliente + hidratante · Corticoide moderado (hidrocortisona 1%) para manutenção<br>
+• Dermatite grave/generalizada: prednisona VO 0,5–1 mg/kg × 7–14 dias<br>
+• DCA crônica refratária: fototerapia UVB · Ciclosporina 2,5–5 mg/kg · Dupilumabe (eczema atópico com DCA)`,
+   note:'Dermite por látex em profissionais de saúde: rastreio com RAST (IgE específica para látex) + patch test. Reação imediata (tipo I, anafilaxia) vs tardia (tipo IV, eczema). Protocolo sem látex em hospital. Creme de barreira: não substitui luva adequada mas reduz DCI por água/sabão. NR-6 (EPI): luvas de nitrila (sem látex) para profissionais com exposição química e biológica.'},
+  asma_oc:{hdr:'Asma Ocupacional',col:'#0369a1',nome:'Afastamento precoce do agente — determinante do prognóstico',
+   body:`<strong>Definição:</strong> asma causada por agentes inaláveis no ambiente de trabalho · Dois mecanismos:<br>
+1. <strong>Asma ocupacional imunológica (com período de latência):</strong> sensibilização + hiper-responsividade brônquica<br>
+2. <strong>Asma irritante (RADS — Reactive Airways Dysfunction Syndrome):</strong> exposição única a alta concentração de irritante → sem latência (ex: acidente com cloro, amônia)<br><br>
+<strong>Agentes de alto peso molecular (sensibilizantes proteicos):</strong><br>
+Farinha de trigo (padeiros) · Látex · Polvos de animais (veterinários, biotério) · Enzimas (detergente biológico, farmácia, indústria alimentícia) · Abelhas/baratas<br><br>
+<strong>Agentes de baixo peso molecular (haptenos):</strong><br>
+Isocianatos (TDI, MDI — poliuretano, tintas, vernizes) · Anidridos (plásticos) · Metais (platina, cromo, cobalto — metalurgia, dentistas) · Madeiras (cedro vermelho — plicatic acid)<br><br>
+<strong>Diagnóstico:</strong><br>
+• Clínica: asma típica + piora nos dias de trabalho + melhora nos finais de semana/férias<br>
+• <strong>PEFR seriado:</strong> medições de pico de fluxo (peak flow) a cada 2h por 4 semanas (trabalho e folga) · Variação &gt;20% nos dias de trabalho = positivo<br>
+• Espirometria pré/pós-turno (queda &gt;10% VEF1 após turno = positivo)<br>
+• Teste de provocação bronquial específico (câmara de exposição controlada): padrão-ouro<br><br>
+<strong>Tratamento:</strong><br>
+• <strong>Afastamento imediato e definitivo</strong> do agente sensibilizante: quanto mais cedo, melhor reversibilidade<br>
+• Broncodilatadores LABA/LAMA + corticoide inalatório: tratamento sintomático (mesma asma comum)<br>
+• Redução de exposição sem afastamento total: remissão incompleta em &gt;70%`,
+   note:'Isocianatos (MDI/TDI): causa mais comum de asma ocupacional no mundo · Exposição em metalurgia, fabricação de espumas, tintas automotivas. Limite TLV-TWA: TDI 0,005 ppm (ACGIH). Asma ocupacional e indenização: doença profissional típica (lista B do decreto 3.048) → B91 ou B31 dependendo se reconhecida ou não pela perícia INSS.'},
+  pb:{hdr:'Intoxicação por Chumbo (Pb) — Saturnismo',col:'#374151',nome:'Afastamento + EDTA dissódico ou d-penicilamina (quelação se PbS ≥70 µg/dL)',
+   body:`<strong>Fontes ocupacionais:</strong> fundição de chumbo/bateria · Reforma de pinturas antigas (chumbo orgânico) · Fabricação de munição/solda · Queima de resíduos · Mineração<br><br>
+<strong>Quadro clínico por nível de chumbo (PbS — chumbo no sangue):</strong><br>
+<table>
+  <tr><th>PbS (µg/dL)</th><th>Manifestações</th></tr>
+  <tr><td>&lt;10 (adulto)</td><td>Assintomático (referência para adultos: &lt;5 µg/dL)</td></tr>
+  <tr><td>10–40</td><td>Fadiga, irritabilidade, cefaleia, dificuldade de concentração, anemia discreta</td></tr>
+  <tr><td>40–70</td><td>Cólica de chumbo (dor abdominal intensa), anemia, neuropatia periférica motora (sinal do pé caído)</td></tr>
+  <tr><td>&gt;70</td><td>Encefalopatia aguda (convulsão, coma, HTIC), neuropatia grave, IRA</td></tr>
+</table>
+<br>
+<strong>Diagnóstico:</strong><br>
+• Chumbo no sangue (PbS): exame padrão · PPb INSS: afastar se PbS &gt;40 µg/dL<br>
+• Zinco protoporfirina (ZPP): elevada quando há inibição da heme sintetase (mais sensível para exposição crônica)<br>
+• Ácido delta-aminolevulínico urinário (ALA-U) · Coproporfirina urinária<br><br>
+<strong>Tratamento:</strong><br>
+• PbS &lt;40 µg/dL: <strong>afastamento + monitoramento + higiene</strong> (lavar mãos, não comer no trabalho, banho antes de sair) · Sem quelação<br>
+• PbS 40–70 µg/dL com sintomas: afastamento + <strong>DMSA oral (succimer) 10 mg/kg 8h × 5 dias → 12h × 14 dias</strong><br>
+• PbS ≥70 µg/dL OU encefalopatia: <strong>EDTA cálcico dissódico (Ca-EDTA) 25–50 mg/kg/dia IV × 5 dias</strong> · Hospitalização<br>
+  ± BAL (dimercaprol) 3–4 mg/kg IM 4h × 5 dias se encefalopatia (dar BAL antes de Ca-EDTA para evitar redistribuição para SNC)<br>
+• d-Penicilamina oral (250–500 mg 4×/dia): alternativa oral · Menor eficácia que EDTA IV · RAM: urticária, anemia<br><br>
+<strong>Controle biológico (NHO/ACGIH):</strong> PbS &lt;30 µg/dL durante trabalho com chumbo (média dos últimos 3 meses)`,
+   note:'Chumbo e gestação: atravessa placenta livremente → aborto, retardo mental, anomalias → afastamento de grávidas de qualquer exposição ao chumbo independente do nível. Criança com PbS &gt;5 µg/dL: investigar fonte ambiental (tintas antigas, solo contaminado, água) e quelação se PbS &gt;45 µg/dL. Linha de Burton (pigmentação gengival escura): clássico em intoxicação crônica de chumbo, raro hoje.'},
+  hg:{hdr:'Intoxicação por Mercúrio (Hg)',col:'#1e3a8a',nome:'Hg elementar/inorgânico: DMSA oral · Hg orgânico (metilmercúrio): dimercaprol IM',
+   body:`<strong>Formas e fontes ocupacionais:</strong><br>
+• <strong>Hg elementar (vapor):</strong> termômetros, barômetros, lâmpadas fluorescentes, amalgama dentária, mineração de ouro<br>
+• <strong>Hg inorgânico (sais):</strong> laboratórios, fabricação de agroquimicidas<br>
+• <strong>Mercúrio orgânico (metilmercúrio):</strong> pesticidas, preservativos (fungicidas), contaminação de peixes (atum, peixe-espada, merluza)<br><br>
+<strong>Quadro clínico:</strong><br>
+Hg vapor (crônico): tremor intencional + eretismo mercurial (irritabilidade, timidez, insônia, amnésia) + estomatite + acrodynia (crianças: descamação de palmas e plantas)<br>
+Hg inorgânico (agudo): náusea, vômito, corrosão GI, nefrotoxicidade, colapso<br>
+Metilmercúrio: neurotoxicidade (parestesia, ataxia, surdez, cegueira — Doença de Minamata)<br><br>
+<strong>Diagnóstico:</strong><br>
+• Hg urinário (Hg-U): exposição a Hg inorgânico/elementar · &gt;35 µg/g creatinina: ação imediata · &gt;150 µg/g: sintomático geralmente<br>
+• Hg sangue (Hg-S): exposição a metilmercúrio · &gt;15 µg/L: recomendação de afastamento<br><br>
+<strong>Tratamento:</strong><br>
+• <strong>Hg elementar/inorgânico:</strong> DMSA (succimer) 10 mg/kg 8h × 5 dias → 12h × 14 dias · D-penicilamina 250–500 mg 4×/dia como alternativa<br>
+• <strong>Metilmercúrio:</strong> Dimercaprol (BAL) 3–5 mg/kg IM 4h × 5 dias (mais eficaz para compostos orgânicos)<br>
+• Suporte: hidratação IV (proteger rim) · Carvão ativado se ingestão aguda`,
+   note:'Amalgama dentária: contém Hg elementar (~50%). Risco ocupacional principalmente para dentistas e protéticos dentários (vapor de Hg durante trituração/remoção). Monitoramento anual de Hg-U recomendado. Pacientes: amalgama intacta não libera Hg em quantidade significativa — não recomendada remoção preventiva (risco maior durante remoção). Grávidas: evitar colocação ou remoção de amalgama.'},
+  of:{hdr:'Intoxicação por Organofosforados (OF) e Carbamatos',col:'#dc2626',nome:'Atropina IV + Pralidoxima (2-PAM) precoce — URGÊNCIA TOXICOLÓGICA',
+   body:`<div class="alerta">⚠️ Intoxicação grave por OF = emergência toxicológica com risco de morte por parada respiratória. Iniciar atropina IMEDIATAMENTE.</div>
+<strong>Fontes de exposição:</strong><br>
+Agrotóxicos: malation, paration, clorpirifós, diclorvós · Agrotóxicos carbamatos: aldicarbe (chumbinho), carbaril · Armas químicas (nervos): sarín, VX<br><br>
+<strong>Mecanismo:</strong> inibição irreversível de acetilcolinesterase → acúmulo de ACh → hiperatividade muscarínica (SLUDGE) + nicotínica + SNC<br><br>
+<strong>Síndrome SLUDGE (muscarínica):</strong><br>
+<strong>S</strong>alivação · <strong>L</strong>acrimejamento · <strong>U</strong>rinação · <strong>D</strong>efecação · <strong>G</strong>astrointestinal (náusea, vômito, cólica) · <strong>E</strong>mese<br>
++ Broncospasmo + Bradicardia + Miose + Sudorese<br><br>
+<strong>Nicotínico (NMJ):</strong> fasciculações → fraqueza muscular → paralisia respiratória<br>
+<strong>SNC:</strong> ansiedade → convulsão → coma<br><br>
+<strong>Tratamento:</strong><br>
+<strong>1. ATROPINA:</strong><br>
+• <strong>Adulto: 2–4 mg IV bolus → repetir a cada 5–10 min até secreções respiratórias cessarem (critério: broncorreia, não midríase!)</strong><br>
+• Dose total pode ser centenas de mg em casos graves<br>
+• Objetivo: secar broncorreia + FC &gt;80 bpm · Pupilas podem permanecer mióticas · Não é meta<br><br>
+<strong>2. PRALIDOXIMA (2-PAM):</strong><br>
+• <strong>1–2 g IV em 15–30 min → 200–500 mg/h infusão contínua</strong> (iniciar em &lt;24–48h — "envelhece" a ligação OF-acetilcolinesterase, tornando irreversível após 24–72h)<br>
+• Reativa acetilcolinesterase inibida (efeito nicotínico, menos eficaz em muscarínico)<br>
+• NÃO usar em intoxicação por CARBAMATOS (ligação spontaneamente reversível — 2-PAM pode piorar)<br><br>
+<strong>3. Diazepam 5–10 mg IV</strong> em convulsão · Suporte ventilatório (intubação frequentemente necessária)`,
+   note:'Inibidores de colinesterase terapêuticos (donepezila, piridostigmina, neostigmina, rivastigmina): mesma classe mas doses terapêuticas — toxicidade similar em overdose. Carbamatos vs organofosforados: carbamatos — ligação reversível espontaneamente (horas) → 2-PAM contraindicada (pode reverter bloqueio antes do tempo). Atropina: disponível no "kit de chumbinho" de muitos CAPS; capacitar equipe de APS em zonas rurais para uso imediato.'},
+  co:{hdr:'Intoxicação por Monóxido de Carbono (CO)',col:'#374151',nome:'O₂ 100% por máscara não-reinalante (ou câmara hiperbárica se grave)',
+   body:`<strong>Fontes:</strong> escapamento de veículos (garagem fechada) · Incêndios · Aquecedor a gás/carvão em ambientes fechados · Caldeiras/fornos mal ventilados · Exposição ocupacional: metalurgia, mineração, motores de combustão interna<br><br>
+<strong>Mecanismo:</strong> CO liga à hemoglobina com afinidade 240× maior que O₂ → carboxihemoglobina (HbCO) → hipóxia tecidual + inibição da citocromo oxidase mitocondrial<br><br>
+<strong>Quadro clínico por HbCO%:</strong><br>
+<table>
+  <tr><th>HbCO%</th><th>Manifestações</th></tr>
+  <tr><td>&lt;20%</td><td>Cefaleia, tontura, náusea, mal-estar ("sintomas gripais" — diagnóstico frequentemente perdido)</td></tr>
+  <tr><td>20–40%</td><td>Cefaleia intensa, confusão mental, fraqueza, síncope</td></tr>
+  <tr><td>40–60%</td><td>Convulsão, coma, cardiotoxicidade (ST, arritimias)</td></tr>
+  <tr><td>&gt;60%</td><td>Coma profundo, rabdomiólise, parada cardiorrespiratória</td></tr>
+</table>
+<br>
+<strong>Diagnóstico:</strong><br>
+• Co-oximetria: medida de HbCO no sangue arterial · Oxímetro de pulso comum: NÃO distingue HbCO de HbO₂ (falsa SpO₂ normal) · Usar co-oximetro/gasometria<br><br>
+<strong>Tratamento:</strong><br>
+• <strong>O₂ 100% por máscara não-reinalante:</strong> meia-vida HbCO = 5h no ar → 60–90 min com O₂ 100% · Iniciar IMEDIATAMENTE · Manter até HbCO &lt;5%<br>
+• <strong>Oxigenoterapia hiperbárica (OHB):</strong> câmara pressurizada a 3 atm → meia-vida HbCO = 20 min · Indicação: HbCO &gt;25% OU sintomas neurológicos OU gravidez (feto mais sensível) OU cardiotoxicidade · Disponibilidade limitada<br>
+• Suporte: hidratação · Monitoramento cardíaco (ECG) · Neurológico (sequela anóxica)`,
+   note:'CO e gravidez: CO atravessa placenta → HbCO fetal é 10–15% maior que materna → sempre OHB em gestante sintomática mesmo com HbCO "baixo". Síndrome de intervalo lúcido (delayed neurological sequelae — DNS): aparente recuperação seguida de deterioração neurológica 1–30 dias depois (demência, parkinsonismo, personalidade). Ocorre em 10–30% dos casos graves. OHB pode reduzir DNS. Detector de CO doméstico: recomendado em casas com aquecedor a gás, lareira, garagem integrada.'},
+};
+
+function calcTrab(){
+  const cond=document.getElementById('trab_cond').value;
+  const p=PROTO_TRAB[cond];
+  document.getElementById('trabResult').style.display='block';
+  document.getElementById('trabResult').innerHTML=`<div class="rec-card" style="border-color:${p.col}"><div class="rec-hdr" style="color:${p.col}">MEDICINA DO TRABALHO — ${p.hdr}</div><div class="rec-nome">${p.nome}</div><div class="rec-body">${p.body}</div>${p.note?`<div class="rec-note">${p.note}</div>`:''}</div>`;
+  document.getElementById('trabResult').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+/* ─── LER/DORT & PAIR ─────────────────────────────────────────── */
+function renderLERD(){
+  if(document.getElementById('lerdList').innerHTML) return;
+  const CARDS=[
+    {col:'#9a3412',nome:'LER/DORT — Lesões por Esforço Repetitivo / Distúrbios Osteomusculares',
+     body:`<strong>Definição:</strong> Afecções musculoesqueléticas relacionadas ao trabalho · Causas: posturas inadequadas, esforço repetitivo, sobrecarga biomecânica · Mais comuns: membros superiores e coluna<br><br>
+<strong>Principais entidades clínicas:</strong><br>
+<table>
+  <tr><th>Diagnóstico</th><th>Localização</th><th>Teste Clínico</th><th>Tratamento</th></tr>
+  <tr><td><strong>Síndrome do Túnel do Carpo (STC)</strong></td><td>Nervo mediano no punho</td><td>Phalen (60s flexão punho) + Tinel (percussão) · EMG confirma</td><td>Órtese noturna · AINE · Injeção de corticoide local · Cirurgia (descompressão) se refratária</td></tr>
+  <tr><td>Epicondilite Lateral ("cotovelo de tenista")</td><td>Extensor radial curto</td><td>Cozen test (extensão de punho contra resistência)</td><td>Fisioterapia (excêntrico) · AINE tópico · Corticoide local 1–2 injeções · Órtese de cotovelo</td></tr>
+  <tr><td>Epicondilite Medial ("cotovelo de golfista")</td><td>Flexores de punho/pronadores</td><td>Dor à palpação epicôndilo medial + carga de flexão</td><td>Fisioterapia · AINE · Corticoide local</td></tr>
+  <tr><td>Tendinite de Manguito Rotador</td><td>Supraespinhoso, subescapular</td><td>Neer, Hawkins, Jobe (resistência ao empty can)</td><td>Fisioterapia rotineiramente · Corticoide subacromial (máx 3 injeções/ano)</td></tr>
+  <tr><td>Tenossinovite de DeQuervain</td><td>Abdutor polegar longo + extensor curto</td><td>Finkelstein test (polegar na mão + desvio ulnar)</td><td>Órtese de polegar · Corticoide local · Cirurgia em refratários</td></tr>
+  <tr><td>Dedo em Gatilho (Tenossinovite Estenosante)</td><td>Bainha dos flexores</td><td>Clique palpável + travamento do dedo</td><td>Injeção de corticoide na bainha · Cirurgia (tenotomia percutânea)</td></tr>
+  <tr><td>Lombalgia Ocupacional</td><td>Coluna lombar (L4-L5-S1)</td><td>Lasègue (ciática) · RM se déficit neurológico</td><td>Analgesia (paracetamol/AINE) · Fisioterapia (McKenzie, estabilização) · Afastamento ergonômico</td></tr>
+</table>
+<br>
+<strong>Princípios de tratamento geral:</strong><br>
+• Fase aguda: repouso relativo + compressas frias + AINE oral/tópico + imobilização<br>
+• Fase crônica: fisioterapia ativa (exercícios excêntricos, RPG, Pilates) + adaptação ergonômica do posto de trabalho<br>
+• PPRA/PCMSO: Programa de Prevenção de Riscos Ambientais + Programa de Controle Médico da Saúde Ocupacional`,
+     note:'Injeção de corticoide e tendão: máximo 3 injeções no mesmo local (degeneração tendinosa com injeções repetidas). Aguardar ≥6–8 semanas entre injeções. Ultrassonografia guiada: aumenta precisão e eficácia da injeção. LER/DORT e nexo causal: deve-se demonstrar relação entre atividade laboral e doença (exame pericial + descrição do posto de trabalho). CAT pode ser emitida pelo médico assistente (não apenas pelo médico do trabalho).'},
+    {col:'#1e3a8a',nome:'PAIR — Perda Auditiva Induzida por Ruído',
+     body:`<strong>Definição:</strong> perda auditiva neurossensorial bilateral, simétrica, irreversível · Causada por exposição prolongada a ruído ≥85 dB(A) · Afeta inicialmente frequências de 3.000–4.000–6.000 Hz (entalhe audiométrico de 4.000 Hz)<br><br>
+<strong>Ocupações de alto risco:</strong><br>
+Construção civil (perfuradeiras) · Metalurgia (forja, estamparia) · Aeroportos · Motores · Mineração · Exércitos · Músicos (amplificadores) · Agricultores (tratores)<br><br>
+<strong>Critério de insalubridade (NR-15):</strong><br>
+• &gt;85 dB(A) × 8h/dia: grau médio (20% de adicional) · &gt;90 dB(A) × 4h/dia: grau máximo<br>
+• LT (Limite de Tolerância) de NR-15: 85 dB(A) para 8h (com limitação de 115 dB pico)<br><br>
+<strong>Diagnóstico:</strong><br>
+• <strong>Audiometria tonal limiar:</strong> curva em entalhe (notch) na frequência de 3–4 kHz + piora progressiva com anos de exposição<br>
+• BCSNIP (Binaural Confirmed Sensorineural Notch In Pathology): confirmação de PAIR com padrão específico<br>
+• Diferenciar de presbycusis (perda senil: frequências agudas + instalação gradual), otosclerose, meningite<br><br>
+<strong>Tratamento e prevenção:</strong><br>
+• <strong>SEM TRATAMENTO CURATIVO</strong> (neurônios cocleares não se regeneram)<br>
+• Afastamento da fonte: não há reversão, mas impede progressão<br>
+• Protetor auricular: EPI obrigatório (Proteção de 25 dB → plug + concha = 35 dB) · Programa de conservação auditiva (PPPA)<br>
+• Prótese auditiva (AASI) para reabilitação<br>
+• Implante coclear: PAIR severa bilateral (limiar &gt;90 dB) com pouco benefício de AASI<br><br>
+<strong>Reconhecimento legal:</strong><br>
+PAIR é doença do trabalho Lista B (Decreto 3.048/99 Anexo II) → B91 INSS · CAT obrigatória`,
+     note:'Acúfeno (zumbido) na PAIR: frequentemente acompanha a perda auditiva. Sem tratamento eficaz comprovado. Terapia de reabilitação (TRT — Tinnitus Retraining Therapy): dessensibilização + mascaramento. Melatonina 3 mg à noite: pode ajudar no sono associado ao zumbido. Programa de Conservação Auditiva (PPPA): avaliação audiométrica anual + EPI + educação + controle de ruído na fonte.'},
+  ];
+  document.getElementById('lerdList').innerHTML=CARDS.map(c=>`<div class="trab-card" style="border-color:${c.col}"><div class="trab-nome" style="color:${c.col}">${c.nome}</div><div class="trab-body">${c.body}</div>${c.note?`<div style="font-size:.7rem;color:#64748b;margin-top:6px">💡 ${c.note}</div>`:''}</div>`).join('');
+}
+
+/* ─── SAÚDE MENTAL & CAT ─────────────────────────────────────────── */
+function renderMent(){
+  if(document.getElementById('mentList').innerHTML) return;
+  const CARDS=[
+    {col:'#312e81',nome:'Burnout e Transtornos Mentais Relacionados ao Trabalho',
+     body:`<strong>Burnout (Esgotamento Profissional — CID-11: QD85):</strong><br>
+Síndrome resultante de estresse crônico no trabalho não gerenciado com sucesso · 3 dimensões (Maslach):<br>
+1. <strong>Exaustão emocional:</strong> sentimento de esgotamento, sem energia para o trabalho<br>
+2. <strong>Despersonalização/Cinismo:</strong> atitudes distantes ou indiferentes com colegas/pacientes<br>
+3. <strong>Redução da realização pessoal:</strong> sensação de ineficácia e falta de sentido no trabalho<br><br>
+<strong>Diagnóstico diferencial:</strong><br>
+• Depressão maior: não restrita ao contexto laboral · Melhora em férias · Critérios DSM-5/CID-11<br>
+• Burnout: exclusivamente relacionado ao trabalho · IMPORTANTE: CID-11 classifica burnout como "fenômeno ocupacional", não doença — mas pode coexistir com depressão<br><br>
+<strong>Tratamento Burnout:</strong><br>
+• Afastamento temporário do trabalho (fundamental para recuperação) · Redução de carga<br>
+• Psicoterapia (TCC): evidência mais forte · Terapia de Aceitação e Compromisso (ACT)<br>
+• Farmacológico (se depressão comórbida): ISRS de escolha (escitalopram, sertralina)<br>
+• Yoga, meditação mindfulness, exercício físico: evidência moderada como adjuvantes<br>
+• Intervenções organizacionais: mais eficazes que intervenções individuais isoladas<br><br>
+<strong>Distúrbio de Estresse Pós-Traumático Ocupacional (TEPT laboral):</strong><br>
+Trabalhadores expostos: policiais, bombeiros, militares, profissionais de saúde (pandemias), motoristas (acidentes)<br>
+• ISRS (sertralina 50–200 mg, paroxetina 20–60 mg): aprovados FDA para TEPT<br>
+• Prazosin 1–16 mg/noite: pesadelos do TEPT (bloqueio α1 central) · Titulação necessária<br>
+• EMDR (Eye Movement Desensitization and Reprocessing): psicoterapia específica para TEPT · 1ª linha em guidelines · Eficácia comparável à TCC focada no trauma`,
+     note:'Burnout em profissionais de saúde: prevalência de 40–60% em médicos e enfermeiros (pré-pandemia) · Suicídio 2–4× maior em médicos que população geral. Programas de bem-estar institucional: reduzem burnout quando bem implementados. Afastamento por burnout e CID: médico assistente pode emitir CID F48.0 (Neurastenia — estresse relacionado ao trabalho) ou Z56.6 (outras dificuldades físicas e mentais relacionadas ao emprego).'},
+    {col:'#b45309',nome:'CAT e Legislação Trabalhista — Nexo Causal e Benefícios',
+     body:`<strong>CAT (Comunicação de Acidente de Trabalho):</strong><br>
+Documento que formaliza acidente do trabalho ou doença ocupacional ao INSS<br><br>
+<strong>Quem pode emitir CAT:</strong><br>
+• Empregador (obrigação legal — Art. 22 Lei 8.213/91) · <strong>Médico (qualquer médico assistente pode emitir!)</strong> · Segurado (trabalhador) · Sindicato · Autoridade pública<br>
+• Prazo: até o 1° dia útil seguinte ao acidente (ou imediatamente se morte)<br><br>
+<strong>Tipos de Benefício B no INSS:</strong><br>
+<table>
+  <tr><th>Código</th><th>Benefício</th><th>Diferença</th></tr>
+  <tr><td><strong>B91</strong></td><td>Auxílio-doença Acidentário</td><td>Vinculado a acidente/doença do trabalho · Estabilidade de 12 meses após alta · Multa FGTS computada · Mais vantajoso ao trabalhador</td></tr>
+  <tr><td>B31</td><td>Auxílio-doença Previdenciário</td><td>Doença comum (não relacionada ao trabalho) · Sem estabilidade empregatícia</td></tr>
+  <tr><td>B92</td><td>Aposentadoria por Invalidez Acidentária</td><td>Incapacidade permanente por acidente/doença do trabalho</td></tr>
+  <tr><td>B94</td></td><td>Acidente de Qualquer Natureza (sem afastamento)</td><td>Apenas para registro</td></tr>
+</table>
+<br>
+<strong>Nexo Causal:</strong> relação entre trabalho e doença/lesão<br>
+• Nexo técnico por doença da lista B (Decreto 3.048): automático — ex: PAIR por ruído, silicose, asbestose<br>
+• Nexo Técnico Epidemiológico Previdenciário (NTEP): INSS reconhece automaticamente por dados estatísticos (CNAE do empregador + CID)<br>
+• Nexo causal em outras doenças: laudo médico + descrição do posto de trabalho + análise por perito INSS<br><br>
+<strong>NRs Relevantes:</strong><br>
+• NR-7 (PCMSO) · NR-9 (PPRA) · NR-15 (Insalubridade) · NR-17 (Ergonomia) · NR-6 (EPI) · NR-32 (Saúde do Trabalhador na Saúde)`,
+     note:'PCMSO (Programa de Controle Médico da Saúde Ocupacional — NR-7): exames médicos obrigatórios: admissional, periódico (frequência por risco), retorno ao trabalho (após afastamento ≥30 dias), mudança de função, demissional. Médico Coordenador do PCMSO: obrigatório em empresas com ≥50 funcionários. ASO (Atestado de Saúde Ocupacional): documento emitido ao final do exame médico ocupacional — apto ou inapto para a função.'},
+  ];
+  document.getElementById('mentList').innerHTML=CARDS.map(c=>`<div class="trab-card" style="border-color:${c.col}"><div class="trab-nome" style="color:${c.col}">${c.nome}</div><div class="trab-body">${c.body}</div>${c.note?`<div style="font-size:.7rem;color:#64748b;margin-top:6px">💡 ${c.note}</div>`:''}</div>`).join('');
+}
+</script>
+</body>
+</html>
