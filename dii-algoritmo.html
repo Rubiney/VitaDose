@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>DII — Algoritmo — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .dii-hdr{background:linear-gradient(135deg,#065f46,#0f766e);color:#fff;border-radius:14px;padding:18px;margin-bottom:14px}
+    .dii-title{font-size:1rem;font-weight:800;margin-bottom:4px}
+    .dii-sub{font-size:.73rem;opacity:.8}
+    label{font-size:.75rem;font-weight:700;color:#1e3a5f;display:block;margin-bottom:4px}
+    select{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:10px;padding:10px 12px;font-size:.85rem;background:#fff;margin-bottom:10px}
+    select:focus{border-color:#065f46;outline:none}
+    .checkbox-group{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
+    .checkbox-item{display:flex;align-items:center;gap:8px;font-size:.8rem;cursor:pointer}
+    .checkbox-item input[type=checkbox]{width:18px;height:18px;accent-color:#065f46;cursor:pointer}
+    .btn-calc{width:100%;background:#065f46;color:#fff;border:none;border-radius:12px;padding:13px;font-size:.87rem;font-weight:700;cursor:pointer;margin:8px 0}
+    .btn-auto{background:#0f766e;color:#fff;border:none;border-radius:10px;padding:10px 16px;font-size:.8rem;font-weight:700;cursor:pointer;margin-bottom:10px}
+    .tab-bar{display:flex;gap:6px;margin-bottom:14px}
+    .tab-btn{flex:1;padding:9px 4px;border-radius:10px;border:2px solid #e2e8f0;background:#fff;font-size:.76rem;font-weight:700;cursor:pointer;color:#64748b}
+    .tab-btn.active{border-color:#065f46;background:#f0fdf4;color:#065f46}
+    .rec-card{border-radius:12px;border:2px solid;padding:14px;margin-bottom:10px}
+    .rec-hdr{font-size:.63rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+    .rec-nome{font-size:.88rem;font-weight:800;margin-bottom:6px}
+    .rec-badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:.65rem;font-weight:800;color:#fff;margin:2px}
+    .rec-body{font-size:.78rem;margin-top:6px;line-height:1.7}
+    .rec-note{font-size:.71rem;color:#64748b;margin-top:6px;padding-top:6px;border-top:1px solid #f1f5f9}
+    .bio-card{border-radius:10px;border-left:5px solid;padding:12px 14px;margin-bottom:8px;background:#fff}
+    .bio-nome{font-size:.84rem;font-weight:800;margin-bottom:4px}
+    .bio-badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:.63rem;font-weight:800;color:#fff;margin:2px 2px 4px 0}
+    .bio-body{font-size:.77rem;line-height:1.7;color:#374151}
+    .bio-note{font-size:.7rem;color:#64748b;margin-top:4px}
+    .hosp-item{padding:6px 0;border-bottom:1px dashed #d1fae5;font-size:.76rem;line-height:1.6}
+    .hosp-item:last-child{border-bottom:none}
+    .mon-row{padding:8px 0;border-bottom:1px solid #f1f5f9;font-size:.77rem}
+    .mon-row:last-child{border-bottom:none}
+    .mon-lbl{font-weight:800;color:#1e3a5f;margin-bottom:2px}
+    .mon-sub{font-size:.7rem;color:#64748b}
+  </style>
+</head>
+<body>
+<header class="top-bar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <span class="top-title">DII — Doença Inflamatória Intestinal</span>
+  <div class="top-right"></div>
+</header>
+<main class="container" style="padding-bottom:90px">
+  <div class="dii-hdr">
+    <div class="dii-title">🫁 DII — Crohn & RCU — Algoritmo Terapêutico</div>
+    <div class="dii-sub">Aminossalicilatos · Corticosteroides · Imunossupressores · Biológicos · JAKi · Triagem pré-biológico · Monitoramento</div>
+  </div>
+  <div class="tab-bar">
+    <button class="tab-btn active" id="tb0" onclick="showTab(0)">Diagnóstico & Indução</button>
+    <button class="tab-btn" id="tb1" onclick="showTab(1)">Biológicos & JAKi</button>
+    <button class="tab-btn" id="tb2" onclick="showTab(2)">Monitoramento</button>
+  </div>
+
+  <!-- TAB 0 -->
+  <div id="tab0">
+    <button class="btn-auto" onclick="autoFill()">⚡ Auto-preencher do paciente ativo</button>
+    <div class="card" style="padding:12px 14px">
+      <label>Diagnóstico</label>
+      <select id="dii_dx">
+        <option value="rcu">RCU — Retocolite Ulcerativa</option>
+        <option value="crohn">Doença de Crohn</option>
+      </select>
+      <label>Extensão / Localização</label>
+      <select id="dii_ext">
+        <option value="distal">RCU: Proctite / Distal (até ângulo esplênico)</option>
+        <option value="extensa">RCU: Extensa / Pancolite</option>
+        <option value="cr_ileal">Crohn: Ileal / Ileocecal</option>
+        <option value="cr_colo">Crohn: Cólico</option>
+        <option value="cr_alto">Crohn: Jejuno / Gastroduodenal / Esofágico</option>
+        <option value="cr_fistula">Crohn: Fistulizante / Penetrante</option>
+      </select>
+      <label>Atividade da doença</label>
+      <select id="dii_ativ">
+        <option value="leve">Leve (ambulatorial, sem marcadores gravidade)</option>
+        <option value="mod">Moderada (PCR elevado, sintomas diários impactantes)</option>
+        <option value="grave">Grave (>6 evacuações/dia, FC>90, anemia, albumina baixa, PCR alto)</option>
+      </select>
+      <label>Situação terapêutica</label>
+      <div class="checkbox-group">
+        <label class="checkbox-item"><input type="checkbox" id="dii_naive"> Sem tratamento prévio (naive)</label>
+        <label class="checkbox-item"><input type="checkbox" id="dii_cortico"> Corticodependente (≥3 cursos/ano ou incapaz de retirar)</label>
+        <label class="checkbox-item"><input type="checkbox" id="dii_bio_fail"> Falha de biológico (anti-TNF ou outro)</label>
+        <label class="checkbox-item"><input type="checkbox" id="dii_gest"> Gestação</label>
+        <label class="checkbox-item"><input type="checkbox" id="dii_extra"> Manifestações extra-intestinais (artrite, pioderma, uveíte)</label>
+      </div>
+    </div>
+    <button class="btn-calc" onclick="calcDII()">🔬 Gerar protocolo de tratamento</button>
+    <div id="diiResult" style="display:none"></div>
+  </div>
+
+  <!-- TAB 1 -->
+  <div id="tab1" style="display:none">
+    <div id="bioList"></div>
+    <div class="card" style="padding:10px 14px;margin-top:6px">
+      <div style="font-size:.78rem;font-weight:800;color:#dc2626;margin-bottom:8px">🔬 Triagem Pré-Biológico (DII)</div>
+      <div id="screenDII"></div>
+    </div>
+    <div class="card" style="padding:10px 14px;margin-top:6px">
+      <div style="font-size:.78rem;font-weight:800;color:#dc2626;margin-bottom:8px">⚠️ Azatioprina — Triagem TPMT obrigatória</div>
+      <div id="tpmtInfo"></div>
+    </div>
+  </div>
+
+  <!-- TAB 2 -->
+  <div id="tab2" style="display:none">
+    <div class="card" style="padding:10px 14px;margin-bottom:10px">
+      <div style="font-size:.78rem;font-weight:800;color:#065f46;margin-bottom:8px">📋 Monitoramento por Fármaco</div>
+      <div id="monList"></div>
+    </div>
+    <div class="card" style="padding:10px 14px">
+      <div style="font-size:.78rem;font-weight:800;color:#dc2626;margin-bottom:8px">🚨 Critérios de Hospitalização</div>
+      <div id="hospList"></div>
+    </div>
+  </div>
+</main>
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+<script src="js/db.js"></script>
+<script>
+const pid=localStorage.getItem('vd_active');
+function showTab(n){[0,1,2].forEach(i=>{document.getElementById('tab'+i).style.display=i===n?'block':'none';document.getElementById('tb'+i).classList.toggle('active',i===n);});if(n===1){renderBio();renderScreenDII();renderTPMT();}if(n===2){renderMon();renderHosp();}}
+async function autoFill(){if(!pid){alert('Nenhum paciente ativo.');return;}const pac=await dbGet('pacientes',parseInt(pid));if(!pac)return;if(pac.sexoPac==='F')document.getElementById('dii_gest').checked=false;}
+function recHTML(r){return `<div class="rec-card" style="border-color:${r.col}"><div class="rec-hdr" style="color:${r.col}">${r.hdr}</div><div class="rec-nome">${r.nome}</div><div>${(r.badges||[]).map(b=>`<span class="rec-badge" style="background:${b.c}">${b.t}</span>`).join('')}</div><div class="rec-body">${r.body}</div>${r.note?`<div class="rec-note">${r.note}</div>`:''}</div>`;}
+
+function calcDII(){
+  const dx    =document.getElementById('dii_dx').value;
+  const ext   =document.getElementById('dii_ext').value;
+  const ativ  =document.getElementById('dii_ativ').value;
+  const naive =document.getElementById('dii_naive').checked;
+  const cortico=document.getElementById('dii_cortico').checked;
+  const biofail=document.getElementById('dii_bio_fail').checked;
+  const gest  =document.getElementById('dii_gest').checked;
+  const extra =document.getElementById('dii_extra').checked;
+  const recs=[];
+  const isRCU=dx==='rcu';
+  const isDistal=ext==='distal';
+  const isFistula=ext==='cr_fistula';
+
+  // Aminossalicilatos (RCU)
+  if(isRCU){
+    recs.push({hdr:`RCU ${isDistal?'Distal / Proctite':'Extensa / Pancolite'} — Aminossalicilatos`,col:'#065f46',
+      nome:'Mesalazina — base do tratamento em RCU leve a moderada',badges:[{t:'Mesalazina',c:'#065f46'},{t:'1ª linha',c:'#059669'}],
+      body:isDistal
+        ?`<strong>Proctite:</strong><br>Mesalazina supositório 1 g/noite (preferido — contato direto com mucosa)<br>Associar com mesalazina oral 2,4 g/dia se resposta insuficiente<br><br><strong>Proctossigmoidite / Colite esquerda:</strong><br>Mesalazina enema 1–4 g/noite + mesalazina oral 2,4–4,8 g/dia (combinação superior à monoterapia)<br>Microenema de budesonida: alternativa tópica se intolerância à mesalazina`
+        :`<strong>Pancolite / Extensa:</strong><br>Mesalazina oral 2,4–4,8 g/dia (MMX 1×/dia — conveniência e aderência) + supositório ou enema associado<br><strong>Sulfassalazina</strong> 2–4 g/dia: alternativa mais barata; RAM: cefaleia, náusea (entérico), oligospermia<br><br>Meta de indução: remissão clínica em 4–8 semanas<br>Meta de manutenção: mesalazina 2,4 g/dia indefinidamente (reduz recidiva e CA colorretal)`,
+      note:`${gest?'Gestação: mesalazina segura em toda a gestação e lactação. Sulfassalazina: associar ácido fólico 4–5 mg/dia (inibe dihidrofolato redutase).':''}Eficácia da mesalazina tópica > oral em proctite. Não descontinuar na remissão — manutenção reduz risco de CA colorretal em ~75%.`});
+  }
+
+  // Corticosteroides
+  if(ativ==='mod'||ativ==='grave'){
+    recs.push({hdr:'Indução de Remissão — Corticosteroide',col:'#d97706',nome:ativ==='grave'?'Metilprednisolona IV ou Prednisona oral em alta dose':'Prednisona oral — indução de remissão ativa',badges:[{t:ativ==='grave'?'IV':'VO',c:ativ==='grave'?'#dc2626':'#d97706'},{t:'Indução',c:'#b45309'}],
+      body:ativ==='grave'
+        ?`Hospitalizar: Metilprednisolona 40–60 mg IV 1×/dia ou Hidrocortisona 100 mg IV 6/6h × 5–7 dias<br>Resposta em 3–5 dias: manter → oral e desmame<br>Sem resposta em 3–5 dias: salvar → infliximabe 5 mg/kg IV (rescue) OU ciclosporina 2–4 mg/kg/dia IV (RCU)<br>Colectomia: se falha de rescue`
+        :`Prednisona 40–60 mg/dia × 4 semanas → reduzir 5 mg/semana<br>Budesonida MMX 9 mg/dia × 8 semanas (Crohn ileal/ileocecal — ação tópica, menos sistêmica)<br>Budesonida supositório/enema (RCU distal)<br>Não usar como manutenção (corticodependência)`,
+      note:cortico?`⚠️ Corticodependente: iniciar imunossupressor (azatioprina) ou biológico concomitantemente — corticoide nunca deve ser mantido cronicamente. Definir causa do corticodependência: doença refratária → biológico; dose insuficiente de manutenção → otimizar.`:'Sempre associar proteção óssea: cálcio + vitamina D (se uso >3 meses → bisfosfonato — GIOP).'});
+  }
+
+  // Imunossupressor
+  const indicaAZA=cortico||ativ==='mod'||ativ==='grave'||!isRCU;
+  if(indicaAZA){
+    recs.push({hdr:'Imunossupressores — Manutenção',col:'#7c3aed',nome:'Azatioprina (AZA) ou Metotrexato — manutenção de remissão',badges:[{t:'Manutenção',c:'#7c3aed'},{t:'Triagem TPMT',c:'#dc2626'}],
+      body:`<strong>Azatioprina</strong> 2–2,5 mg/kg/dia (dosar TPMT antes — ver aba Biológicos/TPMT)<br>Início de efeito: 3–6 meses (não usar como indutor)<br>Sulfato de 6-mercaptopurina (6-MP) 1–1,5 mg/kg/dia: alternativa à AZA; mesmo mecanismo<br><br><strong>Metotrexato</strong> 15–25 mg/semana IM/SC (Crohn — evidência em manutenção; não recomendado em RCU com mesalazina)<br>Associar ácido fólico 5 mg/semana<br><br><strong>Ciclosporina IV</strong> 2 mg/kg/dia (apenas RCU grave refratária a corticoide IV — ponte para biológico ou cirurgia)`,
+      note:`${gest?'Azatioprina: compatível com gestação (manter em gestante em remissão). MTX: CONTRAINDICADO na gestação e em mulheres que planejam gravidez.':''}Alopurinol + AZA: interação grave — reduzir AZA 75% ou usar 6-MP em dose reduzida (ver Gota & Hiperuricemia).`});
+  }
+
+  // Fistulizante
+  if(isFistula){
+    recs.push({hdr:'Crohn Fistulizante — Abordagem Específica',col:'#0369a1',nome:'Biológico anti-TNF + cirurgia pré-biólogica (drenagem)',badges:[{t:'Fistulizante',c:'#0369a1'}],
+      body:`<strong>Pré-biológico:</strong> cirurgia de drenagem (seton) + ciprofloxacino 500 mg 2×/dia + metronidazol 500 mg 3×/dia × 4–8 semanas<br><br><strong>Biológico (1ª linha fistulizante):</strong><br><strong>Infliximabe</strong> 5 mg/kg IV em 0, 2, 6 semanas → 8/8 semanas (ACCENT II — fechamento de fistula em 36%)<br><strong>Adalimumabe</strong> 160/80/40 mg SC (alternativa)<br><br><strong>Associar AZA ao infliximabe:</strong> aumenta taxas de fechamento e reduz anticorpos anti-infliximabe<br><br><strong>Cirurgia definitiva:</strong> após remissão com biológico — mucosectomia, fechamento do trato fistuloso`,
+      note:'⚠️ Não iniciar biológico com abscesso ativo não drenado — risco de sepse. Dregar primeiro, antibiótico, depois biológico.'});
+  }
+
+  // Manifestações extra-intestinais
+  if(extra){
+    recs.push({hdr:'Manifestações Extra-Intestinais',col:'#b45309',nome:'Tratamento paralelo — algumas respondem ao controle da DII',badges:[{t:'Extra-intestinal',c:'#b45309'}],
+      body:`<strong>Artrite periférica (tipo 1 — <5 articulações, ativa com DII):</strong> Controle da DII → resolve artrite<br><strong>Artrite axial (sacroileíte, espondilite):</strong> independe da atividade da DII; anti-TNF (infliximabe, adalimumabe) — 1ª linha biológica<br><strong>Pioderma gangrenoso:</strong> prednisona sistêmica ± infliximabe (resposta rápida ao anti-TNF)<br><strong>Eritema nodoso:</strong> tratamento da DII base; AINE (cautela em DII)<br><strong>Uveíte:</strong> colírio de corticoide + midriático; anti-TNF em refratária<br><strong>CEP (Colangite Esclerosante Primária):</strong> ursodiol 13–15 mg/kg/dia — questionar benefício atual; transplante hepático na falência`,
+      note:'CEP: risco aumentado de CA colorretal → colonoscopia anual. Uveíte: encaminhar urgência ao oftalmologista — risco de cegueira se não tratada.'});
+  }
+
+  // Orientações gerais
+  recs.push({hdr:'Metas Treat-to-Target na DII',col:'#0f766e',nome:'Remissão clínica + remissão endoscópica (cicatrização mucosa)',badges:[{t:'Treat-to-Target',c:'#0f766e'},{t:'ECCO 2022',c:'#065f46'}],
+    body:`<strong>Meta primária:</strong> remissão clínica + cicatrização mucosa (endpoint superior — CALM trial, STRIDE II)<br><strong>Reavaliação:</strong> PCR + calprotectina fecal (marcador atividade) a cada 3 meses durante indução<br>Colonoscopia de avaliação: 6 meses após início do tratamento (RCU) ou 6–12 meses (Crohn)<br><br><strong>Calprotectina fecal:</strong> <50 mcg/g = remissão; >250 mcg/g = atividade inflamatória<br><strong>PCR:</strong> alvo <5 mg/L · VHS: alvo normal · Albumina: alvo >3,5 g/dL`,
+    note:'Rastreio de CA colorretal: RCU extensa ≥8 anos → colonoscopia a cada 1–3 anos. Displasia de alto grau → colectomia. Crohn com envolvimento colônico ≥8 anos: mesmo protocolo.'});
+
+  document.getElementById('diiResult').style.display='block';
+  document.getElementById('diiResult').innerHTML=recs.map(recHTML).join('');
+  document.getElementById('diiResult').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+/* ── BIOLÓGICOS ──────────────────────────────────────────────────────── */
+function renderBio(){
+  const BIOS=[
+    {nome:'Infliximabe (Remicade + biossimilares)',col:'#dc2626',
+     ind:[{t:'RCU mod-grave',c:'#dc2626'},{t:'Crohn',c:'#b91c1c'},{t:'Fistulizante',c:'#7f1d1d'}],
+     body:'5 mg/kg IV em 0, 2, 6 sem → a cada 8 sem · Pode aumentar para 10 mg/kg ou reduzir intervalo para 6 sem<br>Associar AZA/MTX: ↑ eficácia e ↓ anticorpos anti-infliximabe<br>Monitorar nível sérico + anti-drug antibodies em perda de resposta',
+     note:'Biossimilares (CT-P13, SB2, BS5) — equivalência terapêutica comprovada, menor custo.'},
+    {nome:'Adalimumabe (Humira + biossimilares)',col:'#d97706',
+     ind:[{t:'RCU mod-grave',c:'#d97706'},{t:'Crohn',c:'#b45309'},{t:'Fistulizante',c:'#92400e'}],
+     body:'160 mg SC (semana 0) → 80 mg SC (semana 2) → 40 mg SC a cada 2 semanas<br>Dose de manutenção: 40 mg/2 sem; se perda de resposta: 40 mg/sem<br>Autoinjetor (menor medo de agulhas que infliximabe IV)',
+     note:'Biossimilares disponíveis. Menores taxas de anticorpos que infliximabe (sem região Fc exposta). Pode ser usado em monoterapia.'},
+    {nome:'Vedolizumabe (Entyvio)',col:'#0369a1',
+     ind:[{t:'RCU mod-grave',c:'#0369a1'},{t:'Crohn mod-grave',c:'#1d4ed8'},{t:'Seletividade intestinal',c:'#2563eb'}],
+     body:'300 mg IV em 0, 2, 6 sem → a cada 8 sem (ou SC 108 mg a cada 2 sem após indução IV)<br>Mecanismo: anti-integrina α4β7 → seletivo para intestino (não atinge SNC)<br>Perfil de segurança favorável: menor risco de infecções sistêmicas graves que anti-TNF<br>Início de ação mais lento que anti-TNF (4–12 semanas) — não ideal como rescue agudo',
+     note:'Preferido em: maior risco infeccioso, histórico de TB, tuberculose latente, neoplasia prévia, EMs, infecções recorrentes. Após falha anti-TNF: eficácia moderada. Risco infeccioso: menor.'},
+    {nome:'Ustekinumabe (Stelara)',col:'#7c3aed',
+     ind:[{t:'Crohn mod-grave',c:'#7c3aed'},{t:'RCU (aprovado)',c:'#6d28d9'},{t:'Anti-TNF falha',c:'#4c1d95'}],
+     body:'Dose de indução IV (única): ~6 mg/kg IV (peso-dependente: 260 mg se <55 kg / 390 mg se 55–85 kg / 520 mg se >85 kg)<br>Manutenção: 90 mg SC a cada 8–12 semanas<br>Mecanismo: anti-IL-12/23 (bloqueia p40 compartilhada)<br>Eficácia no Crohn após falha de anti-TNF: ~45% de remissão (IM-UNITI)',
+     note:'Perfil de segurança excelente — menor taxa de infecções que anti-TNF e vedolizumabe. Psoríase/artrite psoriásica: indicação dupla. Sem sinal de câncer de pele (ao contrário de anti-TNF).'},
+    {nome:'Tofacitinibe (Xeljanz) — JAKi',col:'#b45309',
+     ind:[{t:'RCU mod-grave',c:'#b45309'},{t:'Anti-TNF falha',c:'#92400e'}],
+     body:'10 mg VO 2×/dia × 8–16 sem (indução) → 5 mg 2×/dia (manutenção)<br>Oral — vantagem de conveniência vs IV/SC<br>Início de ação rápido (1–2 semanas) — pode ser opção de rescue em RCU grave<br>JAK1/3 inibidor (panJAK)',
+     note:'⚠️ Black box FDA: infecções graves (herpes-zóster ↑ 4×), MACE, trombose, cânceres (ORAL Surveillance). Restrito a: falha de ≥1 anti-TNF. Contraindicado em: histórico de trombose, MACE recente, neoplasia ativa. Vacina Shingrix obrigatória antes.'},
+    {nome:'Ozanimode (Zeposia) / Filgotinibe (Jyseleca) — Small molecules',col:'#0f766e',
+     ind:[{t:'RCU mod-grave',c:'#0f766e'}],
+     body:'Ozanimode 0,92 mg/dia VO (S1P modulator — retém linfócitos em linfonodo; reduz inflamação)<br>Indução: 0,23 mg × 1 sem → 0,46 mg × 1 sem → 0,92 mg<br>Filgotinibe 200 mg/dia VO (JAK1 seletivo — aprovado Europa para RCU)<br>Todas as small molecules: oral, sem imunogenicidade (sem anticorpos anti-droga)',
+     note:'Ozanimode: bradicardia sinusal transitória na 1ª dose — ECG basal, cardiopata: monitorar 6h pós-1ª dose. Antes de iniciar: status imune VZV, história de herpes-zóster, avaliar fundo de olho (macular edema raro).'},
+  ];
+  document.getElementById('bioList').innerHTML=BIOS.map(b=>`<div class="bio-card" style="border-color:${b.col}"><div class="bio-nome" style="color:${b.col}">${b.nome}</div><div>${b.ind.map(i=>`<span class="bio-badge" style="background:${i.c}">${i.t}</span>`).join('')}</div><div class="bio-body">${b.body}</div><div class="bio-note">💡 ${b.note}</div></div>`).join('');
+}
+
+function renderScreenDII(){
+  const items=[
+    '🔬 <strong>TB:</strong> PPD ≥5 mm ou IGRA positivo = TB latente → isoniazida 300 mg/dia × 9 meses ANTES do biológico (pelo menos 1 mês de INH antes)',
+    '🩸 <strong>VHB:</strong> HBsAg · Anti-HBc · Anti-HBs — VHB ativo: tratar com entecavir/tenofovir. Anti-HBc+ isolado: profilaxia com entecavir durante biológico + 12 meses após',
+    '🩸 <strong>VHC / HIV / VHA / VZV:</strong> sorologias basais. HIV: iniciar TARV antes de biológico. VZV negativo: vacina varicela ≥4 semanas antes',
+    '💉 <strong>Vacinas antes de iniciar:</strong> influenza · pneumocócica (PCV13 + PPSV23) · Shingrix (herpes-zóster recombinante) · VHB (se negativo) · Td/Tdpa. NUNCA vacinas vivas após biológico/JAKi',
+    '🩺 <strong>Hemograma + TGP + creatinina + albumina + PCR basal</strong>. Calprotectina fecal basal. Radiografia de tórax',
+    '🔭 <strong>Rastreio de CA:</strong> skin check (CA pele ↑ com anti-TNF). Colonoscopia de rastreio se DII ≥8 anos (antes de iniciar biológico em pancolite/extensa)',
+  ];
+  document.getElementById('screenDII').innerHTML=items.map(t=>`<div class="hosp-item">${t}</div>`).join('');
+}
+
+function renderTPMT(){
+  document.getElementById('tpmtInfo').innerHTML=`<div style="font-size:.77rem;line-height:1.8">
+<strong>TPMT (Tiopurina S-metiltransferase) — Farmacogenômica obrigatória antes de AZA/6-MP:</strong><br><br>
+<strong>TPMT normal (metabolizadores normais — 89%):</strong> dose plena 2–2,5 mg/kg/dia<br>
+<strong>TPMT heterozigoto (metabolizadores intermediários — 11%):</strong> reduzir 50% → 1–1,5 mg/kg/dia<br>
+<strong>TPMT homozigoto inativo (metabolizadores lentos — 0,3%):</strong> CONTRAINDICADO — risco de pancitopenia grave<br><br>
+<strong>Alternativas se TPMT inativo:</strong><br>
+• 6-tioguanina (6-TG) em dose muito baixa — uso especializado<br>
+• Trocar para metotrexato SC<br>
+• Biológico diretamente<br><br>
+<strong>NUDT15 (Nudix Hydrolase 15):</strong> gene alternativo — mais importante em asiáticos para predizer mielotoxicidade por AZA/6-MP que o TPMT. Considerar no painel genético.
+</div>`;
+}
+
+function renderMon(){
+  const MON=[
+    {lbl:'Mesalazina',sub:'Creatinina + urina a cada 6 meses (nefrite intersticial rara — 1:500; idiopática). Hemograma se sulfassalazina (discrasia). Aderência é o principal problema — preferir formulações 1×/dia (MMX)'},
+    {lbl:'Azatioprina / 6-MP',sub:'Hemograma + TGP + amilase mensalmente × 3 meses → a cada 3 meses. Pancreatite: RAM em 3–5% — geralmente nas primeiras 4 semanas (suspender permanentemente). Linfoma: risco ↑ com uso ≥5 anos — rastreio clínico. 6-TGN / 6-MMP: dosar metabólitos em falha ou toxicidade'},
+    {lbl:'Metotrexato (Crohn)',sub:'Hemograma + TGP + creatinina a cada 4–6 semanas no início → a cada 3 meses. Ácido fólico 5 mg/semana. Hepatotoxicidade cumulativa: fibrose após dose total >1500 mg (rara com doses IM/SC semanais). Contracepção obrigatória'},
+    {lbl:'Infliximabe / Adalimumabe',sub:'Hemograma + TGP + PCR a cada 3 meses. Nível sérico (vale): infliximabe alvo >3–5 mcg/mL; adalimumabe alvo >7–12 mcg/mL. Anticorpos anti-droga: dosar se perda de resposta (ADA+ + nível baixo → trocar de anti-TNF; ADA- + nível baixo → aumentar dose)'},
+    {lbl:'Vedolizumabe',sub:'Hemograma + TGP a cada 3 meses. Nível sérico alvo >18–20 mcg/mL (semana 14) para manutenção. Sem monitoramento especial de TB ou infecções sistêmicas (ação intestinal seletiva). Colonoscopia 6 meses após início'},
+    {lbl:'Ustekinumabe',sub:'Hemograma + TGP a cada 3 meses. Nível sérico: alvo >1–4 mcg/mL na manutenção. Excelente perfil de segurança — sem restrições especiais além de TB e VHB basais'},
+    {lbl:'Tofacitinibe (JAKi)',sub:'Hemograma + lipídeos + TGP mensalmente × 3 meses → trimestralmente. Herpes-zóster: vacinar antes. Linfócitos <500: reduzir ou suspender. LDL ↑: tratar estatina. Hb cai <2 g/dL: reduzir dose'},
+    {lbl:'Calprotectina Fecal (monitoramento da atividade)',sub:'Meta: <50 mcg/g (remissão). Reavaliação a cada 3 meses durante indução; a cada 6 meses na manutenção. Melhor que PCR para predizer recidiva. >250 mcg/g + assintomático: pode indicar recidiva subclínica → colonoscopia'},
+  ];
+  document.getElementById('monList').innerHTML=MON.map(m=>`<div class="mon-row"><div class="mon-lbl">${m.lbl}</div><div class="mon-sub">${m.sub}</div></div>`).join('');
+}
+
+function renderHosp(){
+  const items=[
+    '🚨 <strong>RCU grave (critérios de Truelove-Witts):</strong> >6 evacuações/dia com sangue + FC>90 + Hb<10,5 g/dL + VHS>30 + PCR>30 mg/L → Hospitalizar para corticoide IV',
+    '🚨 <strong>Megacólon tóxico:</strong> diâmetro cólico >6 cm + toxemia sistêmica → UTI cirúrgica + AB IV (metronidazol + ciprofloxacino) + corticoide IV + cirurgia se piorar em 24–72h',
+    '🚨 <strong>Crohn grave:</strong> dor abdominal intensa + febre + desidratação + obstrução parcial → internação; excluir abscesso (TC abdome urgente)',
+    '🚨 <strong>Abscesso abdominal/perianal:</strong> drenagem cirúrgica + antibiótico ANTES de iniciar ou retomar biológico',
+    '🚨 <strong>Falha de rescue (infliximabe ou ciclosporina em RCU grave):</strong> 3ª linha = colectomia de urgência — reduz mortalidade',
+    '🚨 <strong>Perfuração intestinal / peritonite:</strong> cirurgia de emergência',
+    '⚠️ <strong>Suspender imunossupressor/biológico se:</strong> infecção grave ativa, TB ativa, sepse, neutrófilos <1000, leucócitos <2500',
+  ];
+  document.getElementById('hospList').innerHTML=items.map(t=>`<div class="hosp-item">${t}</div>`).join('');
+}
+</script>
+</body>
+</html>

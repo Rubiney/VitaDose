@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Dor Crônica — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .dor-hdr{background:linear-gradient(135deg,#1e3a8a,#6d28d9);color:#fff;border-radius:14px;padding:18px;margin-bottom:14px}
+    .dor-title{font-size:1rem;font-weight:800;margin-bottom:4px}
+    .dor-sub{font-size:.73rem;opacity:.8}
+    label{font-size:.75rem;font-weight:700;color:#1e3a5f;display:block;margin-bottom:4px}
+    select{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:10px;padding:10px 12px;font-size:.85rem;background:#fff;margin-bottom:10px}
+    select:focus{border-color:#1e3a8a;outline:none}
+    input[type=number]{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:10px;padding:10px 12px;font-size:.85rem;background:#fff;outline:none;margin-bottom:10px}
+    input:focus{border-color:#1e3a8a}
+    .checkbox-group{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
+    .checkbox-item{display:flex;align-items:center;gap:8px;font-size:.8rem;cursor:pointer}
+    .checkbox-item input[type=checkbox]{width:18px;height:18px;accent-color:#1e3a8a;cursor:pointer}
+    .btn-calc{width:100%;background:#1e3a8a;color:#fff;border:none;border-radius:12px;padding:13px;font-size:.87rem;font-weight:700;cursor:pointer;margin:8px 0}
+    .btn-auto{background:#0f766e;color:#fff;border:none;border-radius:10px;padding:10px 16px;font-size:.8rem;font-weight:700;cursor:pointer;margin-bottom:10px}
+    .tab-bar{display:flex;gap:6px;margin-bottom:14px}
+    .tab-btn{flex:1;padding:9px 4px;border-radius:10px;border:2px solid #e2e8f0;background:#fff;font-size:.76rem;font-weight:700;cursor:pointer;color:#64748b}
+    .tab-btn.active{border-color:#1e3a8a;background:#eff6ff;color:#1e3a8a}
+    .rec-card{border-radius:12px;border:2px solid;padding:14px;margin-bottom:10px}
+    .rec-hdr{font-size:.63rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+    .rec-nome{font-size:.88rem;font-weight:800;margin-bottom:6px}
+    .rec-badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:.65rem;font-weight:800;color:#fff;margin:2px}
+    .rec-body{font-size:.78rem;margin-top:6px;line-height:1.7}
+    .rec-note{font-size:.71rem;color:#64748b;margin-top:6px;padding-top:6px;border-top:1px solid #f1f5f9}
+    .conv-table{width:100%;border-collapse:collapse;font-size:.73rem;margin-top:8px}
+    .conv-table th{background:#eff6ff;padding:6px 8px;text-align:left;font-weight:800;color:#1e3a8a;border-bottom:2px solid #bfdbfe}
+    .conv-table td{padding:6px 8px;border-bottom:1px solid #f1f5f9;vertical-align:top}
+    .conv-table tr:last-child td{border-bottom:none}
+    .input-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .conv-result{border-radius:12px;background:#eff6ff;border:2px solid #1e3a8a;padding:14px;margin:8px 0;text-align:center}
+    .conv-num{font-size:2rem;font-weight:900;color:#1e3a8a;line-height:1}
+    .conv-lbl{font-size:.82rem;font-weight:800;color:#1e3a8a;margin-top:4px}
+    .conv-sub{font-size:.7rem;color:#64748b;margin-top:6px}
+  </style>
+</head>
+<body>
+<header class="top-bar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <span class="top-title">Dor Crônica — Manejo Farmacológico</span>
+  <div class="top-right"></div>
+</header>
+<main class="container" style="padding-bottom:90px">
+  <div class="dor-hdr">
+    <div class="dor-title">💊 Dor Crônica — Escada Analgésica e Adjuvantes</div>
+    <div class="dor-sub">Escada OMS · Dor neuropática · Fibromialgia · Conversão de opioides · Gestão segura de opioides · Naloxona</div>
+  </div>
+  <div class="tab-bar">
+    <button class="tab-btn active" id="tb0" onclick="showTab(0)">Analgesia & Adjuvantes</button>
+    <button class="tab-btn" id="tb1" onclick="showTab(1)">Dor Neuropática</button>
+    <button class="tab-btn" id="tb2" onclick="showTab(2)">Opioides</button>
+  </div>
+
+  <!-- TAB 0 -->
+  <div id="tab0">
+    <button class="btn-auto" onclick="autoFill()">⚡ Auto-preencher do paciente ativo</button>
+    <div class="card" style="padding:12px 14px">
+      <label>Tipo de dor</label>
+      <select id="d_tipo">
+        <option value="noci">Dor nociceptiva (musculoesquelética, articular, pós-operatória)</option>
+        <option value="neuro">Dor neuropática (queimação, choque elétrico, alodinia)</option>
+        <option value="mista">Dor mista (nociceptiva + neuropática)</option>
+        <option value="fibro">Fibromialgia / Dor centralizada</option>
+        <option value="cancer">Dor oncológica / Cuidados paliativos</option>
+      </select>
+      <label>Intensidade (EVA/NRS 0–10)</label>
+      <select id="d_int">
+        <option value="leve">Leve (1–3)</option>
+        <option value="mod">Moderada (4–6)</option>
+        <option value="grave">Intensa (7–10)</option>
+      </select>
+      <label>Comorbidades relevantes</label>
+      <div class="checkbox-group">
+        <label class="checkbox-item"><input type="checkbox" id="d_drc"> DRC (TFG &lt;60)</label>
+        <label class="checkbox-item"><input type="checkbox" id="d_hepato"> Hepatopatia</label>
+        <label class="checkbox-item"><input type="checkbox" id="d_idoso"> Idoso (&gt;65 anos)</label>
+        <label class="checkbox-item"><input type="checkbox" id="d_gest"> Gestante</label>
+        <label class="checkbox-item"><input type="checkbox" id="d_depre"> Depressão / ansiedade comórbida</label>
+        <label class="checkbox-item"><input type="checkbox" id="d_ulcera"> Úlcera péptica / sangramento GI prévio</label>
+      </div>
+    </div>
+    <button class="btn-calc" onclick="calcDor()">💊 Gerar plano analgésico</button>
+    <div id="dorResult" style="display:none"></div>
+  </div>
+
+  <!-- TAB 1 -->
+  <div id="tab1" style="display:none">
+    <div class="card" style="padding:12px 14px">
+      <label>Etiologia da dor neuropática</label>
+      <select id="n_etiol">
+        <option value="dn_dm">Neuropatia diabética periférica dolorosa</option>
+        <option value="nph">Neuralgia pós-herpética (varicela-zóster)</option>
+        <option value="ntrig">Neuralgia do trigêmeo</option>
+        <option value="lesao">Neuropatia pós-lesão nervosa / cirúrgica</option>
+        <option value="central">Dor central (pós-AVC, esclerose múltipla, lesão medular)</option>
+        <option value="radiculop">Radiculopatia / Lombociatalgia neuropática</option>
+      </select>
+    </div>
+    <button class="btn-calc" onclick="calcNeuro()">⚡ Gerar protocolo neuropático</button>
+    <div id="neuroResult" style="display:none"></div>
+  </div>
+
+  <!-- TAB 2 -->
+  <div id="tab2" style="display:none">
+    <div class="card" style="padding:12px 14px">
+      <div style="font-size:.78rem;font-weight:800;color:#1e3a8a;margin-bottom:8px">⚖️ Conversor de Opioides (Dose Equianalgésica)</div>
+      <label>Opioide atual e dose total diária</label>
+      <div class="input-row">
+        <div>
+          <label>Opioide de origem</label>
+          <select id="op_from">
+            <option value="morfina_iv">Morfina IV/SC</option>
+            <option value="morfina_vo">Morfina VO</option>
+            <option value="codeina">Codeína VO</option>
+            <option value="tramadol">Tramadol VO</option>
+            <option value="oxicodona">Oxicodona VO</option>
+            <option value="hidromorfona_iv">Hidromorfona IV</option>
+            <option value="fentanil_td">Fentanil TD (mcg/h patch)</option>
+            <option value="buprenorfina_td">Buprenorfina TD (mcg/h patch)</option>
+            <option value="metadona_vo">Metadona VO</option>
+          </select>
+        </div>
+        <div><label>Dose diária total</label><input type="number" id="op_dose" placeholder="ex.: 30" min="0" step="0.5"></div>
+      </div>
+      <label>Opioide alvo</label>
+      <select id="op_to">
+        <option value="morfina_vo">Morfina VO</option>
+        <option value="morfina_iv">Morfina IV/SC</option>
+        <option value="oxicodona">Oxicodona VO</option>
+        <option value="tramadol">Tramadol VO</option>
+        <option value="fentanil_td">Fentanil TD (mcg/h patch)</option>
+        <option value="metadona_vo">Metadona VO (usar tabela separada — variável)</option>
+        <option value="buprenorfina_td">Buprenorfina TD (mcg/h patch)</option>
+        <option value="hidromorfona_iv">Hidromorfona IV</option>
+      </select>
+    </div>
+    <button class="btn-calc" onclick="calcConv()">🔄 Calcular dose equianalgésica</button>
+    <div id="convResult" style="display:none"></div>
+    <div id="opioideGuias" style="margin-top:6px"></div>
+  </div>
+</main>
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+<script src="js/db.js"></script>
+<script>
+const pid=localStorage.getItem('vd_active');
+function showTab(n){[0,1,2].forEach(i=>{document.getElementById('tab'+i).style.display=i===n?'block':'none';document.getElementById('tb'+i).classList.toggle('active',i===n);});if(n===2)renderOpioideGuias();}
+async function autoFill(){if(!pid){alert('Nenhum paciente ativo.');return;}const pac=await dbGet('pacientes',parseInt(pid));if(!pac)return;const conds=pac.condicoes||[];if(pac.idadePac&&parseInt(pac.idadePac)>=65)document.getElementById('d_idoso').checked=true;if(pac.sexoPac==='F')document.getElementById('d_gest').checked=false;}
+function recHTML(r){return `<div class="rec-card" style="border-color:${r.col}"><div class="rec-hdr" style="color:${r.col}">${r.hdr}</div><div class="rec-nome">${r.nome}</div><div>${(r.badges||[]).map(b=>`<span class="rec-badge" style="background:${b.c}">${b.t}</span>`).join('')}</div><div class="rec-body">${r.body}</div>${r.note?`<div class="rec-note">${r.note}</div>`:''}</div>`;}
+
+/* ── ESCADA ANALGÉSICA ─────────────────────────────────────────────── */
+function calcDor(){
+  const tipo  =document.getElementById('d_tipo').value;
+  const int   =document.getElementById('d_int').value;
+  const drc   =document.getElementById('d_drc').checked;
+  const hepato=document.getElementById('d_hepato').checked;
+  const idoso =document.getElementById('d_idoso').checked;
+  const gest  =document.getElementById('d_gest').checked;
+  const depre =document.getElementById('d_depre').checked;
+  const ulcera=document.getElementById('d_ulcera').checked;
+  const recs=[];
+  const antiAINE=drc||ulcera||idoso;
+
+  if(tipo==='fibro'){
+    recs.push({hdr:'Fibromialgia — Dor Centralizada',col:'#7c3aed',nome:'Abordagem multimodal — farmacológica + não-farmacológica',badges:[{t:'Fibromialgia',c:'#7c3aed'},{t:'Abordagem multimodal',c:'#4c1d95'}],
+      body:`<strong>Farmacológico (evidência moderada):</strong><br>• <strong>Duloxetina</strong> 60 mg/dia (IRSN — reduz dor e fadiga; aprovada FDA para fibromialgia)<br>• <strong>Pregabalina</strong> 150–450 mg/dia (2 doses; aprovada FDA) ou <strong>Gabapentina</strong> 300–1200 mg/dia<br>• <strong>Milnaciprana</strong> 100–200 mg/dia (IRSN; aprovada FDA — sem uso comercial no Brasil)<br>• <strong>Amitriptilina</strong> 10–50 mg/noite (melhora sono e dor — baixa dose, efeito secundário de analgesia central)<br>• <strong>Ciclobenzaprina</strong> 5–10 mg/noite (miorrelaxante — uso por períodos curtos para sono e rigidez matinal)<br><br><strong>Evitar em fibromialgia:</strong> opioides fortes (amplificam sensibilização central a longo prazo); AINE (sem eficácia demonstrada); corticosteroide`,
+      note:`${depre?'Depressão comórbida: duloxetina é a escolha inicial (trata ambas as condições). Amitriptilina: útil se insônia proeminente. Fluoxetina: evidência menor para dor fibromialgia.':''}Tratamento não-farmacológico: exercício aeróbico gradual (evidência A) + TCC + fisioterapia + higiene do sono. Combinação supera qualquer monoterapia farmacológica.`});
+    document.getElementById('dorResult').style.display='block';
+    document.getElementById('dorResult').innerHTML=recs.map(recHTML).join('');
+    return;
+  }
+
+  if(tipo==='cancer'){
+    recs.push({hdr:'Dor Oncológica — Escada OMS para Cuidados Paliativos',col:'#7f1d1d',nome:'Escalonamento rápido e uso liberal de opioides',badges:[{t:'Dor oncológica',c:'#7f1d1d'},{t:'OMS Paliativo',c:'#dc2626'}],
+      body:`<strong>Princípios OMS:</strong> pela boca → pelo relógio (dose regular) → pela escada → para o indivíduo<br><br><strong>Dor leve:</strong> Paracetamol 1 g 6/6h (ATC) ± AINE (se não contraindicado)<br><strong>Dor moderada:</strong> Tramadol 50–100 mg 6/6h OU Morfina 5–10 mg 4/4h<br><strong>Dor intensa:</strong> Morfina VO 10–30 mg 4/4h (dose regular ATC) + resgate de 1/6 da dose diária total a cada 1h SOS<br>Escalonar: aumentar 25–33% da dose total diária se >3 resgates/24h<br><br><strong>Adjuvantes sempre em dor oncológica:</strong><br>• Dexametasona 4–8 mg/dia (dor óssea, HIC, compressão neural)<br>• Amitriptilina/gabapentina: componente neuropático<br>• Bifosfonatos / denosumabe: metástases ósseas`,
+      note:'Constipação induzida por opioides: SEMPRE prescrever laxante junto ao opioide (macrogol, bisacodil ou naloxegol). Náusea inicial: metoclopramida 10 mg antes das doses × 1–2 semanas. Sonolência: reduzir dose + fracionamento.'});
+    document.getElementById('dorResult').style.display='block';
+    document.getElementById('dorResult').innerHTML=recs.map(recHTML).join('');
+    return;
+  }
+
+  // Dor nociceptiva / mista
+  recs.push({hdr:`Degrau 1 — Dor ${int==='leve'?'Leve':'Moderada a Intensa'} (Base)`,col:'#16a34a',nome:'Paracetamol como base analgésica universal',badges:[{t:'1º Degrau OMS',c:'#16a34a'}],
+    body:`<strong>Paracetamol</strong> 500–1000 mg 6/6h (máx 4 g/dia; máx 2 g/dia se hepatopatia ou idoso desnutrido)<br>Regularidade ATC (ao redor do relógio) mais eficaz que uso SOS em dor crônica<br><br>${!antiAINE?`<strong>AINE (se sem contraindicação):</strong><br>• <strong>Ibuprofeno</strong> 400–600 mg 3×/dia (menor risco CV dos AINE tradicionais)<br>• <strong>Naproxeno</strong> 250–500 mg 2×/dia (menor risco CV — preferível em idoso sem CR)<br>• <strong>Etoricoxibe</strong> 60–90 mg/dia (COX-2; menor RAM GI; maior risco CV — evitar em cardiopata)<br>• <strong>Diclofenaco</strong> 50 mg 3×/dia (eficaz mas maior risco CV e GI entre os AINE)<br>Sempre com: Omeprazol 20 mg/dia como gastroproteção`
+      :`AINE contraindicado (${drc?'DRC':ulcera?'úlcera péptica':'idoso com múltiplas comorbidades'}) — usar paracetamol ± opioide fraco`}`,
+    note:`${hepato?'⚠️ Hepatopatia: paracetamol máx 2 g/dia. AINE contraindicado em hepatopatia descompensada.':''}${idoso?'Idoso: AINE aumenta risco de IRA, hipertensão, ICC e sangramento GI. Preferir paracetamol. Se AINE necessário: dose mínima, por menor tempo, com IBP.':''}`});
+
+  if(int==='mod'||int==='grave'){
+    recs.push({hdr:'Degrau 2 — Opioide Fraco (Dor Moderada)',col:'#d97706',nome:'Tramadol ou Codeína — opioide de 2º degrau',badges:[{t:'2º Degrau OMS',c:'#d97706'}],
+      body:`<strong>Tramadol</strong> 50–100 mg 6/6h VO (liberação imediata) ou 100–200 mg 12/12h (LP) · Máx 400 mg/dia<br>Mecanismo dual: agonista opioide µ fraco + recaptação 5-HT/NA (analgesia sinérgica)<br>RAM: náusea, constipação, tontura · Síndrome serotoninérgica com ISRS/IRSN (cautela!)<br><strong>DRC:</strong> reduzir dose e ampliar intervalo (TFG 30–60: tramadol 50 mg 8/8h; <30: evitar)<br><br><strong>Codeína</strong> 30–60 mg 4–6/6h (pró-fármaco convertido a morfina por CYP2D6)<br>Metabolizadores ultrarrápidos (PM africanos, mediterrâneos): risco de toxicidade por morfina<br>Metabolizadores lentos (PM): sem efeito analgésico`,
+      note:gest?'⚠️ Gestação: paracetamol é único seguro no 3T. Tramadol e codeína: cautela — síndrome de abstinência neonatal. AINE contraindicado no 3T (fechamento prematuro do ducto arterioso).':depre?'Tramadol + ISRS/IRSN: síndrome serotoninérgica — monitorar ou evitar combinação. Preferir oxicodona se opioide necessário em paciente com AD serotoninérgico.':''});
+  }
+
+  if(int==='grave'){
+    recs.push({hdr:'Degrau 3 — Opioide Forte (Dor Intensa)',col:'#dc2626',nome:'Morfina, Oxicodona ou Fentanil — opioides de 3º degrau',badges:[{t:'3º Degrau OMS',c:'#dc2626'}],
+      body:`<strong>Morfina VO:</strong> 10–30 mg 4/4h (liberação imediata) → titular por resgates<br>Morfina LP (sulfato de morfina): 30–60 mg 12/12h + resgate de 1/6 da dose diária total SOS<br><strong>DRC:</strong> morfina acumula metabólito ativo (M6G) → usar oxicodona (menor acúmulo) ou fentanil (sem metabólito ativo renal)<br><br><strong>Oxicodona</strong> LP 10–20 mg 12/12h (melhor em DRC, sem M6G)<br><strong>Fentanil TTS</strong> 12–25 mcg/h patch 72h (dor estável, impossibilidade de VO, menor constipação)<br><strong>Buprenorfina TTS</strong> 5–20 mcg/h patch 7 dias (opção em DRC severa — sem ajuste renal; antagonismo parcial — menor risco de superdosagem)`,
+      note:drc?'⚠️ DRC: morfina contraindicada se TFG <30 (M6G). Usar oxicodona (TFG >30) ou fentanil TTS (qualquer TFG) ou buprenorfina. Hidromorfona com monitoramento em TFG 10–29.':idoso?'Idoso: iniciar com 50% da dose de adulto. Monitorar sedação, retenção urinária, constipação e quedas. Fentanil TTS: evitar em febre (↑ absorção) e caquexia (sem depósito SC adequado).':''});
+  }
+
+  // Adjuvantes por tipo de dor
+  if(tipo==='neuro'||tipo==='mista'){
+    recs.push({hdr:'Adjuvantes — Componente Neuropático',col:'#4c1d95',nome:'Duloxetina, Pregabalina ou Amitriptilina como 1ª linha neuropática',badges:[{t:'Adjuvante neuropático',c:'#4c1d95'}],
+      body:'<strong>Duloxetina</strong> 60 mg/dia (1ª linha para neuropatia diabética e fibromialgia; também antidepressivo)<br><strong>Pregabalina</strong> 75–300 mg 2×/dia (aprovada FDA para NPD e NPH; início mais rápido que gabapentina)<br><strong>Gabapentina</strong> 300 mg noite → 300–600 mg 3×/dia (mais barata que pregabalina)<br><strong>Amitriptilina</strong> 10–75 mg/noite (TCA mais estudado em dor neuropática; excelente custo-efetividade)<br>Ver tab Dor Neuropática para protocolo por etiologia',
+      note:depre?'Dupla indicação: duloxetina ou amitriptilina tratam dor neuropática E depressão simultaneamente.':''});
+  }
+
+  document.getElementById('dorResult').style.display='block';
+  document.getElementById('dorResult').innerHTML=recs.map(recHTML).join('');
+  document.getElementById('dorResult').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+/* ── DOR NEUROPÁTICA ───────────────────────────────────────────────── */
+function calcNeuro(){
+  const etiol=document.getElementById('n_etiol').value;
+  const PROTO={
+    dn_dm:{nome:'Neuropatia Diabética Periférica Dolorosa',col:'#b45309',
+      body:`<strong>1ª linha:</strong><br>• <strong>Duloxetina</strong> 60 mg/dia (IRSN — aprovada FDA, reduz dor 50% em ~40% dos pacientes)<br>• <strong>Pregabalina</strong> 150–300 mg/dia (2 doses; aprovada FDA) · <strong>Gabapentina</strong> 300–600 mg 3×/dia<br>• <strong>Amitriptilina</strong> 10–50 mg/noite (evidência robusta, custo mínimo)<br><br><strong>2ª linha:</strong><br>• Tramadol 50–100 mg 3–4×/dia (efeito dual — útil se componente misto)<br>• <strong>Tapentadol</strong> LP 50–100 mg 12/12h (MOR + NRI — eficácia superior ao tramadol em neuropatia)<br><br><strong>Tópico (dor localizada):</strong><br>• Capsaicina 0,075% creme 4×/dia (queimação inicial; TRPV1 dessensibilização)<br>• Lidocaína 5% adesivo (NPH e NPD localizada — máx 3 adesivos/12h)`,
+      note:'Controle glicêmico: HbA1c <7% é a única intervenção que previne progressão da NPD. Opioides fortes: reservar para falha das opções acima — risco de dependência e efeitos adversos superados.'},
+    nph:{nome:'Neuralgia Pós-Herpética',col:'#7c3aed',
+      body:`<strong>1ª linha:</strong><br>• <strong>Gabapentina</strong> 300 mg/noite → 300–600 mg 3×/dia (titular ao longo de 3–4 semanas)<br>• <strong>Pregabalina</strong> 75–150 mg 2×/dia → 300 mg/dia<br>• <strong>Amitriptilina / Nortriptilina</strong> 10–50 mg/noite<br>• <strong>Lidocaína 5% adesivo</strong> (NPH localizada em tronco — máx 3 patches/12h on/12h off)<br><br><strong>2ª linha:</strong><br>• Capsaicina 8% patch (Qutenza) — aplicação única por profissional; alívio por 3 meses<br>• Tramadol ou oxicodona LP: dor refratária<br><br><strong>Prevenção:</strong> vacina Shingrix (herpes-zóster recombinante) → reduz incidência de NPH em 90%`,
+      note:'Tratamento precoce do HZ com aciclovir/valaciclovir reduz mas NÃO elimina o risco de NPH. Se iniciado >72h do rash: indicação apenas em imunossuprimido, disseminado ou com envolvimento ocular/auricular.'},
+    ntrig:{nome:'Neuralgia do Trigêmeo',col:'#dc2626',
+      body:`<strong>1ª linha (neuralgia clássica — dor em choque em distribuição trigeminal):</strong><br>• <strong>Carbamazepina</strong> 200–1200 mg/dia (DEA de 1ª linha; eficácia >80%) — iniciar 100 mg 2×/dia e titular<br>Monitorar: Na⁺ (hiponatremia), hemograma (aplasia rara), TGP, HLA-B*1502 (asiáticos — SJS/TEN)<br>• <strong>Oxcarbazepina</strong> 300–1800 mg/dia (melhor tolerabilidade que CBZ; menos interações)<br><br><strong>2ª linha:</strong><br>• Baclofen 5–10 mg 3×/dia (add-on ou alternativa)<br>• Lamotrigina 25–200 mg/dia<br>• Gabapentina / Pregabalina (eficácia menor que CBZ na clássica)<br><br><strong>Cirurgia / Procedimento:</strong> microvascular decompression (MVD) — tratamento definitivo se farmacológico falha`,
+      note:'Neuralgia trigeminal sintomática (EM, tumor, DAVES): tratar causa + CBZ/OXC. RM obrigatória para excluir causa secundária na apresentação atípica (bilateral, déficit sensitivo, <50 anos).'},
+    lesao:{nome:'Neuropatia Pós-Lesão Nervosa / Cirúrgica',col:'#0369a1',
+      body:`Mesma hierarquia da NPH + neuropatia diabética:<br><strong>1ª linha:</strong> Amitriptilina 10–50 mg/noite · Gabapentina 300–600 mg 3×/dia · Pregabalina 75–300 mg/dia<br><strong>2ª linha:</strong> Duloxetina 60 mg/dia · Tramadol · Tapentadol LP<br><strong>Tópico (dor localizada):</strong> Lidocaína 5% adesivo · Capsaicina 0,075%<br><br><strong>Síndrome dor regional complexa (CRPS I/II):</strong><br>Corticoide oral (fase aguda) · Bifosfonatos · Gabapentina · Vitamina C 500 mg/dia (profilaxia CRPS após fratura — evidência crescente)`,
+      note:''},
+    central:{nome:'Dor Central (Pós-AVC, EM, Lesão Medular)',col:'#1e3a8a',
+      body:`<strong>Dor pós-AVC (dor talâmica):</strong><br>• <strong>Amitriptilina</strong> 25–75 mg/noite (maior evidência em dor pós-AVC)<br>• <strong>Lamotrigina</strong> 200 mg/dia (2ª linha)<br>• Gabapentina / Pregabalina<br><br><strong>Dor na esclerose múltipla:</strong><br>• Gabapentina · Pregabalina · Amitriptilina<br>• <strong>Cannabinoides (THC:CBD oral — Sativex):</strong> dor neuropática em EM, evidência moderada<br>• Baclofeno: espasmos dolorosos<br><br><strong>Dor em lesão medular:</strong><br>• Pregabalina (aprovada FDA — evidência em lesão medular) · Gabapentina · Duloxetina<br>• Ketamina infusão (CRNI): uso especializado em refratários`,
+      note:'Dor central: geralmente mais refratária ao tratamento. Expectativa realista: redução de 30–40% da intensidade, não resolução. Abordagem multidisciplinar obrigatória (fisioterapia, psicologia, neuromodulação).'},
+    radiculop:{nome:'Radiculopatia / Lombociatalgia Neuropática',col:'#059669',
+      body:`<strong>Fase aguda (primeiras 6 semanas):</strong><br>• Paracetamol + AINE (naproxeno, etoricoxibe) como base<br>• Corticoide oral: prednisona 40–60 mg/dia × 5 dias (reduz inflamação radicular — para dor severa aguda)<br>• Gabapentina 300 mg TID ou pregabalina 75 mg BID (componente neuropático)<br>• Relaxante muscular (se contratura): ciclobenzaprina 5–10 mg/noite × 2 semanas (não longo prazo)<br><br><strong>Crônica (&gt;12 semanas):</strong><br>• Duloxetina 60 mg/dia (dor lombar crônica + componente neuropático)<br>• Gabapentina / Pregabalina<br>• Amitriptilina 10–50 mg/noite<br>• Opioides: evitar como 1ª linha (risco de cronicidade e dependência)`,
+      note:'Exercício: terapia mais eficaz a longo prazo para lombalgia crônica (NNT ~5 para 50% de melhora). Fisioterapia + exercício > farmacológico isolado. Cirurgia: indicada apenas com déficit neurológico progressivo ou falha de 6–12 semanas de tratamento conservador.'},
+  };
+  const p=PROTO[etiol];
+  document.getElementById('neuroResult').style.display='block';
+  document.getElementById('neuroResult').innerHTML=recHTML({hdr:`Dor Neuropática: ${p.nome}`,col:p.col,nome:'Protocolo por linha de tratamento',badges:[{t:'1ª-3ª linha',c:p.col}],body:p.body,note:p.note});
+  document.getElementById('neuroResult').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+/* ── CONVERSÃO DE OPIOIDES ──────────────────────────────────────────── */
+// Dose equianalgésica em relação à morfina VO (mg por mg)
+const EQ={
+  morfina_vo:1, morfina_iv:3, codeina:0.13, tramadol:0.1,
+  oxicodona:1.5, hidromorfona_iv:20,
+  fentanil_td:null, // especial
+  buprenorfina_td:null,
+  metadona_vo:null, // variável
+};
+// Fentanil TD: cada 25 mcg/h patch ≈ 60 mg morfina VO/dia
+const FENTANIL_RATIO=2.4; // mcg/h por mg morfina VO por dia
+const BUPRENORFINA_RATIO=1.7; // mcg/h por mg morfina VO por dia
+
+function calcConv(){
+  const from=document.getElementById('op_from').value;
+  const to  =document.getElementById('op_to').value;
+  const dose=parseFloat(document.getElementById('op_dose').value)||0;
+  if(!dose){alert('Informe a dose diária total.');return;}
+  if(from===to){alert('Origem e destino são iguais.');return;}
+
+  // converter dose de origem para morfina VO equivalente
+  let morfVO;
+  if(from==='fentanil_td') morfVO=dose/FENTANIL_RATIO;
+  else if(from==='buprenorfina_td') morfVO=dose/BUPRENORFINA_RATIO;
+  else if(from==='metadona_vo'){
+    // metadona: ratio variável (dose-dependente)
+    const r=dose<=30?4:dose<=60?6:dose<=90?8:10;
+    morfVO=dose*r;
+  }
+  else morfVO=dose*(EQ[from]||1);
+
+  // redução de segurança 25% ao trocar opioides (tolerância cruzada incompleta)
+  const morfVOred=from===to?morfVO:morfVO*0.75;
+
+  // converter para opioide alvo
+  let doseFinal, unit='mg/dia', nota='';
+  if(to==='fentanil_td'){doseFinal=Math.round(morfVOred*FENTANIL_RATIO);unit='mcg/h (patch TD)';nota='Patch de 72h. Aproximar para patch comercial disponível: 12, 25, 37, 50, 75, 100 mcg/h.';}
+  else if(to==='buprenorfina_td'){doseFinal=Math.round(morfVOred*BUPRENORFINA_RATIO);unit='mcg/h (patch TD 7 dias)';nota='Apresentações: 5, 10, 15, 20 mcg/h. Buprenorfina tem teto de efeito respiratório — mais seguro em overdose.';}
+  else if(to==='metadona_vo'){doseFinal='variável';unit='';nota='Conversão de metadona é complexa e dose-dependente (ratio 1:4 a 1:12 conforme dose de morfina). NUNCA calcular automaticamente — usar tabela especializada e consultar especialista em dor.';}
+  else doseFinal=Math.round(morfVOred/((EQ[to]||1)));
+
+  const nomePt={morfina_vo:'Morfina VO',morfina_iv:'Morfina IV/SC',codeina:'Codeína VO',tramadol:'Tramadol VO',oxicodona:'Oxicodona VO',hidromorfona_iv:'Hidromorfona IV',fentanil_td:'Fentanil TD (patch)',buprenorfina_td:'Buprenorfina TD (patch)',metadona_vo:'Metadona VO'};
+
+  document.getElementById('convResult').style.display='block';
+  document.getElementById('convResult').innerHTML=`<div class="conv-result">
+    <div class="conv-num">${doseFinal} ${unit}</div>
+    <div class="conv-lbl">${nomePt[to]} — dose equianalgésica estimada</div>
+    <div class="conv-sub">${nomePt[from]} ${dose} ${from.includes('td')?'mcg/h':'mg/dia'} → Morfina VO equiv.: ${Math.round(morfVO)} mg/dia → Redução de segurança (25%): ${Math.round(morfVOred)} mg/dia</div>
+    ${nota?`<div style="font-size:.7rem;color:#dc2626;margin-top:6px">⚠️ ${nota}</div>`:''}
+  </div>
+  <div style="font-size:.72rem;color:#64748b;margin:6px 0;padding:8px;background:#f8fafc;border-radius:8px">⚠️ Conversão equianalgésica é uma <strong>estimativa de partida</strong>. Iniciar com 75% da dose calculada (tolerância cruzada incompleta) e titular conforme resposta e RAM nas primeiras 24–48h.</div>`;
+}
+
+function renderOpioideGuias(){
+  if(document.getElementById('opioideGuias').innerHTML) return;
+  const GUIAS=[
+    {hdr:'Prescrição Segura de Opioides',col:'#1e3a8a',nome:'Rastreio de risco, termo de consentimento e acompanhamento',badges:[{t:'Gestão segura',c:'#1e3a8a'}],
+      body:`<strong>Antes de iniciar opioide crônico:</strong><br>• Rastreio de risco: ORT (Opioid Risk Tool) ou DIRE — história de TUS, saúde mental, histórico familiar<br>• Contrato/Termo de consentimento informado<br>• Urina toxicológica basal<br>• Diagnóstico documentado + falha de alternativas<br><br><strong>Durante o tratamento:</strong><br>• Monitoramento de uso correto (cápsulas devolvidas, não partir LP, não esmagar)<br>• Urina toxicológica aleatória a cada 3–6 meses<br>• Reavaliação da necessidade em cada consulta<br>• Avaliar metas funcionais (não apenas EVA) — melhora na qualidade de vida, retorno ao trabalho`,
+      note:''},
+    {hdr:'Constipação Induzida por Opioides (CIO)',col:'#d97706',nome:'Laxante profilático OBRIGATÓRIO desde o início do opioide',badges:[{t:'RAM mais frequente',c:'#d97706'}],
+      body:`<strong>CIO: sem tolerância (persiste indefinidamente enquanto usar opioide)</strong><br>Iniciar junto com o opioide:<br>• <strong>Macrogol 4000</strong> (Muvinlax, Triacol) 1–2 saches/dia — 1ª linha CIO<br>• <strong>Bisacodil</strong> 5–10 mg/noite ou lactulose 15 mL 2×/dia<br><br><strong>CIO refratária (opioide antagonista periférico):</strong><br>• <strong>Naloxegol</strong> 12,5–25 mg/dia VO (µ-antagonista periférico oral — não reverte analgesia)<br>• <strong>Metilnaltrexona</strong> SC (Relistor) 8–12 mg SC a cada 48h (para cuidados paliativos)<br>• <strong>Naldemedina</strong> 0,2 mg/dia VO`,
+      note:'Não usar fibras em CIO (motilidade reduzida — risco de impactação). Laxante osmótico (macrogol) é superior ao estimulante (bisacodil) para uso crônico.'},
+    {hdr:'Naloxona — Antídoto de Opioides',col:'#dc2626',nome:'Reversão de depressão respiratória por superdosagem',badges:[{t:'Emergência',c:'#dc2626'},{t:'Naloxona',c:'#7f1d1d'}],
+      body:`<strong>Depressão respiratória (FR <10, SpO₂ <90, miose, sonolência extrema):</strong><br>Naloxona 0,4–0,8 mg IV ou IM ou SC — repetir a cada 2–3 min até FR >12<br>Se VO (paciente alerta): naloxona sublingual<br>Se sem acesso venoso: naloxona 2 mg intranasal (dispensador nasal)<br><br><strong>Meia-vida naloxona: 60–90 min (< maioria dos opioides)</strong> — repetir ou infusão contínua<br><br><strong>Naloxona preventiva (kit para leigos):</strong><br>• Pacientes em uso crônico de opioide forte + risco de superdosagem (histórico de TUS, dose alta, via inalatória)<br>• Prescrever naloxona nasal e treinar cuidadores / familiares`,
+      note:'Superdosagem de buprenorfina: pode precisar de doses maiores de naloxona (antagonismo parcial — alta afinidade pelo receptor µ). Fentanil ilícito (carfentanil): pode precisar >10 mg de naloxona IV em série.'},
+  ];
+  document.getElementById('opioideGuias').innerHTML=GUIAS.map(recHTML).join('');
+}
+</script>
+</body>
+</html>

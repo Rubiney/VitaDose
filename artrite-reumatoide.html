@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Artrite Reumatoide — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .ar-hdr{background:linear-gradient(135deg,#7f1d1d,#b91c1c);color:#fff;border-radius:14px;padding:18px;margin-bottom:14px}
+    .ar-title{font-size:1rem;font-weight:800;margin-bottom:4px}
+    .ar-sub{font-size:.73rem;opacity:.8}
+    label{font-size:.75rem;font-weight:700;color:#1e3a5f;display:block;margin-bottom:4px}
+    select{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:10px;padding:10px 12px;font-size:.85rem;background:#fff;margin-bottom:10px}
+    select:focus{border-color:#b91c1c;outline:none}
+    input[type=number]{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:10px;padding:10px 12px;font-size:.85rem;background:#fff;outline:none;margin-bottom:10px}
+    input:focus{border-color:#b91c1c}
+    .checkbox-group{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
+    .checkbox-item{display:flex;align-items:center;gap:8px;font-size:.8rem;cursor:pointer}
+    .checkbox-item input[type=checkbox]{width:18px;height:18px;accent-color:#b91c1c;cursor:pointer}
+    .btn-calc{width:100%;background:#b91c1c;color:#fff;border:none;border-radius:12px;padding:13px;font-size:.87rem;font-weight:700;cursor:pointer;margin:8px 0}
+    .btn-auto{background:#0f766e;color:#fff;border:none;border-radius:10px;padding:10px 16px;font-size:.8rem;font-weight:700;cursor:pointer;margin-bottom:10px}
+    .tab-bar{display:flex;gap:6px;margin-bottom:14px}
+    .tab-btn{flex:1;padding:9px 4px;border-radius:10px;border:2px solid #e2e8f0;background:#fff;font-size:.76rem;font-weight:700;cursor:pointer;color:#64748b}
+    .tab-btn.active{border-color:#b91c1c;background:#fff1f2;color:#b91c1c}
+    .rec-card{border-radius:12px;border:2px solid;padding:14px;margin-bottom:10px}
+    .rec-hdr{font-size:.63rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+    .rec-nome{font-size:.88rem;font-weight:800;margin-bottom:6px}
+    .rec-badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:.65rem;font-weight:800;color:#fff;margin:2px}
+    .rec-body{font-size:.78rem;margin-top:6px;line-height:1.7}
+    .rec-note{font-size:.71rem;color:#64748b;margin-top:6px;padding-top:6px;border-top:1px solid #f1f5f9}
+    .das-card{border-radius:14px;border:4px solid;padding:14px;margin-bottom:10px;text-align:center}
+    .das-num{font-size:2rem;font-weight:900;line-height:1}
+    .das-lbl{font-size:.85rem;font-weight:800;margin-top:4px}
+    .das-sub{font-size:.72rem;margin-top:6px}
+    .input-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .mon-row{padding:8px 0;border-bottom:1px solid #f1f5f9;font-size:.77rem}
+    .mon-row:last-child{border-bottom:none}
+    .mon-lbl{font-weight:800;color:#1e3a5f;margin-bottom:2px}
+    .mon-freq{font-size:.7rem;color:#b91c1c;font-weight:700;margin-bottom:2px}
+    .mon-sub{font-size:.7rem;color:#64748b}
+    .screen-item{padding:6px 0;border-bottom:1px dashed #fee2e2;font-size:.76rem;line-height:1.6}
+    .screen-item:last-child{border-bottom:none}
+  </style>
+</head>
+<body>
+<header class="top-bar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <span class="top-title">Artrite Reumatoide — DMARDs</span>
+  <div class="top-right"></div>
+</header>
+<main class="container" style="padding-bottom:90px">
+  <div class="ar-hdr">
+    <div class="ar-title">🦴 Artrite Reumatoide — Algoritmo Terapêutico</div>
+    <div class="ar-sub">DMARDs convencionais · Biológicos · Inibidores de JAK · Triagem pré-biológico · Treat-to-Target · DAS28</div>
+  </div>
+  <div class="tab-bar">
+    <button class="tab-btn active" id="tb0" onclick="showTab(0)">DMARDs</button>
+    <button class="tab-btn" id="tb1" onclick="showTab(1)">Biológicos & JAK</button>
+    <button class="tab-btn" id="tb2" onclick="showTab(2)">Monitoramento</button>
+  </div>
+
+  <!-- TAB 0 -->
+  <div id="tab0">
+    <button class="btn-auto" onclick="autoFill()">⚡ Auto-preencher do paciente ativo</button>
+    <div class="card" style="padding:12px 14px">
+      <label>Situação clínica atual</label>
+      <select id="ar_sit">
+        <option value="novo">AR nova — sem DMARD prévio</option>
+        <option value="falha1">Falha de 1 cDMARD (≥3 meses sem resposta adequada)</option>
+        <option value="falha2">Falha de ≥2 cDMARDs — candidato a biológico/JAKi</option>
+        <option value="remissao">Em remissão — avaliar desmame</option>
+      </select>
+      <label>Atividade da doença (DAS28 simplificado)</label>
+      <div class="input-row">
+        <div><label>Articulações dolorosas (0–28)</label><input type="number" id="das_dol" placeholder="ex.: 6" min="0" max="28"></div>
+        <div><label>Articulações inflamadas (0–28)</label><input type="number" id="das_inf" placeholder="ex.: 4" min="0" max="28"></div>
+      </div>
+      <div class="input-row">
+        <div><label>VAS global do paciente (0–100)</label><input type="number" id="das_vas" placeholder="ex.: 60" min="0" max="100"></div>
+        <div><label>PCR (mg/L) ou VHS (mm/h)</label><input type="number" id="das_pcr" placeholder="ex.: 24" min="0"></div>
+      </div>
+      <label>Comorbidades e perfil</label>
+      <div class="checkbox-group">
+        <label class="checkbox-item"><input type="checkbox" id="ar_hepato"> Hepatopatia / transaminases elevadas</label>
+        <label class="checkbox-item"><input type="checkbox" id="ar_drc"> DRC (TFG &lt;45)</label>
+        <label class="checkbox-item"><input type="checkbox" id="ar_gest"> Gestação / planejamento</label>
+        <label class="checkbox-item"><input type="checkbox" id="ar_card"> IC ou evento cardiovascular recente</label>
+        <label class="checkbox-item"><input type="checkbox" id="ar_oftalmo"> Doença ocular (retinopatia, maculopatia)</label>
+        <label class="checkbox-item"><input type="checkbox" id="ar_tb"> TB ativa ou latente suspeita</label>
+      </div>
+    </div>
+    <button class="btn-calc" onclick="calcAR()">💊 Gerar algoritmo de tratamento</button>
+    <div id="arResult" style="display:none"></div>
+  </div>
+
+  <!-- TAB 1 -->
+  <div id="tab1" style="display:none">
+    <div class="card" style="padding:12px 14px">
+      <label>Perfil para escolha do biológico / JAKi</label>
+      <select id="bio_perfil">
+        <option value="geral">Sem preferência por comorbidade específica</option>
+        <option value="ic">IC ou risco cardiovascular alto</option>
+        <option value="dii">DII associada (Crohn ou RCU)</option>
+        <option value="psoriase">Psoríase ou artrite psoriásica associada</option>
+        <option value="trombose">Histórico de trombose / TEP / TVP</option>
+        <option value="infeccao">Risco aumentado de infecção (idoso, DM, DRC)</option>
+        <option value="gravida">Gestante (2T) ou planejamento de gravidez</option>
+      </select>
+    </div>
+    <button class="btn-calc" onclick="calcBio()">🎯 Selecionar biológico / JAKi</button>
+    <div id="bioResult" style="display:none"></div>
+    <div class="card" style="padding:10px 14px;margin-top:6px">
+      <div style="font-size:.78rem;font-weight:800;color:#dc2626;margin-bottom:8px">🔬 Triagem Pré-Biológico Obrigatória</div>
+      <div id="screenList"></div>
+    </div>
+  </div>
+
+  <!-- TAB 2 -->
+  <div id="tab2" style="display:none">
+    <div class="card" style="padding:10px 14px">
+      <div style="font-size:.78rem;font-weight:800;color:#b91c1c;margin-bottom:8px">📋 Monitoramento por DMARD</div>
+      <div id="monList"></div>
+    </div>
+  </div>
+</main>
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+<script src="js/db.js"></script>
+<script>
+const pid=localStorage.getItem('vd_active');
+function showTab(n){[0,1,2].forEach(i=>{document.getElementById('tab'+i).style.display=i===n?'block':'none';document.getElementById('tb'+i).classList.toggle('active',i===n);});if(n===2)renderMon();}
+async function autoFill(){if(!pid){alert('Nenhum paciente ativo.');return;}const pac=await dbGet('pacientes',parseInt(pid));if(!pac)return;const conds=pac.condicoes||[];if(conds.includes('ic'))document.getElementById('ar_card').checked=true;}
+function recHTML(r){return `<div class="rec-card" style="border-color:${r.col}"><div class="rec-hdr" style="color:${r.col}">${r.hdr}</div><div class="rec-nome">${r.nome}</div><div>${(r.badges||[]).map(b=>`<span class="rec-badge" style="background:${b.c}">${b.t}</span>`).join('')}</div><div class="rec-body">${r.body}</div>${r.note?`<div class="rec-note">${r.note}</div>`:''}</div>`;}
+
+function calcDAS28(){
+  const d=parseFloat(document.getElementById('das_dol').value)||0;
+  const i=parseFloat(document.getElementById('das_inf').value)||0;
+  const v=parseFloat(document.getElementById('das_vas').value)||0;
+  const p=parseFloat(document.getElementById('das_pcr').value)||0;
+  if(!d&&!i)return null;
+  // DAS28-PCR = 0.56*sqrt(TJC28) + 0.28*sqrt(SJC28) + 0.36*ln(PCR+1) + 0.014*GH + 0.96
+  const das=0.56*Math.sqrt(d)+0.28*Math.sqrt(i)+0.36*Math.log(p+1)+0.014*v+0.96;
+  return Math.round(das*100)/100;
+}
+
+function calcAR(){
+  const sit   =document.getElementById('ar_sit').value;
+  const hepato=document.getElementById('ar_hepato').checked;
+  const drc   =document.getElementById('ar_drc').checked;
+  const gest  =document.getElementById('ar_gest').checked;
+  const card  =document.getElementById('ar_card').checked;
+  const oftalmo=document.getElementById('ar_oftalmo').checked;
+  const tb    =document.getElementById('ar_tb').checked;
+  const recs=[];
+  const das=calcDAS28();
+
+  if(das!==null){
+    let dasCol,dasClass,dasMeta;
+    if(das<2.6){dasCol='#16a34a';dasClass='Remissão';}
+    else if(das<3.2){dasCol='#84cc16';dasClass='Baixa atividade';}
+    else if(das<5.1){dasCol='#d97706';dasClass='Atividade moderada';}
+    else{dasCol='#dc2626';dasClass='Atividade alta';}
+    dasMeta=das>=3.2?'Meta: DAS28 <2,6 (remissão) ou <3,2 (baixa atividade) — Treat-to-Target ACR/EULAR':'Meta atingida — manter e avaliar desmame se em remissão ≥6 meses';
+    document.getElementById('arResult').style.display='block';
+    document.getElementById('arResult').innerHTML=`<div class="das-card" style="border-color:${dasCol};background:${dasCol}15"><div class="das-num" style="color:${dasCol}">${das}</div><div class="das-lbl" style="color:${dasCol}">DAS28-PCR — ${dasClass}</div><div class="das-sub">${dasMeta}</div></div>`;
+  } else {
+    document.getElementById('arResult').style.display='block';
+    document.getElementById('arResult').innerHTML='';
+  }
+
+  if(sit==='novo'){
+    const mtx_ok=!hepato&&!drc;
+    recs.push({hdr:'1ª Linha — Metotrexato (MTX) como âncora',col:'#b91c1c',nome:mtx_ok?'Metotrexato 10→25 mg/semana + Ácido Fólico 5 mg/semana':'MTX com cautela ou alternativa (ver comorbidades)',
+      badges:[{t:'cDMARD âncora',c:'#b91c1c'},{t:'ACR 2021 Forte',c:'#dc2626'}],
+      body:`<strong>Metotrexato:</strong> iniciar 10–15 mg/semana VO (ou SC se intolerância GI) → aumentar 5 mg a cada 4–8 semanas → alvo 20–25 mg/semana<br><strong>Ácido fólico 5 mg:</strong> 24–48h APÓS cada dose de MTX (reduz RAM hematológica e GI sem comprometer eficácia)<br><br>Início de efeito: 6–12 semanas; efeito máximo: 3–6 meses<br><strong>MTX SC:</strong> maior biodisponibilidade e menos náusea que VO em doses >15 mg<br><br>Estratégia combinada (resposta insuficiente a MTX em monoterapia):<br>• MTX + Hidroxicloroquina 200–400 mg/dia + Sulfassalazina 1000 mg 2×/dia (tríplice terapia — eficácia comparável a biológicos em AR inicial)`,
+      note:hepato?'⚠️ Hepatopatia: MTX contraindicado em Child B/C ou transaminases >3× LSN. Alternativa: leflunomida ou hidroxicloroquina.':drc?'⚠️ DRC: MTX se TFG >45; reduzir dose 50% se TFG 30–44; CI se TFG <30 (acúmulo de poliglutamatos).':''});
+
+    if(!gest){
+      recs.push({hdr:'Alternativas ao MTX ou Combinação',col:'#d97706',nome:'Leflunomida, Hidroxicloroquina, Sulfassalazina',badges:[{t:'cDMARDs alternativos',c:'#d97706'}],
+        body:`<strong>Leflunomida</strong> 20 mg/dia (dose de ataque 100 mg/dia × 3 dias opcionalmente → 20 mg/dia) — eficácia similar ao MTX; meia-vida longa (washout com colestiramina 8 g 3×/dia × 11 dias se toxicidade ou gravidez) · Monitorar PA e TGP<br><strong>Hidroxicloroquina</strong> 200–400 mg/dia (5 mg/kg/dia real — doses ≤5 mg/kg/dia reduzem risco de retinopatia) — AR leve ou como parte da tríplice terapia<br><strong>Sulfassalazina</strong> 500 mg/dia → 1000 mg 2–3×/dia — alternativa em gestação (segura 1T/2T)`,
+        note:oftalmo?'⚠️ Hidroxicloroquina: retinopatia em uso prolongado ≥5 anos ou dose acumulada >1000 g. Avaliação oftalmológica basal + anual após 5 anos (ou imediatamente em DRC, maculopatia prévia).':''});
+    } else {
+      recs.push({hdr:'Gestação — DMARDs seguros',col:'#9d174d',nome:'Hidroxicloroquina e Sulfassalazina — opções na gestação',badges:[{t:'Gestação',c:'#9d174d'}],
+        body:`<strong>Hidroxicloroquina:</strong> segura durante toda a gestação e lactação (usar sempre se possível — reduz flares pós-parto)<br><strong>Sulfassalazina:</strong> segura no 1T e 2T; associar ácido fólico 4–5 mg/dia<br><strong>Prednisolona</strong> 5–10 mg/dia: compatível com gestação (usar a menor dose pelo menor tempo)<br><strong>Evitar:</strong> MTX (teratogênico — suspender ≥3 meses antes da concepção) · Leflunomida (teratogênica — washout obrigatório) · Leflunomida · JAKi · Rituximabe 3T`,
+        note:'MTX e leflunomida exigem washout ≥3 meses antes de engravidar. Certolizumabe pegol: biológico anti-TNF sem transferência placentária — pode ser usado em toda a gestação.'});
+    }
+
+    recs.push({hdr:'Corticoide como "ponte" terapêutica',col:'#0369a1',nome:'Prednisona 5–10 mg/dia enquanto aguarda efeito do DMARD',badges:[{t:'Bridge therapy',c:'#0369a1'}],
+      body:'Usar por tempo limitado (≤3 meses) enquanto o DMARD atinge efeito · Meta: desmame gradual após DMARD ativo<br>Dose baixa crônica (≤7,5 mg/dia): aceita como adjuvante se necessário — associar proteção óssea (cálcio + vit D; bisfosfonato se ≥5 mg/dia ≥3 meses — GIOP)',
+      note:tb?'⚠️ TB latente ou suspeita: tratar ANTES de iniciar biológico ou aumentar corticoide. Isoniazida 300 mg/dia × 9 meses (+ piridoxina B6 50 mg/dia). Consultar infectologista.':''});
+  }
+
+  if(sit==='falha1'||sit==='falha2'){
+    recs.push({hdr:sit==='falha1'?'Falha de 1 cDMARD — Otimizar ou Combinar':'Falha de ≥2 cDMARDs — Indicação de Biológico ou JAKi',col:'#7c3aed',nome:sit==='falha1'?'Otimizar MTX dose + combinar com 2º cDMARD':'Biológico (bDMARD) ou Inibidor de JAK (JAKi) — ver aba Biológicos',badges:[{t:sit==='falha2'?'Biológico indicado':'Otimizar cDMARD',c:'#7c3aed'}],
+      body:sit==='falha1'?`Verificar: dose de MTX atingiu 20–25 mg/semana? Ácido fólico sendo usado? Aderência confirmada?<br>Se sim → adicionar 2º cDMARD (hidroxicloroquina + sulfassalazina) — tríplice terapia<br>Se atividade moderada-alta persistente após 3 meses de tríplice → candidato a biológico`
+        :`Indicação formal de biológico (bDMARD) ou JAKi:<br>• DAS28 ≥3,2 após ≥2 cDMARDs em dose adequada por ≥3 meses cada<br>• OU DAS28 alto com mau prognóstico (FR+, anti-CCP+ em altos títulos, erosões precoces, manifestações extra-articulares)<br>Ver aba Biológicos & JAK para seleção específica`,
+      note:'Manter MTX associado ao biológico sempre que possível — combinação MTX + biológico previne formação de anticorpos contra o biológico e é mais eficaz que biológico em monoterapia.'});
+  }
+
+  if(sit==='remissao'){
+    recs.push({hdr:'Remissão Sustentada — Estratégia de Desmame',col:'#16a34a',nome:'Desmame gradual se DAS28 <2,6 por ≥6 meses consecutivos',badges:[{t:'Remissão',c:'#16a34a'}],
+      body:`<strong>Sequência de desmame recomendada (ACR 2021):</strong><br>1º: Reduzir/suspender corticoide (se em uso)<br>2º: Espaçar biológico (de cada 2 semanas → cada 3 semanas → cada 4 semanas → suspender)<br>3º: Por último: reduzir MTX (não suspender abruptamente — risco de flare)<br><br>Monitorar DAS28 a cada 3 meses durante desmame · Se flare: retornar à dose prévia eficaz`,
+      note:'Suspensão completa do biológico com manutenção de cDMARD (MTX) é possível em ~50% dos pacientes em remissão profunda. Remissão sustentada ≥24 meses: tentativa de suspender tudo (com vigilância estreita).'});
+  }
+
+  document.getElementById('arResult').innerHTML+= recs.map(recHTML).join('');
+  document.getElementById('arResult').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+function calcBio(){
+  const perfil=document.getElementById('bio_perfil').value;
+  const recs=[];
+  const ANTITНF=`<strong>Anti-TNF (1ª escolha bDMARD em maioria dos casos):</strong><br>• <strong>Adalimumabe</strong> 40 mg SC a cada 2 semanas (autoinjetor; biossimilares disponíveis e equivalentes)<br>• <strong>Etanercepte</strong> 50 mg SC 1×/semana ou 25 mg 2×/semana<br>• <strong>Certolizumabe pegol</strong> 200 mg SC a cada 2 sem (preferido na gestação — sem transferência placentária)<br>• <strong>Infliximabe</strong> 3 mg/kg IV em 0, 2, 6 sem → a cada 8 sem (dose pode aumentar até 10 mg/kg se falha)<br>• <strong>Golimumabe</strong> 50 mg SC/mês`;
+
+  if(perfil==='geral'){
+    recs.push({hdr:'Biológico Preferencial — Sem Comorbidade Específica',col:'#b91c1c',nome:'Anti-TNF associado ao MTX (1ª escolha bDMARD)',badges:[{t:'Anti-TNF',c:'#b91c1c'},{t:'1ª linha bDMARD',c:'#dc2626'}],
+      body:ANTITНF+`<br><br><strong>Mecanismo alternativo (falha ou CI a anti-TNF):</strong><br>• <strong>Abatacepte</strong> 125 mg SC/semana ou IV mensal (anti-CTLA4; menor risco infecção pulmonar vs anti-TNF — preferível em DPOC/fibrose pulmonar)<br>• <strong>Tocilizumabe</strong> 162 mg SC/semana ou 8 mg/kg IV/mês (anti-IL-6R; útil em pacientes com LDL baixo paradoxal — eleva colesterol, monitorar lipídeos)<br>• <strong>Sarilumabe</strong> 200 mg SC a cada 2 semanas (anti-IL-6R)<br>• <strong>Rituximabe</strong> 1000 mg IV × 2 (intervalo 2 sem; repetir a cada 6 meses — preferível em manifestações extra-articulares como vasculite/neuropatia)`,
+      note:'Biossimilares dos anti-TNF (adalimumabe-abo, etanercepte-szzs) são terapeuticamente equivalentes e têm menor custo — preferir quando disponíveis no PCDT/SUS.'});
+  } else if(perfil==='ic'){
+    recs.push({hdr:'Cardiopata / IC — Evitar Anti-TNF em IC grave',col:'#0369a1',nome:'Abatacepte ou Tocilizumabe — preferidos na IC',badges:[{t:'IC / Risco CV',c:'#0369a1'}],
+      body:`Anti-TNF contraindicado em IC NYHA III–IV (piora da IC documentada em estudos)<br><strong>Anti-TNF em IC NYHA I–II:</strong> etanercepte e adalimumabe podem ser usados com cautela (infliximabe: contraindicado em IC)<br><br><strong>Preferidos:</strong><br>• <strong>Abatacepte</strong> (menor risco de eventos CV em comparação a outros biológicos)<br>• <strong>Tocilizumabe / Sarilumabe</strong> (anti-IL-6R — dados CV favoráveis; reduz PCR e pode reduzir risco CV)`,
+      note:'Atenção: JAKi (tofacitinibe, baricitinibe) têm sinal de ↑ eventos cardiovasculares maiores (MACE) vs anti-TNF no estudo ORAL Surveillance — evitar em pacientes de alto risco CV ≥50 anos.'});
+  } else if(perfil==='dii'){
+    recs.push({hdr:'DII Associada — Anti-TNF com indicação dupla',col:'#065f46',nome:'Infliximabe ou Adalimumabe — eficácia comprovada em AR e DII',badges:[{t:'AR + DII',c:'#065f46'}],
+      body:`<strong>Infliximabe</strong> 3–5 mg/kg IV (aprovado para AR + Crohn + RCU)<br><strong>Adalimumabe</strong> 40 mg SC a cada 2 sem (aprovado para AR + Crohn + RCU)<br><strong>Certolizumabe</strong> (Crohn — indicação específica)<br><br>Evitar: abatacepte, tocilizumabe (sem evidência para DII); JAKi: tofacitinibe aprovado para RCU também`,
+      note:'Vedolizumabe (anti-integrina): aprovado para DII mas sem eficácia em AR. Ustekinumabe: aprovado para Crohn e psoríase — sem indicação formal em AR isolada.'});
+  } else if(perfil==='psoriase'){
+    recs.push({hdr:'Psoríase / Artrite Psoriásica Associada',col:'#7c3aed',nome:'Anti-TNF, Anti-IL-17 ou Anti-IL-23 — eficácia em ambas as condições',badges:[{t:'AR + Psoríase',c:'#7c3aed'}],
+      body:`<strong>Anti-TNF:</strong> adalimumabe, etanercepte, infliximabe, certolizumabe — eficazes em AR e psoríase/AP<br><strong>Anti-IL-17A:</strong> secuquinumabe 150 mg SC/semana × 4 (indução) → mensal (excelente para psoríase em placas e AP; sem indicação formal em AR isolada)<br><strong>Anti-IL-23:</strong> guselcumabe, risuquizumabe — indicados em AP e psoríase (sem dados em AR)<br><strong>Abatacepte:</strong> AR + AP — dados em AP moderados`,
+      note:'Em AR pura com psoríase isolada de pele: anti-TNF é o biológico com dupla indicação comprovada. Anti-IL-17: eficácia superior para psoríase mas não recomendado para AR isolada (dados negativos em AR).'});
+  } else if(perfil==='trombose'){
+    recs.push({hdr:'Histórico de Trombose / TEP / TVP',col:'#dc2626',nome:'Evitar JAKi — Anti-TNF ou Abatacepte preferidos',badges:[{t:'Risco trombótico',c:'#dc2626'}],
+      body:`JAKi têm black box warning FDA para trombose (TEP, TVP, trombose arterial) — especialmente tofacitinibe (ORAL Surveillance) — <strong>EVITAR em histórico de trombose</strong><br><br><strong>Preferidos:</strong><br>• Anti-TNF (adalimumabe, etanercepte, certolizumabe)<br>• Abatacepte (melhor perfil de segurança trombótica)<br>• Rituximabe`,
+      note:'Baricitinibe e upadacitinibe: menor sinal de trombose que tofacitinibe nos dados — mas ainda contraindicados com histórico de trombose por precaução. Anticoagulação: se em anticoagulante, prefir biológico sem interação com anticoagulante.'});
+  } else if(perfil==='infeccao'){
+    recs.push({hdr:'Risco Aumentado de Infecção',col:'#b45309',nome:'Abatacepte — menor risco infeccioso entre os biológicos',badges:[{t:'Alto risco infeccioso',c:'#b45309'}],
+      body:`<strong>Abatacepte:</strong> menor taxa de infecções graves vs anti-TNF (meta-análise) — preferível em pacientes com infecções recorrentes, DPOC, DM descompensado, idoso frágil<br><strong>Rituximabe:</strong> risco de hipogamaglobulinemia com repetições múltiplas — monitorar IgG<br><strong>Anti-IL-6R (tocilizumabe):</strong> pode mascarar febre (PCR zero) — dificulta diagnóstico de infecção → vigilância clínica ativa<br><br>Todos os biológicos contraindicados em:<br>• Infecção ativa grave · TB ativa · VHB ativo (tratar VHB antes ou simultaneamente com entecavir)`,
+      note:'Vacinas ANTES de iniciar biológico: influenza (anual), pneumocócica (PCV13 + PPSV23), herpes-zóster (Shingrix — recombinante, pode ser dada com biológico), VHB (se sorologia negativa).'});
+  } else if(perfil==='gravida'){
+    recs.push({hdr:'Gestação — Biológico com Menor Transferência Placentária',col:'#9d174d',nome:'Certolizumabe pegol — biológico de escolha na gestação',badges:[{t:'Gestação',c:'#9d174d'}],
+      body:`<strong>Certolizumabe pegol (Cimzia):</strong> único anti-TNF sem Fc — mínima ou nula transferência placentária. Pode ser usado em toda a gestação.<br><strong>Anti-TNF com Fc (adalimumabe, infliximabe, etanercepte):</strong> transferência placentária aumenta progressivamente no 3T → neonato com biológico circulante por meses → evitar vacinas com vírus vivo (BCG, febre amarela) no lactente por 6 meses<br><strong>Rituximabe:</strong> evitar no 3T (linfopenia neonatal)<br><strong>JAKi:</strong> contraindicado — dados de teratogenicidade em animais<br><strong>Abatacepte:</strong> dados limitados — evitar`,
+      note:'Lactação: adalimumabe e etanercepte: nível sérico mínimo no leite materno — geralmente compatíveis. Consultar BriefCase/LactMed para atualização. Rituximabe: evitar amamentação.'});
+  }
+
+  // JAKi sempre
+  recs.push({hdr:'Inibidores de JAK (JAKi) — Alternativa oral ao biológico',col:'#4c1d95',nome:'Tofacitinibe, Baricitinibe, Upadacitinibe — eficácia similar aos biológicos',badges:[{t:'JAKi',c:'#4c1d95'},{t:'Via oral',c:'#7c3aed'}],
+    body:`<strong>Tofacitinibe</strong> 5 mg 2×/dia ou 11 mg XR/dia (JAK1/3 inibidor)<br><strong>Baricitinibe</strong> 4 mg/dia — aprovado FDA e ANVISA; dados COVID-19 favoráveis (JAK1/2)<br><strong>Upadacitinibe</strong> 15 mg/dia — maior eficácia vs adalimumabe em estudos head-to-head (JAK1 seletivo)<br><br><strong>Vantagens:</strong> oral (conveniente), início de ação mais rápido que biológicos<br><strong>Alertas (FDA black box):</strong><br>• ↑ Risco de infecções graves (herpes-zóster: ↑3–4×) → vacinação contra HZ antes de iniciar<br>• ↑ Eventos cardiovasculares (MACE) vs anti-TNF em pacientes ≥50 anos com FRC<br>• ↑ Trombose venosa (tofacitinibe especialmente)<br>• ↑ Risco de certos cânceres (linfoma, pulmão, melanoma — sinal de classe)`,
+    note:'JAKi na prática: preferidos em pacientes sem FRC cardiovascular, sem histórico de trombose e com dificuldade para autoinjeção. Monitorar hemograma, lipídeos (↑ LDL/HDL), creatinina e CPK mensalmente nos primeiros 3 meses.'});
+
+  document.getElementById('bioResult').style.display='block';
+  document.getElementById('bioResult').innerHTML=recs.map(recHTML).join('');
+  renderScreening();
+  document.getElementById('bioResult').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+function renderScreening(){
+  const items=[
+    '🔬 <strong>TB — Triagem obrigatória pré-biológico:</strong> PPD (Mantoux) ≥5 mm = latente em imunossuprimido · IGRA (QuantiFERON-TB Gold) — mais específico · RX de tórax. TB latente: isoniazida 300 mg/dia × 9 meses (+ piridoxina) — iniciar AB só após 1 mês de INH',
+    '🩸 <strong>Sorologia viral:</strong> VHB (HBsAg, Anti-HBc, Anti-HBs) · VHC (Anti-VHC) · HIV · VHA (Anti-VHA IgG). VHB+ com replicação: tratar com entecavir ou tenofovir ANTES ou concomitante ao biológico. Anti-HBc+/HBsAg-: profilaxia com entecavir durante biológico + 12 meses após',
+    '💉 <strong>Vacinação antes de iniciar (idealmente 4 semanas antes para vírus vivos; 2 sem para inativadas):</strong> Influenza (anual) · Pneumocócica (PCV13 + PPSV23) · Herpes-zóster recombinante (Shingrix 2 doses) · VHB (se Anti-HBs <10 UI/L) · VHA · Td/Tdpa. NUNCA vacinas com vírus vivo após iniciar biológico/JAKi (BCG, febre amarela, varicela, MMR)',
+    '🩺 <strong>Hemograma, TGO/TGP, creatinina, PCR/VHS:</strong> basal obrigatório. Lipídeos (JAKi: ↑ colesterol — monitorar antes e 4 semanas após início). Urina rotina. Gravidez: teste β-hCG. Rastreio de câncer de pele (melanoma e NMSC: risco ↑ com JAKi e anti-TNF)',
+    '🫁 <strong>Função pulmonar (espirometria):</strong> antes de anti-TNF em DPOC ou fibrose pulmonar prévia (prefira abatacepte nesse contexto). RX de tórax basal para todos',
+  ];
+  document.getElementById('screenList').innerHTML=items.map(t=>`<div class="screen-item">${t}</div>`).join('');
+}
+
+function renderMon(){
+  const MON=[
+    {lbl:'Metotrexato (MTX)',freq:'Hemograma + TGO/TGP + creatinina mensalmente × 3 meses → a cada 3 meses',sub:'Suspender se TGP >3× LSN ou leucócitos <3.500 ou plaquetas <100.000. Uso de álcool: aumenta hepatotoxicidade — orientar abstinência. Metformina + MTX: ↑ risco de hepatotoxicidade. Tosse seca persistente: pensar em pneumonite por MTX (rara mas grave) → RX tórax urgente'},
+    {lbl:'Leflunomida',freq:'PA a cada consulta · TGO/TGP a cada 4–6 semanas no início → trimestralmente',sub:'Meia-vida muito longa (washout com colestiramina 8 g 3×/dia × 11 dias). Suspender se TGP >3× LSN ou PA não controlada. Teratogênica — washout obrigatório ≥3 meses antes de engravidar'},
+    {lbl:'Hidroxicloroquina',freq:'Fundo de olho: basal → anual após 5 anos de uso (ou imediatamente se DRC)',sub:'Dose máxima 5 mg/kg/dia do peso real. DRC: risco de retinopatia aumentado — exame oftalmológico anual desde o início. Intervalo QTc: monitorar ECG se associado a outros QT-prolongadores. Sem monitoramento hematológico rotineiro necessário'},
+    {lbl:'Sulfassalazina',freq:'Hemograma + TGP a cada 4–6 semanas × 3 meses → a cada 3 meses',sub:'Entérica revestida: melhor tolerabilidade GI (iniciar 500 mg/dia → 1000 mg 2×/dia). Fotossensibilidade: protetor solar. Oligospermia reversível em homens (reversível após suspensão). Deficiência de G6PD: cianose e anemia hemolítica — dosar G6PD antes'},
+    {lbl:'Anti-TNF (adalimumabe, etanercepte, infliximabe)',freq:'Hemograma + TGP + VHS/PCR a cada 3 meses · DAS28 a cada consulta',sub:'Infliximabe: infusões IV — monitorar reação infusional. Anticorpos anti-infliximabe: nível sérico + anti-drug antibodies se perda de resposta. Infecções: consultar imediatamente se febre — suspender temporariamente. TB: PPD/IGRA anual durante uso'},
+    {lbl:'Abatacepte',freq:'Hemograma + TGP a cada 3 meses',sub:'Menor taxa de infecções sérias entre biológicos. Sem monitoramento específico além do hemograma e função hepática. Vacinas: sem vacinas vivas durante tratamento'},
+    {lbl:'Tocilizumabe / Sarilumabe (Anti-IL-6R)',freq:'Hemograma + TGP + lipídeos a cada 4–8 semanas no início → trimestralmente',sub:'⚠️ Neutropenia: reduzir ou suspender se neutrófilos <1000. Lipídeos: ↑ LDL e HDL — tratar dislipidemia se necessário. PCR: torna-se suprimida (não reflete infecção) → usar temperatura e clínica para diagnóstico de infecção. Perfuração intestinal: raro mas grave (risco ↑ em diverticulose)'},
+    {lbl:'Rituximabe (Anti-CD20)',freq:'Hemograma antes de cada ciclo · Imunoglobulinas a cada 6–12 meses',sub:'Hipogamaglobulinemia: após múltiplos ciclos (IgG <500 mg/dL) → IVIG. Reativação VHB: profilaxia obrigatória se Anti-HBc+. Leucoencefalopatia multifocal progressiva (LMP/PML): rara — suspeitar se déficit neurológico. Não revacinar com vírus vivos'},
+    {lbl:'JAKi (tofacitinibe, baricitinibe, upadacitinibe)',freq:'Hemograma + lipídeos + TGP mensalmente × 3 meses → trimestralmente',sub:'Herpes-zóster: risco ↑ 3–4× — vacinação com Shingrix antes. Anemia e leucopenia: dosar antes e mensalmente. Lipídeos: ↑ — tratar com estatina se necessário. Suspender se Hb <8, neutrófilos <1000, plaquetas <50.000. Hemoglobina cai transitoriamente com upadacitinibe nos primeiros meses'},
+  ];
+  document.getElementById('monList').innerHTML=MON.map(m=>`<div class="mon-row"><div class="mon-lbl">${m.lbl}</div><div class="mon-freq">⏱ ${m.freq}</div><div class="mon-sub">${m.sub}</div></div>`).join('');
+}
+</script>
+</body>
+</html>
