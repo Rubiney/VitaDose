@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Dependência de Substâncias — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .dep-hdr{background:linear-gradient(135deg,#1c1917,#44403c);color:#fff;border-radius:14px;padding:18px;margin-bottom:14px}
+    .dep-title{font-size:1rem;font-weight:800;margin-bottom:4px}
+    .dep-sub{font-size:.73rem;opacity:.8}
+    label{font-size:.75rem;font-weight:700;color:#1e3a5f;display:block;margin-bottom:4px}
+    select{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:10px;padding:10px 12px;font-size:.85rem;background:#fff;margin-bottom:10px}
+    select:focus{border-color:#44403c;outline:none}
+    .btn-calc{width:100%;background:#44403c;color:#fff;border:none;border-radius:12px;padding:13px;font-size:.87rem;font-weight:700;cursor:pointer;margin:8px 0}
+    .tab-bar{display:flex;gap:6px;margin-bottom:14px}
+    .tab-btn{flex:1;padding:9px 4px;border-radius:10px;border:2px solid #e2e8f0;background:#fff;font-size:.72rem;font-weight:700;cursor:pointer;color:#64748b}
+    .tab-btn.active{border-color:#44403c;background:#fafaf9;color:#44403c}
+    .dep-card{border-radius:10px;border-left:5px solid;padding:10px 14px;margin-bottom:8px;background:#fff}
+    .dep-nome{font-size:.83rem;font-weight:800;margin-bottom:4px}
+    .dep-body{font-size:.76rem;line-height:1.7;color:#374151}
+    .rec-card{border-radius:12px;border:2px solid;padding:14px;margin-bottom:10px}
+    .rec-hdr{font-size:.63rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+    .rec-nome{font-size:.88rem;font-weight:800;margin-bottom:6px}
+    .rec-body{font-size:.78rem;margin-top:6px;line-height:1.7}
+    .rec-note{font-size:.71rem;color:#64748b;margin-top:6px;padding-top:6px;border-top:1px solid #f1f5f9}
+    .alerta{background:#fef2f2;border:2px solid #dc2626;border-radius:10px;padding:8px;margin:6px 0;font-size:.75rem;color:#7f1d1d;font-weight:700}
+    table{width:100%;border-collapse:collapse;font-size:.73rem;margin-top:6px}
+    th{background:#292524;color:#fff;padding:5px 8px;text-align:left}
+    td{padding:5px 8px;border-bottom:1px solid #f1f5f9}
+    tr:nth-child(even) td{background:#fafaf9}
+    .chip{display:inline-block;padding:2px 8px;border-radius:999px;font-size:.65rem;font-weight:800;color:#fff;margin:2px}
+  </style>
+</head>
+<body>
+<header class="top-bar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <span class="top-title">Dependência de Substâncias</span>
+  <div class="top-right"></div>
+</header>
+<main class="container" style="padding-bottom:90px">
+  <div class="dep-hdr">
+    <div class="dep-title">🔬 Dependência de Substâncias — Farmacoterapia</div>
+    <div class="dep-sub">Álcool · Opioides (MOUD) · Cocaína · BZD · Cannabis</div>
+  </div>
+  <div class="tab-bar">
+    <button class="tab-btn active" id="tb0" onclick="showTab(0)">Álcool</button>
+    <button class="tab-btn" id="tb1" onclick="showTab(1)">Opioides (MOUD)</button>
+    <button class="tab-btn" id="tb2" onclick="showTab(2)">Cocaína · BZD · Cannabis</button>
+  </div>
+
+  <!-- TAB 0 — ÁLCOOL -->
+  <div id="tab0">
+    <div style="font-size:.78rem;font-weight:800;color:#78350f;margin-bottom:8px">🍺 Transtorno por Uso de Álcool (TUA)</div>
+    <div class="card" style="padding:12px 14px">
+      <label>Protocolo de Interesse</label>
+      <select id="alc_cond">
+        <option value="abs">Abstinência de Álcool (CIWA) — Manejo Agudo</option>
+        <option value="nal">Naltrexona — Redução de Recaída</option>
+        <option value="aca">Acamprosato — Manutenção da Abstinência</option>
+        <option value="dis">Dissulfiram — Dissuasão</option>
+        <option value="bac">Baclofen — Hepatopata / Opção Alternativa</option>
+        <option value="gab">Gabapentina / Topiramato — Off-label</option>
+      </select>
+    </div>
+    <button class="btn-calc" onclick="calcAlc()">🔬 Ver protocolo</button>
+    <div id="alcResult" style="display:none"></div>
+
+    <div style="margin-top:12px">
+      <div class="dep-card" style="border-color:#92400e">
+        <div class="dep-nome" style="color:#92400e">Triagem: AUDIT-C (3 perguntas rápidas)</div>
+        <div class="dep-body">
+          <table>
+            <tr><th>#</th><th>Pergunta</th><th>Pontuação</th></tr>
+            <tr><td>1</td><td>Com que frequência bebe bebida alcoólica?</td><td>0=nunca · 1=mensal · 2=2–4×/mês · 3=2–3×/sem · 4=≥4×/sem</td></tr>
+            <tr><td>2</td><td>Quantas doses bebe em um dia normal?</td><td>0=1–2 · 1=3–4 · 2=5–6 · 3=7–9 · 4=≥10</td></tr>
+            <tr><td>3</td><td>Com que frequência bebe ≥6 doses em uma única ocasião?</td><td>0=nunca · 1=&lt;mensal · 2=mensal · 3=semanal · 4=diário</td></tr>
+          </table>
+          <strong>Interpretação AUDIT-C:</strong> ≥3 (M) ou ≥4 (H) = rastreamento positivo → aplicar AUDIT completo (10 perguntas) → AUDIT ≥8 = TUA provável
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 1 — OPIOIDES -->
+  <div id="tab1" style="display:none">
+    <div id="moudList"></div>
+  </div>
+
+  <!-- TAB 2 — COCAÍNA · BZD · CANNABIS -->
+  <div id="tab2" style="display:none">
+    <div id="cocList"></div>
+  </div>
+</main>
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+<script src="js/db.js"></script>
+<script>
+function showTab(n){[0,1,2].forEach(i=>{document.getElementById('tab'+i).style.display=i===n?'block':'none';document.getElementById('tb'+i).classList.toggle('active',i===n);});if(n===1)renderMOUD();if(n===2)renderCoc();}
+
+/* ─── ÁLCOOL ─────────────────────────────────────────────────────── */
+const PROTO_ALC={
+  abs:{hdr:'Abstinência de Álcool — Manejo Agudo (CIWA-Ar)',col:'#b45309',nome:'Diazepam dose-sintoma (CIWA) + Tiamina obrigatória',
+   body:`<strong>Escala CIWA-Ar (Clinical Institute Withdrawal Assessment for Alcohol):</strong><br>
+10 itens: tremor, sudorese, ansiedade, agitação, náusea/vômito, cefaleia, distúrbios perceptivos, distúrbios táteis, distúrbios visuais, distúrbios auditivos, orientação<br>
+Cada item 0–7 pts · Total máximo 67<br>
+CIWA &lt;10: leve → observação + suporte; 10–15: moderada; &gt;15: grave → BZD agressivo<br><br>
+<strong>Protocolo CIWA-guiado (preferencial):</strong><br>
+• <strong>Diazepam 5–10 mg VO/IV a cada hora SE CIWA ≥8–10</strong> (dose-sintoma) · Acumulação é esperada<br>
+• Monitorar CIWA a cada 1h · Descalonar se CIWA &lt;8 por 3 avaliações consecutivas<br>
+• Protocolo de carga: diazepam 10 mg VO a cada hora até CIWA &lt;8 → depois PRN<br><br>
+<strong>Alternativas ao Diazepam:</strong><br>
+• Lorazepam 1–2 mg IV 1/1h (preferível em hepatopatia grave — sem metabólito ativo)<br>
+• Clordiazepóxido 25–100 mg/dose (protocolo fixo): 4 doses/dia × 3 dias → desmame (EUA)<br>
+• Fenobarbital: alternativa segura em hepatopata + refratário a BZD<br><br>
+<div class="alerta">⚠️ TIAMINA (Vitamina B1) ANTES DE QUALQUER GLICOSE — SEMPRE:<br>
+Tiamina 100–300 mg IV/IM · Prevenção de Encefalopatia de Wernicke (EW)<br>
+Glicose sem tiamina em alcoólico depleto precipita EW irreversivelmente<br>
+Suspeita de EW (confusão + oftalmoplegia + ataxia): tiamina 500 mg IV 3×/dia × 3 dias</div>
+<strong>Delirium Tremens (convulsão + delírio + hipertermia — 24–72h após abstinência):</strong><br>
+• Diazepam 5–10 mg IV a cada 5–10 min até sedação · Pode ser necessário 100–200 mg em horas<br>
+• Fenobarbital 130–260 mg IV se refratário · Propofol UTI em casos extremos<br>
+• Internar em UTI · Monitorar eletrólitos (hipoMg, hipoK, hipoP)`,
+   note:'Seizure de álcool: diazepam IV para quebrar · A maioria ocorre 6–24h após abstinência · Carbamazepina e fenitoína NÃO são eficazes para prevenir convulsão alcoólica (mecanismo GABAérgico, não sódio). Quem deve ser internado: CIWA ≥15, histórico de DT/convulsão alcoólica prévia, comorbidade grave, ausência de suporte social confiável.'},
+  nal:{hdr:'Naltrexona — Redução de Recaída no TUA',col:'#7c3aed',nome:'Naltrexona 50 mg/dia VO OU 380 mg IM/mês (Vivitrol)',
+   body:`<strong>Mecanismo:</strong> antagonista opioide puro → bloqueia liberação de dopamina mediada por opioides endógenos associada ao consumo de álcool → reduz reforço e prazer do álcool<br><br>
+<strong>Evidências:</strong> COMBINE trial (NEJM 2006): naltrexona + terapia cognitivo-comportamental → maior taxa de abstinência e menor recaída que placebo · NNT ≈ 12 para abstinência de 6 meses<br><br>
+<strong>Naltrexona VO:</strong><br>
+• <strong>50 mg/dia</strong> (comprimido) · Iniciar após ≥4–7 dias de abstinência<br>
+• Não precisa de abstinência TOTAL prévia para uso (tratamento de redução de dano aceito)<br>
+• RAM: náusea (tomar com alimento), cefaleia, fadiga, insônia · Hepatotoxicidade rara (monitorar TGO/TGP se &gt;300 mg/dia — dose terapêutica: baixo risco)<br>
+• CI: uso atual de opioide, opiáceo dependência, TGO/TGP &gt;5× LSN, insuficiência hepática grave, gravidez<br><br>
+<strong>Naltrexona IM (Vivitrol) 380 mg IM glúteo a cada 4 semanas:</strong><br>
+• Vantagem: elimina problema de adesão diária<br>
+• Dor local no sítio de injeção · Não disponível no Brasil (aprovado EUA/Europa)<br><br>
+<strong>Uso na estratégia de "redução de dano" (Sinclair Method):</strong><br>
+• Tomar naltrexona 1–2h ANTES de beber · Bloqueio do reforço positivo → extinção do comportamento<br>
+• Evidência de eficácia como redução de dano em não-abstinentes · NÃO esperar abstinência total`,
+   note:'Naltrexona e dor: paciente em uso de naltrexona que necessite de analgesia opioide por urgência cirúrgica → esperar 72h para cirurgia eletiva. Analgesia não-opioide primeiro. Em emergência: doses maiores de opioide sob sedação adequada (monitorar). Naltrexona e opioides concomitantes: precipita síndrome de abstinência aguda em dependente de opioide — sempre investigar uso de opioide antes de prescrever.'},
+  aca:{hdr:'Acamprosato — Manutenção da Abstinência',col:'#0369a1',nome:'Acamprosato 666 mg 3×/dia',
+   body:`<strong>Mecanismo:</strong> modulador glutamatérgico (NMDA antagonista + GABA agonista) → restaura equilíbrio excitatório/inibitório alterado pela dependência alcoólica → reduz disforia e craving na abstinência<br><br>
+<strong>Dose:</strong> <strong>666 mg (2 comprimidos de 333 mg) 3×/dia</strong> · Início após abstinência estabelecida · Manutenção por 1 ano (longo prazo)<br>
+Peso &lt;60 kg: dose reduzida 2×/dia pode ser suficiente<br><br>
+<strong>Evidências:</strong> COMBINE trial + meta-análise Cochrane: acamprosato reduz tempo para 1ª recaída e aumenta dias abstinentes em 6 meses (NNT ≈ 12 para abstinência) · Menos eficaz que naltrexona para reduzir quantidade de consumo, mas melhor para manutenção de abstinência total<br><br>
+<strong>Farmacocinética:</strong><br>
+• Excreção renal 100% · Ajuste obrigatório em DRC:<br>
+  TFG 30–60: 333 mg 3×/dia (metade da dose) · TFG &lt;30: CONTRAINDICADO<br>
+• Não metabolizado pelo fígado → <strong>opção de 1ª linha em hepatopata</strong> (ao contrário da naltrexona)<br>
+• Não interage com álcool (tomar mesmo se ocorrer recaída — não suspender)<br><br>
+<strong>RAM:</strong> diarreia (frequente, geralmente autolimitada) · Náusea leve · Sem hepatotoxicidade<br>
+<strong>CI:</strong> TFG &lt;30 · Gravidez`,
+   note:'Acamprosato vs naltrexona: meta-análise COMBINE: acamprosato superior para manutenção de abstinência total; naltrexona superior para redução de heavy drinking (bebedeiras). Combinação dos dois: não demonstrou benefício adicional em COMBINE, mas pode ser tentada individualmente. Acamprosato não trata abstinência aguda — iniciar somente após estabilização.'},
+  dis:{hdr:'Dissulfiram — Dissuasão (Efeito Antabuse)',col:'#dc2626',nome:'Dissulfiram 250–500 mg/dia (supervisão obrigatória)',
+   body:`<strong>Mecanismo:</strong> inibe acetaldeído desidrogenase → acúmulo de acetaldeído ao beber → reação dissulfiram-álcool: rubor, cefaleia, náusea, vômito, taquicardia, hipotensão, angústia<br>
+Reações graves: arritmia, IM, óbito (raros)<br><br>
+<strong>Dose:</strong> 250 mg/dia (máx 500 mg/dia) · Início após ≥24h de abstinência (aguardar 48–72h para seguranção com reação)<br><br>
+<strong>Eficácia:</strong> depende COMPLETAMENTE da adesão e motivação · Sem supervisão: abandono em &gt;80% · Com supervisão diária (cônjuge, profissional): melhor eficácia<br><br>
+<strong>Interações com álcool oculto:</strong><br>
+• Álcool em alimentos (molho de vinho, fermentados), cosméticos (loção aftershave), xaropes com álcool, solução oral de metronidazol · SEMPRE avisar o paciente<br>
+• Metronidazol e tinidazol: reação semelhante ao dissulfiram → contraindicado concomitante<br><br>
+<strong>CI:</strong> Cardiopatia grave · Psicose ativa · Gravidez · Hipersensibilidade ao componente · Insuficiência renal/hepática grave<br>
+<strong>RAM:</strong> Hepatotoxicidade (monitorar TGO/TGP a cada 2 semanas × 3 meses → bimensal) · Neuropatia periférica com uso prolongado · Dermatite`,
+   note:'Dissulfiram implante subdérmico: não aprovado no Brasil; usado em alguns países europeus para garantir adesão. Coprecipitação com cocaína: tentativas de usar dissulfiram para TU cocaína (inibe dopamina β-hidroxilase) — estudos pequenos, sem aprovação oficial. Reação dissulfiram-álcool grave: oxigênio, posição de Trendelenburg, expansão volêmica; vitamina C IV acelera metabolismo do acetaldeído.'},
+  bac:{hdr:'Baclofen — TUA em Hepatopata (off-label)',col:'#059669',nome:'Baclofen 10–30 mg/dia (agonista GABA-B)',
+   body:`<strong>Mecanismo:</strong> agonista GABA-B → reduz craving de álcool, ansiedade e consumo<br><br>
+<strong>Vantagem única:</strong> <strong>metabolismo hepático mínimo (excreção renal 70–85%) → única opção farmacológica em hepatopatia grave (cirrose Child-Pugh C)</strong> quando naltrexona e dissulfiram são contraindicados<br><br>
+<strong>Dose:</strong> 5 mg 3×/dia → aumentar 5 mg a cada 3 dias até 30–60 mg/dia<br>
+Estudos ALPADIR (JAMA Intern Med 2015) e BAClofen for the treatment of Alcohol use Disorder with hepatic Failure (BACLOHED): baclofen modestamente eficaz na cirrose<br><br>
+<strong>RAM:</strong> sedação, tontura, fraqueza muscular, náusea · Síndrome de abstinência de baclofen (evitar parada abrupta em altas doses)<br>
+<strong>CI:</strong> Insuficiência renal grave (TFG &lt;30) · Histórico de AVC com espasticidade (pode piora coordenação)<br><br>
+<strong>Doses altas (off-label europa) — controvérsia:</strong><br>
+Protocolo Ameisen: até 270 mg/dia → indução de "indiferença ao álcool" · Ensaios de eficácia mista · Risco de sedação, convulsão na retirada abrupta, coma · <strong>Não recomendado de rotina</strong>`,
+   note:'Baclofen intratecal: usado para espasticidade severa (EM, TCE, paralisia cerebral) — doses muito menores que oral (100–800 mcg/dia intratecal = equivalente a dose alta oral). Síndrome de abstinência de baclofen: agitação, alucinações, confusão, pirexia, convulsão (similar ao DT) → desmame em 10% por semana se &gt;4 semanas de uso.'},
+  gab:{hdr:'Gabapentina e Topiramato — TUA off-label',col:'#7c3aed',nome:'Gabapentina 900–1800 mg/dia · Topiramato 25–300 mg/dia',
+   body:`<strong>Gabapentina (off-label — APA 2018 recomenda como opção):</strong><br>
+• Mecanismo: bloqueador de canal de Ca voltagem-dependente (α2δ) → reduz hiperexcitabilidade glutamatérgica · Também eficaz na abstinência leve-moderada<br>
+• Dose: 300 mg 3×/dia → aumentar para 600–900 mg 3×/dia<br>
+• Mason 2014 trial: gabapentina 1800 mg/dia superior ao placebo em abstinência e qualidade do sono<br>
+• <strong>CUIDADO:</strong> potencial de abuso da gabapentina em pacientes com histórico de abuso de substâncias · Combinação com opioide ou álcool: depressão respiratória<br><br>
+<strong>Topiramato (off-label — evidência nível A):</strong><br>
+• Mecanismo: agonista GABA + antagonista AMPA/kainato · Reduz consumo de álcool e dias de bebedeira<br>
+• Titulação obrigatória (cognitivo): 25 mg/sem → 25 mg a cada 2 sem → máx 300 mg/dia (em 2 tomadas)<br>
+• Johnson 2007 trial (Lancet): topiramato 300 mg/dia vs placebo → redução de 26% em dias de bebedeira<br>
+• RAM: parestesia (muito comum), disfunção cognitiva ("topiramate stupidity"), perda de peso, nefrolitíase, glaucoma agudo, teratogenicidade (fenda palatina) · <strong>CI em gestação</strong><br>
+• Vantagem: perde peso (útil em TUA com obesidade)`,
+   note:'Pregabalina 150–300 mg/dia: alternativa off-label à gabapentina no TUA (melhor biodisponibilidade). Evidências menores que gabapentina. Potencial de abuso similar. Naltrexona + acamprosato: estudar se há indicação de duplo agente em TUA grave refratário (evidência limitada mas aceito clinicamente). Todos os tratamentos farmacológicos para TUA são adjuvantes: sem suporte psicossocial (TCC, 12 passos, entrevista motivacional) a eficácia é substancialmente menor.'},
+};
+
+function calcAlc(){
+  const cond=document.getElementById('alc_cond').value;
+  const p=PROTO_ALC[cond];
+  document.getElementById('alcResult').style.display='block';
+  document.getElementById('alcResult').innerHTML=`<div class="rec-card" style="border-color:${p.col}"><div class="rec-hdr" style="color:${p.col}">ÁLCOOL — ${p.hdr}</div><div class="rec-nome">${p.nome}</div><div class="rec-body">${p.body}</div>${p.note?`<div class="rec-note">${p.note}</div>`:''}</div>`;
+  document.getElementById('alcResult').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+/* ─── OPIOIDES (MOUD) ─────────────────────────────────────────── */
+function renderMOUD(){
+  if(document.getElementById('moudList').innerHTML) return;
+  const CARDS=[
+    {col:'#0f172a',nome:'Abstinência de Opioides — Diagnóstico e Manejo Agudo',
+     body:`<strong>Escala COWS (Clinical Opiate Withdrawal Scale):</strong><br>
+11 itens (FC, sudorese, midríase, ansiedade/irritabilidade, olhos lacrimejantes, rinorreia, bocejos, tremor, calafrios, borborigmos, náusea/vômito, diarreia, câimbras musculares)<br>
+COWS 5–12: leve · 13–24: moderado · 25–36: moderado-grave · &gt;36: grave<br><br>
+<div class="alerta">COWS ≥8–12: indicação para iniciar buprenorfina (aguardar COWS ≥8 evita precipitação de abstinência)</div>
+<strong>Tratamento sintomático (abstinência sem início de MOUD):</strong><br>
+• Clonidina 0,1–0,3 mg 3–4×/dia: reduz sintomas autonômicos (sudorese, taquicardia, hipertensão) · Monitorar PA<br>
+• Loperamida 4 mg inicial → 2 mg após cada evacuação (máx 16 mg/dia): diarreia<br>
+• Metoclopramida 10 mg 3×/dia ou ondansetrona 8 mg: náuseas/vômito<br>
+• Ibuprofeno 600 mg 8h: câimbras musculares e artralgias<br>
+• Diazepam 5–10 mg: ansiedade/insônia (cautela — combinação com opioide)<br>
+• NUNCA oferecer opioide (mesmo tramadol) para aliviar abstinência fora de protocolo MOUD`,
+     note:'Neonatal Opioid Withdrawal Syndrome (NOWS / NAS): abstinência neonatal de opioides em filhos de mães em MOUD ou dependentes. Morfina oral ou metadona neonatal + sucrose oral + swaddling + low-stimulation protocol. Buprenorfina neonatal emergindo como alternativa.'},
+    {col:'#1e3a8a',nome:'Buprenorfina/Naloxona (MOUD) — Tratamento de Manutenção',
+     body:`<strong>Buprenorfina:</strong> agonista parcial μ e antagonista κ → ativa receptores opioides mas com efeito teto (menor risco de overdose que metadona)<br>
+<strong>Naloxona:</strong> antagonista opioide adicionada para dissuadir uso IV (naloxona oral tem absorção mínima)<br><br>
+<strong>Indução (iniciar quando COWS ≥8):</strong><br>
+• <strong>Buprenorfina/naloxona sublingual (Suboxone) 2/0,5 mg SL → observar 1h → repetir 2 mg SL se COWS ≥8</strong><br>
+• Dose do 1° dia: máx 8–12 mg · Dia 2: aumentar conforme COWS · Dose alvo: 16–24 mg/dia<br>
+• Formulações: comprimido SL, filme SL, implante subdérmico (6 meses), injeção mensal (Sublocade 100–300 mg SC)<br><br>
+<strong>Dose de manutenção:</strong> 16–24 mg/dia (dose única SL) · Dose máxima: 32 mg/dia<br>
+<strong>Duração:</strong> tratamento crônico (não interromper — risco de overdose fatal ao recair com tolerância zero)<br><br>
+<strong>Indução precipitada de abstinência:</strong> dar buprenorfina antes de abstinência suficiente (COWS &lt;8) ou logo após opioide de ação longa (metadona) → EVITAR<br>
+• Metadona → buprenorfina: aguardar redução de metadona a ≤30 mg/dia + COWS ≥12<br>
+• Fentanil (tempo de meia-vida tecidual muito longo): "low dose induction" — iniciar 0,3–0,5 mg/dia e aumentar muito gradualmente<br><br>
+<strong>Naltrexona XR (Vivitrol) 380 mg IM/mês:</strong><br>
+• Antagonista puro — sem potencial de abuso, sem necessidade de prescritores especiais<br>
+• INDICAÇÃO: após desintoxicação completa (aguardar ≥7 dias sem opioide de curta, ≥10 dias sem metadona)<br>
+• X:BOT trial: buprenorfina/naloxona superior em desfechos a 24 sem (maior abandono na fase de indução de naltrexona)`,
+     note:'Overdose de opioide: naloxona 0,4–2 mg IN/IV/IM · Repetir a cada 2–3 min (até 10 mg) · Naloxona tem meia-vida &lt;90 min → paciente pode reentrar em overdose ao "acordar" — observar 4–6h (12h para opioides de depósito como metadona ou fentanil transdérmico). Naloxona kit domiciliar: prescrever kit de naloxona + treinar familiar em todo paciente em MOUD ou em uso de opioide crónico.'},
+    {col:'#92400e',nome:'Metadona — Manutenção em Centros Especializados',
+     body:`<strong>Metadona:</strong> agonista μ total + antagonista NMDA + inibidor de recaptação de 5-HT/NA · Meia-vida prolongada (24–48h) → dose única diária<br><br>
+<strong>Indicações preferenciais:</strong><br>
+• Falha de buprenorfina · Alta tolerância a opioides · Necessidade de supervisão diária (uso observado em CAPS-AD, clínica)<br>
+• Dependência de metadona ou fentanil (alta tolerância, difícil indução de buprenorfina)<br><br>
+<strong>Indução:</strong><br>
+• Dia 1: <strong>20–30 mg VO sob supervisão</strong> · Observar 3–4h antes de dose adicional<br>
+• Aumentar 5–10 mg a cada 3–5 dias · Dose usual de manutenção: 60–120 mg/dia<br>
+• Doses ≥80 mg: maior retenção em tratamento e menor uso de heroína ilícita<br><br>
+<strong>Riscos específicos da metadona:</strong><br>
+• <strong>QTc prolongado:</strong> monitorar ECG antes (basal), após 30 dias, após cada ajuste &gt;40 mg · Risco de Torsades<br>
+  Suspender se QTc &gt;500 ms · Evitar com outros QTc-prolongadores (fluconazol, ciprofloxacino, haloperidol, antidepressivos tricíclicos)<br>
+• Interações CYP3A4 e CYP2D6: rifampicina ↓ nível de metadona; fluconazol, fluoxetina, paroxetina ↑ nível<br>
+• Acúmulo: meia-vida longa → overdose tardia (dias 2–4 de indução — risco maior que com buprenorfina)<br>
+• No Brasil: dispensado apenas em CAPS-AD (Centros de Atenção Psicossocial Álcool e Drogas) sob supervisão ANVISA`,
+     note:'Metadona e gravidez: MOUD preferido na gestação (buprenorfina também aceita — MOTHER trial: similar em desfechos materno-neonatais). NÃO fazer desintoxicação na gestação — risco de morte fetal por estresse fisiológico. NOWS tratável e preferível à recaída com heroína/fentanil ilícito.'},
+  ];
+  document.getElementById('moudList').innerHTML=CARDS.map(c=>`<div class="dep-card" style="border-color:${c.col}"><div class="dep-nome" style="color:${c.col}">${c.nome}</div><div class="dep-body">${c.body}</div>${c.note?`<div style="font-size:.7rem;color:#64748b;margin-top:6px">💡 ${c.note}</div>`:''}</div>`).join('');
+}
+
+/* ─── COCAÍNA · BZD · CANNABIS ─────────────────────────────────── */
+function renderCoc(){
+  if(document.getElementById('cocList').innerHTML) return;
+  const CARDS=[
+    {col:'#dc2626',nome:'Transtorno por Uso de Cocaína / Crack',
+     body:`<strong>Sem farmacoterapia aprovada pelo FDA/ANVISA para TU cocaína</strong> (diferente de álcool e opioides)<br><br>
+<strong>Agentes com evidência emergente (off-label):</strong><br>
+<table>
+  <tr><th>Fármaco</th><th>Evidência</th><th>Dose</th></tr>
+  <tr><td><strong>N-Acetilcisteína (NAC)</strong></td><td>Modula glutamato — reduz craving em estudos de médio porte · LaRowe 2013</td><td>1200–2400 mg/dia em 2 tomadas</td></tr>
+  <tr><td><strong>Topiramato</strong></td><td>Antagonista AMPA/kainato → reduz uso em TU cocaína + álcool</td><td>25 mg → 300 mg/dia (titulação lenta)</td></tr>
+  <tr><td>Bupropiona</td><td>Melhora humor e pode reduzir uso em DU anfetamina; evidência menor em cocaína</td><td>150 mg → 300 mg/dia</td></tr>
+  <tr><td>Modafinil</td><td>Estudos pequenos positivos; sem aprovação · Controla sonolência na abstinência</td><td>200 mg/manhã</td></tr>
+  <tr><td>Dissulfiram</td><td>Inibe DBH (dopamina β-hidroxilase) → reduz reforço da cocaína · Conflito de evidência</td><td>250 mg/dia</td></tr>
+  <tr><td>Vacina de cocaína (TA-CD)</td><td>Anticorpos anti-cocaína em pesquisa; eficácia inconstante</td><td>Pesquisa clínica</td></tr>
+</table>
+<br>
+<strong>Crise de cocaína / intoxicação aguda:</strong><br>
+• Agitação/psicose: benzodiazepínico (diazepam 5–10 mg IV) · Antipsicótico se refratário (haloperidol 5 mg IM)<br>
+• Hipertensão grave: nitroprussiato IV, nitroglicerina IV, fentolamina · <strong>Betabloqueador sozinho: CI</strong> (bloqueio β não oposicionado → vasoconstrição alfa paradoxal piorando crise hipertensiva)<br>
+• Dor torácica: AAS + nitroglicerina + BZD · Solicitar ECG e troponina (espasmo coronário + IAM real)<br>
+• Hipertermia ≥39°C: resfriamento ativo, BZD · NUNCA antitérmico sozinho (causa central)`,
+     note:'Crack e base livre: mesma cocaína, forma fumável → pico mais rápido, potência reforçadora maior, dependência mais severa, mais danos respiratórios. Levamisol (contaminante frequente no crack): causa agranulocitose + ANCA-vasculite. Pesquisar se infecções recorrentes ou neutropenia inexplicada em usuário de crack.'},
+    {col:'#b45309',nome:'Transtorno por Uso de Benzodiazepínicos (BZD)',
+     body:`<strong>Padrão de dependência BZD:</strong><br>
+Dependência física em 4–6 semanas de uso diário · Abstinência: ansiedade, tremor, sudorese, insônia, confusão, convulsão (risco de vida — similar ao álcool)<br><br>
+<strong>Princípio do desmame:</strong><br>
+<strong>1. Converter para BZD de ação longa (diazepam):</strong><br>
+Tabela de equivalência de dose (equivalente a diazepam 10 mg):<br>
+<table>
+  <tr><th>BZD</th><th>Equivalente a 10 mg diazepam</th></tr>
+  <tr><td>Alprazolam</td><td>0,5 mg</td></tr>
+  <tr><td>Clonazepam</td><td>0,25 mg</td></tr>
+  <tr><td>Lorazepam</td><td>1 mg</td></tr>
+  <tr><td>Bromazepam</td><td>3–4 mg</td></tr>
+  <tr><td>Midazolam</td><td>7,5 mg</td></tr>
+  <tr><td>Zolpidem</td><td>10 mg (Z-drug)</td></tr>
+</table>
+<strong>2. Desmame gradual 5–10% da dose a cada 1–2 semanas</strong> (Heather Ashton Protocol)<br>
+• Não reduzir mais que 10% da dose atual por semana · Última fase: as reduções menores são as mais difíceis<br>
+• Objetivo: &gt;3 meses de desmame para BZD usados há anos<br><br>
+<strong>Adjuvantes no desmame:</strong><br>
+• ISRS/IRSN: tratar ansiedade subjacente (iniciar 4–6 sem antes de iniciar desmame)<br>
+• Pregabalina/gabapentina: reduz sintomas de abstinência · Pode ser alternativa ao diazepam<br>
+• Propranolol: tremor e taquicardia no desmame<br>
+• Carbamazepina: proteção anticonvulsivante adicional em desmame rápido`,
+     note:'Z-drugs (zolpidem, zaleplon, eszopiclona): dependência física real — não são "mais seguros" que BZD para uso crônico. Desmame com tabela de equivalência. Flumazenil: reverte sedação BZD, mas pode precipitar abstinência + convulsão em dependente crônico — usar com cautela. Benzodiazepínicos em idosos (Critérios de Beers): evitar, especialmente para insônia — risco de queda, confusão, pneumonia aspirativa.'},
+    {col:'#15803d',nome:'Transtorno por Uso de Cannabis (TUC)',
+     body:`<strong>Síndrome de Abstinência de Cannabis:</strong><br>
+Irritabilidade, ansiedade, insônia, anorexia, sudorese, tremor (início 24–48h, pico 2–4 dias, dura 1–2 semanas)<br>
+Menos grave que álcool/opioide — raramente requer internação · Não há convulsão<br><br>
+<strong>Sem farmacoterapia aprovada para TUC</strong><br>
+<strong>Opções para sintomas da abstinência:</strong><br>
+• Insônia: melatonina 5–10 mg · Zolpidem (curto prazo ≤4 semanas) · Trazodona 50–100 mg<br>
+• Ansiedade: buspirona 10–30 mg/dia · ISRS (fluoxetina, sertralina) · Propranolol<br>
+• Náusea/anorexia: metoclopramida, ondansetrona<br><br>
+<strong>Agentes em investigação para TUC:</strong><br>
+• NAC (N-acetilcisteína): estudos positivos em adolescentes (Gray 2012) e adultos · 1200 mg 2×/dia<br>
+• CBD (canabidiol): paradoxalmente, agonista parcial 5-HT1A e modulador do receptor CB1 → reduz craving em TUC · Evidência preliminar<br>
+• Gabapentina 1200 mg/dia: reduz uso e sintomas de abstinência em pequenos estudos<br><br>
+<strong>Psicose por Cannabis:</strong><br>
+Alta concentração de THC (variedades modernas) → psicose aguda · Risco aumentado com início na adolescência e genótipo COMT<br>
+• Antipsicótico de curta duração (haloperidol 5 mg IM ou olanzapina 10 mg IM) na crise<br>
+• Abstinência da cannabis: 90% resolvem psicose em semanas · Persistência → investigar esquizofrenia (desencadeada pela cannabis)`,
+     note:'EVALI (E-cigarette or Vaping product use-Associated Lung Injury): lesão pulmonar aguda associada a vaping de cannabis (especialmente produtos com acetato de vitamina E como diluente) · Tratamento: suporte + corticoide sistêmico. Cannabis e psicofármacos: cannabis aumenta nível de clozapina via CYP1A2 (tabaco induz CYP1A2, cannabis o inibe) — ajuste de dose ao parar de fumar cannabis em paciente em clozapina.'},
+  ];
+  document.getElementById('cocList').innerHTML=CARDS.map(c=>`<div class="dep-card" style="border-color:${c.col}"><div class="dep-nome" style="color:${c.col}">${c.nome}</div><div class="dep-body">${c.body}</div>${c.note?`<div style="font-size:.7rem;color:#64748b;margin-top:6px">💡 ${c.note}</div>`:''}</div>`).join('');
+}
+</script>
+</body>
+</html>

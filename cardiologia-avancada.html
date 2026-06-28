@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Cardiologia Avançada — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .car-hdr{background:linear-gradient(135deg,#7f1d1d,#b91c1c);color:#fff;border-radius:14px;padding:18px;margin-bottom:14px}
+    .car-title{font-size:1rem;font-weight:800;margin-bottom:4px}
+    .car-sub{font-size:.73rem;opacity:.8}
+    label{font-size:.75rem;font-weight:700;color:#1e3a5f;display:block;margin-bottom:4px}
+    select,input[type=number]{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:10px;padding:10px 12px;font-size:.85rem;background:#fff;margin-bottom:10px}
+    select:focus,input:focus{border-color:#b91c1c;outline:none}
+    .cb-row{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #f1f5f9;font-size:.8rem}
+    .cb-row input[type=checkbox]{width:18px;height:18px;flex-shrink:0}
+    .btn-calc{width:100%;background:#b91c1c;color:#fff;border:none;border-radius:12px;padding:13px;font-size:.87rem;font-weight:700;cursor:pointer;margin:8px 0}
+    .tab-bar{display:flex;gap:6px;margin-bottom:14px}
+    .tab-btn{flex:1;padding:9px 4px;border-radius:10px;border:2px solid #e2e8f0;background:#fff;font-size:.72rem;font-weight:700;cursor:pointer;color:#64748b}
+    .tab-btn.active{border-color:#b91c1c;background:#fff5f5;color:#b91c1c}
+    .car-card{border-radius:10px;border-left:5px solid;padding:10px 14px;margin-bottom:8px;background:#fff}
+    .car-nome{font-size:.83rem;font-weight:800;margin-bottom:4px}
+    .car-body{font-size:.76rem;line-height:1.7;color:#374151}
+    .rec-card{border-radius:12px;border:2px solid;padding:14px;margin-bottom:10px}
+    .rec-hdr{font-size:.63rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+    .rec-nome{font-size:.88rem;font-weight:800;margin-bottom:6px}
+    .rec-badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:.65rem;font-weight:800;color:#fff;margin:2px}
+    .rec-body{font-size:.78rem;margin-top:6px;line-height:1.7}
+    .rec-note{font-size:.71rem;color:#64748b;margin-top:6px;padding-top:6px;border-top:1px solid #f1f5f9}
+    .result-box{background:#fff5f5;border:2px solid #b91c1c;border-radius:12px;padding:14px;margin-top:8px}
+    .result-line{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #fee2e2;font-size:.8rem}
+    .result-val{font-weight:800;color:#b91c1c}
+    .alerta{background:#fef2f2;border:2px solid #dc2626;border-radius:10px;padding:8px;margin:6px 0;font-size:.75rem;color:#7f1d1d;font-weight:700}
+    table{width:100%;border-collapse:collapse;font-size:.73rem;margin-top:6px}
+    th{background:#7f1d1d;color:#fff;padding:5px 8px;text-align:left}
+    td{padding:5px 8px;border-bottom:1px solid #f1f5f9}
+    tr:nth-child(even) td{background:#fff5f5}
+  </style>
+</head>
+<body>
+<header class="top-bar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <span class="top-title">Cardiologia Avançada</span>
+  <div class="top-right"></div>
+</header>
+<main class="container" style="padding-bottom:90px">
+  <div class="car-hdr">
+    <div class="car-title">❤️ Cardiologia Avançada — Algoritmos</div>
+    <div class="car-sub">FA · Arritmias · SCA · Endocardite · Valvopatias · CMHO</div>
+  </div>
+  <div class="tab-bar">
+    <button class="tab-btn active" id="tb0" onclick="showTab(0)">FA & Arritmias</button>
+    <button class="tab-btn" id="tb1" onclick="showTab(1)">SCA & Endocardite</button>
+    <button class="tab-btn" id="tb2" onclick="showTab(2)">Valvopatias & CMHO</button>
+  </div>
+
+  <!-- TAB 0 — FA & ARRITMIAS -->
+  <div id="tab0">
+    <div style="font-size:.78rem;font-weight:800;color:#b91c1c;margin-bottom:8px">📊 CHA₂DS₂-VASc — Risco de AVC na FA</div>
+    <div class="card" style="padding:12px 14px">
+      <div class="cb-row"><input type="checkbox" id="c_ic"> <label style="margin:0">ICC / FE reduzida (1 pt)</label></div>
+      <div class="cb-row"><input type="checkbox" id="c_has"> <label style="margin:0">Hipertensão arterial (1 pt)</label></div>
+      <div class="cb-row"><input type="checkbox" id="c_75"> <label style="margin:0">Idade ≥75 anos (2 pts)</label></div>
+      <div class="cb-row"><input type="checkbox" id="c_dm"> <label style="margin:0">Diabetes mellitus (1 pt)</label></div>
+      <div class="cb-row"><input type="checkbox" id="c_avc"> <label style="margin:0">AVC / AIT / Tromboembolismo prévio (2 pts)</label></div>
+      <div class="cb-row"><input type="checkbox" id="c_vasc"> <label style="margin:0">Doença vascular (IAM, DAP, placa aórtica) (1 pt)</label></div>
+      <div class="cb-row"><input type="checkbox" id="c_65"> <label style="margin:0">Idade 65–74 anos (1 pt)</label></div>
+      <div class="cb-row"><input type="checkbox" id="c_fem"> <label style="margin:0">Sexo feminino (1 pt — não conta se único fator)</label></div>
+    </div>
+    <button class="btn-calc" onclick="calcCHA()">❤️ Calcular CHA₂DS₂-VASc & DOAC</button>
+    <div id="chaResult" style="display:none"></div>
+
+    <div style="margin-top:14px">
+      <div style="font-size:.78rem;font-weight:800;color:#7f1d1d;margin-bottom:8px">📋 Controle de Ritmo vs Frequência na FA</div>
+      <div class="car-card" style="border-color:#b91c1c">
+        <div class="car-nome" style="color:#b91c1c">FA — Controle de Frequência Cardíaca</div>
+        <div class="car-body">
+          <strong>Meta: FC &lt;110 bpm em repouso</strong> (RACE II: FC &lt;110 vs &lt;80 — outcomes iguais a médio prazo)<br><br>
+          <strong>Bloqueadores do nó AV (1ª linha):</strong><br>
+          • <strong>Betabloqueadores:</strong> Metoprolol succinato 25–200 mg/dia OU atenolol 25–100 mg/dia<br>
+            Metoprolol IV 2,5–5 mg em 2 min (máx 15 mg) para FA com FC alta e hemodinâmica estável<br>
+          • <strong>Bloqueadores de canal de Ca não-diidropiridínicos:</strong><br>
+            Diltiazem 120–360 mg/dia (LP) OU Verapamil 120–480 mg/dia<br>
+            CI em IC com FE reduzida (efeito inotrópico negativo)<br>
+          • Digoxina 0,125–0,25 mg/dia: controle de FC apenas em repouso · Útil em IC com FE reduzida + FA<br>
+            Nível terapêutico 0,5–0,9 ng/mL · Atenção em TFG &lt;60 (reduzir dose 50%)<br>
+            Amiodarona potencializa digoxina (+60–80% do nível): reduzir dose de digoxina na associação<br><br>
+          <strong>Controle de Ritmo — Indicações:</strong><br>
+          Sintomas refratários a controle de frequência · FA de início recente (&lt;48h) · FA com WPW (síndrome de pré-excitação) · FA em gestação · Preferência do paciente informado<br><br>
+          <strong>Antiarrítmicos para Cardioversão Farmacológica (FA &lt;48h ou anticoagulado ≥3 sem):</strong><br>
+          <table>
+            <tr><th>Droga</th><th>Dose</th><th>Contraindicação</th></tr>
+            <tr><td>Propafenona</td><td>600 mg VO dose única (pill in pocket) OU 2 mg/kg IV em 10 min</td><td>IC, DAC, DPOC grave</td></tr>
+            <tr><td>Flecainida</td><td>200–300 mg VO OU 2 mg/kg IV</td><td>IC, IAM prévio, Brugada</td></tr>
+            <tr><td>Amiodarona IV</td><td>5–7 mg/kg IV em 1h → 1200 mg/24h</td><td>Tireoideopatia (cautela), QTc</td></tr>
+            <tr><td>Ibutilida IV</td><td>1 mg IV em 10 min (repetir 1×)</td><td>QTc &gt;440 ms, K &lt;4 mEq/L</td></tr>
+          </table>
+          <br>
+          <strong>Cardioversão Elétrica (CVE):</strong> FA &gt;48h (anticoagular 3 sem antes OU ETE) · 200 J bifásico sincronizado<br>
+          <strong>Manutenção do ritmo sinusal:</strong> Flecainida/Propafenona (sem ICC/DAC) · Amiodarona (mais eficaz, mais RAM) · Sotalol (monitorar QTc, K) · Dofetilida<br>
+          <strong>Ablação por cateter (RF):</strong> FA paroxística sintomática refratária · FA persistente selecionada · Isolamento de veias pulmonares (70% livre de FA em 2 anos)
+        </div>
+      </div>
+    </div>
+    <div id="arritmList" style="margin-top:8px"></div>
+  </div>
+
+  <!-- TAB 1 — SCA & ENDOCARDITE -->
+  <div id="tab1" style="display:none">
+    <div id="scaList"></div>
+  </div>
+
+  <!-- TAB 2 — VALVOPATIAS & CMHO -->
+  <div id="tab2" style="display:none">
+    <div id="valvList"></div>
+  </div>
+</main>
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+<script src="js/db.js"></script>
+<script>
+function showTab(n){[0,1,2].forEach(i=>{document.getElementById('tab'+i).style.display=i===n?'block':'none';document.getElementById('tb'+i).classList.toggle('active',i===n);});if(n===0&&!document.getElementById('arritmList').innerHTML)renderArritm();if(n===1)renderSCA();if(n===2)renderValv();}
+
+/* ─── CHA2DS2-VASc ─────────────────────────────────────────────── */
+function calcCHA(){
+  const ids=['c_ic','c_has','c_75','c_dm','c_avc','c_vasc','c_65','c_fem'];
+  const pts=[1,1,2,1,2,1,1,1];
+  let score=0;
+  ids.forEach((id,i)=>{if(document.getElementById(id).checked)score+=pts[i];});
+  // Sexo feminino não conta como único fator
+  const soFem=score===1&&document.getElementById('c_fem').checked;
+  let rec,cor,doac='';
+  if(score===0||(score===1&&soFem)){rec='Baixo risco — anticoagulação NÃO indicada';cor='#059669';}
+  else if(score===1&&!soFem){rec='Risco intermediário — avaliar anticoagulação (preferir iniciar)';cor='#b45309';doac='Considerar DOAC';}
+  else{rec='Alto risco — anticoagulação RECOMENDADA';cor='#dc2626';doac='DOAC obrigatório';}
+  let doacTxt='';
+  if(score>=1&&!soFem){
+    doacTxt=`<div style="margin-top:8px;font-size:.78rem"><strong>DOACs recomendados (superiores à warfarina na FA não-valvar):</strong><br>
+• <strong>Apixabana 5 mg 2×/dia</strong> (2,5 mg 2×/dia se ≥2: idade ≥80, peso ≤60 kg, Cr ≥1,5 mg/dL) — ARISTOTLE: menor AVC + menor sangramento grave<br>
+• <strong>Rivaroxabana 20 mg/dia COM jantar</strong> (15 mg se TFG 15–49) — ROCKET-AF<br>
+• <strong>Dabigatrana 150 mg 2×/dia</strong> (110 mg se ≥80 anos, TFG 30–50, risco sangramento alto) — RE-LY<br>
+• <strong>Edoxabana 60 mg/dia</strong> (30 mg se TFG 15–50, peso ≤60 kg, verapamil/quinidina) — ENGAGE-AF<br>
+<strong>Warfarina (INR 2–3):</strong> FA valvar (estenose mitral moderada-grave ou valva mecânica) · DOAC CI (TFG &lt;15)<br>
+<strong>Score HAS-BLED ≥3 (HAS: HAS, alteração função renal/hepática, AVC, sangramento, lábil INR, idade &gt;65, drogas/álcool):</strong> alto risco hemorrágico — não contraindica anticoagulação, mas corrigir fatores modificáveis</div>`;
+  }
+  document.getElementById('chaResult').style.display='block';
+  document.getElementById('chaResult').innerHTML=`<div class="result-box"><div class="result-line"><span>Score CHA₂DS₂-VASc</span><span class="result-val">${score} pontos</span></div><div style="margin-top:6px;font-size:.82rem;font-weight:700;color:${cor}">${rec}</div>${doacTxt}</div>`;
+  if(!document.getElementById('arritmList').innerHTML) renderArritm();
+}
+
+/* ─── ARRITMIAS ─────────────────────────────────────────────── */
+function renderArritm(){
+  const CARDS=[
+    {col:'#b91c1c',nome:'Taquicardia Ventricular (TV) e Fibrilação Ventricular (FV)',
+     body:`<strong>TV com pulso + hemodinâmica instável:</strong><br>
+• <strong>Cardioversão elétrica sincronizada 100–200 J bifásico IMEDIATAMENTE</strong><br><br>
+<strong>TV com pulso + hemodinâmica estável (QRS alargado, monomórfica):</strong><br>
+• <strong>Amiodarona 150 mg IV em 10 min → 1 mg/min × 6h → 0,5 mg/min × 18h</strong><br>
+• Procainamida 17 mg/kg IV em 25 min → 2–6 mg/min: alternativa (evitar em IC)<br>
+• Lidocaína 1–1,5 mg/kg IV bolus → 1–4 mg/min: menos eficaz que amiodarona em TV<br>
+• <strong>Sotalol IV</strong>: opção em TV monomórfica estável (monitorar QTc)<br><br>
+<strong>FV / TV sem pulso → ACLS:</strong><br>
+• RCP de alta qualidade (100–120/min, 5 cm de profundidade) · Desfibrilação 200 J (bifásico) logo após cada análise<br>
+• Adrenalina 1 mg IV a cada 3–5 min (após 2ª descarga) · Amiodarona 300 mg IV após 3ª descarga · Lidocaína 1,5 mg/kg se amiodarona indisponível<br>
+• Causas reversíveis (Hs e Ts): Hipóxia, Hipovolemia, Hipotermia, H⁺ (acidose), Hiperkalemia, Tensão (pneumotórax), Tamponamento, Trombose (IAM/TEP), Toxinas<br><br>
+<strong>Prevenção secundária de TV/FV:</strong><br>
+• <strong>CDI (Cardioversor-Desfibrilador Implantável):</strong> 1ª linha · FE ≤35% + sobrevivente de TV/FV + TV sustentada sintomática (MADIT-II, SCD-HeFT)<br>
+• Amiodarona VO 200 mg/dia (manutenção): adjuvante ao CDI para reduzir choques · Monitorar tireoideopatia anual, TGP, Rx tórax (fibrose pulmonar)<br>
+• Beta-bloqueador: SEMPRE após TV/FV (reduz tempestade arrítmica)`,
+     note:'Tempestade elétrica (≥3 episódios de TV/FV em 24h): sedação profunda (propofol + opioides) + betabloqueador IV (esmolol) + amiodarona IV + marcapasso de overdrive se TV com ciclo fixo. Ablação por cateter em TV monomórfica recorrente refratária a AAF. TV polimórfica: sempre pesquisar causa (isquemia, QTc longo, hipopotassemia, Brugada).'},
+    {col:'#b45309',nome:'Taquicardias Supraventriculares (TSV) — TRNAV e Flutter Atrial',
+     body:`<strong>TSV (TRNAV/TRAV) com hemodinâmica estável:</strong><br>
+<strong>1. Manobras vagais:</strong><br>
+• Manobra de Valsalva modificada (REVERT trial): soprar na seringa 20 mL × 15s → deitar + elevar MMII 45° × 15s → sentar · Eficácia 43% vs 17% Valsalva clássica<br>
+• Massagem do seio carotídeo: paciente deitado, cabeça virada para o lado, pressão suave por 5–10s (contraindicada em estenose carotídea ou sopro)<br><br>
+<strong>2. Adenosina IV (se manobra vagal falha):</strong><br>
+• <strong>6 mg IV rápido (1 mL/s) + flush 20 mL SF</strong> · Repetir 12 mg × 2 se necessário (máx 18 mg)<br>
+  Acesso periférico antecubital ou central · Início: 15–30 seg · Duração: 10–30 seg<br>
+  RAM: flushing, dispneia, bradi transitória (normal) · Alerta: broncoespasmo em asma (usar verapamil IV)<br>
+  Diagnóstica: FA com BCR, flutter, TV podem não reverter mas mostram morfologia do fundo<br><br>
+<strong>3. Verapamil IV 5 mg em 2 min (repetir 5 mg em 5 min):</strong> alternativa à adenosina · CI com BB (BA grave)<br>
+<strong>4. Metoprolol IV 2,5–5 mg em 2 min:</strong> alternativa<br><br>
+<strong>Flutter Atrial:</strong><br>
+FA com frequência auricular ≈300 bpm e ventricular ≈150 bpm (razão 2:1 típica)<br>
+• Controle de frequência: diltiazem/betabloqueador<br>
+• Cardioversão: 50–100 J (menor energia que FA) · Anticoagulação: mesmas regras da FA (CHA₂DS₂-VASc)<br>
+• Ablação do istmo cavotricuspídeo: cura em &gt;95% do flutter típico (1ª linha para recorrente)<br><br>
+<strong>WPW (Síndrome de Wolff-Parkinson-White) com FA:</strong><br>
+<div class="alerta">⚠️ NUNCA usar adenosina, verapamil, diltiazem ou digoxina em FA com WPW (bloqueio do nó AV redireciona para via acessória → FV)</div>
+• CVE elétrica imediatamente se instável · Procainamida IV se estável (bloqueia via acessória)`,
+     note:'Adenosina e transplantados cardíacos: dose dobrada (12 mg inicial) — denervação do coração transplantado aumenta sensibilidade à adenosina. Xantinas (teofilina, cafeína) antagonizam adenosina — avisar para não tomar cafeína antes de teste de adenosina/estresse farmacológico com adenosina. Taquicardia de Coumel (automaticidade): não responde a adenosina.'},
+  ];
+  document.getElementById('arritmList').innerHTML=CARDS.map(c=>`<div class="car-card" style="border-color:${c.col}"><div class="car-nome" style="color:${c.col}">${c.nome}</div><div class="car-body">${c.body}</div>${c.note?`<div style="font-size:.7rem;color:#64748b;margin-top:6px">💡 ${c.note}</div>`:''}</div>`).join('');
+}
+
+/* ─── SCA & ENDOCARDITE ─────────────────────────────────────────── */
+function renderSCA(){
+  if(document.getElementById('scaList').innerHTML) return;
+  const CARDS=[
+    {col:'#dc2626',nome:'SCA sem Supradesnível de ST (IAMSSST / AI)',
+     body:`<strong>Diagnóstico:</strong> dor torácica + troponina elevada (IAMSSST) OU troponina normal (angina instável) + sem supradesnível de ST persistente<br><br>
+<strong>Terapia antiplaquetária dual (DAPT) — iniciar IMEDIATAMENTE:</strong><br>
+• <strong>AAS 300 mg (dose de ataque) → 100 mg/dia</strong><br>
+• <strong>Ticagrelor 180 mg VO (ataque) → 90 mg 2×/dia × 12 meses:</strong> preferencial (PLATO: superior ao clopidogrel em morte CV + IAM + AVC sem diferença em sangramento fatal)<br>
+  CI: AVC hemorrágico, sangramento ativo, hepatopatia grave, amamentação<br>
+• <strong>Clopidogrel 600 mg (ataque) → 75 mg/dia</strong>: alternativa (se ticagrelor indisponível ou CI · genótipos CYP2C19 IM/PM respondem menos)<br>
+• Prasugrel 60 mg (ataque) → 10 mg/dia: CI em AVC/AIT prévio; não usar no pré-ICP sem anatomia coronária conhecida<br><br>
+<strong>Anticoagulação:</strong><br>
+• <strong>Fondaparinux 2,5 mg SC/dia</strong>: 1ª linha IAMSSST (OASIS-5: menor sangramento que enoxaparina, mesma eficácia) · Adicionar UFH 85 UI/kg IV no momento do cateterismo<br>
+• Enoxaparina 1 mg/kg SC 12/12h: alternativa (CI se TFG &lt;30 — dose ajustada 1 mg/kg/24h se TFG 15–30)<br>
+• Bivalirudina: alternativa em alto risco de sangramento (TFG &lt;30) · IV durante ICP<br><br>
+<strong>Estratégia invasiva (coronariografia) — timing:</strong><br>
+<table>
+  <tr><th>Urgência</th><th>Critério</th><th>Tempo</th></tr>
+  <tr><td>Invasivo muito precoce</td><td>Choque, IC grave, arritmia maligna, isquemia refratária</td><td>&lt;2h (imediato)</td></tr>
+  <tr><td>Invasivo precoce</td><td>GRACE score &gt;140, troponina sobe/desce, ST dinâmico</td><td>&lt;24h</td></tr>
+  <tr><td>Invasivo seletivo</td><td>Baixo risco (TIMI 0–1, GRACE &lt;109, sem ST)</td><td>Estratégia não-invasiva + cintilografia/teste ergométrico</td></tr>
+</table>
+<br>
+<strong>Terapia adjunta pós-ICP:</strong><br>
+• IECA/BRA: FE &lt;40%, DM, HAS, DRC · Iniciar em 24h<br>
+• Betabloqueador: FC, PA, função VE preservada<br>
+• Estatina de alta intensidade: rosvastatina 20–40 mg OU atorvastatina 40–80 mg — iniciar imediatamente independente do colesterol`,
+     note:'IAMSSST e cirurgia não-cardíaca urgente: suspender ticagrelor/prasugrel 5 dias antes (clopidogrel 5 dias) · Manter AAS · Ponte com UFH IV · Avaliar risco/benefício individualmente. TIMI Risk Score: 7 variáveis (0–7 pts) — score ≥3: benefício de estratégia invasiva precoce. GRACE: mais preciso; score online.'},
+    {col:'#991b1b',nome:'IAM com Supradesnível de ST (IAMSSST) — Reperfusão Urgente',
+     body:`<strong>DIAGNÓSTICO:</strong> dor torácica + supradesnivelamento ≥1 mm em ≥2 derivações contíguas (ou BRE novo/presumivelmente novo)<br>
+<strong>Meta de tempo porta-balão: &lt;90 min</strong><br><br>
+<strong>Terapia de reperfusão:</strong><br>
+• <strong>ICP primária (angioplastia com stent):</strong> 1ª linha se disponível em &lt;120 min · Stent farmacológico (DES) de 2ª geração superior ao convencional · DAPT por 12 meses<br>
+• <strong>Trombolítico (se ICP não disponível em &lt;120 min):</strong><br>
+  Alteplase (rt-PA): 15 mg IV bolus → 0,75 mg/kg em 30 min (máx 50 mg) → 0,5 mg/kg em 60 min (máx 35 mg) · Total máx 100 mg<br>
+  Tenecteplase: bolus único IV (dose por peso: 30–50 mg) · Mais conveniente<br>
+  CI ao trombolítico: AVC hemorrágico ou isquêmico em &lt;3 meses, cirurgia intracraniana recente, neoplasia/malformação AV intracraniana, sangramento ativo, HAS grave não controlada (&gt;180/110 após tratamento), dissecção de aorta<br><br>
+<strong>Farmacoterapia peri-IAM:</strong><br>
+• AAS 300 mg + Ticagrelor 180 mg (ou prasugrel em ICP, ou clopidogrel pré-trombolítico)<br>
+• UFH 60 UI/kg bolus (máx 4000 UI) → 12 UI/kg/h (máx 1000 UI/h) — manter PTTa 50–70s<br>
+• Enoxaparina: 30 mg IV bolus → 1 mg/kg SC 12/12h (alternativa à UFH)<br>
+• Nitroglicerina IV: isquemia persistente, IC, HAS · CI: hipotensão, bradicardia, VD infartado, uso de sildenafila/tadalafila<br>
+• Betabloqueador: iniciar em 24h se FC &gt;60, PAS &gt;90, sem IC/choque · Metoprolol 25–50 mg VO<br>
+• IECA: ramipril 2,5–5 mg 2×/dia — iniciar em 24h (FE reduzida, DM, HAS, IAM anterior extenso)<br>
+• Estatina alta intensidade: iniciar imediatamente`,
+     note:'VD infartado (IAM inferior com ≥1 mm em V4R): hipotensão tratada com VOLUME (sem nitrato, sem diurético) + pressores (noradrenalina) se sem resposta a volume. Diagnosticar: eletrocardiograma com derivações direitas (V3R, V4R). AAS + anticoagulante + DAPT: evitar AINE e COX-2 (aumentam risco cardiovascular e interferem com a antiagregação do AAS).'},
+    {col:'#1e3a8a',nome:'Endocardite Infecciosa — Critérios de Duke e Tratamento',
+     body:`<strong>Critérios de Duke Modificados:</strong><br>
+EI definida: 2 critérios maiores OU 1 maior + 3 menores OU 5 menores<br>
+Maiores: hemoculturas positivas para organismos típicos (≥2 pares) OU evidência de envolvimento endocardíaco (eco: vegetação, abscesso, regurgitação nova)<br>
+Menores: predisposição cardíaca/UDI · Febre &gt;38°C · Fenômenos vasculares (embolia séptica, Janeway) · Fenômenos imunológicos (Osler, Roth, FR +) · Hemoculturas positivas não-major<br><br>
+<strong>ATB Empírico (antes da cultura — baseado no contexto):</strong><br>
+<table>
+  <tr><th>Contexto</th><th>ATB Empírico</th></tr>
+  <tr><td>Comunitária / valva nativa</td><td>Ampicilina-sulbactam 3 g 6h + Gentamicina 3 mg/kg/dia IV (3 doses/dia)</td></tr>
+  <tr><td>MRSA suspeito / dispositivo / hospitalar</td><td>Vancomicina AUC-guiada + Gentamicina</td></tr>
+  <tr><td>Valva protética precoce (&lt;12m)</td><td>Vancomicina + Gentamicina + Rifampicina 300 mg 3×/dia</td></tr>
+</table>
+<br>
+<strong>ATB Definitivo por Germe:</strong><br>
+• <strong>S. aureus (sensível — OSSA) valva nativa:</strong> Oxacilina 2 g IV 4/4h × 6 sem<br>
+• <strong>MRSA:</strong> Vancomicina AUC 400–600 × 6 sem · Daptomicina 6–8 mg/kg/dia (se valva direita isolada ou CI vanco)<br>
+• <strong>Streptococcus viridans (sensível — PIC ≤0,12):</strong> Penicilina G 18–24 MUI/dia × 4 sem OU ampicilina 2 g 4h × 4 sem<br>
+• <strong>Enterococcus faecalis:</strong> Ampicilina 2 g 4h × 6 sem + Ceftriaxona 2 g 12h × 6 sem (TREE trial: sem gentamicina — menor nefrotoxicidade)<br>
+• <strong>HACEK:</strong> Ceftriaxona 2 g/dia × 4 sem · Alternativa: ampicilina-sulbactam<br><br>
+<strong>Indicações Cirúrgicas (referência cardiotorácica):</strong><br>
+• IC refratária ao tratamento clínico (regurgitação grave) · Abscesso perivalvar / fistula<br>
+• Embolização persistente sob ATB adequado (&gt;2 eventos) · Vegetação grande (&gt;15 mm) + embolia ou instabilidade<br>
+• Fungo ou germe multirresistente · Valva protética com disfunção mecânica`,
+     note:'Hemoculturas em EI: colher 3 pares em 1h de locais diferentes, antes de ATB (sensibilidade 90%). EI de válvula tricúspide (UDIV — drogas injetáveis): S. aureus em 70%; pode tratar com oxacilina/daptomicina VO por 4 sem sem cirurgia em casos sem complicação. Profilaxia de EI: amoxicilina 2 g VO 30–60 min antes de procedimentos dentários (mucosa oral) apenas em pacientes de alto risco (valva protética, EI prévia, cardiopatia congênita cianótica não-reparada).'},
+  ];
+  document.getElementById('scaList').innerHTML=CARDS.map(c=>`<div class="car-card" style="border-color:${c.col}"><div class="car-nome" style="color:${c.col}">${c.nome}</div><div class="car-body">${c.body}</div>${c.note?`<div style="font-size:.7rem;color:#64748b;margin-top:6px">💡 ${c.note}</div>`:''}</div>`).join('');
+}
+
+/* ─── VALVOPATIAS & CMHO ─────────────────────────────────────────── */
+function renderValv(){
+  if(document.getElementById('valvList').innerHTML) return;
+  const CARDS=[
+    {col:'#b91c1c',nome:'Estenose Aórtica Grave — TAVI vs Cirurgia',
+     body:`<strong>Diagnóstico de EA grave:</strong><br>
+AVA &lt;1 cm² + gradiente médio &gt;40 mmHg OU Vmax &gt;4 m/s (+ sintomas: dispneia, síncope, angina)<br><br>
+<strong>Indicação de intervenção:</strong><br>
+• EA grave sintomática (mortalidade 50% em 2 anos sem cirurgia)<br>
+• EA grave assintomática + FE &lt;50% OU FEVI cai &gt;10% no esforço<br><br>
+<strong>TAVI vs Cirurgia (SAVR):</strong><br>
+<table>
+  <tr><th>Risco cirúrgico (STS)</th><th>Preferência</th></tr>
+  <tr><td>Alto risco (&gt;8%) ou inoperável</td><td>TAVI (PARTNER-1/CoreValve: TAVI &gt; médico; não-inferior à cirurgia)</td></tr>
+  <tr><td>Risco intermediário (4–8%)</td><td>TAVI não-inferior à cirurgia (PARTNER-2A, SURTAVI)</td></tr>
+  <tr><td>Baixo risco (&lt;4%) &lt;75 anos</td><td>Cirurgia (maior durabilidade) — TAVI emergindo (PARTNER-3, Evolut Low-Risk)</td></tr>
+  <tr><td>Baixo risco &gt;75 anos</td><td>TAVI (menor recuperação, sem esternotomia)</td></tr>
+</table>
+<br>
+<strong>Farmacoterapia pós-TAVI:</strong><br>
+AAS 75–100 mg/dia + clopidogrel 75 mg/dia × 3–6 meses → AAS isolado<br>
+Se FA coexistente: DOAC isolado (sem DAPT adicional salvo se DRC/alto risco trombótico)<br><br>
+<strong>EA de baixo gradiente com FE reduzida (pseudo-severa):</strong><br>
+Ecocardiograma de estresse com dobutamina: distingue EA verdadeira (AVA não muda) de pseudo-EA (AVA sobe com ↑DC)`,
+     note:'Valvoplastia aórtica com balão: apenas como ponte para TAVI em pacientes instáveis. Sem benefício como tratamento definitivo (reestenose em 6–12 meses). Bicúspide aórtica: TAVI mais complexo (assimetria) — preferir cirurgia em jovens. EA + doença coronária: ICP simultânea ao TAVI ou antes do SAVR.'},
+    {col:'#7c3aed',nome:'Regurgitação Mitral — Reparo vs Substituição vs Clip',
+     body:`<strong>RM Orgânica (degenerativa) — prolapso mitral:</strong><br>
+Indicação de cirurgia:<br>
+• RM grave sintomática (NYHA II–IV) · RM grave assintomática + FE &lt;60% ou DDVE &gt;45 mm<br>
+• Reparo mitral preferível à substituição (menor mortalidade, preserva função VE)<br><br>
+<strong>RM Funcional (isquêmica ou dilatativa — anel dilatado):</strong><br>
+• Tratar a causa (revascularização, otimização de IC) — cirurgia de pouco benefício adicional<br>
+• COAPT trial: <strong>MitraClip (clip percutâneo de cúspides):</strong> RM grave funcional residual em IC otimizada + critérios específicos → reduz hospitalização por IC 47% e mortalidade<br>
+  Indicação: FEVI 20–50%, volumes VE não excessivos, anatomia favorável<br><br>
+<strong>Estenose Mitral:</strong><br>
+• AM &lt;1,5 cm² + sintomas (NYHA II–IV) → intervenção<br>
+• Valvotomia mitral percutânea (VMP) com balão: 1ª linha se anatomiafavorável (Wilkins ≤8) · Valva calcificada/AI trombo: cirurgia<br>
+• Anticoagulação: warfarina obrigatória em FA ou embolia prévia (DOAC NÃO aprovado em EM reumática)<br>
+• Controle de FC: betabloqueador ou verapamil (evitar esforço excessivo que encurta tempo de enchimento diastólico)`,
+     note:'Prolapso de valva mitral: maioria benigno; risco arrítmico aumentado em prolapso clássico (valva redundante + inversão T em V4–V6 + betabloqueador reduz risco de MS súbita). Regurgitação tricúspide grave: avaliar reparo concomitante ao procedimento mitral (anel tricúspide dilata em cascata). Endocardite mitral: cirurgia precoce se vegetação &gt;10 mm + embolia.'},
+    {col:'#059669',nome:'Miocardiopatia Hipertrófica Obstrutiva (CMHO) — Mavacamten',
+     body:`<strong>Diagnóstico:</strong> espessura do septo interventricular ≥15 mm sem causa alternativa (HAS, EA) na ausência de doença de depósito<br>
+CMHO: GOTO &gt;30 mmHg em repouso ou ≥50 mmHg provocável (manobra de Valsalva)<br><br>
+<strong>Tratamento farmacológico — CMHO com obstução (GOTO ≥30 mmHg):</strong><br>
+• <strong>Betabloqueador:</strong> Metoprolol succinato 25–200 mg/dia OU Propranolol 80–320 mg/dia · 1ª linha · Reduz FC e GOTO · Melhora sintomas<br>
+• <strong>Verapamil 120–480 mg/dia:</strong> alternativa se intolerância a BB · CI se GOTO muito alto + IC (pode deteriorar hemodinâmica)<br>
+• <strong>Disopiramida 100–400 mg/dia (com BB ou verapamil):</strong> inibidor inotrópico + GOTO negativo · Efeitos anticolinérgicos (boca seca, retenção urinária, visão turva, constipação)<br><br>
+<strong>MAVACAMTEN (Camzyos) — novo!</strong><br>
+• <strong>Inibidor seletivo de miosina cardíaca (miosin ATPase inhibitor):</strong> reduz formação de pontes actina-miosina → menor obstrução<br>
+• Dose: 2,5 mg/dia → titular conforme GOTO e FE (a cada 4 sem) até 15 mg/dia<br>
+• EXPLORER-HCM trial (NEJM 2020): GOTO ↓47 mmHg, melhora NYHA, VO2 máximo<br>
+• CI: FE &lt;55% (risco de deterioração sistólica) · Inibidores de CYP2C19 (aumentam nível de mavacamten) · Gravidez<br>
+• Monitorar: eco com FE e GOTO a cada 4 sem durante titulação · Nível sérico disponível<br><br>
+<strong>Septal Reduction Therapy (CMHO refratária a fármacos):</strong><br>
+• Miectomia septal cirúrgica (Morrow): intervenção padrão-ouro · Centros experientes · Alívio imediato e durável do GOTO<br>
+• Ablação septal por álcool (ASA): alternativa percutânea · Risco de BAV completo (20%) → marcapasso`,
+     note:'CMHO e risco de morte súbita: calculadora HCM Risk-SCD (ESC 2014) — 5 fatores (espessura MV, diâmetro AE, GOTO, história familiar, síncope). Score ≥6%/5 anos → CDI indicado. CMHO e desporto: atividade intensa CI (natação e caminhada permitidos). CMHO e fármacos contraindicados: digoxina, vasodilatadores puros (nitratos, IECA, BRA), diuréticos excessivos (reduzem pré-carga → piora GOTO).'},
+  ];
+  document.getElementById('valvList').innerHTML=CARDS.map(c=>`<div class="car-card" style="border-color:${c.col}"><div class="car-nome" style="color:${c.col}">${c.nome}</div><div class="car-body">${c.body}</div>${c.note?`<div style="font-size:.7rem;color:#64748b;margin-top:6px">💡 ${c.note}</div>`:''}</div>`).join('');
+}
+</script>
+</body>
+</html>

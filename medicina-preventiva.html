@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Medicina Preventiva — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .prv-hdr{background:linear-gradient(135deg,#14532d,#16a34a);color:#fff;border-radius:14px;padding:18px;margin-bottom:14px}
+    .prv-title{font-size:1rem;font-weight:800;margin-bottom:4px}
+    .prv-sub{font-size:.73rem;opacity:.8}
+    label{font-size:.75rem;font-weight:700;color:#1e3a5f;display:block;margin-bottom:4px}
+    select,input[type=number]{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:10px;padding:10px 12px;font-size:.85rem;background:#fff;margin-bottom:10px}
+    select:focus,input:focus{border-color:#16a34a;outline:none}
+    .btn-calc{width:100%;background:#16a34a;color:#fff;border:none;border-radius:12px;padding:13px;font-size:.87rem;font-weight:700;cursor:pointer;margin:8px 0}
+    .tab-bar{display:flex;gap:6px;margin-bottom:14px}
+    .tab-btn{flex:1;padding:9px 4px;border-radius:10px;border:2px solid #e2e8f0;background:#fff;font-size:.72rem;font-weight:700;cursor:pointer;color:#64748b}
+    .tab-btn.active{border-color:#16a34a;background:#f0fdf4;color:#16a34a}
+    .prv-card{border-radius:10px;border-left:5px solid;padding:10px 14px;margin-bottom:8px;background:#fff}
+    .prv-nome{font-size:.83rem;font-weight:800;margin-bottom:4px}
+    .prv-body{font-size:.76rem;line-height:1.7;color:#374151}
+    .result-box{background:#f0fdf4;border:2px solid #16a34a;border-radius:12px;padding:14px;margin-top:8px}
+    .result-line{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #dcfce7;font-size:.8rem}
+    .result-val{font-weight:800;color:#16a34a}
+    .alert-r{background:#fef2f2;border:2px solid #dc2626;border-radius:10px;padding:8px;margin:6px 0;font-size:.75rem;color:#7f1d1d;font-weight:700}
+    table{width:100%;border-collapse:collapse;font-size:.73rem;margin-top:6px}
+    th{background:#14532d;color:#fff;padding:5px 8px;text-align:left}
+    td{padding:5px 8px;border-bottom:1px solid #f1f5f9}
+    tr:nth-child(even) td{background:#f0fdf4}
+    .chip{display:inline-block;padding:2px 8px;border-radius:999px;font-size:.65rem;font-weight:800;color:#fff;margin:2px}
+  </style>
+</head>
+<body>
+<header class="top-bar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <span class="top-title">Medicina Preventiva</span>
+  <div class="top-right"></div>
+</header>
+<main class="container" style="padding-bottom:90px">
+  <div class="prv-hdr">
+    <div class="prv-title">🌱 Medicina Preventiva & Rastreamento</div>
+    <div class="prv-sub">Prevenção CV · Rastreios · Obesidade · Tabagismo · Vacinas adulto</div>
+  </div>
+  <div class="tab-bar">
+    <button class="tab-btn active" id="tb0" onclick="showTab(0)">Prev. CV & Rastreios</button>
+    <button class="tab-btn" id="tb1" onclick="showTab(1)">Tabagismo & Obesidade</button>
+    <button class="tab-btn" id="tb2" onclick="showTab(2)">Vacinas do Adulto</button>
+  </div>
+
+  <!-- TAB 0 — PREV CV & RASTREIOS -->
+  <div id="tab0">
+    <div style="font-size:.78rem;font-weight:800;color:#16a34a;margin-bottom:8px">📊 Risco Cardiovascular — ASCVD 10 anos</div>
+    <div class="card" style="padding:12px 14px">
+      <label>Idade</label><input type="number" id="asc_idade" min="40" max="79" placeholder="40–79 anos">
+      <label>Colesterol Total (mg/dL)</label><input type="number" id="asc_ct" placeholder="ex: 200">
+      <label>LDL-c (mg/dL)</label><input type="number" id="asc_ldl" placeholder="ex: 130">
+      <label>HDL-c (mg/dL)</label><input type="number" id="asc_hdl" placeholder="ex: 50">
+      <label>PAS sistólica (mmHg)</label><input type="number" id="asc_pas" placeholder="ex: 130">
+      <label>Sexo</label>
+      <select id="asc_sexo"><option value="M">Masculino</option><option value="F">Feminino</option></select>
+      <label>Raça</label>
+      <select id="asc_raca"><option value="W">Branca / Outras</option><option value="B">Negra / Afrodescendente</option></select>
+      <label>Tabagismo ativo?</label>
+      <select id="asc_tab"><option value="N">Não</option><option value="S">Sim</option></select>
+      <label>Tratamento para HAS?</label>
+      <select id="asc_has"><option value="N">Não</option><option value="S">Sim</option></select>
+      <label>Diabetes?</label>
+      <select id="asc_dm"><option value="N">Não</option><option value="S">Sim</option></select>
+    </div>
+    <button class="btn-calc" onclick="calcASCVD()">🫀 Calcular Risco CV</button>
+    <div id="ascResult" style="display:none"></div>
+
+    <div style="margin-top:14px">
+      <div style="font-size:.78rem;font-weight:800;color:#14532d;margin-bottom:8px">🔍 Rastreamentos por Faixa Etária (USPSTF / INCA / SBC)</div>
+      <div id="rastrList"></div>
+    </div>
+  </div>
+
+  <!-- TAB 1 — TABAGISMO & OBESIDADE -->
+  <div id="tab1" style="display:none">
+    <div id="tabObesList"></div>
+  </div>
+
+  <!-- TAB 2 — VACINAS ADULTO -->
+  <div id="tab2" style="display:none">
+    <div id="vacinaList"></div>
+  </div>
+</main>
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+<script src="js/db.js"></script>
+<script>
+function showTab(n){[0,1,2].forEach(i=>{document.getElementById('tab'+i).style.display=i===n?'block':'none';document.getElementById('tb'+i).classList.toggle('active',i===n);});if(n===0&&!document.getElementById('rastrList').innerHTML)renderRastr();if(n===1)renderTabObes();if(n===2)renderVac();}
+
+/* ─── ASCVD (estimativa simplificada — Pooled Cohort Equations) ─── */
+function calcASCVD(){
+  const idade=parseInt(document.getElementById('asc_idade').value)||55;
+  const ct=parseFloat(document.getElementById('asc_ct').value)||200;
+  const ldl=parseFloat(document.getElementById('asc_ldl').value)||130;
+  const hdl=parseFloat(document.getElementById('asc_hdl').value)||50;
+  const pas=parseFloat(document.getElementById('asc_pas').value)||130;
+  const sexo=document.getElementById('asc_sexo').value;
+  const raca=document.getElementById('asc_raca').value;
+  const tab=document.getElementById('asc_tab').value==='S';
+  const hasRx=document.getElementById('asc_has').value==='S';
+  const dm=document.getElementById('asc_dm').value==='S';
+
+  // Equações do Pooled Cohort (ACC/AHA 2013) — logarítmicas por grupo demográfico
+  const lnA=Math.log(idade), lnCT=Math.log(ct), lnHDL=Math.log(hdl), lnPAS=Math.log(pas);
+  let indiv=0, media=0, baseRisk=0;
+
+  if(sexo==='M'&&raca==='W'){
+    indiv=12.344*lnA+11.853*lnCT-2.664*Math.log(hdl)+1.769*(hasRx?lnPAS:0)+(hasRx?0:1.764)*lnPAS+7.837*0+(tab?7.837:0)+(dm?0.661:0);
+    media=61.18; baseRisk=0.9144;
+    indiv=1-Math.pow(baseRisk,Math.exp(indiv-media));
+  } else if(sexo==='M'&&raca==='B'){
+    indiv=2.469*lnA+0.302*lnCT-0.307*Math.log(hdl)+1.916*(hasRx?lnPAS:0)+(hasRx?0:1.809)*lnPAS+(tab?0.549:0)+(dm?0.645:0);
+    media=19.54; baseRisk=0.8954;
+    indiv=1-Math.pow(baseRisk,Math.exp(indiv-media));
+  } else if(sexo==='F'&&raca==='W'){
+    indiv=-29.799*lnA+4.884*lnA*lnA+13.54*lnCT-3.114*lnA*lnCT-13.578*Math.log(hdl)+3.149*lnA*Math.log(hdl)+2.019*(hasRx?lnPAS:0)+(hasRx?0:1.957)*lnPAS+(tab?7.574:0)+(dm?0.661:0);
+    media=-29.18; baseRisk=0.9665;
+    indiv=1-Math.pow(baseRisk,Math.exp(indiv-media));
+  } else {
+    indiv=17.1141*lnA+0.9396*lnCT-18.9196*Math.log(hdl)+4.4748*lnA*Math.log(hdl)+29.2907*(hasRx?lnPAS:0)-6.4321*(hasRx?lnA*lnPAS:0)+(hasRx?0:27.8197)*lnPAS+(hasRx?0:-6.0873*lnA*lnPAS)+(tab?0.8738:0)+(dm?0.8738:0);
+    media=86.61; baseRisk=0.9533;
+    indiv=1-Math.pow(baseRisk,Math.exp(indiv-media));
+  }
+  const risco=Math.max(0,Math.min(0.99,indiv))*100;
+  let cat='',cor='',rec='',estatina='';
+  if(risco<5){cat='Baixo risco';cor='#16a34a';rec='Mudanças de estilo de vida';estatina='Estatina NÃO indicada para prevenção primária com risco &lt;5%';}
+  else if(risco<7.5){cat='Borderline';cor='#b45309';rec='Considerar fatores modificadores (PCR-us, score de cálcio — CAC)';estatina='Estatina de intensidade moderada se fatores de risco aumentadores';}
+  else if(risco<20){cat='Risco Intermediário';cor='#ea580c';rec='Estatina de intensidade moderada-alta';estatina='<strong>Atorvastatina 10–20 mg</strong> OU Rosuvastatina 5–10 mg/dia · Meta LDL &lt;100 mg/dL';}
+  else{cat='Alto Risco';cor='#dc2626';rec='Estatina de alta intensidade + mudança de estilo de vida intensa';estatina='<strong>Atorvastatina 40–80 mg</strong> OU Rosuvastatina 20–40 mg · Meta LDL &lt;70 mg/dL (ou &lt;50 se muito alto risco)';}
+  let ext='';
+  if(risco>=5&&risco<20){ext=`<div style="margin-top:8px;font-size:.77rem"><strong>Fatores que aumentam risco (modificadores — mover para estatina):</strong><br>
+• PCR-us ≥2 mg/L · Score CAC ≥100 UA (tomografia de cálcio coronário) · Tornozelo-braquial &lt;0,9 (DAP)<br>
+• História familiar prematura de DCV · LDL ≥160 mg/dL · Triglicerídeos ≥175 mg/dL persistentes<br>
+• TFG 15–59 · Pré-eclâmpsia · Artrite reumatoide · DII · Psoríase · HIV<br><br>
+<strong>AAS na prevenção primária (USPSTF 2022 — mudança importante):</strong><br>
+• 40–59 anos + risco ≥10%: AAS 81 mg/dia — <strong>decisão compartilhada</strong> (risco hemorrágico vs benefício modesto)<br>
+• ≥60 anos: AAS DESACONSELHADO em prevenção primária (benefício não supera risco GI)</div>`;
+  }
+  document.getElementById('ascResult').style.display='block';
+  document.getElementById('ascResult').innerHTML=`<div class="result-box"><div class="result-line"><span>Risco ASCVD 10 anos (estimado)</span><span class="result-val">${risco.toFixed(1)}%</span></div><div style="margin-top:6px;font-weight:800;color:${cor}">${cat}</div><div style="margin-top:4px;font-size:.78rem">${rec}</div><div style="margin-top:8px;font-size:.78rem">${estatina}</div>${ext}</div>`;
+  if(!document.getElementById('rastrList').innerHTML) renderRastr();
+}
+
+/* ─── RASTREAMENTOS ─────────────────────────────────────────────── */
+function renderRastr(){
+  const CARDS=[
+    {col:'#0369a1',nome:'Câncer Colorretal — Rastreamento (INCA/USPSTF 2021)',
+     body:`<strong>Início:</strong> 45 anos (USPSTF 2021 antecipou de 50 para 45 anos — GI rate de câncer em jovens) · Início mais cedo se história familiar<br><br>
+<table>
+  <tr><th>Exame</th><th>Frequência</th><th>Observações</th></tr>
+  <tr><td>Colonoscopia</td><td>A cada 10 anos</td><td>Padrão-ouro · Exame terapêutico (remove pólipos)</td></tr>
+  <tr><td>Sigmoidoscopia flexível</td><td>A cada 5 anos</td><td>Combinar com PSOF anual</td></tr>
+  <tr><td>Colonoscopia virtual (CTC)</td><td>A cada 5 anos</td><td>Sem sedação · Achados requerem colonoscopia</td></tr>
+  <tr><td>PSOF fecal (FIT)</td><td>Anual</td><td>Mais acessível · Positivo → colonoscopia</td></tr>
+  <tr><td>DNA fecal (Cologuard)</td><td>A cada 1–3 anos</td><td>Custo elevado · Alta sensibilidade</td></tr>
+</table>
+<strong>Alto risco:</strong> CCR familiar de 1° grau &lt;60 anos → colonoscopia a partir de 40 anos OU 10 anos antes do caso familiar (o que for mais cedo)<br>
+Doença de Lynch (MMR): colonoscopia anual desde 25 anos<br>
+PAF: sigmoidoscopia anual desde adolescência`},
+    {col:'#be185d',nome:'Câncer de Mama — Rastreamento (USPSTF 2024 / FEBRASGO)',
+     body:`<strong>USPSTF 2024 (revisão):</strong> mamografia bienal a partir dos <strong>40 anos</strong> (antecipou de 50 para 40) · Até 74 anos<br>
+<strong>FEBRASGO:</strong> mamografia anual a partir de 40 anos · Ultrassonografia em mamas densas<br><br>
+<strong>Alto risco (iniciar mais cedo + RM):</strong><br>
+• Mutação BRCA1/BRCA2 · PALB2, CHEK2, ATM · Mama densa categoria C–D (BIRADS)<br>
+• Histórico familiar (1° grau) &lt;50 anos ou bilateral ou câncer de mama em homem<br>
+• Histórico pessoal de Ca mama/ovário · Radioterapia torácica antes dos 30 anos (linfoma Hodgkin)<br>
+• Nestas: RM + mamografia anualmente a partir de 30 anos (ou 10 anos antes do caso familiar)<br><br>
+<strong>Teste genético BRCA (USPSTF):</strong><br>
+Histórico familiar positivo para Ca mama/ovário/pâncreas/próstata agressivo → encaminhar conselheiro genético<br>
+Se BRCA1/2 +: quimioprofilaxia com tamoxifeno 20 mg/dia × 5 anos (pré-menopáusica) OU raloxifeno/anastrozol (pós-menopáusica) OU mastectomia redutora de risco`},
+    {col:'#7c3aed',nome:'Ca de Colo do Útero · Ca de Próstata · Ca de Pulmão',
+     body:`<strong>Colo do Útero — Citologia (Papanicolaou):</strong><br>
+• Início: 25 anos · Citopatologia a cada 3 anos até 64 anos<br>
+• 25–64 anos: preferir co-teste (citologia + HPV-DNA) a cada 5 anos<br>
+• &gt;64 anos: interromper se ≥2 negativos consecutivos nos últimos 10 anos<br>
+• Histerectomia total + sem histórico de NIC2/3: interromper rastreamento<br>
+Vacinação HPV: 9–14 anos (2 doses) · até 26 anos (3 doses) · 27–45 anos: decidir com médico<br><br>
+<strong>Próstata — PSA:</strong><br>
+• USPSTF: PSA não recomendado como rastreamento de rotina (&gt;55 anos: decisão individual informada)<br>
+• SBU/CFM: oferecer PSA anual a partir de 50 anos (45 se afrodescendente ou familiar de 1° grau com Ca próstata &lt;65 anos)<br>
+• PSA &gt;4 ng/mL ou velocidade de subida &gt;0,75 ng/mL/ano: urologista + biópsia guiada por RM multiparamétrica<br><br>
+<strong>Pulmão — TC de tórax de baixa dose:</strong><br>
+• 50–80 anos + história de ≥20 maços-ano + tabagismo atual ou cessação &lt;15 anos (USPSTF 2021)<br>
+• Anualmente · NLST trial: redução 20% de mortalidade por Ca pulmão<br>
+• Cessação do tabagismo: mais eficaz que qualquer rastreamento (reduz risco em 90% após 15 anos)`,},
+    {col:'#0369a1',nome:'Rastreamentos Metabólicos e Cardiovasculares',
+     body:`<strong>Diabetes (ADA 2024):</strong><br>
+• Triagem: HbA1c OU glicemia jejum OU TOTG 75g a cada 3 anos — adultos assintomáticos ≥35 anos com sobrepeso/obesidade OU qualquer adulto com HAS, dislipidemia, DM gestacional prévio, SOP, familiar de 1° grau<br>
+• Pré-DM: glicemia jejum 100–125 mg/dL OU HbA1c 5,7–6,4% OU TOTG 140–199 mg/dL<br><br>
+<strong>Hipertensão:</strong><br>
+• USPSTF: medição de PA a cada 1 ano (adultos ≥18 anos) · MAPA/MRPA para confirmar diagnóstico<br>
+• PA ótima: &lt;120/80 · PA elevada: 120–129/&lt;80 · HAS 1: 130–139/80–89 · HAS 2: ≥140/90<br><br>
+<strong>Dislipidemia:</strong><br>
+• Lipidograma em jejum de 12h a partir dos 20 anos · Repetir a cada 5 anos se normal<br>
+• Hipercolesterolemia familiar (HF): LDL ≥190 mg/dL sem causa secundária + histórico familiar → diagnóstico de HF (Dutch Lipid Clinic Network score)<br><br>
+<strong>Abdominal Aorta Aneurysm (AAA):</strong><br>
+• Homens 65–75 anos com histórico de tabagismo: ultrassom abdominal único · AAA &gt;5,5 cm: cirurgia eletiva<br><br>
+<strong>Doença Renal Crônica:</strong><br>
+• TFG (CKD-EPI 2021 sem raça) + ACR (albumina/creatinina urinária) em DM, HAS, obesidade, família com DRC`},
+  ];
+  document.getElementById('rastrList').innerHTML=CARDS.map(c=>`<div class="prv-card" style="border-color:${c.col}"><div class="prv-nome" style="color:${c.col}">${c.nome}</div><div class="prv-body">${c.body}</div></div>`).join('');
+}
+
+/* ─── TABAGISMO & OBESIDADE ─────────────────────────────────────── */
+function renderTabObes(){
+  if(document.getElementById('tabObesList').innerHTML) return;
+  const CARDS=[
+    {col:'#374151',nome:'Cessação do Tabagismo — Farmacoterapia',
+     body:`<strong>Eficácia comparativa:</strong> Vareniclina &gt; TRN combinado (adesivo + goma) &gt; bupropiona &gt; TRN monoterapia<br><br>
+<strong>1. Vareniclina (Champix/Chantix) — agonista parcial nAChR α4β2</strong><br>
+• Dose: 0,5 mg/dia × 3 dias → 0,5 mg 2×/dia × 4 dias → <strong>1 mg 2×/dia × 12 sem</strong> (iniciar 1 semana antes da data de parar)<br>
+• Extensão: 12 semanas adicionais aumenta abstinência para 44% em 1 ano (EAGLES trial: extensão de 24 sem superior)<br>
+• RAM: náusea (tomar com alimento), sonhos vivos, cefaleia · Cardioseguro em DCV estável (EAGLES: sem diferença em MACE vs placebo)<br>
+• Gravidez: não usar · Adolescentes: aprovado ≥12 anos nos EUA<br>
+• Mirtazapina 15 mg: pode reduzir náusea da vareniclina (também melhora humor em ex-tabagistas)<br><br>
+<strong>2. Terapia de Reposição de Nicotina (TRN)</strong><br>
+• <strong>Adesivo (patch):</strong> 21 mg/24h × 6 sem → 14 mg × 2 sem → 7 mg × 2 sem (TRN de alta dose se &gt;1 maço/dia)<br>
+• <strong>Goma de mascar:</strong> 2 mg (≤25 cigarros/dia) ou 4 mg (&gt;25 cigarros/dia) · 1 goma a cada 1–2h · Técnica mordida-pausa-bocal<br>
+• Pastilha: 2 mg ou 4 mg · Dissolver debaixo da língua<br>
+• Spray nasal (não disponível no Brasil) · Inalador<br>
+• <strong>Combinação adesivo + forma de liberação rápida</strong> (goma/pastilha): superior à monoterapia · Adesivo controla baseline + goma controla fissura<br><br>
+<strong>3. Bupropiona SR 150 mg/dia × 3 dias → 150 mg 2×/dia × 7–12 sem</strong><br>
+• Antidepressivo com efeito adicional em cessação (iniciar 1 sem antes da data de parar)<br>
+• CI: histórico de convulsão, transtorno alimentar (bulimia/AN), IMAO em uso · Cuidado: IAM recente, bipolar<br>
+• Útil em depressão comórbida com tabagismo<br><br>
+<strong>4. Citicolina (Cytidine 5-diphosphocholine):</strong><br>
+• Evidência emergente: reduz craving de nicotina · 500 mg 2×/dia · Off-label no Brasil<br><br>
+<strong>Abordagem 5As (INCA/BRASIL):</strong><br>
+Abordar (perguntar sobre tabagismo) → Aconselhar (orientar a parar) → Avaliar (prontidão para parar) → Auxiliar (oferecer suporte + farmacoterapia) → Acompanhar (follow-up em 1, 4, 12 semanas)`,
+     note:'Cigarros eletrônicos (vaping): NÃO recomendados como estratégia de cessação pela FDA/OMS (falta de evidência + EVALI — lesão pulmonar). Narguilé: mesma nicotina/alcatrão do cigarro. Tabaco mastigado: 4× mais risco de Ca boca que cigarro. DPOC e cessação: maior benefício em mortalidade que qualquer broncodilatador disponível.'},
+    {col:'#7c3aed',nome:'Obesidade — Farmacoterapia (IMC ≥30 ou ≥27 + comorbidade)',
+     body:`<strong>Critérios para farmacoterapia:</strong> IMC ≥30 kg/m² OU IMC ≥27 + ≥1 comorbidade (DM, HAS, dislipidemia, SAOS, doença cardíaca) + falha de mudança comportamental ≥3 meses<br><br>
+<strong>Análogos de GLP-1 — 1ª linha (2024):</strong><br>
+• <strong>Semaglutida (Wegovy) 2,4 mg SC semanal:</strong> titulação em 16 sem (0,25→0,5→1→1,7→2,4 mg) · STEP-1: -14,9% peso em 68 sem · SELECT trial: -20% MACE em obesos sem DM → aprovado para prevenção CV<br>
+  Forma oral: Rybelsus 7–14 mg/dia (aprovada para DM2, off-label para obesidade)<br>
+  RAM: náusea, vômito, diarreia (graduais com titulação lenta) · CI: neoplasia medular de tireoide, MEN2, pancreatite grave<br>
+• <strong>Liraglutida (Saxenda) 3 mg SC diário:</strong> titulação em 5 sem · -8% peso · LEADER trial: redução MACE em DM<br><br>
+<strong>Agonista duplo GIP/GLP-1:</strong><br>
+• <strong>Tirzepatida (Zepbound) 15 mg SC semanal:</strong> titulação em 20 sem · SURMOUNT-1: -20,9% peso (maior perda entre os aprovados) · Aprovada FDA 2023 para obesidade (no Brasil: Mounjaro aprovada apenas para DM2 até 2024)<br><br>
+<strong>Outras opções aprovadas:</strong><br>
+• <strong>Bupropiona/Naltrexona SR (Contrave/Mysimba) 8/90 mg:</strong> 1 comp/dia → 2×/dia × 1 sem → 2+1×/dia × 1 sem → 2+2×/dia (máx) · COR-I: -6,4% peso · CI: HAS não controlada, convulsão, tabagismo com vareniclina<br>
+• <strong>Orlistate 120 mg 3×/dia com refeições gordurosas</strong>: inibidor de lipase · Perda -3,5 a -5% · Diarreia gordurosa (reduzir gordura na dieta) · Reduz absorção de vitaminas lipossolúveis (suplementar)<br>
+• Fentermina/Topiramato ER (Qsymia): não disponível no Brasil<br>
+• Naltrexona isolada: sem evidência robusta para obesidade<br><br>
+<strong>Cirurgia Bariátrica:</strong><br>
+IMC ≥40 OU ≥35 + comorbidade grave (DM2, SAOS, HAS grave) + falha de tratamento clínico ≥2 anos<br>
+• Bypass gástrico em Y de Roux (BGYR): perda de 60–70% do excesso de peso · Resolução DM2 em 80%<br>
+• Gastrectomia vertical (sleeve): perda 50–60% · Sem desvio intestinal · Menos deficiências nutricionais`,
+     note:'Semaglutida e perda muscular: perda de massa magra (20–30% do peso perdido é músculo) → associar exercício resistido. Semaglutida e cirurgia: suspender 1 semana antes de cirurgia eletiva (risco de aspiração por esvaziamento gástrico retardado — anestesiologista deve ser informado). Manutenção: recidiva de peso ao suspender semaglutida/tirzepatida → tratamento crônico, não temporário.'},
+  ];
+  document.getElementById('tabObesList').innerHTML=CARDS.map(c=>`<div class="prv-card" style="border-color:${c.col}"><div class="prv-nome" style="color:${c.col}">${c.nome}</div><div class="prv-body">${c.body}</div>${c.note?`<div style="font-size:.7rem;color:#64748b;margin-top:6px">💡 ${c.note}</div>`:''}</div>`).join('');
+}
+
+/* ─── VACINAS ADULTO ─────────────────────────────────────────────── */
+function renderVac(){
+  if(document.getElementById('vacinaList').innerHTML) return;
+  const CARDS=[
+    {col:'#0369a1',nome:'Calendário de Vacinação do Adulto — SBIm / SBI 2024',
+     body:`<table>
+  <tr><th>Vacina</th><th>Esquema</th><th>Indicação / Situações Especiais</th></tr>
+  <tr><td>Influenza</td><td>1 dose anual</td><td>Todos adultos · Gestantes em qualquer trimestre · &gt;60 anos (dose dupla ou alta dose Fluzone HD) · Profissionais de saúde</td></tr>
+  <tr><td>COVID-19</td><td>Conforme esquema vigente SVS</td><td>Reforço anual para &gt;60 anos, imunossuprimidos, gestantes</td></tr>
+  <tr><td>dTpa (adulto)</td><td>1 dose a cada 10 anos</td><td>Substituir 1 reforço por dTpa (tétano + difteria + pertussis) · Gestantes: 1 dose entre 20–36 sem em cada gestação (proteção contra coqueluche neonatal)</td></tr>
+  <tr><td>Pneumocócica</td><td>PCV15 ou PCV20 (dose única)</td><td>≥65 anos · Imunossuprimidos, asplenia, DRC, DPOC, DM, cardiopatia: PCV13 + PPSV23 (2 doses)</td></tr>
+  <tr><td>Herpes zóster (Shingrix)</td><td>2 doses IM (0 e 2–6 meses)</td><td>≥50 anos (EUA/ACIP) · &gt;60 anos SBIm Brasil · Imunossuprimidos ≥18 anos · Recombinante inativada = pode ser usada em imunossuprimidos (diferente da vacina viva ZVL)</td></tr>
+  <tr><td>HPV (Gardasil-9)</td><td>2 doses (9–14 anos) · 3 doses (15+)</td><td>Até 26 anos · Compartilhada 27–45 anos · Imunossuprimidos/HIV: 3 doses independente de idade</td></tr>
+  <tr><td>Hepatite B (Engerix/Recombivax)</td><td>3 doses (0, 1, 6 meses)</td><td>Todos adultos não imunizados · Pré-diálise: dose dupla (40 mcg) · Anti-HBs &lt;10 mUI/mL após série: revacinação</td></tr>
+  <tr><td>Hepatite A (Havrix/Vaqta)</td><td>2 doses (0 e 6–12 meses)</td><td>Hepatopatia crônica, viajantes para endêmicas, HSH, hepatite C, usuários de drogas</td></tr>
+  <tr><td>Meningocócica ACWY</td><td>1–2 doses</td><td>Estudantes universitários (moradia coletiva), viajantes para Cinturão do Saara, asplenia, deficiência de complemento</td></tr>
+  <tr><td>Meningocócica B (Bexsero/Trumenba)</td><td>Bexsero: 2 doses · Trumenba: 2–3 doses</td><td>Surtos, asplenia, deficiência de complemento, estudantes universitários (decisão compartilhada)</td></tr>
+  <tr><td>Febre Amarela</td><td>1 dose (dose única vitalícia)</td><td>Viajantes para áreas endêmicas (AM, PA, MT, MS, GO...) · Contraindicada em imunossuprimidos graves e &gt;60 anos (risco de doença viscerotrópica)</td></tr>
+  <tr><td>Tifóide (oral)</td><td>4 cápsulas em dias alternados</td><td>Viajantes para Ásia/África/Américas do Sul - áreas endêmicas · Reforço a cada 5 anos</td></tr>
+  <tr><td>Raiva (pré-exposição)</td><td>3 doses (dias 0, 7, 21 ou 28)</td><td>Veterinários, biólogos, manejadores de morcegos</td></tr>
+</table>
+<br><strong>Vacinas em gestação (SBIm 2024):</strong><br>
+<span class="chip" style="background:#16a34a">Seguras</span> Influenza (inativada), dTpa (20–36 sem), Hep B, Hep A (se alto risco)<br>
+<span class="chip" style="background:#dc2626">Contraindicadas</span> Vacinas vivas atenuadas (FA, SCR, varicela, herpes zóster viva ZVL, oral tifóide)`,},
+    {col:'#059669',nome:'Imunização em Imunossuprimidos (Transplante · Oncologia · Biológicos)',
+     body:`<strong>Princípios gerais:</strong><br>
+• Vacinas vivas: contraindicadas em imunossupressão moderada-grave (exceto quando especificado)<br>
+• Vacinas inativadas: seguras mas com resposta imune reduzida<br>
+• Timing: ideal vacinar ANTES do início da imunossupressão (2 semanas para inativadas, 4 sem para vivas)<br><br>
+<strong>Calendário pós-transplante de órgão sólido:</strong><br>
+<table>
+  <tr><th>Vacina</th><th>Pós-transplante</th></tr>
+  <tr><td>Influenza inativada</td><td>A partir de 3–6 meses (pode iniciar precocemente)</td></tr>
+  <tr><td>Pneumocócica PCV15/PCV20</td><td>≥3–6 meses</td></tr>
+  <tr><td>Hepatite B</td><td>≥6 meses (dose dupla — resposta reduzida)</td></tr>
+  <tr><td>MMR, Varicela, FA</td><td>CONTRAINDICADAS pós-transplante</td></tr>
+  <tr><td>Shingrix (Zóster recombinante)</td><td>≥6–12 meses (inativada — PODE)</td></tr>
+</table>
+<br>
+<strong>Biológicos imunomoduladores (TNF, JAK, IL) — SBR/SBD:</strong><br>
+• Suspender metotrexato 2 semanas antes e após vacina influenza (maior resposta)<br>
+• Rituximabe: vacinar 4 semanas ANTES; após: aguardar pelo menos 6 meses (B-cells indetectáveis)<br>
+• Tofacitinibe/baricitinibe (JAK): suspender 1–2 sem antes de vacina viva · Vacinas inativadas: sem pausa necessária<br>
+• Anti-IL-17/IL-23 (secuquinumabe, rizanquizumabe): vacinas inativadas seguras, vivas contraindicadas<br><br>
+<strong>HIV — CD4 e vacinação:</strong><br>
+CD4 &gt;200: vacinas inativadas seguras + considerar FA (se viagem) e varicela se não-imune<br>
+CD4 &lt;200: adiar vivas · Influenza anual · Pneumocócica · Hep A/B · HPV (CD4 qualquer)`,},
+  ];
+  document.getElementById('vacinaList').innerHTML=CARDS.map(c=>`<div class="prv-card" style="border-color:${c.col}"><div class="prv-nome" style="color:${c.col}">${c.nome}</div><div class="prv-body">${c.body}</div>${c.note?`<div style="font-size:.7rem;color:#64748b;margin-top:6px">💡 ${c.note}</div>`:''}</div>`).join('');
+}
+</script>
+</body>
+</html>
