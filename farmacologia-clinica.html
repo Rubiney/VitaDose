@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Farmacologia Clínica — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .far-hdr{background:linear-gradient(135deg,#1e3a5f,#0f4c81);color:#fff;border-radius:14px;padding:18px;margin-bottom:14px}
+    .far-title{font-size:1rem;font-weight:800;margin-bottom:4px}
+    .far-sub{font-size:.73rem;opacity:.8}
+    label{font-size:.75rem;font-weight:700;color:#1e3a5f;display:block;margin-bottom:4px}
+    select,input{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:10px;padding:10px 12px;font-size:.85rem;background:#fff;margin-bottom:10px}
+    select:focus,input:focus{border-color:#0f4c81;outline:none}
+    .btn-calc{width:100%;background:#0f4c81;color:#fff;border:none;border-radius:12px;padding:13px;font-size:.87rem;font-weight:700;cursor:pointer;margin:8px 0}
+    .tab-bar{display:flex;gap:6px;margin-bottom:14px}
+    .tab-btn{flex:1;padding:9px 4px;border-radius:10px;border:2px solid #e2e8f0;background:#fff;font-size:.72rem;font-weight:700;cursor:pointer;color:#64748b}
+    .tab-btn.active{border-color:#0f4c81;background:#eff6ff;color:#0f4c81}
+    .rec-card{border-radius:12px;border:2px solid;padding:14px;margin-bottom:10px}
+    .rec-hdr{font-size:.63rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+    .rec-nome{font-size:.88rem;font-weight:800;margin-bottom:6px}
+    .rec-badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:.65rem;font-weight:800;color:#fff;margin:2px}
+    .rec-body{font-size:.78rem;margin-top:6px;line-height:1.7}
+    .rec-note{font-size:.71rem;color:#64748b;margin-top:6px;padding-top:6px;border-top:1px solid #f1f5f9}
+    .far-card{border-radius:10px;border-left:5px solid;padding:10px 14px;margin-bottom:8px;background:#fff}
+    .far-nome{font-size:.83rem;font-weight:800;margin-bottom:4px}
+    .far-body{font-size:.76rem;line-height:1.7;color:#374151}
+    .result-box{background:#f8fafc;border:2px solid #0f4c81;border-radius:12px;padding:14px;margin-top:8px}
+    .result-line{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #e2e8f0;font-size:.8rem}
+    .result-val{font-weight:800;color:#0f4c81}
+    .alerta{background:#fef2f2;border:2px solid #dc2626;border-radius:10px;padding:8px;margin:6px 0;font-size:.75rem;color:#7f1d1d;font-weight:700}
+    table{width:100%;border-collapse:collapse;font-size:.73rem;margin-top:6px}
+    th{background:#1e3a5f;color:#fff;padding:5px 8px;text-align:left}
+    td{padding:5px 8px;border-bottom:1px solid #f1f5f9}
+    tr:nth-child(even) td{background:#f8fafc}
+  </style>
+</head>
+<body>
+<header class="top-bar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <span class="top-title">Farmacologia Clínica</span>
+  <div class="top-right"></div>
+</header>
+<main class="container" style="padding-bottom:90px">
+  <div class="far-hdr">
+    <div class="far-title">💊 Farmacologia Clínica Aplicada</div>
+    <div class="far-sub">Peso em Doses · Interações QTc · PK Especial · Serotonérgicos · Abstinência</div>
+  </div>
+  <div class="tab-bar">
+    <button class="tab-btn active" id="tb0" onclick="showTab(0)">Doses por Peso</button>
+    <button class="tab-btn" id="tb1" onclick="showTab(1)">QTc & Serotonínicos</button>
+    <button class="tab-btn" id="tb2" onclick="showTab(2)">PK UTI & Abstinência</button>
+  </div>
+
+  <!-- TAB 0 — DOSES POR PESO / OBESIDADE -->
+  <div id="tab0">
+    <div class="card" style="padding:12px 14px">
+      <label>Altura (cm)</label>
+      <input type="number" id="alt" placeholder="ex: 175" min="100" max="220">
+      <label>Peso Real (kg)</label>
+      <input type="number" id="pr" placeholder="ex: 120" min="20" max="300">
+      <label>Sexo</label>
+      <select id="sex">
+        <option value="M">Masculino</option>
+        <option value="F">Feminino</option>
+      </select>
+    </div>
+    <button class="btn-calc" onclick="calcPeso()">⚖️ Calcular Pesos Farmacológicos</button>
+    <div id="pesoResult" style="display:none"></div>
+
+    <div style="margin-top:14px">
+      <div style="font-size:.78rem;font-weight:800;color:#1e3a5f;margin-bottom:8px">📋 Qual peso usar para cada fármaco?</div>
+      <div class="far-card" style="border-color:#0f4c81">
+        <div class="far-nome" style="color:#0f4c81">Antibióticos</div>
+        <div class="far-body">
+          <table>
+            <tr><th>Fármaco</th><th>Peso a usar</th><th>Observação</th></tr>
+            <tr><td>Vancomicina</td><td>Peso REAL</td><td>Dose inicial ≥4,5 g/dia em obesos mórbidos; monitorar AUC</td></tr>
+            <tr><td>Aminoglicosídeos</td><td>Peso AJUSTADO</td><td>PA = PI + 0,4 × (PR − PI); dose única diária</td></tr>
+            <tr><td>β-lactâmicos</td><td>Peso REAL</td><td>Infusão estendida em ESBL/KPC (T&gt;CIM maximizado)</td></tr>
+            <tr><td>Fluconazol</td><td>Peso REAL</td><td>Dose máx 800 mg/dia em candemia grave obeso</td></tr>
+            <tr><td>Metronidazol</td><td>Peso IDEAL</td><td>Toxicidade aumenta com dose alta em obesos</td></tr>
+            <tr><td>Linezolida</td><td>Peso REAL</td><td>Sem ajuste para obesidade; monitorar plaquetas</td></tr>
+            <tr><td>Ciprofloxacino</td><td>Peso IDEAL</td><td>Distribuição não aumenta proporcionalmente</td></tr>
+            <tr><td>TMP-SMX</td><td>Peso IDEAL</td><td>Toxicidade renal/hematológica se usar PR obeso</td></tr>
+          </table>
+        </div>
+      </div>
+      <div class="far-card" style="border-color:#7c3aed">
+        <div class="far-nome" style="color:#7c3aed">Anticoagulantes & Cardiovasculares</div>
+        <div class="far-body">
+          <table>
+            <tr><th>Fármaco</th><th>Peso</th><th>Detalhe</th></tr>
+            <tr><td>Heparina UFH</td><td>REAL (máx 100 kg)</td><td>Para bolus initial: máx 10.000 UI independente do peso</td></tr>
+            <tr><td>Enoxaparina (profilaxia)</td><td>REAL</td><td>40 mg/dia se PR &lt;100 kg; 60 mg/dia se 100–150 kg; anti-Xa dosar se &gt;150 kg</td></tr>
+            <tr><td>Enoxaparina (tratamento)</td><td>REAL (máx 144 kg sem ajuste)</td><td>&gt;144 kg: usar 1 mg/kg 12/12h e monitorar anti-Xa 4h após 3ª dose</td></tr>
+            <tr><td>DOAC (rivaroxabana, apixabana)</td><td>NÃO ajustar</td><td>ASH 2020: usar doses padrão em obesos; apixabana com mais dados acima de 120 kg</td></tr>
+            <tr><td>Digoxina</td><td>MAGRA (LBW)</td><td>Volume de distribuição proporcional à massa magra (não gordura)</td></tr>
+            <tr><td>Lítio</td><td>IDEAL</td><td>Volume de distribuição não aumenta com gordura</td></tr>
+          </table>
+        </div>
+      </div>
+      <div class="far-card" style="border-color:#059669">
+        <div class="far-nome" style="color:#059669">Analgesia, Sedação e Quimioterapia</div>
+        <div class="far-body">
+          <table>
+            <tr><th>Fármaco</th><th>Peso</th><th>Detalhe</th></tr>
+            <tr><td>Morfina IV</td><td>IDEAL</td><td>Início, titular conforme dor; lipofílicos acumulam</td></tr>
+            <tr><td>Fentanil IV (bolus)</td><td>IDEAL</td><td>Alta lipossolubilidade: depressão respiratória prolongada se PR</td></tr>
+            <tr><td>Fentanil IV (infusão)</td><td>AJUSTADO</td><td>Em infusão contínua: redistribuição para gordura aumenta t½</td></tr>
+            <tr><td>Propofol</td><td>REAL</td><td>Volume de distribuição aumenta com gordura</td></tr>
+            <tr><td>Midazolam</td><td>AJUSTADO</td><td>Evitar midazolam em obesos mórbidos: acumulação e sedação prolongada</td></tr>
+            <tr><td>Cisplatina</td><td>REAL (cappado)</td><td>Muitos protocolos cappam em PR 100 kg para evitar toxicidade</td></tr>
+            <tr><td>Carboplatina (AUC)</td><td>TFG (Cockcroft-Gault REAL)</td><td>Calman-Chatelut: melhor em obesos; capa TFG em alguns centros</td></tr>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 1 — QTc & SEROTONÍNICOS -->
+  <div id="tab1" style="display:none">
+    <div class="card" style="padding:12px 14px">
+      <label>QT medido (ms) — no ECG</label>
+      <input type="number" id="qtm" placeholder="ex: 420" min="200" max="700">
+      <label>FC (bpm)</label>
+      <input type="number" id="qtfc" placeholder="ex: 72" min="30" max="200">
+    </div>
+    <button class="btn-calc" onclick="calcQTc()">💓 Calcular QTc (Bazett e Fridericia)</button>
+    <div id="qtcResult" style="display:none"></div>
+
+    <div style="margin-top:14px">
+      <div style="font-size:.78rem;font-weight:800;color:#1e3a5f;margin-bottom:8px">⚠️ Fármacos com Risco de Prolongamento do QTc</div>
+      <div class="far-card" style="border-color:#dc2626">
+        <div class="far-nome" style="color:#dc2626">Risco Alto — Evitar combinações (CredibleMeds Risk: Known / Conditional)</div>
+        <div class="far-body">
+          <table>
+            <tr><th>Classe</th><th>Fármacos</th><th>ΔQTc esperado</th></tr>
+            <tr><td>Antiarrítmicos IA</td><td>Quinidina, procainamida, disopiramida</td><td>+40–80 ms</td></tr>
+            <tr><td>Antiarrítmicos III</td><td>Amiodarona, sotalol, dofetilida</td><td>+40–100 ms (amio: menor risco Tdp paradoxalmente)</td></tr>
+            <tr><td>Antipsicóticos</td><td>Haloperidol IV (&gt;35 mg), tioridazina, ziprasidona</td><td>+20–50 ms</td></tr>
+            <tr><td>Antidepressivos</td><td>Citalopram &gt;40 mg/dia, escitalopram &gt;20 mg/dia; TCAs</td><td>+15–30 ms</td></tr>
+            <tr><td>Antibióticos</td><td>Moxifloxacino, claritromicina IV, eritromicina IV, azitromicina IV</td><td>+10–20 ms</td></tr>
+            <tr><td>Antifúngicos</td><td>Fluconazol &gt;200 mg/dia, voriconazol IV (sulfobutileter β-CD)</td><td>+10–20 ms</td></tr>
+            <tr><td>Metadona</td><td>Qualquer dose — risco dose-dependente</td><td>+20–100 ms</td></tr>
+            <tr><td>Domperidona</td><td>Dose &gt;30 mg/dia · CI IV</td><td>+10–20 ms</td></tr>
+            <tr><td>Hidroxicloroquina</td><td>Dose &gt;5 mg/kg + hipocalemia</td><td>+10–20 ms</td></tr>
+            <tr><td>Ondansetrona</td><td>IV &gt;32 mg/dose única; 16 mg dose única padrão</td><td>+10–20 ms</td></tr>
+          </table>
+          <div style="margin-top:6px;font-size:.72rem;color:#7f1d1d"><strong>Fatores potencializadores:</strong> hipocalemia, hipomagnesemia, hipocalcemia, bradicardia, sexo feminino, DRC, doença cardíaca estrutural · Corrigir eletrólitos antes e durante uso</div>
+        </div>
+      </div>
+      <div class="far-card" style="border-color:#b45309">
+        <div class="far-nome" style="color:#b45309">Síndrome Serotoninérgica — Combinações Perigosas</div>
+        <div class="far-body">
+          Tríade: hipertermia + agitação/tremor/mioclonia + hiperreflexia/clonus → início em &lt;24h da combinação<br>
+          Diferencial: NMS (início tardio, rigidez lead-pipe, CPK muito elevada, sem hiperreflexia)<br><br>
+          <table>
+            <tr><th>Combinação</th><th>Risco</th></tr>
+            <tr><td>IMAO + ISRS/IRSN</td><td>Grave · Intervalo mínimo 14 dias (fluoxetina: 5 sem) antes/depois de IMAO</td></tr>
+            <tr><td>IMAO + meperidina</td><td>Grave · NUNCA combinar · Usar morfina/fentanil se opioide necessário</td></tr>
+            <tr><td>IMAO + tramadol</td><td>Grave · Tramadol inibe recaptação de serotonina</td></tr>
+            <tr><td>ISRS + tramadol</td><td>Moderado · Risco em idosos, doses altas</td></tr>
+            <tr><td>ISRS + linezolida</td><td>Moderado-grave · Linezolida = IMAO não-seletivo fraco</td></tr>
+            <tr><td>Lítio + ISRS</td><td>Moderado · Monitorar</td></tr>
+            <tr><td>Triptanos + ISRS/IRSN</td><td>Leve-moderado (FDA alert 2006 — baseado em casos raros; maioria tolera)</td></tr>
+            <tr><td>Fentanil + ISRS</td><td>Baixo (não inibe recaptação de serotonina significativamente)</td></tr>
+          </table>
+          <div style="margin-top:6px"><strong>Tratamento SS:</strong> Suspender agente causador · Resfriamento · BZD (agitação/convulsão) · <strong>Ciproeptadina 12 mg VO → 2 mg/h:</strong> antagonista 5-HT2A (único antídoto específico, via oral, não IV) · Casos graves: BZD IV + suporte intensivo</div>
+        </div>
+      </div>
+      <div class="far-card" style="border-color:#7c3aed">
+        <div class="far-nome" style="color:#7c3aed">Interações Críticas por CYP450 e P-gp</div>
+        <div class="far-body">
+          <table>
+            <tr><th>Inibidor forte</th><th>CYP</th><th>Substratos críticos afetados</th></tr>
+            <tr><td>Cetoconazol/Itraconazol/Voriconazol</td><td>3A4 + P-gp</td><td>↑ DOAC (apixabana 2×), ↑ estatinas (miopatia), ↑ benzodiazepínicos, ↑ imunossupressores</td></tr>
+            <tr><td>Claritromicina/Eritromicina</td><td>3A4 + P-gp</td><td>↑ sinvastatina/lovastatina (rabdomiólise — CI absoluta), ↑ digoxina, ↑ tacrolimus</td></tr>
+            <tr><td>Ritonavir/Cobicistat</td><td>3A4 + 2D6</td><td>↑ DOAC (CI), ↑ colchicina (CI), ↑ sildenafila, ↑ estatinas</td></tr>
+            <tr><td>Fluconazol</td><td>2C9 + 2C19 + 3A4</td><td>↑ warfarina (INR até 2×), ↑ fenitoína, ↑ glibenclamida (hipoglicemia), ↑ losartana</td></tr>
+            <tr><td>Amiodarona</td><td>2D6 + 2C9 + 3A4</td><td>↑ warfarina (INR até 50%), ↑ digoxina (reduzir dose 50%), ↑ estatinas</td></tr>
+            <tr><td>Fluoxetina/Paroxetina</td><td>2D6</td><td>↑ tamoxifeno→↓ endoxifeno (reduz eficácia em CaM), ↑ TCA, ↑ codeína (ineficaz)</td></tr>
+            <tr><td>Cimetidina</td><td>2D6 + 3A4 + 2C19 + 1A2</td><td>Inibidor múltiplo de amplo espectro · Substituir por famotidina ou omeprazol</td></tr>
+          </table>
+          <br>
+          <table>
+            <tr><th>Indutor forte</th><th>CYP</th><th>Consequência</th></tr>
+            <tr><td>Rifampicina</td><td>3A4 + 2C9 + 2C19 + P-gp</td><td>↓ DOAC (CI), ↓ warfarina (↑dose 50%), ↓ antirretrovirais, ↓ antifúngicos azólicos, ↓ imunossupressores</td></tr>
+            <tr><td>Fenitoína / Fenobarbital / Carbamazepina</td><td>3A4 + 2C9</td><td>↓ warfarina, ↓ anticoncepcionais orais (↓eficácia), ↓ DOAC, ↓ corticosteroides</td></tr>
+            <tr><td>Tabagismo (CYP1A2)</td><td>1A2</td><td>↓ clozapina/olanzapina (aumentar doses), ↓ teofilina, ↓ cafeína</td></tr>
+            <tr><td>Erva de São João</td><td>3A4 + P-gp</td><td>↓ DOAC, ↓ ciclosporina (rejeição de transplante), ↓ anticoncepcionais, ↓ antidepressivos</td></tr>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 2 — PK UTI & ABSTINÊNCIA -->
+  <div id="tab2" style="display:none">
+    <div id="pkList"></div>
+  </div>
+</main>
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+<script src="js/db.js"></script>
+<script>
+function showTab(n){[0,1,2].forEach(i=>{document.getElementById('tab'+i).style.display=i===n?'block':'none';document.getElementById('tb'+i).classList.toggle('active',i===n);});if(n===2)renderPK();}
+
+/* ─── PESO ─────────────────────────────────────────────────────── */
+function calcPeso(){
+  const alt=parseFloat(document.getElementById('alt').value);
+  const pr=parseFloat(document.getElementById('pr').value);
+  const sx=document.getElementById('sex').value;
+  if(!alt||!pr||alt<100||pr<20){alert('Informe altura e peso válidos.');return;}
+  const ht=alt/100;
+  const pi=sx==='M'?50+2.3*(alt-60*2.54)/2.54:45.5+2.3*(alt-60*2.54)/2.54;
+  // Alternativa: Devine formula (comum): PI(M)=50+0.906×(cm−152); PI(F)=45.5+0.906×(cm−152)
+  const piDev=sx==='M'?50+0.906*(alt-152):45.5+0.906*(alt-152);
+  const imc=pr/(ht*ht);
+  const lbw=sx==='M'?(9270*pr)/(6680+216*imc):(9270*pr)/(8780+244*imc);
+  const pa=piDev+0.4*(pr-piDev);
+  const obeso=pr>piDev*1.3;
+  let html=`<div class="result-box">
+    <div class="result-line"><span>Peso Real (PR)</span><span class="result-val">${pr.toFixed(1)} kg</span></div>
+    <div class="result-line"><span>IMC</span><span class="result-val">${imc.toFixed(1)} kg/m²${imc>=30?' 🔴 Obeso':imc>=25?' 🟡 Sobrepeso':' 🟢 Normal'}</span></div>
+    <div class="result-line"><span>Peso Ideal (PI — Devine)</span><span class="result-val">${piDev.toFixed(1)} kg</span></div>
+    <div class="result-line"><span>Peso Magro (LBW — Janmahasatian)</span><span class="result-val">${lbw.toFixed(1)} kg</span></div>
+    <div class="result-line"><span>Peso Ajustado (PA = PI + 0,4 × (PR−PI))</span><span class="result-val">${pa.toFixed(1)} kg</span></div>
+  </div>`;
+  if(obeso) html+=`<div class="alerta">⚠️ Obesidade significativa (PR &gt;130% do PI). Atenção ao peso usado em cada fármaco — ver tabelas abaixo.</div>`;
+  document.getElementById('pesoResult').style.display='block';
+  document.getElementById('pesoResult').innerHTML=html;
+}
+
+/* ─── QTc ─────────────────────────────────────────────────────── */
+function calcQTc(){
+  const qt=parseFloat(document.getElementById('qtm').value);
+  const fc=parseFloat(document.getElementById('qtfc').value);
+  if(!qt||!fc||qt<200||fc<30){alert('Informe QT e FC válidos.');return;}
+  const rr=60/fc;
+  const bazett=qt/Math.sqrt(rr);
+  const frid=qt/Math.pow(rr,1/3);
+  function class_qtc(v){return v<450?'🟢 Normal (&lt;450 ms)':v<500?'🟡 Limítrofe (450–499 ms) — monitorar':v<550?'🔴 Prolongado (500–549 ms) — reavaliar medicações':'🔴🔴 Muito prolongado (≥550 ms) — risco de Torsades de Pointes';}
+  const html=`<div class="result-box">
+    <div class="result-line"><span>QTc Bazett (÷√RR)</span><span class="result-val">${Math.round(bazett)} ms</span></div>
+    <div class="result-line"><span>QTc Fridericia (÷RR^1/3)</span><span class="result-val">${Math.round(frid)} ms</span></div>
+    <div style="margin-top:8px;font-size:.78rem"><strong>Bazett:</strong> ${class_qtc(bazett)}</div>
+    <div style="font-size:.78rem"><strong>Fridericia:</strong> ${class_qtc(frid)}</div>
+    <div style="margin-top:8px;font-size:.72rem;color:#64748b">Bazett: superestima QTc em FC &gt;100 · Fridericia: mais preciso em taquicardia/bradicardia · Usar Fridericia quando FC &lt;60 ou &gt;100</div>
+  </div>
+  ${frid>=500?`<div class="alerta">⚠️ QTc ≥500 ms: risco aumentado de Torsades de Pointes. Revisar e suspender fármacos alargadores de QTc. Corrigir K⁺ (&gt;4 mEq/L) e Mg²⁺ (&gt;2 mg/dL). Considerar monitoração cardíaca contínua.</div>`:''}`;
+  document.getElementById('qtcResult').style.display='block';
+  document.getElementById('qtcResult').innerHTML=html;
+}
+
+/* ─── PK UTI & ABSTINÊNCIA ─────────────────────────────────────────── */
+function renderPK(){
+  if(document.getElementById('pkList').innerHTML) return;
+  const CARDS=[
+    {col:'#0f4c81',nome:'Antibióticos em Infusão Estendida — PK/PD em UTI',
+     body:`<strong>Princípio PK/PD de β-lactâmicos:</strong><br>
+Eficácia correlaciona-se ao <strong>%T&gt;CIM</strong> (tempo em que a concentração livre supera o CIM)<br>
+Meta: 40–70% T&gt;CIM (bacteriostático) · &gt;70% T&gt;CIM (bactericida em infecção grave/imunossuprimido)<br><br>
+<strong>Infusão Estendida (IE) vs bolus:</strong><br>
+IE administra &gt;50% da dose em 3–4h (piperacilina-tazobactam, meropeném) ou 0,5 g em 30 min → resto em 3h<br>
+Maximiza %T&gt;CIM · Especialmente útil para CIM borderline (CIM = 4–8 mg/L para P. aeruginosa)<br><br>
+<strong>Regimes de IE aprovados na prática (DALI study / BLING III trial):</strong><br>
+• <strong>Piperacilina-tazobactam 4,5 g IV em 4h, 8/8h (total 13,5 g/dia)</strong><br>
+  OU 3,375 g em 4h, 8/8h · BLING III: IE superior em mortalidade 28d em APACHE ≥ 17<br>
+• <strong>Meropeném 1 g ou 2 g em 3h, 8/8h</strong><br>
+  Pseudo MDR (CIM 4–8): 2 g 3h a cada 8h · CIM &lt;2: 1 g 3h suficiente<br>
+• <strong>Imipeném: NÃO fazer IE</strong> (instabilidade química em temperatura ambiente &gt;1h em SF)<br>
+• <strong>Ceftazidima 2 g em 3h, 8/8h</strong> ou infusão contínua 9 g/24h<br><br>
+<strong>Vancomicina AUC-guided (ASHP/IDSA 2020):</strong><br>
+• Meta AUC/MIC: 400–600 mg·h/L (MIC de referência 1 mg/L)<br>
+• Dose inicial: 25–30 mg/kg (PR) para AUC 400 · Método Bayesiano preferencial<br>
+• Nível mínimo isolado: não recomendado como única estratégia (subestima exposição)<br>
+• AUC estimado por 2 pontos: colher concentração 1–2h após infusão de 1h (Cpico) e 4–6h depois (Cvale)<br><br>
+<strong>Aminoglicosídeos (dose única estendida — ODA):</strong><br>
+• Amicacina 15–20 mg/kg PR/dia · Gentamicina/tobramicina 5–7 mg/kg/dia<br>
+• Meta: Cpico/CIM &gt;8–10 (aminoglicosídeos = bactericida concentração-dependente)<br>
+• Vale &lt;1 mg/L (gentamicina/tobra) ou &lt;5 mg/L (amicacina) antes da próxima dose<br>
+• Hartford nomogram: nível 6–14h após dose → guia intervalo (24h / 36h / 48h)<br>
+• Nunca usar como monoterapia em Pseudomonas grave`,
+     note:'PK em UTI: síndrome capilar aumenta Vd de hidrofílicos (β-lactâmicos) → doses maiores ou IE. Hipoalbuminemia aumenta Vd de albumina-ligantes. IRA em sepse: dosagem variável — monitorar TDM quando possível. TFG flutuante em UTI: reavaliar dose a cada 24–48h em IRA em resolução.'},
+    {col:'#7c3aed',nome:'Monitoramento Terapêutico (TDM) — Fármacos-Chave',
+     body:`<strong>Fenitoína / Fosfenitoína:</strong><br>
+• Nível terapêutico: 10–20 µg/mL (total) · Livre (útil em hipoalbuminemia/uremia): 1–2 µg/mL<br>
+• <strong>Fórmula de Sheiner-Tozer:</strong> Nível corrigido = Nível medido / (0,2 × albumina + 0,1) [albumina em g/dL]<br>
+  Em DRC (TFG &lt;10): Nível corrigido = Nível medido / (0,1 × albumina + 0,1)<br>
+• Coleta: vale (30 min antes da dose) após estado estável (&gt;5 meias-vidas, ≈2 semanas)<br>
+• PK não-linear (Michaelis-Menten): pequenas mudanças de dose → grandes variações de nível<br><br>
+<strong>Ciclosporina / Tacrolimus:</strong><br>
+• Ciclosporina C0 (vale): transplante renal 100–300 ng/mL (inicial) → 75–125 ng/mL (manutenção)<br>
+• Ciclosporina C2 (2h após dose): preferível como guia de eficácia (600–800 ng/mL pós-transplante)<br>
+• Tacrolimus C0 (vale): 8–12 ng/mL (inicial) → 5–8 ng/mL (manutenção) · Transplante coração: 10–15 ng/mL<br>
+• Interações críticas: inibidores CYP3A4 triplicam nível · Rifampicina reduz 80%<br><br>
+<strong>Carbamazepina:</strong><br>
+• Nível terapêutico: 4–12 µg/mL · Toxicidade: diplopia, ataxia, sedação (&gt;10 µg/mL)<br>
+• Autoindução: nível cai 3–4 semanas após início (CYP3A4 induzido) → ajustar dose<br><br>
+<strong>Clozapina:</strong><br>
+• Nível terapêutico: 350–600 ng/mL · &gt;1000 ng/mL: risco de convulsão<br>
+• Tabagismo induz CYP1A2 → reduz nível 40–50% · Ao parar de fumar: reduzir dose 30–40%<br>
+• Infecção + ciprofloxacino: inibe CYP1A2 → ↑nível de clozapina (monitorar agranulocitose e nível)<br><br>
+<strong>Aminoglicosídeos:</strong><br>
+• Gentamicina Cpico: 8–12 µg/mL; Cvale: &lt;1 µg/mL<br>
+• Amicacina Cpico: 20–40 µg/mL; Cvale: &lt;5 µg/mL<br>
+• Colher pico 30 min após infusão de 30 min; vale 30 min antes da próxima dose`,
+     note:'Laboratório de TDM: colher horário EXATO (registrar hora de coleta e última dose). Estabilidade da amostra: a maioria dos fármacos estável 24–48h refrigerado. Resultados de TDM devem ser sempre interpretados com clínica (nível subclínico com boa resposta: não mudar).'},
+    {col:'#dc2626',nome:'Síndrome de Abstinência — Álcool, Opioides e BZD',
+     body:`<strong>Abstinência de Álcool (CIWA-Ar):</strong><br>
+Score CIWA-Ar (&gt;10 = tratar):<br>
+• Tremor, ansiedade, sudorese, náusea, cefaleia, agitação, distúrbio perceptivo, orientação (0–7 cada)<br><br>
+<strong>Tratamento:</strong><br>
+• <strong>Diazepam 10 mg VO/IV 1/1h PRN se CIWA &gt;10</strong> (preferido: meia-vida longa = tapering natural)<br>
+  Alternativa: lorazepam 2 mg 1/1h (1ª linha em hepatopatia — sem metabólito ativo)<br>
+  Alternativa: fenobarbital 130 mg IV se refratário a BZD (carga inicial 10 mg/kg IV dividida)<br>
+• Tiamina 200–500 mg IV 3×/dia × 3 dias ANTES de qualquer glicose (Wernicke!)<br>
+• Tiamina 100 mg VO/dia por 30 dias na sequência<br>
+• Delirium tremens: BZD em bolus repetidos (diazepam 10 mg IV a cada 5–10 min até controle) + UTI<br><br>
+<strong>Abstinência de Opioides (COWS score):</strong><br>
+Score &gt;12 = moderado-grave:<br>
+FC, sudorese, pupila dilatada, goosebumps, tremor, bocejos, ansiedade, lacrimejamento, rinorreia, GI, dor osteoarticular<br><br>
+<strong>Tratamento:</strong><br>
+• <strong>Buprenorfina/Naloxona (Suboxone) 8/2 mg SL → 4/1 mg SL quando COWS ≥12</strong><br>
+  Iniciar só após COWS ≥8–12 e &gt;8–12h após última dose de opioide curto (18–24h após metadona)<br>
+  Precipitação de abstinência se dado antes do tempo: COWS piora drasticamente<br>
+• Metadona 20–30 mg VO/dia: alternativa (clínicas especializadas)<br>
+• Clonidina 0,1–0,3 mg VO 3×/dia: controle autonômico (sudorese, taquicardia) — poupador de opioide<br>
+• Propranolol: ansiedade e taquicardia<br>
+• Ondansetrona: náusea · Loperamida: diarreia<br><br>
+<strong>Abstinência de BZD (Benzodiazepínicos):</strong><br>
+Risco de convulsão e delirium (como álcool) · NÃO cessar abruptamente<br>
+• Converter para BZD de ação longa (diazepam) e retirar 5–10%/semana (SLOW taper)<br>
+• Exemplo: clonazepam 4 mg/dia → diazepam 40 mg/dia → reduzir 4 mg/semana × 10 semanas<br>
+• Carbamazepina 400–800 mg/dia: facilita retirada de BZD, melhora sintomas<br>
+• Gabapentina 300 mg 3×/dia: adjuvante na retirada lenta`,
+     note:'Wernicke-Korsakoff: NUNCA dar glicose antes de tiamina em alcoolista (precipita Wernicke aguda). Encefalopatia de Wernicke: clássica tríade oftalmoplégia + ataxia + confusão em apenas 33% dos casos — tratar se suspeita. Psicose de Korsakoff: sequela permanente, confabulação. Naltrexona 50 mg/dia OU acamprosato 666 mg 3×/dia: prevenção de recaída alcoólica pós-desintoxicação.'},
+    {col:'#059669',nome:'Ajuste de Dose Renal — Antibióticos Principais (TFG-guiado)',
+     body:`<strong>Usar TFG estimada pelo CKD-EPI (adultos) ou Cockcroft-Gault (aminoglicosídeos e em quimio)</strong><br><br>
+<table>
+  <tr><th>Fármaco</th><th>TFG 30–60</th><th>TFG 15–30</th><th>TFG &lt;15 / HD</th></tr>
+  <tr><td>Amoxicilina</td><td>500 mg 8/8h</td><td>500 mg 12/12h</td><td>500 mg 24/24h</td></tr>
+  <tr><td>Amox-clavulanato</td><td>Normal</td><td>500/125 mg 12h</td><td>500 mg (amox) 24h; CI clavulanato extra</td></tr>
+  <tr><td>Piperacilina-tazobactam</td><td>Normal</td><td>Normal (monitorar)</td><td>2,25 g 8/8h (não usar 4h IE)</td></tr>
+  <tr><td>Meropeném</td><td>1 g 8/8h</td><td>0,5 g 12/12h</td><td>0,5 g 24/24h; repor pós-HD</td></tr>
+  <tr><td>Ceftriaxona</td><td>Normal</td><td>Normal</td><td>Normal (biliar predomina)</td></tr>
+  <tr><td>Cefepime</td><td>1–2 g 8/8h</td><td>1 g 12/12h</td><td>0,5 g 24/24h</td></tr>
+  <tr><td>Ciprofloxacino</td><td>Normal</td><td>400 mg IV 24h · 500 mg VO 24h</td><td>200–400 mg 24h; HD: extra 200 mg pós-HD</td></tr>
+  <tr><td>Levofloxacino</td><td>Normal (750 mg/48h se TFG 20–49)</td><td>500 mg 48h</td><td>250 mg 48h após dose inicial 500 mg</td></tr>
+  <tr><td>Vancomicina</td><td>Guiar por AUC/nível</td><td>Guiar por AUC/nível</td><td>15–20 mg/kg pós-HD → dosar nível; sem dose regular</td></tr>
+  <tr><td>Metronidazol</td><td>Normal</td><td>Normal (metabolito acumula)</td><td>Normal IV (metabolito eliminado na HD)</td></tr>
+  <tr><td>Fluconazol</td><td>Normal</td><td>Normal (reduzir se neurotoxicidade)</td><td>100–200 mg após HD</td></tr>
+  <tr><td>TMP-SMX</td><td>Normal</td><td>Dose normal, vigilância K⁺ e Cr</td><td>CI (exceto pneumocistose: usar e monitorar)</td></tr>
+  <tr><td>Daptomicina</td><td>Normal</td><td>6 mg/kg 48h</td><td>6 mg/kg 48h; repor pós-HD</td></tr>
+  <tr><td>Linezolida</td><td>Normal</td><td>Normal (metabolito acumula)</td><td>Normal; sem remoção significativa na HD</td></tr>
+  <tr><td>Cefiderocol</td><td>Normal</td><td>Normal</td><td>1,5 g 8/8h; repor pós-HD</td></tr>
+</table>
+<div style="margin-top:6px;font-size:.72rem;color:#64748b"><strong>Nota:</strong> SLED/HDF/hemofiltração: clearance variável — consultar protocolo da UTI e farmacocinética específica. ECMO: altera Vd e clearance (consultar serviço)</div>`,
+     note:'Aminoglicosídeos em HD: dose inicial cheia (15 mg/kg amicacina) → dosar vale antes da próxima dose (alvo &lt;5 µg/mL amicacina). HD remove aminoglicosídeos significativamente — repor após cada sessão. Vancomicina em HD convencional: retirada variável (3–7 mg/L/h de 4h) → nível pós-HD antes de decidir reposição.'},
+  ];
+  document.getElementById('pkList').innerHTML=CARDS.map(c=>`<div class="far-card" style="border-color:${c.col}"><div class="far-nome" style="color:${c.col}">${c.nome}</div><div class="far-body">${c.body}</div>${c.note?`<div style="font-size:.7rem;color:#64748b;margin-top:6px">💡 ${c.note}</div>`:''}</div>`).join('');
+}
+</script>
+</body>
+</html>

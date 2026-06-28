@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Reumatologia Avançada — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .reu-hdr{background:linear-gradient(135deg,#701a75,#a21caf);color:#fff;border-radius:14px;padding:18px;margin-bottom:14px}
+    .reu-title{font-size:1rem;font-weight:800;margin-bottom:4px}
+    .reu-sub{font-size:.73rem;opacity:.8}
+    label{font-size:.75rem;font-weight:700;color:#1e3a5f;display:block;margin-bottom:4px}
+    select{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:10px;padding:10px 12px;font-size:.85rem;background:#fff;margin-bottom:10px}
+    select:focus{border-color:#a21caf;outline:none}
+    .btn-calc{width:100%;background:#a21caf;color:#fff;border:none;border-radius:12px;padding:13px;font-size:.87rem;font-weight:700;cursor:pointer;margin:8px 0}
+    .tab-bar{display:flex;gap:6px;margin-bottom:14px}
+    .tab-btn{flex:1;padding:9px 4px;border-radius:10px;border:2px solid #e2e8f0;background:#fff;font-size:.72rem;font-weight:700;cursor:pointer;color:#64748b}
+    .tab-btn.active{border-color:#a21caf;background:#fdf4ff;color:#a21caf}
+    .rec-card{border-radius:12px;border:2px solid;padding:14px;margin-bottom:10px}
+    .rec-hdr{font-size:.63rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+    .rec-nome{font-size:.88rem;font-weight:800;margin-bottom:6px}
+    .rec-badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:.65rem;font-weight:800;color:#fff;margin:2px}
+    .rec-body{font-size:.78rem;margin-top:6px;line-height:1.7}
+    .rec-note{font-size:.71rem;color:#64748b;margin-top:6px;padding-top:6px;border-top:1px solid #f1f5f9}
+    .reu-card{border-radius:10px;border-left:5px solid;padding:10px 14px;margin-bottom:8px;background:#fff}
+    .reu-nome{font-size:.83rem;font-weight:800;margin-bottom:4px}
+    .reu-body{font-size:.76rem;line-height:1.7;color:#374151}
+  </style>
+</head>
+<body>
+<header class="top-bar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <span class="top-title">Reumatologia Avançada</span>
+  <div class="top-right"></div>
+</header>
+<main class="container" style="padding-bottom:90px">
+  <div class="reu-hdr">
+    <div class="reu-title">🧬 Reumatologia Avançada — Algoritmos</div>
+    <div class="reu-sub">LES · SAF · Vasculites ANCA · Miopatias Inflamatórias · Sjögren · Esclerodermia</div>
+  </div>
+  <div class="tab-bar">
+    <button class="tab-btn active" id="tb0" onclick="showTab(0)">LES & SAF</button>
+    <button class="tab-btn" id="tb1" onclick="showTab(1)">Vasculites & Miopatias</button>
+    <button class="tab-btn" id="tb2" onclick="showTab(2)">Sjögren & Esclerodermia</button>
+  </div>
+
+  <!-- TAB 0 — LES & SAF -->
+  <div id="tab0">
+    <div class="card" style="padding:12px 14px">
+      <label>Condição / Cenário</label>
+      <select id="les_cond">
+        <option value="les_leve">LES — Atividade leve a moderada</option>
+        <option value="les_grave">LES — Atividade grave / Comprometimento orgânico</option>
+        <option value="nefrite">Nefrite Lúpica Classe III/IV</option>
+        <option value="les_bio">LES — Biológicos (belimumabe, anifrolumabe)</option>
+        <option value="saf_trom">SAF — Evento Trombótico</option>
+        <option value="saf_obst">SAF Obstétrico — Gestação com SAF</option>
+      </select>
+    </div>
+    <button class="btn-calc" onclick="calcLES()">🧬 Gerar protocolo</button>
+    <div id="lesResult" style="display:none"></div>
+  </div>
+
+  <!-- TAB 1 — VASCULITES & MIOPATIAS -->
+  <div id="tab1" style="display:none">
+    <div id="vascList"></div>
+  </div>
+
+  <!-- TAB 2 — SJÖGREN & ESCLERODERMIA -->
+  <div id="tab2" style="display:none">
+    <div id="sjogList"></div>
+  </div>
+</main>
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+<script src="js/db.js"></script>
+<script>
+function showTab(n){[0,1,2].forEach(i=>{document.getElementById('tab'+i).style.display=i===n?'block':'none';document.getElementById('tb'+i).classList.toggle('active',i===n);});if(n===1)renderVasc();if(n===2)renderSjog();}
+function recHTML(r){return `<div class="rec-card" style="border-color:${r.col}"><div class="rec-hdr" style="color:${r.col}">${r.hdr}</div><div class="rec-nome">${r.nome}</div><div>${(r.badges||[]).map(b=>`<span class="rec-badge" style="background:${b.c}">${b.t}</span>`).join('')}</div><div class="rec-body">${r.body}</div>${r.note?`<div class="rec-note">${r.note}</div>`:''}</div>`;}
+
+/* ─── LES & SAF ─────────────────────────────────────────────────────── */
+const PROTO_LES={
+  les_leve:{hdr:'LES — Atividade Leve a Moderada',col:'#a21caf',nome:'Hidroxicloroquina + Metotrexato/Azatioprina',
+    body:`<strong>Avaliação de atividade (SLEDAI-2K):</strong><br>
+0 = inativo · 1–5 = leve · 6–10 = moderado · 11–19 = grave · ≥20 = muito grave<br><br>
+<strong>TODOS os pacientes com LES:</strong><br>
+• <strong>Hidroxicloroquina (HCQ) 200–400 mg/dia (≤5 mg/kg/dia peso real)</strong><br>
+  Reduz flares, mortalidade, trombose, nefrite, dano cumulativo · Efeito pleno em 3–6 meses<br>
+  Toxicidade retiniana: rastreio com OCT e campo visual aos 5 anos e anualmente depois<br>
+  Dose &gt;5 mg/kg/dia: maior risco retiniano — ajustar se obesidade/idoso/DRC<br>
+  Gestação: MANTER — reduz complicações obstétricas<br>
+• Protetor solar (UVA/UVB) diário: fotossensibilidade é critério diagnóstico<br><br>
+<strong>Atividade leve (SLEDAI 1–5 — artrite, rash, serosites, mucosite):</strong><br>
+• AINEs curta duração: artralgia leve (ibuprofeno 400 mg 8h ou naproxeno 550 mg 2×/dia)<br>
+• Prednisolona &lt;7,5 mg/dia (ou equivalente): controle sintomático · Minimizar dose e duração<br>
+• Metotrexato 7,5–25 mg/sem SC (artrite e rash): poupador de corticoide · Ácido fólico 5 mg/dia<br><br>
+<strong>Atividade moderada (SLEDAI 6–10 — artrite, serosites, manifestações hematológicas):</strong><br>
+• Prednisolona 0,5 mg/kg/dia × 4–6 semanas → desmame gradual<br>
+• <strong>Azatioprina 2–3 mg/kg/dia:</strong> artrite, hematológico, pele · Medir TPMT antes<br>
+• <strong>Metotrexato 15–25 mg/sem:</strong> artrite, pele refratária`,
+    note:'EULAR 2023: alvo terapêutico = remissão (SLEDAI 0 sem corticoide) OU baixa atividade (SLEDAI ≤4 com HCQ isolada ou prednisolona ≤7,5 mg/dia). Prevenir dano cumulativo por flares repetidos é o principal objetivo do tratamento a longo prazo. Complemento C3/C4 e anti-dsDNA: indicadores de atividade renal.'},
+  les_grave:{hdr:'LES — Atividade Grave (Comprometimento Orgânico)',col:'#dc2626',nome:'Pulsoterapia + Micofenolato ou Ciclofosfamida',
+    body:`<strong>Comprometimento grave:</strong> nefrite, pneumonite lúpica, pericardite com tamponamento, anemia hemolítica grave, trombocitopenia &lt;20.000, neuropatia/psicose lúpica, vasculite sistêmica<br><br>
+<strong>Pulsoterapia de indução:</strong><br>
+• <strong>Metilprednisolona 500–1000 mg IV/dia × 3 dias</strong> (pulsoterapia) → prednisolona VO 0,5–1 mg/kg/dia<br>
+• Imunossupressor de manutenção obrigatório (poupador de corticoide)<br><br>
+<strong>Imunossupressores de indução/manutenção por sítio:</strong><br>
+• Nefrite lúpica: ver card específico<br>
+• Hematológico (PTI lúpica grave):<br>
+  IVIg 1 g/kg/dia × 2 dias (emergência) · Rituximabe 375 mg/m² 4 doses · Danazol 200 mg 3×/dia<br>
+• Pneumonite lúpica: pulsoterapia + ciclofosfamida IV<br>
+• Neurológico (psicose, mielite): pulsoterapia + ciclofosfamida IV · Anti-convulsivante se convulsão<br><br>
+<strong>Ciclofosfamida IV (NIH low-dose Euro-lupus):</strong><br>
+• Euro-Lupus: 500 mg IV a cada 2 semanas × 6 doses (total 3 g) → seguro e equivalente ao NIH high-dose<br>
+• NIH high-dose: 0,5–1 g/m² IV mensalmente × 6 doses (mais tóxico)<br>
+• Mesna (uroprotitor): 20% da dose de CFM antes e 4h depois (previne cistite hemorrágica)<br>
+• Preservação de fertilidade: análogo GnRH (goserelina 3,6 mg SC) 1–2 sem antes de CFM · Criopreservação`,
+    note:'Rituximabe em LES (off-label mas usado): 375 mg/m² × 4 doses OU 500–1000 mg 2 doses com 15 dias de intervalo. Indicação: casos refratários a imunossupressores convencionais. Registrar status VHB antes (reativação). Screening pré-biológico: PPD/IGRA, VHB, VHC, HIV.'},
+  nefrite:{hdr:'Nefrite Lúpica Classe III / IV — Tratamento',col:'#7c3aed',nome:'Indução: Micofenolato ou Ciclofosfamida + corticoide → Manutenção: MMF',
+    body:`<strong>Biópsia renal:</strong> fundamental antes do tratamento específico (classificação ISN/RPS 2003)<br>
+Classe III (focal &lt;50% glomérulos) e IV (difusa ≥50%): tratamento imunossupressor intenso<br>
+Classe V (membranosa): ver abaixo<br><br>
+<strong>Indução (6 meses):</strong><br>
+Opção A — <strong>Micofenolato de Mofetila (MMF) 2–3 g/dia</strong> + prednisolona 0,5–1 mg/kg/dia<br>
+• Resposta similar à ciclofosfamida IV em não-asiáticos e asiáticos · Menor toxicidade gonadal<br>
+• Alucinação/teratogênica: 2 métodos contraceptivos (aborto em 45%)<br>
+Opção B — <strong>Ciclofosfamida IV Euro-Lupus 500 mg × 6 doses + baixo corticoide</strong><br>
+• Preferir em NL grave, Cr &gt;2 mg/dL, proliferação crescente (&gt;50% crescentes)<br><br>
+<strong>Voclosporina (Lupkynis) 23,7 mg 2×/dia — nova opção (FDA 2021):</strong><br>
+• Inibidor de calcineurina seletivo renal · Adicionado ao MMF em classe III/IV<br>
+• AURORA trial: remissão renal completa 40,8% vs 22,5% com MMF+placebo<br>
+• Monitorar: TFG, PA (efeito vasoconstritor aferente)<br><br>
+<strong>Manutenção (3–5 anos):</strong><br>
+• <strong>MMF 1,5–2 g/dia</strong> + prednisolona 5–7,5 mg/dia + HCQ (obrigatória em LES)<br>
+• Azatioprina 2 mg/kg/dia: alternativa (inferior ao MMF em ALMS) · Preferível em gestação<br><br>
+<strong>Classe V (membranosa) com síndrome nefrótica:</strong><br>
+• MMF 2–3 g/dia + corticoide · Voclosporina pode ser adicionada<br>
+• Inibidor do SRAA (IECA/BRA) obrigatório: reduz proteinúria e progressão`,
+    note:'Metas terapêuticas em NL: proteinúria &lt;0,5 g/g, creatinina estável/normal em 12 meses. Falha de indução após 3–6 meses (sem melhora 25%): trocar MMF→CFM ou viceversa. Belimumabe + MMF: estudado em NL (BLISS-LN trial) com benefício adicional.'},
+  les_bio:{hdr:'LES — Biológicos: Belimumabe e Anifrolumabe',col:'#059669',nome:'Belimumabe (anti-BAFF) · Anifrolumabe (anti-IFNAR1)',
+    body:`<strong>Belimumabe (Benlysta) — anti-BLyS/BAFF:</strong><br>
+• <strong>200 mg SC/sem</strong> OU 10 mg/kg IV mês 0, 2, 4 → mensal<br>
+• Indicação: LES ativo com manifestações serológicas, articular, cutânea refratária a HCQ + corticoide<br>
+• Não indicado em NL grave ativa (exceto pós-indução: BLISS-LN mostrou benefício em NL)<br>
+• RAM: náusea, diarreia, infecção, reações de infusão · Depressão/suicídio: monitorar humor<br>
+• Reduz flares renais, uso de corticoide e melhora QoL · BLISS-52/76 trials<br>
+• CI: infecções ativas graves, HIV, uso de IVIg/ciclofosfamida concomitante<br><br>
+<strong>Anifrolumabe (Saphnelo) — anti-IFNAR1 (receptor de IFN tipo I):</strong><br>
+• <strong>300 mg IV a cada 4 semanas</strong><br>
+• Indicação: LES ativo (moderado-grave) não-renal ou não-neuropsíquico, com altos níveis de IFN<br>
+• TULIP-2 trial: redução de atividade lúpica + menos corticoide<br>
+• RAM: herpes zóster ↑↑ (vacinar com Shingrix antes) · IVRS recorrente · Reação de infusão<br><br>
+<strong>Rituximabe (off-label em LES):</strong><br>
+• 375 mg/m² × 4 doses semanais OU 1000 mg × 2 doses (intervalo 15 dias)<br>
+• LES refratário, NL refratária, PTI lúpica · Evidência de series e registros (LUNAR trial negativo)<br>
+• Pré-screening: VHB (reativação), PPD/IGRA · Status de vacinação<br><br>
+<strong>Abatacepte (CTLA4-Ig):</strong><br>
+• Estudado em NL (ACCESS trial) — sem benefício adicional sobre MMF em NL Classe III/IV`,
+    note:'Antes de biológico: atualizar vacinas (influenza, pneumocócica, Shingrix para anifrolumabe), screening TB (IGRA), VHB, HIV. Belimumabe e anifrolumabe: NÃO combinar com rituximabe ou ciclofosfamida (sem dados de segurança). Anifrolumabe não indicado em NL isolada ou SNC.'},
+  saf_trom:{hdr:'Síndrome Antifosfolipídea — Evento Trombótico',col:'#dc2626',nome:'Warfarina (NÃO DOAC em SAF de alto risco)',
+    body:`<strong>Critérios de Sapporo (Sydney 2006):</strong><br>
+Clínico: trombose vascular arterial/venosa OU morbidade obstétrica<br>
+Laboratorial (≥2 positivos com intervalo ≥12 semanas):<br>
+• Anticardiolipina (aCL) IgG/IgM ≥40 GPL/MPL<br>
+• Anti-β2-glicoproteína I (aβ2GPI) IgG/IgM positivo<br>
+• Anticoagulante lúpico (LA) positivo<br><br>
+<strong>"Triple positivity" (todos 3 positivos) = SAF alto risco:</strong> maior risco trombótico e recorrência<br><br>
+<strong>SAF de Alto Risco (triple positivity ou trombo arterial/venoso recorrente):</strong><br>
+• <strong>Warfarina INR 2–3 (venoso) OU INR 3–4 (arterial/muito alto risco): INDEFINIDAMENTE</strong><br>
+• DOAC CONTRAINDICADO: TRAPS trial (rivaroxabana vs warfarina em SAF triplo) → rivaroxabana inferior (RR 3× mais trombose arterial) — FDA alerta 2019<br><br>
+<strong>SAF de Baixo Risco (anticardiolipina isolada, títulos baixos, 1º evento):</strong><br>
+• Warfarina INR 2–3 por 3–6 meses para 1º evento trombótico · Considerar DOAC caso a caso<br><br>
+<strong>Microangiopatia trombótica catastrófica (CAPS):</strong><br>
+Trombose multi-orgânica em &lt;1 semana · Mortalidade 30–50%<br>
+Tratamento combinado: anticoagulação (UFH IV) + corticoide IV + plasma fresco + IVIg/rituximabe`,
+    note:'SAF "seronegativo" (clínica típica sem Ab documentado): alguns autores tratam como SAF após exclusão de outras causas. Plaquetopenia em SAF (PAPS trombocitopênica): HCQ (se LES) + corticoide; evitar suspender anticoagulação em &gt;50.000. Estatina em SAF: evidência emergente de redução de trombose (mecanismo independente do colesterol).'},
+  saf_obst:{hdr:'SAF Obstétrico — Gestação com Anticorpos Antifosfolipídeos',col:'#b45309',nome:'HBPM + AAS 100 mg — combinação desde o início da gestação',
+    body:`<strong>Critérios obstétricos SAF:</strong><br>
+• ≥3 abortos espontâneos &lt;10 sem sem causa anatômica/cromossômica<br>
+• ≥1 óbito fetal ≥10 sem com morfologia normal<br>
+• ≥1 parto prematuro &lt;34 sem por PE grave/eclâmpsia/insuficiência placentária<br><br>
+<strong>Tratamento durante gestação:</strong><br>
+• <strong>AAS 100–150 mg/dia</strong>: iniciar ao tentar conceber (profilaxia de PE) + manter até 36–37 sem<br>
+• <strong>HBPM profilática</strong> (enoxaparina 40 mg SC/dia): desde confirmação da gravidez até 6 sem pós-parto<br>
+  Dose maior (enoxaparina 1 mg/kg 12/12h) se trombose venosa prévia documentada<br>
+• Warfarina: CONTRAINDICADA no 1T (embriopatia) e peri-parto · Usar apenas 2T se anticoagulação plena necessária<br><br>
+<strong>Pós-parto:</strong><br>
+• Retornar anticoagulação: 6–12h após parto vaginal / 12–24h após cesárea<br>
+• SAF com trombose prévia: reiniciar warfarina (HBPM até INR terapêutico)<br>
+• SAF obstétrico sem trombose: HBPM profilática 6 semanas pós-parto → reavaliar<br><br>
+<strong>SAF obstétrico refratário (falha de HBPM + AAS):</strong><br>
+• HCQ 200–400 mg/dia: adicionar em gestação (segura · reduz abortos em LES/SAF)<br>
+• Pravastatina 20 mg/dia: evidência emergente de atividade anti-inflamatória placentária<br>
+• Prednisolona 5–10 mg/dia: SÍNDROME ATFL (anti-fosfolipídeo e labirinto) · Estudos menores<br>
+• IVIg 1 g/kg/dia × 2 ciclos mensais: casos refratários (custo limitante)`,
+    note:'Anti-β2GPI IgG isolado: maior risco tromboembólico e obstétrico que aCL isolado. Triple positivity: maior risco — considerar HBPM plena mesmo na ausência de trombose prévia em gestante. Vigilância fetal intensificada: doppler uterino e fetal mensalmente a partir de 20 sem (insuficiência placentária).'},
+};
+
+function calcLES(){
+  const cond=document.getElementById('les_cond').value;
+  const p=PROTO_LES[cond];
+  document.getElementById('lesResult').style.display='block';
+  document.getElementById('lesResult').innerHTML=recHTML({hdr:p.hdr,col:p.col,nome:p.nome,badges:[{t:'REUMATOLOGIA',c:p.col}],body:p.body,note:p.note});
+  document.getElementById('lesResult').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+/* ─── VASCULITES & MIOPATIAS ─────────────────────────────────────────── */
+function renderVasc(){
+  if(document.getElementById('vascList').innerHTML) return;
+  const CARDS=[
+    {col:'#dc2626',nome:'Vasculites ANCA (GPA e MPA)',
+     body:`<strong>GPA (Granulomatose com Poliangiite) — antiga Wegener:</strong> c-ANCA (PR3-ANCA) · granulomas + vasculite de vasos médios/pequenos · tríade: VAS, pulmão, rim<br>
+<strong>MPA (Poliangiite Microscópica):</strong> p-ANCA (MPO-ANCA) · vasculite sem granuloma · rim+pulmão (HRCT: hemorragia alveolar)<br>
+<strong>EGPA (Eosinofílica — Churg-Strauss):</strong> ANCA+ (50%), asma grave, eosinofilia, granuloma eosinofílico<br><br>
+<strong>Diagnóstico:</strong><br>
+• ANCA sérico (IFI + ELISA para PR3/MPO) · Biópsia (rim, pulmão, pele) · TCAR tórax · Proteinúria + hematúria<br>
+• Biópsia renal: crescentes (índice de atividade e cronicidade) → guia urgência de tratamento<br><br>
+<strong>Indução (RAVE/RITUXVAS trial):</strong><br>
+• <strong>Rituximabe 375 mg/m² × 4 semanas</strong> + metilprednisolona 1 g × 3 + prednisolona 1 mg/kg/dia → desmame<br>
+• OU <strong>Ciclofosfamida IV 15 mg/kg</strong> a cada 3 semanas × 6 doses (+ mesna) + prednisolona<br>
+• RTX = não-inferior à CFM em GPA/MPA; preferir RTX: doença refratária, jovens (preservar fertilidade), recidivante<br><br>
+<strong>Manutenção:</strong><br>
+• <strong>Rituximabe 500 mg IV a cada 6 meses × 2 anos</strong> (MAINRITSAN 2/3 trial: superior à AZA)<br>
+• Azatioprina 2 mg/kg/dia: alternativa menos eficaz · MMF: 3ª linha<br>
+• Desmame de corticoide: lento ao longo de 12–18 meses<br><br>
+<strong>Hemorragia Alveolar Difusa (HAD) grave:</strong><br>
+• Metilprednisolona 1 g IV/dia × 3 + plasmaférese (7 sessões × 3 L) → PEXIVAS trial mostrou plasmaférese reduz EIRA mas não mortalidade · Alguns centros ainda usam em HAD grave<br>
+• RTX ou CFM imediatamente<br><br>
+<strong>Avacopan (Tavneos) 30 mg 2×/dia:</strong><br>
+• Inibidor de C5aR1 (complemento) · ADVOCATE trial: não-inferior a prednisolona para remissão; superior em remissão sustentada aos 52 sem · Permite redução de corticoide<br>
+• Aprovado FDA/EMA 2021 para GPA/MPA em adição a rituximabe ou CFM`,
+     note:'Recidiva em vasculites ANCA: PR3-ANCA (GPA) recidiva mais que MPO-ANCA (MPA). Monitorar ANCA seriado + PCR/VHS. Elevação de ANCA sem clínica: NÃO recontratar preventivamente (WAVE trial — recontratar piora eventos adversos). Profilaxia PCP com TMP-SMX: obrigatória em indução com RTX/CFM.'},
+    {col:'#b45309',nome:'Vasculites de Grandes Vasos — ACG e TAK',
+     body:`<strong>Arterite de Células Gigantes (ACG) — temporal (&gt;50 anos):</strong><br>
+Cefaleia temporal + claudicação mandibular + VSH &gt;50 + amaurose fugaz → emergência (risco de cegueira)<br>
+<strong>Iniciar prednisolona 1 mg/kg/dia IMEDIATAMENTE — não aguardar biópsia</strong><br>
+• Biópsia de artéria temporal: até 2–4 semanas após início do corticoide (resultado não muda)<br>
+• Amaurose/AVC iminente: metilprednisolona 1 g × 3 dias IV + ASA 100 mg<br>
+• <strong>Tocilizumabe 162 mg SC/sem OU 8 mg/kg IV/mês (GiACTA trial):</strong> superior ao corticoide isolado em manutenção de remissão; permite desmame mais rápido · Aprovado FDA 2017<br>
+• Desmame de corticoide: lento ao longo de 1–2 anos (DM, osteoporose em idosos: alendronato + Ca + VitD desde o início)<br><br>
+<strong>Arterite de Takayasu (TAK — &lt;40 anos, F&gt;M):</strong><br>
+Clínica: claudicação de membros, sopros vasculares, assimetria de PA &gt;10 mmHg, aneurismas<br>
+Diagnóstico: TC/AngioRM ou PET-FDG (atividade inflamatória)<br>
+• Prednisolona 1 mg/kg/dia + metotrexato 15–25 mg/sem (poupador) · OU tocilizumabe 8 mg/kg/4 sem (após falha MTX)<br>
+• Cirurgia/stent: apenas em remissão prolongada (inflamação ativa aumenta reestenose)`,
+     note:'VSH normal não exclui ACG (15% têm VSH <50). Biópsia temporal bilateral: sensibilidade 95% vs 85% unilateral (especialmente se sintomas unilaterais). Duplex ultrassom temporal: sinal do halo (edema da parede) — sensível e específico. ACG e DMSO: monitorar TC anual (aneurisma de aorta frequente — 17× mais que geral).'},
+    {col:'#7c3aed',nome:'Miopatias Inflamatórias — DM, PM, IMNM, MCI',
+     body:`<strong>Classificação (EULAR/ACR 2017):</strong><br>
+Dermatomiosite (DM): rush característico (heliotropo, Gottron) + miosite<br>
+Polimiosite (PM): diagnóstico de exclusão após excluir DM/IMNM/IBM<br>
+Miopatia Inflamatória Necrosante Imunomediada (IMNM): anti-SRP ou anti-HMGCR (estatina)<br>
+Miosite de Corpos de Inclusão (IBM): &gt;45 anos, sem resposta a IS · Não tratar (IBM não responde)<br><br>
+<strong>Diagnóstico:</strong><br>
+• CPK/aldolase elevados · EMG: padrão miopático · Biópsia muscular (padrão ouro) · RM muscular<br>
+• Painel de anticorpos: anti-Jo1, anti-MDA5, anti-PL7/PL12, anti-Mi2, anti-SRP, anti-HMGCR, anti-TIF1γ (neoplasia)<br>
+• TIF1γ positivo: câncer associado em 75% de adultos &gt;40 → investigação oncológica urgente<br><br>
+<strong>Tratamento:</strong><br>
+• <strong>Prednisolona 1 mg/kg/dia × 4–8 sem</strong> → desmame lento (1–2 anos)<br>
+• <strong>Metotrexato 15–25 mg/sem SC</strong> (1ª poupadora de corticoide) OU azatioprina 2 mg/kg/dia<br>
+• <strong>IVIg 2 g/kg em 2–5 dias</strong> (PROMYOS trial: superior a placebo em DM; também IBM tenta-se)<br>
+• <strong>Rituximabe 375 mg/m² × 4 (ou 1000 mg × 2):</strong> refratários, anti-Jo1, anti-MDA5<br>
+• Anti-MDA5 + DPI rapidamente progressiva: imunossupressão combinada intensa (RTX + tacrolimus + ciclofosfamida + corticoide) — mortalidade alta<br>
+• Tofacitinibe 5 mg 2×/dia (off-label): DPI associada a DM refratária, anti-MDA5`,
+     note:'IMNM por estatina (anti-HMGCR): suspender estatina IMEDIATAMENTE; melhora parcial; frequentemente necessita imunossupressor por 12+ meses (anticorpo persiste mesmo sem estatina). DM juvenil: início mais abrupto, calcinose frequente, sem associação com neoplasia. Rastreio oncológico em DM adulto: PET-FDG, TC TAPe, endoscopia se suspeita GI.'},
+  ];
+  document.getElementById('vascList').innerHTML=CARDS.map(c=>`<div class="reu-card" style="border-color:${c.col}"><div class="reu-nome" style="color:${c.col}">${c.nome}</div><div class="reu-body">${c.body}</div>${c.note?`<div style="font-size:.7rem;color:#64748b;margin-top:6px">💡 ${c.note}</div>`:''}</div>`).join('');
+}
+
+/* ─── SJÖGREN & ESCLERODERMIA ─────────────────────────────────────────── */
+function renderSjog(){
+  if(document.getElementById('sjogList').innerHTML) return;
+  const CARDS=[
+    {col:'#0369a1',nome:'Síndrome de Sjögren Primária',
+     body:`<strong>Critérios ACR/EULAR 2016:</strong><br>
+Score ≥4: anti-SSA/Ro+ (3pts) · Biópsia glândula salivar (focos linfocitários ≥1/4mm²) (3pts) · Anti-SSA/Ro+ (1pt, se já contado) · Schirmer ≤5 mm/5min (1pt) · Flux salivar ≤0,1 mL/min (1pt) · Rose Bengal/fluoresceína (1pt)<br><br>
+<strong>Manifestações sistêmicas:</strong><br>
+• Ceratoconjuntivite seca (xeroftalmia) · Xerostomia (salivação reduzida)<br>
+• Artrite, vasculite, neuropatia, DPI, nefrite (néfrite intersticial tubular, NL)<br>
+• Risco de linfoma B (MALT/gânglio): 5–10% ao longo da vida<br><br>
+<strong>Tratamento sintomático (olhos secos):</strong><br>
+• Lágrimas artificiais (sem conservante): frequentes, a cada 1–2h se grave<br>
+• Ciclosporina 0,05% (Restasis) 1 gt 2×/dia: reduz inflamação e aumenta secreção<br>
+• Lifitegrast 5% (Xiidra): inibidor LFA-1/ICAM-1; alternativa ao restasis; 1 gt 2×/dia<br>
+• Oclusão de ponto lacrimal: casos refratários a colírios<br><br>
+<strong>Tratamento sistêmico:</strong><br>
+• <strong>Hidroxicloroquina 200–400 mg/dia</strong>: artralgia, fadiga, manifestações sistêmicas leves; melhora VSH<br>
+• <strong>Pilocarpina 5 mg 4×/dia</strong> ou Cevimelina 30 mg 3×/dia: estimulante colinérgico de glândula salivar/lacrimal<br>
+• Metotrexato 10–15 mg/sem: artrite · Azatioprina: DPI leve<br>
+• <strong>Rituximabe (off-label)</strong>: manifestações sistêmicas graves (vasculite, neuropatia, DPI, linfoma)<br><br>
+<strong>Atividade sistêmica (ESSDAI):</strong><br>
+Score &gt;14 = alto · Orienta necessidade de imunossupressores sistêmicos`,
+     note:'Hipocalemia severa por acidose tubular renal (ATR tipo 1): comum em SSP + nefrite intersticial. Reposição IV KCl. Biópsia glândula: preferencialmente glândula salivar menor do lábio inferior. Síndrome seca secundária: excluir DM, efeitos colaterais de medicamentos (anticolinérgicos, antidepressivos, anti-histamínicos), sarcoidose, amiloidose antes do diagnóstico.'},
+    {col:'#1e3a8a',nome:'Esclerodermia (Esclerose Sistêmica) — Manejo por Órgão',
+     body:`<strong>Fenômeno de Raynaud:</strong><br>
+• <strong>Nifedipino LP 30–60 mg/dia</strong> (1ª linha) OU anlodipino 5–10 mg/dia<br>
+• Sildenafila 25–50 mg 2×/dia: casos refratários ao BCCa, reduz frequência e duração<br>
+• Bosentana 125 mg 2×/dia: prevenção de novas úlceras digitais (RAPIDS-2 trial)<br>
+• Iloprost IV 0,5–2 ng/kg/min × 5 dias (hospitalização): úlceras digitais ativas/isquemia<br>
+• Local: glicerina trinitrato tópico · Prostaglandinas tópicas<br><br>
+<strong>HAS esclerodérmica (crise hipertensiva esclerodérmica — renal):</strong><br>
+<strong>IECA (captopril 25 mg SL → VO / enalapril) — droga de escolha:</strong><br>
+Alvo SBP &lt;120 mmHg com IECA (mesmo em IRA — IECA protege a função renal na crise esclerodérmica ao contrário da maioria das nefropatias)<br><br>
+<strong>DPI (Doença Pulmonar Intersticial):</strong><br>
+• <strong>Micofenolato 2–3 g/dia</strong> (SLS II trial) · Nintedanibe (SENSCIS trial): aprovado para DPI-esclerodermia · Tocilizumabe 162 mg SC/sem (faSScinate/focuSSced trials): melhora CVF<br>
+• Rituximabe: alternativa refratária<br><br>
+<strong>Hipertensão Pulmonar (HP) — alta prevalência (lcSSc):</strong><br>
+• Rastreio anual com ecocardio (DTAP &gt;2,8 m/s → cateterismo)<br>
+• Tratar conforme HP Grupo 1 (ERA + PDE5i) — ver pneumologia-avancada<br><br>
+<strong>Manifestações GI:</strong><br>
+• DRGE: IBP + cabeceira elevada · Gastroparesia: metoclopramida 10 mg antes das refeições (curto prazo) ou domperidona · Malabsorção (supercrescimento bacteriano): ciclos de rifaximina 550 mg 2×/dia × 7 dias ou alternados`,
+     note:'Anti-topoisomerase (Scl-70): lcSSc com maior DPI. Anti-centrômero (ACA): lcSSc com maior HP; menor DPI. Anti-RNA polimerase III: dcSSc com crise renal hipertensiva, maior risco de câncer (sincronizado com crise). DEXA anual para osteoporose (corticoide + limitação de mobilidade). Esclerodermia e corticoide: altas doses precipitam crise renal hipertensiva (usar ≤15 mg/dia se inevitável).'},
+    {col:'#065f46',nome:'Doenças Inflamatórias Sistêmicas — Rastreio Pré-Biológico Completo',
+     body:`<strong>Antes de qualquer biológico (anti-TNF, rituximabe, JAKi, tocilizumabe, anti-IL-17/23):</strong><br><br>
+<strong>Infecções:</strong><br>
+• <strong>TB: PPD ≥5 mm OU IGRA positivo</strong> → ILTB → tratar 1 mês antes do biológico · Rx tórax (nódulo suspeito → TC + pneumologia)<br>
+• <strong>VHB: HBsAg, Anti-HBc, Anti-HBs</strong>:<br>
+  HBsAg+: antiretroviral com cobertura VHB (entecavir 0,5 mg/dia) desde o dia do biológico<br>
+  Anti-HBc+ / HBsAg−: monitorar DNA-VHB mensalmente · Ou tratar profilaticamente se anti-TNF/RTX<br>
+  Anti-HBs− (suscetível): vacinar ANTES (3 doses com resposta verificada)<br>
+• <strong>HIV:</strong> teste antes de qualquer IS<br>
+• VHC: antiHCV · DNA-VHC se positivo · Tratar antes (DAA como sofosbuvir/velpatasvir) → depois biológico<br><br>
+<strong>Vacinação (idealmente ≥4 semanas antes — vacinas vivas):</strong><br>
+• Influenza anual (inativada — pode continuar durante biológico)<br>
+• Pneumocócica (PCV20 ou PCV15+PPSV23)<br>
+• Shingrix (herpes zóster recombinante): obrigatória se anifrolumabe, rituximabe, JAKi · 2 doses intervalo 2–6 meses<br>
+• VHB (se não imune)<br>
+• TDAP (tetano, difteria, pertussis)<br>
+• NÃO aplicar vacinas vivas (varicela, febre amarela, SCRV) durante biológico ativo<br><br>
+<strong>Monitoramento durante biológico:</strong><br>
+Hemograma · TGP/TGO · Cr · Lipídeos (JAKi) · PCR · Função tireóidea (tocilizumabe pode mascarar elevação de PCR)`,
+     note:'JAKi (tofacitinibe, baricitinibe, upadacitinibe): FDA safety alert 2021 — maior risco de MACE, trombose venosa, malignidades e infecções graves vs anti-TNF em pacientes com fatores de risco cardiovascular. Preferir anti-TNF como 1ª linha biológica quando possível em AR/DII em pacientes de alto risco CV ou história de trombose.'},
+  ];
+  document.getElementById('sjogList').innerHTML=CARDS.map(c=>`<div class="reu-card" style="border-color:${c.col}"><div class="reu-nome" style="color:${c.col}">${c.nome}</div><div class="reu-body">${c.body}</div>${c.note?`<div style="font-size:.7rem;color:#64748b;margin-top:6px">💡 ${c.note}</div>`:''}</div>`).join('');
+}
+</script>
+</body>
+</html>

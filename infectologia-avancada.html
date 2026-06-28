@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Infectologia Avançada — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .inf-hdr{background:linear-gradient(135deg,#14532d,#15803d);color:#fff;border-radius:14px;padding:18px;margin-bottom:14px}
+    .inf-title{font-size:1rem;font-weight:800;margin-bottom:4px}
+    .inf-sub{font-size:.73rem;opacity:.8}
+    label{font-size:.75rem;font-weight:700;color:#1e3a5f;display:block;margin-bottom:4px}
+    select{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:10px;padding:10px 12px;font-size:.85rem;background:#fff;margin-bottom:10px}
+    select:focus{border-color:#15803d;outline:none}
+    .btn-calc{width:100%;background:#15803d;color:#fff;border:none;border-radius:12px;padding:13px;font-size:.87rem;font-weight:700;cursor:pointer;margin:8px 0}
+    .tab-bar{display:flex;gap:6px;margin-bottom:14px}
+    .tab-btn{flex:1;padding:9px 4px;border-radius:10px;border:2px solid #e2e8f0;background:#fff;font-size:.72rem;font-weight:700;cursor:pointer;color:#64748b}
+    .tab-btn.active{border-color:#15803d;background:#f0fdf4;color:#15803d}
+    .rec-card{border-radius:12px;border:2px solid;padding:14px;margin-bottom:10px}
+    .rec-hdr{font-size:.63rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+    .rec-nome{font-size:.88rem;font-weight:800;margin-bottom:6px}
+    .rec-badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:.65rem;font-weight:800;color:#fff;margin:2px}
+    .rec-body{font-size:.78rem;margin-top:6px;line-height:1.7}
+    .rec-note{font-size:.71rem;color:#64748b;margin-top:6px;padding-top:6px;border-top:1px solid #f1f5f9}
+    .inf-card{border-radius:10px;border-left:5px solid;padding:10px 14px;margin-bottom:8px;background:#fff}
+    .inf-nome{font-size:.83rem;font-weight:800;margin-bottom:4px}
+    .inf-body{font-size:.76rem;line-height:1.7;color:#374151}
+    .alerta{background:#fef2f2;border:2px solid #dc2626;border-radius:10px;padding:8px;margin:6px 0;font-size:.75rem;color:#7f1d1d;font-weight:700}
+  </style>
+</head>
+<body>
+<header class="top-bar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <span class="top-title">Infectologia Avançada</span>
+  <div class="top-right"></div>
+</header>
+<main class="container" style="padding-bottom:90px">
+  <div class="inf-hdr">
+    <div class="inf-title">🦠 Infectologia Avançada — Algoritmos</div>
+    <div class="inf-sub">Tuberculose · HIV/TARV · Dengue/Arboviroses · Malária</div>
+  </div>
+  <div class="tab-bar">
+    <button class="tab-btn active" id="tb0" onclick="showTab(0)">TB & HIV</button>
+    <button class="tab-btn" id="tb1" onclick="showTab(1)">Dengue & Arboviroses</button>
+    <button class="tab-btn" id="tb2" onclick="showTab(2)">Malária & Outros</button>
+  </div>
+
+  <!-- TAB 0 — TB & HIV -->
+  <div id="tab0">
+    <div class="card" style="padding:12px 14px">
+      <label>Condição</label>
+      <select id="tbhiv_cond">
+        <option value="tb_sens">Tuberculose — Doença Ativa Sensível (DS-TB)</option>
+        <option value="tb_lat">Tuberculose Latente (ILTB)</option>
+        <option value="tb_mdr">Tuberculose MDR / XDR</option>
+        <option value="hiv_ini">HIV — Início de TARV (naive)</option>
+        <option value="hiv_profil">HIV — Profilaxias de Infecções Oportunistas</option>
+        <option value="hiv_prep">PrEP e PEP — Profilaxia HIV</option>
+        <option value="hiv_gest">HIV na Gestação — TARV e Parto</option>
+      </select>
+    </div>
+    <button class="btn-calc" onclick="calcTBHIV()">🦠 Gerar protocolo</button>
+    <div id="tbhivResult" style="display:none"></div>
+  </div>
+
+  <!-- TAB 1 — DENGUE -->
+  <div id="tab1" style="display:none">
+    <div class="card" style="padding:12px 14px">
+      <label>Fase / Classificação</label>
+      <select id="dengue_fase">
+        <option value="a">Grupo A — Dengue sem sinais de alarme (ambulatorial)</option>
+        <option value="b">Grupo B — Sem alarme com condição especial OU com sangramento</option>
+        <option value="c">Grupo C — Com sinais de alarme (internação)</option>
+        <option value="d">Grupo D — Dengue grave (UTI)</option>
+        <option value="chik">Chikungunya</option>
+        <option value="zika">Zika / Zika na Gestação</option>
+      </select>
+    </div>
+    <button class="btn-calc" onclick="calcDengue()">🦟 Gerar conduta</button>
+    <div id="dengueResult" style="display:none"></div>
+  </div>
+
+  <!-- TAB 2 — MALÁRIA -->
+  <div id="tab2" style="display:none">
+    <div id="malarList"></div>
+  </div>
+</main>
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+<script src="js/db.js"></script>
+<script>
+function showTab(n){[0,1,2].forEach(i=>{document.getElementById('tab'+i).style.display=i===n?'block':'none';document.getElementById('tb'+i).classList.toggle('active',i===n);});if(n===2)renderMalar();}
+function recHTML(r){return `<div class="rec-card" style="border-color:${r.col}"><div class="rec-hdr" style="color:${r.col}">${r.hdr}</div><div class="rec-nome">${r.nome}</div><div>${(r.badges||[]).map(b=>`<span class="rec-badge" style="background:${b.c}">${b.t}</span>`).join('')}</div><div class="rec-body">${r.body}</div>${r.note?`<div class="rec-note">${r.note}</div>`:''}</div>`;}
+
+/* ─── TB & HIV ─────────────────────────────────────────────────────── */
+const PROTO_TBHIV={
+  tb_sens:{hdr:'Tuberculose Ativa — DS-TB',col:'#15803d',nome:'Esquema RHZE → RH — 6 meses total',
+    body:`<strong>Fase intensiva — 2 meses (2RHZE):</strong><br>
+• <strong>Rifampicina (R)</strong> 10 mg/kg/dia (máx 600 mg) · COM jeito (1h antes ou 2h após refeição)<br>
+• <strong>Isoniazida (H)</strong> 5–10 mg/kg/dia (máx 300 mg) + <strong>Piridoxina B6 25–50 mg/dia</strong> (previne neuropatia periférica — obrigatória se DM, alcoolismo, desnutrição, gestante, PVHIV)<br>
+• <strong>Pirazinamida (Z)</strong> 25–35 mg/kg/dia (máx 2 g): hepatotóxico + hiperuricemia<br>
+• <strong>Etambutol (E)</strong> 15–20 mg/kg/dia (máx 1,2 g): toxicidade óptica (neurite retrobulbar) — campo visual e acuidade mensais<br>
+Formulação combinada (RHZE 150/75/400/275 mg): preferível para adesão<br><br>
+<strong>Fase manutenção — 4 meses (4RH):</strong><br>
+• Rifampicina + Isoniazida (com piridoxina)<br>
+• TB meningite/osteoarticular: 7–10 meses manutenção · Fase intensiva = 2 meses RHZE<br><br>
+<strong>Controle do tratamento:</strong><br>
+• Baciloscopia mensal (cultura mês 2 e 5) · Se baciloscopia + no mês 2: cultura + TS e continuar RHZE<br>
+• TGP antes e a cada 1–2 meses: se &gt;5× LSN → suspender hepatotóxicos<br>
+• Hepatotoxicidade (icterícia): suspender R + H + Z → aguardar normalização → reintrodução gradual<br><br>
+<strong>TB + HIV:</strong><br>
+• Iniciar TARV 2–8 semanas após início de TARV em TB (CD4 &lt;50: iniciar em 2 semanas)<br>
+• Rifampicina + Efavirenz: compatível (EFV 600 mg/dia — dose habitual); NÃO usar inibidor de protease sem reforço ritonavir<br>
+• Rifampicina reduz níveis de DOACs, antifúngicos azólicos, antirretrovirais por forte indução CYP3A4/P-gp`,
+    note:'DOTS (Terapia Diretamente Observada): aumenta taxa de cura de 60% para 85%. Notificação compulsória. Investigação de contatos: PPD/IGRA + Rx tórax. Critérios de TB extrapulmonar: biópsia ou cultura de sítio extrapulmonar ou cultura de LCR/líquido pleural. TB em imunossuprimido: RHZE por ≥9 meses (alguns 12 meses para meníngea).'},
+  tb_lat:{hdr:'Tuberculose Latente (ILTB)',col:'#065f46',nome:'Isoniazida 6 meses OU 3HP (INH+rifapentina)',
+    body:`<strong>Indicações de tratamento de ILTB:</strong><br>
+• PVHIV com PPD ≥5 mm (ou IGRA positivo)<br>
+• Contato próximo de TB bacilífera: PPD ≥5 mm<br>
+• Imunossuprimido (TNF, transplantado, corticoide crônico &gt;15 mg/dia): PPD ≥5 mm<br>
+• Converter PPD (viragem tuberculínica) independente do valor<br>
+• Silicose: PPD ≥10 mm<br>
+• Criança &lt;5 anos contato de TB: tratar independente do PPD<br><br>
+<strong>Esquemas:</strong><br>
+• <strong>6H (isoniazida 300 mg/dia × 6 meses):</strong> esquema padrão Brasil · + piridoxina 25 mg/dia · Monitorar TGP<br>
+• <strong>9H (9 meses):</strong> PVHIV, imunossuprimidos, silicose<br>
+• <strong>3HP (rifapentina 900 mg + isoniazida 900 mg semanal × 12 sem):</strong> DOT semanal · Superior a 6H em adesão · Aprovado ILTB em ≥2 anos · NÃO disponível no SUS atualmente<br>
+• <strong>3HR (rifampicina + isoniazida diários × 3 meses):</strong> alternativa com boa adesão<br>
+• <strong>4R (rifampicina 600 mg/dia × 4 meses):</strong> alternativa se intolerância à INH; boa tolerabilidade<br><br>
+<strong>Contraindicações à ILTB:</strong><br>
+• Hepatopatia grave · TB ativa (investigar antes) · TGP &gt;3× antes do início<br><br>
+<strong>TB ativa descartada antes de iniciar ILTB:</strong><br>
+Rx tórax normal + assintomático + TB passada tratada = pode iniciar`,
+    note:'Não tratar ILTB em contato de TB MDR com isoniazida (INH resistente) — aguardar TS do caso índice e ajustar esquema ou monitorar por 2 anos. IGRA (QuantiFERON/T-SPOT): vantagem em vacinados com BCG (menor falso-positivo que PPD) e em imunossuprimidos (maior sensibilidade que PPD em alguns estudos).'},
+  tb_mdr:{hdr:'TB MDR / XDR — Resistência a Antibióticos',col:'#b45309',nome:'Bedaquilina + Linezolida + Pretomanida (BPaL) ou esquemas longos',
+    body:`<strong>Definições:</strong><br>
+TB-MDR: resistência a rifampicina + isoniazida (os dois principais de primeira linha)<br>
+TB-XDR (WHO 2021): MDR + resistência a fluoroquinolona + 1 dos injetáveis (bedaquilina ou linezolida)<br>
+TB pré-XDR (nova classificação): MDR + fluoroquinolona<br><br>
+<strong>Esquema BPaL (TB-ZeNix/ZeNix trial — WHO 2022):</strong><br>
+• <strong>Bedaquilina 400 mg/dia × 2 sem → 200 mg 3×/sem × 22 sem:</strong> inibidor da ATP sintase micobacteriana · Bactericida lento mas poderoso · Prolongamento QTc (monitorar ECG) · Interação rifampicina (indução CYP3A4 — NÃO combinar)<br>
+• <strong>Pretomanida 200 mg/dia × 26 sem:</strong> nitroimidazol (hipóxia bacteriana) · Aprovado FDA 2019<br>
+• <strong>Linezolida 600 mg/dia → 300 mg/dia (se RAM):</strong> mielossupressão, neuropatia periférica, acidose láctica · B6 obrigatória · Hemograma quinzenal<br>
+• BPaL: 6 meses · Eficácia 90% em XDR e MDR falha<br><br>
+<strong>Esquema longo (alternativa quando BPaL não disponível):</strong><br>
+18–20 meses: fluoroquinolona (levofloxacino 750 mg/dia) + bedaquilina + linezolida ± clofazimina 100 mg/dia<br>
+Injetáveis (amicacina, canamicina): remover dos esquemas de 2022 (toxicidade sem benefício adicional em MDR)<br><br>
+<strong>Monitoramento MDR-TB:</strong><br>
+ECG (bedaquilina: QTc &lt;500 ms — se prolongar &gt;500 ms: suspender) · Hemograma (linezolida) · TGP · Cultura mensal · Audiometria (se aminoglicosídeo usado)`,
+    note:'TB MDR no Brasil: Centro de Referência e treinamento (CRT-DST/AIDS) para supervisão. Cultura de escarro com TS extended (XDR panel) antes de iniciar esquema MDR. Contato de TB MDR: NÃO tratar com isoniazida (resistente) — monitorar clinicamente. Delamanida: alternativa à pretomanida; disponível para uso compasivo.'},
+  hiv_ini:{hdr:'HIV — Início de TARV (Naive)',col:'#1e3a8a',nome:'BIC/FTC/TAF — Bictegravir/Emtricitabina/Tenofovir Alafenamida',
+    body:`<strong>Indicação: TODOS os PVHIV independente de CD4 — iniciar o mais rápido possível</strong><br><br>
+<strong>Regime preferencial (DHHS 2024 / WHO 2024):</strong><br>
+• <strong>Bictegravir/FTC/TAF (Biktarvy) 50/200/25 mg 1 cp/dia</strong> (INI + ITIAN × 2)<br>
+  Barreira genética mais alta entre os INI · Sem ajuste renal até TFG ≥15 · Excelente tolerabilidade<br>
+  Interação: não usar com rifampicina · Anfotericina B: monitorar Mg²+<br>
+• <strong>Dolutegravir/Lamivudina (Dovato) 50/300 mg:</strong> dupla terapia; não-inferior em CD4 &gt;200 e CV &lt;500.000 cópias (GEMINI trials) · Menos RAM GI<br>
+• <strong>Dolutegravir + TDF/3TC:</strong> regime WHO-recomendado para países de baixa renda (TLD — Tenofovir/Lamivudina/Dolutegravir)<br><br>
+<strong>Alternativas:</strong><br>
+• Cabotegravir + Rilpivirina LA (CABENUVA): injeção IM mensal (com 2 meses de oral de lead-in) — para supressão viral estabelecida<br>
+• Elvitegravir/Cobicistat/FTC/TAF (Genvoya): útil mas cobicistat aumenta creatinina (falso, tubular) e tem interações CYP3A4<br><br>
+<strong>TDF vs TAF:</strong><br>
+TDF: menor custo (genérico); maior nefrotoxicidade e perda óssea · Ajustar se TFG &lt;50<br>
+TAF: menor dose (25 mg vs 300 mg); menor toxicidade renal/óssea; mais caro; NÃO ajustar até TFG ≥15<br><br>
+<strong>Monitoramento TARV:</strong><br>
+CV (carga viral) e CD4 a 1, 3, 6 meses → anual se suprimido · Hemograma, TGP, Cr, lipídeos, glicemia · CV indetectável (&lt;20–50 cópias) = meta · Resistência: teste antes de TARV inicial se suspeita de infecção por cepa resistente`,
+    note:'Iniciar TARV mesmo com infecções oportunistas ativas (exceto meningite por Cryptococcus — aguardar 4–6 semanas para evitar IRIS). Síndrome de Reconstituição Imune (IRIS): piora paradoxal da IO após início de TARV (CD4 sobem e inflamação exacerba). IRIS grave: prednisolona 1 mg/kg × 2 sem. Interação com rifampicina: usar EFV 600 mg ou dolutegravir 50 mg 2×/dia (dobrar dose do DTG).'},
+  hiv_profil:{hdr:'HIV — Profilaxias de Infecções Oportunistas',col:'#7c3aed',nome:'Indicações por CD4',
+    body:`<strong>Profilaxias indicadas por CD4:</strong><br><br>
+<strong>CD4 &lt;200 células/µL → Pneumocistose (PCP):</strong><br>
+• <strong>TMP-SMX 400/80 mg 1 cp/dia</strong> (1ª linha) OU 800/160 mg 3×/sem<br>
+• Alternativa: dapsona 100 mg/dia · Pentamidina inalatória 300 mg/mês<br>
+• Suspender se CD4 &gt;200 por ≥3 meses em TARV<br><br>
+<strong>CD4 &lt;100 células/µL → Toxoplasmose:</strong><br>
+• <strong>TMP-SMX 800/160 mg/dia</strong> (mesma droga que PCP, dose maior): já cobre se CD4 &lt;100<br>
+• Alternativa se intolerante: dapsona 50 mg/dia + pirimetamina 50 mg/sem + leucovorin 25 mg/sem<br><br>
+<strong>CD4 &lt;50 células/µL → MAI (Mycobacterium avium complex):</strong><br>
+• <strong>Azitromicina 1250 mg/sem</strong> (dose única semanal) OU claritromicina 500 mg 2×/dia<br>
+• Suspender se CD4 &gt;100 por ≥3 meses<br><br>
+<strong>Qualquer CD4 → Tuberculose latente:</strong><br>
+• Isoniazida 300 mg/dia × 9 meses + B6 25 mg/dia (se ILTB confirmada)<br><br>
+<strong>Criptococose (CD4 &lt;100 + RAS/Africa subsaariana):</strong><br>
+• Fluconazol 200 mg/dia: profilaxia secundária após tratamento · Em tratamento de criptococose: anfotericina B 1 mg/kg/dia × 14 dias → fluconazol 400 mg/dia × 8 sem → 200 mg/dia<br><br>
+<strong>Herpes simples recorrente grave:</strong><br>
+• Aciclovir 400 mg 2×/dia ou valaciclovir 500 mg/dia (supressiva)<br><br>
+<strong>Vacinação em PVHIV (NÃO com CD4 &lt;200):</strong><br>
+Influenza anual · Pneumocócica PCV15 + PPSV23 · VHB (doses dobradas se CD4 &lt;200) · HAV · HPV (até 45 anos)`,
+    note:'Suspensão de profilaxias: só após CD4 acima do limiar por ≥3 meses consecutivos com TARV supressiva. Profilaxia de CMV: ganciclovir 1 g 3×/dia (oral) — apenas em CD4 &lt;50 com retinite ativa tratada (profilaxia secundária). Aciclovir 400 mg 2×/dia reduz transmissão de HSV-2 em casais sorodiscordantes.'},
+  hiv_prep:{hdr:'PrEP e PEP — Profilaxia de HIV',col:'#059669',nome:'TDF/FTC (Truvada) PrEP diária OU cabotegravir LA',
+    body:`<strong>PrEP (Profilaxia Pré-Exposição) — Indicações:</strong><br>
+• Homens que fazem sexo com homens (HSH) sem uso consistente de camisinha<br>
+• Profissionais do sexo · Pessoas trans · Casais sorodiscordantes<br>
+• Uso de drogas injetáveis com compartilhamento de seringas<br><br>
+<strong>PrEP Oral Diária:</strong><br>
+• <strong>TDF/FTC (Truvada) 300/200 mg 1 cp/dia</strong> · Proteção: &gt;99% se adesão &gt;80%<br>
+• TAF/FTC (Descovy): aprovada FDA para HSH/TGM — menos nefrotóxico e ósseo; NÃO aprovado para relações receptivas vaginais (penetração vaginal menos estudada)<br>
+• Testar HIV + função renal + ISTs antes de iniciar; repetir a cada 3 meses<br><br>
+<strong>PrEP On-Demand (2-1-1 — para relações sexuais planejadas):</strong><br>
+• TDF/FTC 2 cp 2–24h antes → 1 cp 24h depois → 1 cp 48h depois<br>
+• Eficaz em HSH com relações receptivas anais (IPERGAY trial); NÃO indicado em mulheres (carga vaginal menos previsível)<br><br>
+<strong>Cabotegravir LA (Cabenuva / Apretude) injetável:</strong><br>
+• 600 mg IM glúteo — a cada 2 meses (após 2 injeções mensais de lead-in)<br>
+• HPTN 083/084: superior ao TDF/FTC oral em HSH e mulheres cisgênero<br>
+• Vantagem: sem adesão diária; discreto<br><br>
+<strong>PEP (Profilaxia Pós-Exposição — iniciada em até 72h):</strong><br>
+• <strong>TDF/FTC 300/200 mg + Dolutegravir 50 mg — 1×/dia × 28 dias</strong><br>
+• OU TDF/FTC + Raltegravir 400 mg 2×/dia × 28 dias<br>
+• Iniciar o mais rápido possível — cada hora conta<br>
+• Exposto HIV+: oferecer PEP + testar HIV (4ª geração) no D0, D30, D90`,
+    note:'PrEP disponível no SUS Brasil (Ministério da Saúde 2018). PEP: disponível 24h em qualquer UPA/PA. Falha de PEP: rara se iniciada em &lt;72h e completada 28 dias. Testar HIV antes de prescrever PrEP — se agudo: TARV, não PrEP.'},
+  hiv_gest:{hdr:'HIV na Gestação — TARV e Parto',col:'#b45309',nome:'Dolutegravir + TDF/3TC — iniciado ao diagnóstico',
+    body:`<strong>Início de TARV na gestação:</strong><br>
+Indicar IMEDIATAMENTE ao diagnóstico (qualquer trimestre)<br>
+Meta: carga viral indetectável antes do parto<br><br>
+<strong>Regime preferencial (2024):</strong><br>
+• <strong>Dolutegravir 50 mg + TDF 300 mg + 3TC 300 mg (TLD) 1×/dia</strong><br>
+  1T segurança confirmada (dados pós-2019 mostram risco de defeito tubo neural &lt;0,3% — inferior ao risco sem TARV) · Ácido fólico 5 mg/dia obrigatório<br>
+• Alternativa: Raltegravir 400 mg 2×/dia + TDF/3TC (mais dados de segurança gestacional)<br>
+• Evitar EFV (moderno debate ainda pendente) e IP boosted (náusea aumentada)<br><br>
+<strong>Carga viral no parto:</strong><br>
+CV &lt;1000 cópias: parto vaginal (sem AZT IV infusão)<br>
+CV ≥1000 cópias ou desconhecida: cesariana eletiva (37–38 sem) + AZT IV intraparto (2 mg/kg em 1h → 1 mg/kg/h até clampeamento)<br><br>
+<strong>Profilaxia neonatal:</strong><br>
+• <strong>Zidovudina (AZT) xarope 4 mg/kg 2×/dia × 4–6 semanas</strong> para TODOS os RN de mãe HIV+<br>
+• CV materna &gt;1000 ou desconhecida: adicionar nevirapina 2 mg/kg/dose × 3 doses (D0, D3, D7)<br>
+• Amamentação: CONTRAINDICADA (transmissão por leite materno) · Fórmula láctea: oferecer pelo programa<br><br>
+<strong>Monitoramento gestacional:</strong><br>
+CV: D0, 8 sem após TARV, 3T trimestre, parto · CD4: D0 e 34 sem · TGP, Cr, hemograma: mensal`,
+    note:'Nevirapina dose única intraparto: NÃO usar mais (resistência gerada; DTG é superior). Transmissão vertical sem TARV: 25–35%. Com TARV supressiva: &lt;1%. RN HIV+: TARV completo ao diagnóstico (não aguardar CD4). Sífilis + HIV co-infecção: penicilina G benzatina 2,4 MUI × 3 (latente tardia) — monitoramento VDRL mensal.'},
+};
+
+function calcTBHIV(){
+  const cond=document.getElementById('tbhiv_cond').value;
+  const p=PROTO_TBHIV[cond];
+  document.getElementById('tbhivResult').style.display='block';
+  document.getElementById('tbhivResult').innerHTML=recHTML({hdr:p.hdr,col:p.col,nome:p.nome,badges:[{t:'INFECTOLOGIA',c:p.col}],body:p.body,note:p.note});
+  document.getElementById('tbhivResult').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+/* ─── DENGUE & ARBOVIROSES ─────────────────────────────────────────── */
+const PROTO_DENGUE={
+  a:{hdr:'Grupo A — Dengue Ambulatorial',col:'#059669',nome:'Hidratação oral + analgesia — SEM internação',
+    body:`<strong>Critérios Grupo A:</strong> dengue sem sinais de alarme + sem condições especiais + sem sangramento<br><br>
+<strong>Conduta:</strong><br>
+• Hidratação oral: 60–80 mL/kg/dia (água, suco, soro oral, água de coco)<br>
+• Paracetamol 500–1000 mg 6/6h (máx 4 g/dia): febre e dor<br>
+• <strong>PROIBIDO: AAS, ibuprofeno, diclofenaco, nimesulida</strong> — risco de sangramento (plaquetopenia + inibição TXA2)<br>
+• Retorno imediato se: dor abdominal intensa, vômitos persistentes, sangramento, lipotimia, agitação<br>
+• Hemograma no D3–D4 (fase crítica): queda &gt;20% do hematócrito = alarme<br><br>
+<strong>Orientação ao paciente — sinais de alarme:</strong><br>
+Dor abdominal intensa · Vômitos persistentes · Sangramento mucoso · Sonolência/agitação · Lipotimia · Extremidades frias`,
+    note:'Dengue por sorotipos 1–4 (DENV). Co-circulação frequente no Brasil. Dengue grave: segundo episódio com sorotipo diferente tem maior risco (ADE — anticorpo-dependente enhancement). Vacina Dengvaxia: somente em soropositivos anteriores ≥9 anos (piora em soronaïve).'},
+  b:{hdr:'Grupo B — Internação/Observação',col:'#b45309',nome:'Hidratação IV + monitoramento intensivo',
+    body:`<strong>Grupo B1 (condição especial — sem alarme):</strong><br>
+Lactente &lt;2 anos · Idoso &gt;65 anos · Gestante · DM · HAS · DRC · Imunocomprometido · Obesidade<br>
+→ Internação para observação · Hidratação oral supervisionada · Hemograma 12/12h<br><br>
+<strong>Grupo B2 (sangramento espontâneo sem choque):</strong><br>
+Petéquias + plaquetas ≤20.000 · Sangramento mucoso · Hematêmese/hematúria leve<br>
+→ Internação · SF 0,9% 25 mL/kg em 4h → reavaliar<br>
+Transfusão de plaquetas: APENAS se &lt;10.000 OU sangramento grave (não repor plaquetas rotineiramente)<br><br>
+<strong>Hidratação IV Grupo B:</strong><br>
+• Fase de reposição: SF 0,9% 10 mL/kg/h × 2h → reavaliar · Reduzir conforme melhora clínica<br>
+• Não superidratação (risco de edema pulmonar)<br>
+• Hematócrito: alvo normal + hemodinâmica estável`,
+    note:'Corticoide em dengue: SEM benefício comprovado e pior em estudos. Imunoglobulina IV: sem indicação. Plaquetas: meta não é número — é ausência de sangramento clinicamente relevante.'},
+  c:{hdr:'Grupo C — Sinais de Alarme (Internação obrigatória)',col:'#dc2626',nome:'SF 20 mL/kg em 20 min + reavaliação frequente',
+    body:`<strong>Sinais de alarme (qualquer um → Grupo C):</strong><br>
+• Dor abdominal intensa e contínua · Vômitos persistentes (&gt;3/h × 2h)<br>
+• Acúmulo de líquidos (ascite, derrame pleural na imagem)<br>
+• Sangramento mucoso · Letargia/agitação<br>
+• Hepatomegalia &gt;2 cm · Queda abrupta do hematócrito após febre ↓<br><br>
+<strong>Tratamento:</strong><br>
+1. <strong>SF 0,9% 20 mL/kg IV em 20 min</strong> → reavaliar hemodinâmica<br>
+2. Se melhora: SF 0,9% 10 mL/kg/h × 2h → 5 mL/kg/h × 2h → 3 mL/kg/h → 2 mL/kg/h<br>
+3. Se sem melhora após 3 bolus: <strong>Dengue Grave (Grupo D)</strong><br>
+4. Monitorar: PA, FC, FR, diurese horária (alvo: 0,5–1 mL/kg/h) · Hematócrito 2/2h<br>
+5. Exames: hemograma completo, ALT/AST, albumina, Cr, gasometria · ECG (HAS, cardiopatia)`,
+    note:'Queda do hematócrito APÓS a febre ceder (D4–D6) = fase crítica = extravasamento plasmático. Se hematócrito aumenta (hemoconcentração) com sinais de choque = gravidade. Expansão com coloide (albumina 5%): apenas se choque refratário a cristaloide e albumina baixa.'},
+  d:{hdr:'Grupo D — Dengue Grave (UTI)',col:'#7f1d1d',nome:'Choque grave + suporte avançado',
+    body:`<strong>Critérios Grupo D:</strong><br>
+Choque (PA divergente, taquicardia, extremidades frias) · Sangramento grave · Comprometimento grave de órgãos (encefalite, miocardite, hepatite grave, IRA)<br><br>
+<strong>Ressuscitação volêmica agressiva:</strong><br>
+SF 0,9% 20 mL/kg em 15 min → repetir até 3 vezes → se sem resposta:<br>
+Coloide (albumina 5% ou gelatina) 20 mL/kg<br><br>
+<strong>Vasopressor se hipotensão refratária:</strong><br>
+Noradrenalina 0,1–2 mcg/kg/min · Dopamina 5–20 mcg/kg/min<br><br>
+<strong>Sangramento grave:</strong><br>
+Transfusão de concentrado de hemácias se Hb &lt;7 g/dL · Plaquetas &lt;20.000 + sangramento ativo<br>
+PFC: se CIVD · Ácido tranexâmico 1 g IV: dengue com sangramento grave (evidência limitada)<br><br>
+<strong>Complicações:</strong><br>
+Hepatite dengue: ALT &gt;1000 U/L; hepatite fulminante → suporte · Encefalite: manito 0,5 g/kg · Miocardite: ECG + troponina + ecocardiograma`,
+    note:'Dengue sem sinais de choque mas com plaquetas &lt;10.000: internação Grupo B mas MUITO cuidado — transição para D pode ser rápida. Dengue e gestação: alto risco de prematuridade, transmissão vertical, morte materna — internar Grupo B/C independente de CD4.'},
+  chik:{hdr:'Chikungunya',col:'#7c3aed',nome:'Analgesia escalonada — fase aguda + crônica',
+    body:`<strong>Fases:</strong><br>
+Aguda (0–10 dias): febre + artralgia intensa + rush · Subaguda (10 dias–3 meses) · Crônica (&gt;3 meses): artrite crônica em 20–40%<br><br>
+<strong>Fase aguda:</strong><br>
+• Paracetamol 1 g 6/6h · Dipirona 1 g 6/6h (febre e dor)<br>
+• Ibuprofeno 400–600 mg 8/8h ou naproxeno 550 mg 2×/dia: fase subaguda (não aguda — vírus ainda replica)<br>
+• Cloroquina 500 mg/dia × 7 dias: controverso, sem evidência clara<br>
+• Prednisona: fase subaguda com artrite grave (10–20 mg/dia × 2–4 sem)<br><br>
+<strong>Fase crônica (artrite):</strong><br>
+• Metotrexato 10–20 mg/sem + ácido fólico: artrite persistente · Hidroxicloroquina 400 mg/dia<br>
+• Sulfassalazina 2 g/dia: artrite periférica refratária<br>
+• Não há antiviral eficaz`,
+    note:'Chikungunya e dengue: podem coexistir na mesma epidemia (co-infecção documentada). Diagnóstico diferencial: Chik tem artralgia muito intensa e precoce; dengue tem maior grau de plaquetopenia. Chikungunya em RN: EVITAR parto vaginal na viremia materna (transmissão perinatal rara mas descrita).'},
+  zika:{hdr:'Zika / Zika na Gestação',col:'#0369a1',nome:'Suporte + vigilância neurológica',
+    body:`<strong>Clínica:</strong> exantema maculopapular pruriginoso + febre baixa + artralgia leve + conjuntivite · Síndrome de Guillain-Barré (GBS): 1:4000 infecções<br><br>
+<strong>Tratamento:</strong><br>
+• Sintomático: paracetamol · EVITAR AAS (risco sangramento) e ibuprofeno (gestação)<br>
+• GBS: IVIg 2 g/kg em 5 dias OU plasmaférese<br><br>
+<strong>Zika na Gestação — Síndrome Congênita do Zika (SCZ):</strong><br>
+• Microcefalia (PC &lt;2 DP para IG) + calcificações intracranianas + anomalias do SNC<br>
+• <strong>Risco maior: 1T (semana 8–12)</strong> — 30% de anomalias neurológicas · 2T: menor risco<br>
+• US morfológico detalhado: ao diagnóstico e repetir mensalmente<br>
+• RM fetal: se US suspeito (semana 29–30)<br>
+• PCR Zika no líquido amniótico: confirma infecção fetal mas não prediz gravidade<br>
+• Acompanhar: neonatologia, neurologia pediátrica, oftalmologia, audiologia ao nascimento<br><br>
+<strong>Contraceptivos pós-Zika:</strong><br>
+Adiar gravidez: 8 semanas após resolução dos sintomas (feminino) · 3 meses (masculino — Zika em sêmen)<br>
+• Preservativo masculino por 3 meses após infecção`,
+    note:'TORCH expandido: incluir Zika em grávida com exantema febril. RT-PCR Zika em soro + urina: positivo nas primeiras 3 semanas. IgM: pode persistir meses (cuidado com falso-positivo por dengue — reação cruzada). Registro de SCZ: CID Q02 (microcefalia congênita).'},
+};
+
+function calcDengue(){
+  const fase=document.getElementById('dengue_fase').value;
+  const p=PROTO_DENGUE[fase];
+  document.getElementById('dengueResult').style.display='block';
+  document.getElementById('dengueResult').innerHTML=recHTML({hdr:p.hdr,col:p.col,nome:p.nome,badges:[{t:'ARBOVIROSE',c:p.col}],body:p.body,note:p.note});
+  document.getElementById('dengueResult').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+/* ─── MALÁRIA ─────────────────────────────────────────────────────── */
+function renderMalar(){
+  if(document.getElementById('malarList').innerHTML) return;
+  const CARDS=[
+    {col:'#b45309',nome:'Malária por P. vivax (não-falciparum)',
+     body:`<strong>Diagnóstico:</strong> Gota espessa + esfregaço (padrão-ouro) · Teste rápido (HRP2): mais específico para P. falciparum · Microscopia: morfologia das hemácias e parasitas<br><br>
+<strong>Tratamento P. vivax / P. ovale / P. malariae (Brasil — SIVEP-Malária):</strong><br>
+• <strong>Cloroquina 25 mg base/kg total dividida em 3 dias:</strong><br>
+  D1: 10 mg/kg · D2: 7,5 mg/kg · D3: 7,5 mg/kg (máx 600 mg base/dia)<br>
+• <strong>Primaquina 0,5 mg/kg/dia × 7 dias</strong> (adulto &gt;60 kg: 15 mg/dia × 14 dias)<br>
+  Elimina hipnozoítas (formas latentes hepáticas de P. vivax/ovale) → previne recidivas<br>
+  <strong>⚠️ TRIAGEM de G6PD antes da primaquina obrigatória</strong><br>
+  G6PD deficiente: hemólise grave · G6PD normal: primaquina segura<br>
+  G6PD deficiente heterozigoto: 0,75 mg/kg/sem × 8 semanas (dose semanal reduzida)<br>
+  Gestante: primaquina CONTRAINDICADA (hemólise fetal) → profilaxia com cloroquina 300 mg/sem até pós-parto e amamentação<br><br>
+<strong>P. malariae:</strong> NÃO dá recidiva (sem hipnozoítas) → cloroquina sem primaquina<br>
+<strong>P. knowlesi:</strong> igual P. vivax; vigilância (zoonose macacos — Borneo/Sudeste Asiático)`,
+     note:'G6PD: 10% dos brasileiros (maioria do sexo masculino) têm deficiência. Teste: colorimétrico ou fluorescente. Se teste indisponível: usar dose semanal de primaquina (mais segura em G6PD desconhecido). Cloroquina resistente em P. vivax: raro no Brasil, comum em Papua Nova Guiné — tratar com arteméter-lumefantrina.'},
+    {col:'#dc2626',nome:'Malária Falciparum — P. falciparum (Grave)',
+     body:`<strong>Malária falciparum:</strong> principal causa de malária grave e mortalidade<br>
+Regiões: Amazônia (Brasil), África subsaariana, Sul/Sudeste asiático, Oceania<br><br>
+<strong>Malária não-grave (P. falciparum):</strong><br>
+• <strong>Arteméter/Lumefantrina (Coartem) 20/120 mg:</strong><br>
+  Adulto: 4 cp 2×/dia × 3 dias (D1: doses 0 e 8h; D2 e D3: 2×/dia com alimento gorduroso)<br>
+  Alternativa: Artesunato + mefloquina (ARTEQUICK/FANSIMEF) · DHA-piperaquina (D-ARTS)<br>
+• <strong>Primaquina 0,75 mg/kg dose única D1</strong> (elimina gametócitos = bloqueia transmissão)<br>
+  Triagem G6PD: verificar antes (dose única de 0,75 mg/kg menos hemolítica que esquema de 7 dias)<br><br>
+<strong>Malária Grave (P. falciparum) — UTI:</strong><br>
+Critérios: coma · convulsão recorrente · IRA · SARA · hipoglicemia · anemia grave (Hb &lt;7) · hemoglobinúria · hiperparasitemia (&gt;5%) · hiperlactatemia<br>
+• <strong>Artesunato IV 2,4 mg/kg em bólus → 12h → 24h → a cada 24h até VO possível</strong><br>
+  AQUAMAT trial: artesunato IV = 35% menos mortalidade vs quinina IV em malária grave<br>
+• Glicose IV: hipoglicemia frequente (parasita consome glicose + quinina estimula insulina)<br>
+• Transfusão: Hb &lt;7 g/dL em malária grave · Exsanguíneotransfusão: hiperparasitemia &gt;10% (controverso)<br>
+• Dexametasona: CONTRAINDICADA em malária cerebral (aumenta mortalidade — WHO)<br>
+• Troca de plasma: sem evidência`,
+     note:'Malária cerebral: coma + esfregaço positivo sem outra causa. Mortalidade 15–20% mesmo com artesunato. Manitol 20%: HIC cerebral (0,5 g/kg IV). Quinina IV: alternativa se artesunato indisponível (quinina 20 mg/kg IV ataque → 10 mg/kg 8/8h — monitorar QTc). Mefloquina: NÃO para malária cerebral (convulsão). Doxiciclina: adjuvante a artesunato em adultos (não crianças &lt;8 anos).'},
+    {col:'#1e3a8a',nome:'Profilaxia de Malária — Viajantes',
+     body:`<strong>Indicação: viagem para área endêmica — iniciar 1–2 semanas antes e manter 4 semanas após retorno</strong><br><br>
+<strong>Mefloquina (Lariam) 250 mg/sem:</strong><br>
+• 1 cp/sem a partir de 2 semanas antes + 4 semanas após · Boa eficácia em P. vivax e falciparum<br>
+• RAM: tontura, pesadelos, ansiedade, psicose (raro) · CI: epilepsia, psiquiátrico<br><br>
+<strong>Atovaquona + Proguanil (Malarone) 250/100 mg/dia:</strong><br>
+• Iniciar 1–2 dias antes · Parar 7 dias após · Excelente tolerabilidade · Mais caro<br>
+• CI: TFG &lt;30 · Gravidez (dados insuficientes) · Amamentação (&lt;11 kg RN)<br><br>
+<strong>Doxiciclina 100 mg/dia:</strong><br>
+• Iniciar 1–2 dias antes · 4 semanas após · Tomar com alimento (fotossensibilidade, esofagite)<br>
+• CI: gestação (formação óssea/dentária fetal) · &lt;8 anos · Mais barata<br><br>
+<strong>Cloroquina 300 mg base/sem (apenas P. vivax sensível ou áreas sem falciparum):</strong><br>
+• Certas áreas da América Central (oeste de Panamá, Haiti, República Dominicana, México)<br><br>
+<strong>Primaquina profilaxia (P. vivax endêmico — pós-exposição):</strong><br>
+• 0,5 mg/kg/dia × 14 dias após saída da área (elimina hipnozoítas) · Triagem G6PD antes`,
+     note:'Malária falciparum e gestação: emergência. Quinina + clindamicina IV (artesunato sem dados robustos em 1T; usar artesunato IV a partir do 2T em grave). Primaquina na gestação: contraindicada. Vacina RTS,S/AS01 (Mosquirix): 4 doses em crianças &lt;5 anos em África — eficácia 30–40% contra falciparum grave; aprovada OMS 2021. Vacina R21/Matrix-M (Oxford): eficácia 75–80% em 3 doses — aprovada OMS 2023.'},
+    {col:'#065f46',nome:'Leishmaniose — Visceral (LV) e Tegumentar (LT)',
+     body:`<strong>Leishmaniose Visceral (Calazar) — Leishmania donovani / chagasi:</strong><br>
+Clínica: febre prolongada · hepatoesplenomegalia · pancitopenia · hipoalbuminemia · hipergamaglobulinemia<br>
+Diagnóstico: sorologia (ELISA/RIFI) + aspirado esplênico/medula óssea + PCR<br><br>
+<strong>Tratamento LV:</strong><br>
+• <strong>Anfotericina B lipossomal (AmBisome) 3–5 mg/kg/dia × 5–7 dias (total 20–25 mg/kg):</strong><br>
+  1ª linha Brasil (SUS) · Menor toxicidade renal vs convencional · Eficácia &gt;90%<br>
+• Miltefosina 2,5 mg/kg/dia × 28 dias: oral; teratogênica (contracepção durante e 3 meses após)<br>
+• Antimoniato de N-metilglucamina (Glucantime) 20 mg Sb⁵/kg/dia IV/IM × 28–30 dias: mais RAM (cardio, hepato, pancreatite)<br><br>
+<strong>Leishmaniose Tegumentar (LTA) — cutânea e mucosa:</strong><br>
+• <strong>Glucantime 15–20 mg Sb⁵/kg/dia × 30 dias (cutânea) / 30–45 dias (mucosa)</strong><br>
+• Anfotericina B lipossomal: LM refratária ou CI ao Glucantime<br>
+• Miltefosina: alternativa oral para cutânea<br>
+• Pentamidina 300 mg IM 3×/sem × 4–6 doses: cutânea não-complicada (alternativa)`,
+     note:'Reativação de Leishmaniose em imunossuprimido (TARV, transplante, biológico): Leishmania pode reativar anos depois — investigar antes de iniciar biológico em área endêmica. LV em PVHIV: recidiva frequente → profilaxia secundária com anfotericina B lipossomal 3–5 mg/kg/sem indefinidamente.'},
+  ];
+  document.getElementById('malarList').innerHTML=CARDS.map(c=>`<div class="inf-card" style="border-color:${c.col}"><div class="inf-nome" style="color:${c.col}">${c.nome}</div><div class="inf-body">${c.body}</div>${c.note?`<div style="font-size:.7rem;color:#64748b;margin-top:6px">💡 ${c.note}</div>`:''}</div>`).join('');
+}
+</script>
+</body>
+</html>
