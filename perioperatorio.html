@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Perioperatório — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .per-hdr{background:linear-gradient(135deg,#1c1917,#78350f);color:#fff;border-radius:14px;padding:18px;margin-bottom:14px}
+    .per-title{font-size:1rem;font-weight:800;margin-bottom:4px}
+    .per-sub{font-size:.73rem;opacity:.8}
+    label{font-size:.75rem;font-weight:700;color:#1c1917;display:block;margin-bottom:4px}
+    select,input[type=number]{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:10px;padding:10px 12px;font-size:.85rem;background:#fff;margin-bottom:10px}
+    .btn-calc{width:100%;background:#78350f;color:#fff;border:none;border-radius:12px;padding:13px;font-size:.87rem;font-weight:700;cursor:pointer;margin:8px 0}
+    .tab-bar{display:flex;gap:6px;margin-bottom:14px}
+    .tab-btn{flex:1;padding:9px 4px;border-radius:10px;border:2px solid #e2e8f0;background:#fff;font-size:.72rem;font-weight:700;cursor:pointer;color:#64748b}
+    .tab-btn.active{border-color:#78350f;background:#fef3c7;color:#78350f}
+    .per-card{border-radius:10px;border-left:5px solid;padding:10px 14px;margin-bottom:8px;background:#fff}
+    .per-nome{font-size:.83rem;font-weight:800;margin-bottom:4px}
+    .per-body{font-size:.76rem;line-height:1.7;color:#374151}
+    .alerta{background:#fef2f2;border:2px solid #dc2626;border-radius:10px;padding:8px;margin:6px 0;font-size:.75rem;color:#7f1d1d;font-weight:700}
+    .atencao{background:#fffbeb;border:2px solid #d97706;border-radius:10px;padding:8px;margin:6px 0;font-size:.75rem;color:#78350f;font-weight:700}
+    .ok-box{background:#f0fdf4;border:2px solid #15803d;border-radius:10px;padding:8px;margin:6px 0;font-size:.75rem;color:#14532d;font-weight:700}
+    table{width:100%;border-collapse:collapse;font-size:.73rem;margin-top:6px}
+    th{background:#78350f;color:#fff;padding:5px 8px;text-align:left}
+    td{padding:5px 8px;border-bottom:1px solid #f1f5f9}
+    tr:nth-child(even) td{background:#fef9f0}
+    .result-box{background:#fef3c7;border-radius:10px;padding:14px;margin-top:8px}
+    .result-val{font-size:1.3rem;font-weight:900;color:#78350f}
+    .result-label{font-size:.7rem;color:#475569;margin-top:2px}
+    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  </style>
+</head>
+<body>
+<header class="top-bar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <span class="top-title">Perioperatório</span>
+  <div class="top-right"></div>
+</header>
+<main class="container" style="padding-bottom:90px">
+  <div class="per-hdr">
+    <div class="per-title">🔪 Gerenciamento Perioperatório</div>
+    <div class="per-sub">Profilaxia ATB · VTE · Anticoagulação · Medicamentos crônicos · Glicemia</div>
+  </div>
+  <div class="tab-bar">
+    <button class="tab-btn active" id="tb0" onclick="showTab(0)">Profilaxia ATB & VTE</button>
+    <button class="tab-btn" id="tb1" onclick="showTab(1)">Anticoagulação & AAS</button>
+    <button class="tab-btn" id="tb2" onclick="showTab(2)">Medicamentos Crônicos</button>
+  </div>
+
+  <!-- TAB 0 — Profilaxia ATB & VTE -->
+  <div id="tab0">
+    <div class="card" style="padding:12px 14px;margin-bottom:10px">
+      <div style="font-size:.8rem;font-weight:800;color:#78350f;margin-bottom:8px">Profilaxia Antibiótica Cirúrgica — ASHP/IDSA/SIS 2023</div>
+      <label>Tipo de cirurgia</label>
+      <select id="per_cirurgia">
+        <option value="">Selecione o procedimento...</option>
+        <optgroup label="Cardiovascular / Torácica">
+          <option value="cardio">Cardíaca (CEC, valvar, bypass)</option>
+          <option value="vasc">Vascular (aorta, bypass periférico)</option>
+        </optgroup>
+        <optgroup label="Abdominal">
+          <option value="colon">Colorretal (colorretoscopia com ressecção)</option>
+          <option value="hep">Hepatobiliar (colecistectomia, fígado)</option>
+          <option value="gast">Gastroduodenal (gastrectomia, GERD)</option>
+          <option value="apend">Apendicectomia (perfurada/não perfurada)</option>
+        </optgroup>
+        <optgroup label="Ortopédica">
+          <option value="artro">Artroplastia total (joelho/quadril)</option>
+          <option value="coluna">Coluna vertebral (com implante)</option>
+          <option value="frat">Fratura exposta (ossos longos)</option>
+        </optgroup>
+        <optgroup label="Urológica">
+          <option value="uro_trans">Ressecção transuretral (RTU)</option>
+          <option value="uro_aberta">Prostatectomia radical/nefrectomia</option>
+        </optgroup>
+        <optgroup label="Ginecológica / Obstétrica">
+          <option value="cesarea">Cesariana</option>
+          <option value="histe">Histerectomia (vaginal/abdominal)</option>
+        </optgroup>
+        <optgroup label="Cabeça e pescoço">
+          <option value="head_neck">Cabeça e pescoço (com mucosa oral)</option>
+          <option value="tireo">Tireoidectomia (campo limpo)</option>
+        </optgroup>
+        <optgroup label="Mama / Superficial">
+          <option value="mama">Mastectomia / cirurgia de mama</option>
+          <option value="hernia">Herniorrafia (inguinal, ventral)</option>
+        </optgroup>
+        <optgroup label="Neurológica">
+          <option value="neuro">Neurocirurgia (craniotomia, shunt)</option>
+        </optgroup>
+      </select>
+      <button class="btn-calc" onclick="calcATB()">🔬 Ver protocolo de profilaxia</button>
+    </div>
+    <div id="atbResult" style="display:none"></div>
+
+    <div class="per-card" style="border-color:#7c3aed;margin-top:10px">
+      <div class="per-nome" style="color:#7c3aed">Tromboprofilaxia Cirúrgica — Escore de Caprini (Cirurgia Geral)</div>
+      <div class="per-body">
+        <div id="capriniList"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 1 — Anticoagulação Perioperatória -->
+  <div id="tab1" style="display:none">
+    <div id="anticoagList"></div>
+  </div>
+
+  <!-- TAB 2 — Medicamentos Crônicos -->
+  <div id="tab2" style="display:none">
+    <div id="medcronicaList"></div>
+  </div>
+</main>
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+<script src="js/db.js"></script>
+<script>
+function showTab(n){[0,1,2].forEach(i=>{document.getElementById('tab'+i).style.display=i===n?'block':'none';document.getElementById('tb'+i).classList.toggle('active',i===n);});if(n===0)renderCaprini();if(n===1)renderAnticoag();if(n===2)renderMedCronica();}
+
+const PROTO_ATB={
+  cardio:{nome:'Cirurgia Cardíaca (CEC/Valvar/Bypass)',atb:'Cefazolina 2g IV (peso ≥120 kg: 3g) · Alérgicos a β-lactâmico: vancomicina 15–25 mg/kg IV',timing:'30–60 min antes da incisão (vancomicina: iniciar 60–120 min antes)',duracao:'48h máximo — NÃO há benefício além de 48h (estudos de nível I)',repetir:'Repetir a cada 4h de cirurgia (cefazolina t½ ~2h intra-op) OU se sangramento >1,5 L',obs:'Vancomicina NÃO substitui cefazolina de rotina (cobertura gram-negativa inferior). Reservar para colonização MRSA confirmada ou alergia grave.',cor:'#1e40af'},
+  vasc:{nome:'Cirurgia Vascular (Aorta/Prótese/Bypass)',atb:'Cefazolina 2g IV (3g se ≥120 kg)',timing:'30–60 min antes',duracao:'Dose única intraoperatória · Máximo 24h',repetir:'Repetir a cada 4h de cirurgia ou perda >1,5 L',obs:'Implante de prótese vascular: manter até remoção de drenos (24h). Alérgico: vancomicina 15–25 mg/kg + aztreonam 2g.',cor:'#1e40af'},
+  colon:{nome:'Cirurgia Colorretal',atb:'Cefazolina 2g + metronidazol 500 mg IV (ambos)',timing:'30–60 min antes',duracao:'Dose única · NÃO prolongar além de 24h',repetir:'Repetir cefazolina a cada 4h; metronidazol a cada 8h se cirurgia prolongada',obs:'Preparo mecânico oral (lavagem intestinal) + antibiótico oral no dia anterior: neomicina 1g + eritromicina 1g às 13h, 14h e 23h · OU neomicina + metronidazol. Reduz complicações infecciosas de forma complementar.',cor:'#15803d'},
+  hep:{nome:'Cirurgia Hepatobiliar',atb:'Cefazolina 2g IV (biliar de baixo risco: dose única). Alto risco (colangite, icterícia, >70 anos, reoperação): piperacilina-tazobactam 3,375g OU cefazolina + metronidazol',timing:'30–60 min antes',duracao:'Dose única para baixo risco · 24h para alto risco',repetir:'Repetir a cada 4h de cirurgia',obs:'Alto risco para infecção: colangite ativa, obstrução biliar, idade >70 anos, reoperação, litíase coledociana. CPRE com stent: ciprofloxacino 400 mg IV 60 min antes.',cor:'#15803d'},
+  gast:{nome:'Cirurgia Gastroduodenal',atb:'Cefazolina 2g IV (apenas para cirurgias que entram na luz gástrica — úlcera, tumor, obesidade barátrica)',timing:'30–60 min antes',duracao:'Dose única',repetir:'Repetir a cada 4h',obs:'Gastrectomia por obesidade (bypass gástrico): cefazolina 3g IV todos os pacientes (dose baseada no peso real ≥120 kg ou dose padronizada 3g em obesos). NÃO usar profilaxia em cirurgias laparoscópicas simples sem abertura de víscera.',cor:'#15803d'},
+  apend:{nome:'Apendicectomia',atb:'Não perfurada: cefazolina 2g + metronidazol 500 mg (dose única). Perfurada/gangrenada: piperacilina-tazobactam 3,375g a cada 6h por 4–7 dias (é tratamento, não profilaxia)',timing:'30–60 min antes',duracao:'Não perfurada: dose única. Perfurada: 4–7 dias de tratamento',obs:'Apendicite perfurada = infecção estabelecida, não profilaxia. Esquema: pip-tazo OU cefoxitina 2g IV 6/6h + metronidazol. Alta assim que tolerar oral: amoxicilina-clavulanato 875/125 mg + metronidazol 400 mg 8/8h.',cor:'#15803d'},
+  artro:{nome:'Artroplastia Total (Joelho/Quadril)',atb:'Cefazolina 2g IV (3g se ≥120 kg). Alérgico: vancomicina 15–25 mg/kg IV',timing:'30–60 min antes (vancomicina: 60–120 min antes)',duracao:'24h — evidência sólida de que 24h = 48h sem benefício adicional',repetir:'Repetir intra-op a cada 4h',obs:'Vancomicina em portador MRSA: swab nasal positivo pré-op. Cefazolina + vancomicina juntas se portador MRSA (cobertura combinada gram-positivo e negativo). Profilaxia VTE obrigatória (ver Caprini) com HBPM, AAS, ou rivaroxabana por 35 dias.',cor:'#b45309'},
+  coluna:{nome:'Cirurgia de Coluna com Implante',atb:'Cefazolina 2g IV (3g se ≥120 kg)',timing:'30–60 min antes',duracao:'24h — NÃO prolongar (evidência nível I)',repetir:'Repetir a cada 4h',obs:'Vancomicina tópica em pó (1–2g no sítio cirúrgico): reduz SSI em alguns estudos retrospectivos em cirurgia de coluna — prática usada em muitos centros. Evidência ainda não nível I para uso rotineiro.',cor:'#b45309'},
+  frat:{nome:'Fratura Exposta (Ossos Longos)',atb:'Gustilo-Anderson Tipo I/II: cefazolina 2g IV. Tipo III (grave, contaminada): cefazolina + gentamicina 5 mg/kg/dia OU piperacilina-tazobactam. Contaminação por terra/fazenda: + penicilina G cristalina (C. perfringens)',timing:'Idealmente em até 1h do trauma (reduz SSI significativamente)',duracao:'Tipo I/II: 24h. Tipo III: 72h ou até fechamento definitivo da ferida',obs:'Tempo até primeiro antibiótico é determinante: cada hora atrasa aumenta SSI. Tetanus toxoid se imunização desatualizada.',cor:'#b45309'},
+  uro_trans:{nome:'Ressecção Transuretral (RTU/RTUP)',atb:'Ciprofloxacino 400 mg IV OU TMP-SMX 160/800 mg IV. Urina com cultura positiva: tratar infecção ativa antes da cirurgia eletiva',timing:'30–60 min antes',duracao:'Dose única (urina estéril)',obs:'Realizar urinocultura pré-operatória. ITU ativa = contraindicação para cirurgia eletiva. Risco elevado (sonda de longa data, alteração urológica complexa): fluoroquinolona 5–7 dias peri-op.',cor:'#7c3aed'},
+  uro_aberta:{nome:'Cirurgia Urológica Aberta (Prostatectomia/Nefrectomia)',atb:'Cefazolina 2g IV (sem abertura de cólon). Com abertura de cólon: + metronidazol 500 mg IV',timing:'30–60 min antes',duracao:'24h',obs:'Linfadenectomia pélvica extensa: HBPM profilaxia VTE por 28 dias (alto risco trombótico).',cor:'#7c3aed'},
+  cesarea:{nome:'Cesariana',atb:'Cefazolina 2g IV (3g se ≥120 kg OU IMC ≥40). Alérgica: clindamicina 900 mg + gentamicina 5 mg/kg',timing:'30–60 min ANTES da incisão (não após clampeamento do cordão — evidência atual)',duracao:'Dose única',obs:'Antes vs após clampeamento: estudos atuais (ACOG 2023) recomendam administração ANTES da incisão para redução máxima de endometrite e SSI, sem aumento de IAM neonatal ou complicações no RN.',cor:'#db2777'},
+  histe:{nome:'Histerectomia (Vaginal/Abdominal)',atb:'Cefazolina 2g IV (3g se ≥120 kg). Vaginal: mesma dose',timing:'30–60 min antes',duracao:'Dose única',repetir:'Repetir a cada 4h se cirurgia prolongada',obs:'Metronidazol adicional não é recomendado rotineiramente para histerectomia simples (evidência insuficiente de benefício adicional sobre cefazolina isolada). Histerectomia radical por câncer: cefazolina + metronidazol.',cor:'#db2777'},
+  head_neck:{nome:'Cirurgia de Cabeça e Pescoço (com Mucosa Oral/Faríngea)',atb:'Cefazolina 2g + metronidazol 500 mg IV (cirurgias que entram na mucosa orofaríngea)',timing:'30–60 min antes',duracao:'24h (máximo 48h em ressecções extensas com retalho)',repetir:'Repetir a cada 4h',obs:'Amoxicilina-clavulanato IV (1,2 g) é alternativa para cirurgias contaminadas moderadas. Alérgico a β-lactâmico: clindamicina 900 mg IV + gentamicina 5 mg/kg. Laringoscopia simples/biópsia sem abertura: NÃO requer profilaxia.',cor:'#0891b2'},
+  tireo:{nome:'Tireoidectomia (Campo Limpo)',atb:'NÃO indicada — cirurgia de campo limpo com baixíssima taxa de SSI (<1%) sem profilaxia',timing:'N/A',duracao:'N/A',obs:'Exceções (considerar profilaxia): reoperação, implante de prótese, imunossupressão grave, diabetes mellitus descompensado. Nestas situações: cefazolina 2g IV dose única.',cor:'#0891b2'},
+  mama:{nome:'Mastectomia / Cirurgia de Mama',atb:'Cefazolina 2g IV (dose única). Reconstrução com expansor/implante: cefazolina 2g + gentamicina 5 mg/kg',timing:'30–60 min antes',duracao:'Dose única. Com implante: 24h',obs:'BRCA positiva com mastectomia profilática bilateral + reconstrução: maior risco de SSI — cefazolina 24h + curativo com solução de antibiótico para irrigação do bolso do implante (prática em alguns centros).',cor:'#db2777'},
+  hernia:{nome:'Herniorrafia (Inguinal/Ventral)',atb:'Inguinal sem tela: NÃO indicada. Inguinal com tela (mesh): cefazolina 2g IV dose única. Ventral/incisional com tela grande: cefazolina 2g IV dose única',timing:'30–60 min antes',duracao:'Dose única',obs:'Herniorrafia inguinal sem tela = campo limpo → evidência não suporta profilaxia de rotina (metanálise Cochrane). Com tela sintética: cefazolina reduz SSI e infecção de mesh (meta-análise 2019 favorece profilaxia).',cor:'#0891b2'},
+  neuro:{nome:'Neurocirurgia (Craniotomia/Shunt/Coluna)',atb:'Cefazolina 2g IV (3g se ≥120 kg). Shunt VP: cefazolina 2g IV + gentamicina 1,5 mg/kg IT (intratecal) em alguns centros',timing:'30–60 min antes',duracao:'24h para craniotomia com implante. Dose única para biópsia/craniectomia simples',obs:'Vancomicina sistêmica para portador MRSA (swab nasal+). Vancomicina intratecal (10–20 mg) em alguns centros para prevenção de shunt infection (Staphylococcus epidermidis — biofilme). Dexametasona pré-op NÃO afeta a profilaxia ATB.',cor:'#0891b2'}
+};
+
+function calcATB(){
+  const v=document.getElementById('per_cirurgia').value;
+  if(!v){alert('Selecione o procedimento');return;}
+  const p=PROTO_ATB[v];
+  document.getElementById('atbResult').style.display='block';
+  document.getElementById('atbResult').innerHTML=`
+  <div class="per-card" style="border-color:${p.cor}">
+    <div class="per-nome" style="color:${p.cor}">${p.nome}</div>
+    <div class="per-body">
+      <strong>Antibiótico:</strong> ${p.atb}<br>
+      <strong>Timing:</strong> ${p.timing}<br>
+      <strong>Duração:</strong> ${p.duracao}<br>
+      ${p.repetir ? `<strong>Redosagem intraoperatória:</strong> ${p.repetir}<br>` : ''}
+      <div class="atencao" style="margin-top:6px">📋 ${p.obs}</div>
+    </div>
+  </div>`;
+  document.getElementById('atbResult').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+function renderCaprini(){
+  if(document.getElementById('capriniList').innerHTML) return;
+  document.getElementById('capriniList').innerHTML=`
+    <table>
+      <tr><th>Pontos</th><th>Fator de risco</th></tr>
+      <tr><td>1</td><td>Idade 41–60 anos · IMC >25 kg/m² · Varizes · Edema de MMII · Cirurgia de pequeno porte · Gravidez ou pós-parto recente · Anticoncepcionais/TRH · Sepse recente · Doença pulmonar grave · Infarto agudo · IC congestiva · AVC com paresia · DII · Repouso no leito >72h</td></tr>
+      <tr><td>2</td><td>Idade 61–74 anos · Cirurgia artroscópica · Neoplasia maligna · Cirurgia laparoscópica >45 min · Paciente acamado >72h · Gesso em MMII · Acesso venoso central</td></tr>
+      <tr><td>3</td><td>Idade ≥75 anos · TVP/TEP prévia · Trombofilia (fator V Leiden, mutação protrombina, antitrombina, prot C/S) · Anticorpo antifosfolipídio (anticoagulante lúpico, anticardiolipina)</td></tr>
+      <tr><td>5</td><td>AVC (<1 mês) · Artroplastia eletiva (quadril/joelho) · Fratura de quadril, pelve ou MMII · Lesão medular aguda</td></tr>
+    </table>
+    <div style="margin-top:10px;font-size:.76rem">
+      <strong>Classificação e conduta:</strong><br>
+      <table>
+        <tr><th>Escore</th><th>Risco</th><th>Profilaxia recomendada</th></tr>
+        <tr><td>0–1</td><td>Muito baixo</td><td>Deambulação precoce — NÃO farmacológica</td></tr>
+        <tr><td>2</td><td>Baixo</td><td>Meias de compressão graduada (MCG) OU CNI (compressão pneumática intermitente)</td></tr>
+        <tr><td>3–4</td><td>Moderado</td><td>HBPM (enoxaparina 40 mg SC/dia) OU HNF 5000 UI SC 8/8h + CNI</td></tr>
+        <tr><td>≥5</td><td>Alto</td><td>HBPM + CNI · Artroplastia/fratura quadril: prolongar 35 dias · Câncer colorretal: 28 dias</td></tr>
+      </table>
+      <div class="ok-box" style="margin-top:8px">⚖️ Cirurgia de alto risco hemorrágico: CNI mecânica até risco de sangramento reduzir → iniciar HBPM. Avaliar filtro VCI temporário apenas em casos extremos (contraindicação absoluta e alta TV).</div>
+    </div>`;
+}
+
+function renderAnticoag(){
+  if(document.getElementById('anticoagList').innerHTML) return;
+  document.getElementById('anticoagList').innerHTML=`
+  <div class="per-card" style="border-color:#dc2626">
+    <div class="per-nome" style="color:#dc2626">Manejo Perioperatório de Anticoagulantes Orais</div>
+    <div class="per-body">
+      <strong>DOACs (apixabana, rivaroxabana, dabigatrana, edoxabana):</strong><br>
+      <table>
+        <tr><th>Fármaco</th><th>Risco Cirúrgico Baixo</th><th>Risco Cirúrgico Alto</th><th>Retomada</th></tr>
+        <tr><td>Apixabana/Rivaroxabana (anti-Xa)</td><td>Suspender 24–48h antes</td><td>Suspender 48–72h antes (IRC: ≥72h se ClCr 30–50)</td><td>24–72h pós-op</td></tr>
+        <tr><td>Dabigatrana (anti-IIa)</td><td>ClCr ≥80: 24h · ClCr 50–80: 36h · ClCr 30–50: 48h</td><td>ClCr ≥80: 48h · ClCr 50–80: 72h · ClCr 30–50: 96h</td><td>24–72h pós-op</td></tr>
+      </table>
+      <div class="ok-box" style="margin-top:6px">✅ DOACs: NÃO fazer ponte com HBPM na maioria dos casos. A ponte HBPM em pacientes com DOAC aumenta sangramento sem reduzir trombose (PAUSE trial, PERIOP-2 trial).</div>
+      <br>
+      <strong>Varfarina (AVK) — Estratégia de Ponte:</strong><br>
+      Suspender 5 dias antes (INR alvo &lt;1,5 no dia da cirurgia). A ponte HBPM é indicada apenas em risco trombótico ALTO:<br>
+      <table>
+        <tr><th>Indicação de DOAC/Varfarina</th><th>Risco Trombótico</th><th>Ponte?</th></tr>
+        <tr><td>FA + CHA₂DS₂-VASc ≤4 sem AVC prévio</td><td>Baixo</td><td>NÃO (BRIDGE trial: ponte ↑ sangramento sem ↓ AVC)</td></tr>
+        <tr><td>FA + AVC/TIA < 3 meses · CHA₂DS₂-VASc ≥5</td><td>Alto</td><td>SIM → enoxaparina 1 mg/kg SC 12/12h</td></tr>
+        <tr><td>Válvula mecânica aórtica (bileaflet moderno)</td><td>Moderado</td><td>Considerar · Suspender varfarina 5d · HBPM 3d antes</td></tr>
+        <tr><td>Válvula mecânica mitral · Cage-ball · TVP/TEP < 3 meses</td><td>Alto</td><td>SIM — ponte obrigatória</td></tr>
+      </table>
+      <div class="atencao">⚠️ Protocolo de ponte HBPM: enoxaparina última dose 24h pré-cirurgia (dose terapêutica) ou 12h (dose profilática). Reiniciar 24–72h pós-op conforme risco hemorrágico. Varfarina reiniciar na noite da cirurgia ou D1 pós-op.</div>
+    </div>
+  </div>
+  <div class="per-card" style="border-color:#d97706;margin-top:8px">
+    <div class="per-nome" style="color:#d97706">AAS e Antiplaquetários Perioperatório</div>
+    <div class="per-body">
+      <table>
+        <tr><th>Situação</th><th>Conduta</th></tr>
+        <tr><td>AAS prevenção primária (sem stent)</td><td>Suspender 7–10 dias antes se risco hemorrágico alto (POISE-2: AAS não reduz eventos, aumenta sangramento)</td></tr>
+        <tr><td>AAS prevenção secundária (DAC estável, sem stent recente)</td><td>Manter AAS 81–100 mg (exceto neurocirurgia, cirurgia oftalmológica vitreoretiniana, próstata)</td></tr>
+        <tr><td>Stent coronariano metálico (bare metal) < 1 mês</td><td>ADIAR cirurgia eletiva. Se urgente: manter dupla antiagregação (AAS + clopidogrel)</td></tr>
+        <tr><td>Stent farmacológico (DES) < 6 meses</td><td>ADIAR cirurgia eletiva até 6 meses. Suspenso inevitavelmente: manter AAS; suspender P2Y12 5–7 dias antes, reiniciar 24h pós-op</td></tr>
+        <tr><td>Clopidogrel isolado (AVC, DAP)</td><td>Suspender 5–7 dias antes se risco hemorrágico relevante. Manter em cirurgia de baixo risco hemorrágico.</td></tr>
+        <tr><td>Ticagrelor</td><td>Suspender 5 dias antes (reversão mais rápida que clopidogrel)</td></tr>
+        <tr><td>Prasugrel</td><td>Suspender 7 dias antes</td></tr>
+      </table>
+      <div class="alerta">🚨 SÍNDROME CORONARIANA AGUDA RECENTE (<30 dias): cirurgia eletiva CONTRAINDICADA. Mortalidade pós-op até 30% se IAM &lt;7 dias. Adiar mínimo 30 dias (DAC estável) ou 3 meses (SCA recente) — ACC/AHA 2022.</div>
+    </div>
+  </div>`;
+}
+
+function renderMedCronica(){
+  if(document.getElementById('medcronicaList').innerHTML) return;
+  document.getElementById('medcronicaList').innerHTML=`
+  <div class="per-card" style="border-color:#15803d">
+    <div class="per-nome" style="color:#15803d">Antidiabéticos Perioperatório — Protocolo Glicêmico</div>
+    <div class="per-body">
+      <strong>Alvo glicêmico peri-op (ACC/ADA 2023):</strong><br>
+      • UTI/cirurgia cardíaca: glicemia 140–180 mg/dL (insulina em infusão contínua IV)<br>
+      • Enfermaria/cirurgia geral: glicemia &lt;180 mg/dL antes das refeições; &lt;200 mg/dL ao deitar<br>
+      • Evitar hipoglicemia (&lt;70 mg/dL) = aumenta mortalidade tanto quanto hiperglicemia<br><br>
+      <table>
+        <tr><th>Medicamento</th><th>Conduta perioperatória</th><th>Motivo</th></tr>
+        <tr><td><strong>Metformina</strong></td><td>Suspender no dia da cirurgia · Reiniciar 24–48h pós-op quando função renal confirmada normal</td><td>Risco de acidose lática em contexto de jejum, contraste iodado, instabilidade hemodinâmica, IR aguda</td></tr>
+        <tr><td><strong>SGLT2i (empagliflozina, dapagliflozina, canagliflozina)</strong></td><td><strong>Suspender 3–4 dias antes da cirurgia</strong> · Reiniciar quando dieta oral plena retomada</td><td>Risco de euglicemic DKA (cetoacidose sem hiperglicemia) perioperatória · FDA/ADA alert 2019</td></tr>
+        <tr><td>GLP-1 RA (semaglutida, liraglutida)</td><td>Suspender: injetável semanal 1 semana antes · Diário: no dia da cirurgia · Oral: no dia da cirurgia</td><td>Retardo do esvaziamento gástrico → risco de aspiração mesmo com jejum adequado</td></tr>
+        <tr><td>Sulfonilureias (glibenclamida, glipizida, glimepirida)</td><td>Suspender na noite anterior (glibenclamida: 48h antes). Reiniciar quando dieta oral normal</td><td>Risco de hipoglicemia prolongada em jejum</td></tr>
+        <tr><td>Insulina basal (glargina, detemir, degludeca)</td><td>Reduzir 20–25% da dose noturna anterior à cirurgia · Não suspender — risco de cetoacidose em DM1</td><td>Manutenção do efeito basal · Redução para compensar jejum</td></tr>
+        <tr><td>Insulina rápida/ultrarrápida</td><td>Suspender doses de refeição durante jejum · Manter conforme protocolo sliding scale se necessário</td><td>Sem refeição → sem dose prandial</td></tr>
+        <tr><td>Inibidores DPP-4 (sitagliptina, saxagliptina, linagliptina)</td><td>Suspender no dia da cirurgia (manter é aceitável — baixo risco de hipoglicemia)</td><td>Baixo risco; suspensão por precaução em contexto de jejum prolongado</td></tr>
+      </table>
+      <div class="alerta">🚨 euDKA com SGLT2i: glicemia pode ser NORMAL (100–200 mg/dL). Suspeitar em paciente com SGLT2i + náuseas/vômitos/acidose metabólica pós-op. Tratar: hidratação + insulina + glicose IV + suspender SGLT2i.</div>
+    </div>
+  </div>
+  <div class="per-card" style="border-color:#7c3aed;margin-top:8px">
+    <div class="per-nome" style="color:#7c3aed">Beta-bloqueadores, Corticosteroides e Outros Medicamentos Crônicos</div>
+    <div class="per-body">
+      <strong>Beta-bloqueadores (POISE trial e seguimento):</strong><br>
+      • Paciente JÁ em uso: MANTER peri-op (suspensão abru­pta → rebote, arritmia, isquemia)<br>
+      • INICIAR β-bloqueador de novo apenas para cirurgia não-cardíaca: NÃO recomendado de rotina (POISE: metoprolol reduziu IAM mas aumentou AVC e mortalidade total). Considerar apenas em paciente com ≥3 fatores RCRI e risco cirúrgico muito alto — iniciar 7–14 dias antes, não no dia<br>
+      • Betabloqueador de escolha: atenolol ou bisoprolol (metoprolol CR se disponível)<br><br>
+      <strong>Corticoide ("Stress Dose" — Insuficiência Adrenal):</strong><br>
+      <table>
+        <tr><th>Situação</th><th>Conduta</th></tr>
+        <tr><td>Dose baixa (≤10 mg/dia prednisona equivalente) por qualquer duração · OU dose &gt;10 mg por &lt;3 semanas</td><td>Manter dose habitual. NÃO é necessário stress dose.</td></tr>
+        <tr><td>Dose alta (&gt;20 mg/dia prednisona) por &gt;3 semanas ou aparência cushingóide</td><td>Avaliar eixo hipotálamo-hipófise-adrenal. Cirurgia de pequeno porte: manter dose habitual + 25 mg hidrocortisona IV na indução. Cirurgia de grande porte: 50–100 mg hidrocortisona IV 8/8h por 24h → desmame rápido.</td></tr>
+        <tr><td>Insuficiência adrenal primária conhecida (doença de Addison)</td><td>Cirurgia de grande porte: hidrocortisona 100 mg IV bolus na indução → 50 mg IV 6/6h · Reduzir à dose habitual em 24–48h</td></tr>
+      </table>
+      <br>
+      <strong>Outros medicamentos crônicos — decisão rápida:</strong><br>
+      <table>
+        <tr><th>Medicamento</th><th>Perioperatório</th></tr>
+        <tr><td>Anti-hipertensivos (IECA/BRA)</td><td>Suspender IECA/BRA no dia da cirurgia → hipotensão refratária durante anestesia (vasoplegia). Retomar 24–48h pós-op se PA e função renal normais. Betabloqueadores e BCC: manter.</td></tr>
+        <tr><td>Estatinas</td><td>MANTER — efeito cardioprotetor peri-op (pleitrópico). Suspensão abrupta associada a piora de eventos cardíacos.</td></tr>
+        <tr><td>Lítio</td><td>Suspender 24–72h antes — eliminação renal; risco de toxicidade em contexto de jejum, alteração eletrolítica, AINE</td></tr>
+        <tr><td>Antidepressivos ISRS/IRSN</td><td>Manter (síndrome de descontinuação grave se suspenso abruptamente). Atenção: ↑ sangramento (antiagregação plaquetária fraca)</td></tr>
+        <tr><td>IMAO</td><td>Suspender 14 dias antes — interação fatal com meperidina/tramadol (síndrome serotoninérgica) e agentes simpatomiméticos</td></tr>
+        <tr><td>Anticonvulsivantes</td><td>MANTER — risco de convulsão com suspensão. Administrar IV se jejum prolongado.</td></tr>
+        <tr><td>Levotiroxina</td><td>Manter (meia-vida longa — alguns dias de omissão são bem tolerados). IV se jejum >5 dias.</td></tr>
+        <tr><td>Anticoncepcionais orais combinados</td><td>Suspender 4 semanas antes de cirurgia de alto risco VTE (ortopédica, oncológica). Risco trombótico por estrogênio.</td></tr>
+        <tr><td>Fitoterápicos</td><td>Suspender TODOS pelo menos 1–2 semanas antes: ginkgo (↑ sangramento), alho (antiagregante), ginseng (hipoglicemia/coagulação), equinácea (imunomodulação), kava (↑ anestésicos), erva-de-são-joão (indutor CYP3A4 — ↓ anestésicos e imunossupressores)</td></tr>
+      </table>
+    </div>
+  </div>`;
+}
+</script>
+</body>
+</html>

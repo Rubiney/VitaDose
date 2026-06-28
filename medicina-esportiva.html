@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Medicina Esportiva — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .esp-hdr{background:linear-gradient(135deg,#14532d,#16a34a);color:#fff;border-radius:14px;padding:18px;margin-bottom:14px}
+    .esp-title{font-size:1rem;font-weight:800;margin-bottom:4px}
+    .esp-sub{font-size:.73rem;opacity:.8}
+    label{font-size:.75rem;font-weight:700;color:#14532d;display:block;margin-bottom:4px}
+    select,input[type=number]{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:10px;padding:10px 12px;font-size:.85rem;background:#fff;margin-bottom:10px}
+    .btn-calc{width:100%;background:#16a34a;color:#fff;border:none;border-radius:12px;padding:13px;font-size:.87rem;font-weight:700;cursor:pointer;margin:8px 0}
+    .tab-bar{display:flex;gap:6px;margin-bottom:14px}
+    .tab-btn{flex:1;padding:9px 4px;border-radius:10px;border:2px solid #e2e8f0;background:#fff;font-size:.72rem;font-weight:700;cursor:pointer;color:#64748b}
+    .tab-btn.active{border-color:#16a34a;background:#f0fdf4;color:#16a34a}
+    .esp-card{border-radius:10px;border-left:5px solid;padding:10px 14px;margin-bottom:8px;background:#fff}
+    .esp-nome{font-size:.83rem;font-weight:800;margin-bottom:4px}
+    .esp-body{font-size:.76rem;line-height:1.7;color:#374151}
+    .alerta{background:#fef2f2;border:2px solid #dc2626;border-radius:10px;padding:8px;margin:6px 0;font-size:.75rem;color:#7f1d1d;font-weight:700}
+    .atencao{background:#fffbeb;border:2px solid #d97706;border-radius:10px;padding:8px;margin:6px 0;font-size:.75rem;color:#78350f;font-weight:700}
+    .ok-box{background:#f0fdf4;border:2px solid #16a34a;border-radius:10px;padding:8px;margin:6px 0;font-size:.75rem;color:#14532d;font-weight:700}
+    table{width:100%;border-collapse:collapse;font-size:.73rem;margin-top:6px}
+    th{background:#16a34a;color:#fff;padding:5px 8px;text-align:left}
+    td{padding:5px 8px;border-bottom:1px solid #f1f5f9}
+    tr:nth-child(even) td{background:#f0fdf4}
+    .result-box{background:#f0fdf4;border-radius:10px;padding:14px;margin-top:8px}
+    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .chip-verde{display:inline-block;padding:2px 8px;border-radius:999px;font-size:.65rem;font-weight:800;background:#16a34a;color:#fff;margin:2px}
+    .chip-red{display:inline-block;padding:2px 8px;border-radius:999px;font-size:.65rem;font-weight:800;background:#dc2626;color:#fff;margin:2px}
+    .chip-gray{display:inline-block;padding:2px 8px;border-radius:999px;font-size:.65rem;font-weight:800;background:#64748b;color:#fff;margin:2px}
+  </style>
+</head>
+<body>
+<header class="top-bar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <span class="top-title">Medicina Esportiva</span>
+  <div class="top-right"></div>
+</header>
+<main class="container" style="padding-bottom:90px">
+  <div class="esp-hdr">
+    <div class="esp-title">🏃 Medicina Esportiva</div>
+    <div class="esp-sub">Lesões Esportivas · Suplementação · Doping WADA · Rabdomiólise</div>
+  </div>
+  <div class="tab-bar">
+    <button class="tab-btn active" id="tb0" onclick="showTab(0)">Lesões Esportivas</button>
+    <button class="tab-btn" id="tb1" onclick="showTab(1)">Suplementação Esportiva</button>
+    <button class="tab-btn" id="tb2" onclick="showTab(2)">Doping & Rabdomiólise</button>
+  </div>
+
+  <!-- TAB 0 — Lesões -->
+  <div id="tab0">
+    <div class="esp-card" style="border-color:#16a34a">
+      <div class="esp-nome" style="color:#16a34a">Protocolos Modernos de Tratamento de Lesões — POLICE e PEACE & LOVE</div>
+      <div class="esp-body">
+        <strong>RICE (antigo — em desuso):</strong> Rest · Ice · Compression · Elevation — abandonado por evidências de que repouso absoluto e gelo prolongado atrasam a cicatrização<br><br>
+        <div class="ok-box">✅ POLICE (fase aguda — primeiras 48–72h):<br>
+        <strong>P</strong>rotection (proteger de novo trauma) · <strong>O</strong>ptimal <strong>L</strong>oading (carga ótima progressiva — não repouso total) · <strong>I</strong>ce (gelo 15–20 min × 3–4x/dia — analgesia, não cura) · <strong>C</strong>ompression · <strong>E</strong>levation</div>
+        <div class="ok-box" style="border-color:#1e3a8a;background:#eff6ff;color:#1e3a5f">✅ PEACE & LOVE (fase subaguda + reabilitação):<br>
+        <strong>P</strong>rotection · <strong>E</strong>levation · <strong>A</strong>void anti-inflammatory modalities · <strong>C</strong>ompression · <strong>E</strong>ducation → <strong>L</strong>oad (carga progressiva) · <strong>O</strong>ptimism · <strong>V</strong>ascularization (cardio sem impacto) · <strong>E</strong>xercise (exercício específico)</div>
+        <div class="atencao">⚠️ "Avoid anti-inflammatory": AINEs e gelo prolongado INIBEM a resposta inflamatória necessária para cicatrização. Usar apenas para analgesia em curto prazo (&lt;3–5 dias), não como tratamento.</div>
+        <br>
+        <strong>Entorses de tornozelo — classificação e conduta:</strong><br>
+        <table>
+          <tr><th>Grau</th><th>Lesão</th><th>Imobilização</th><th>RTP (Return to Play)</th></tr>
+          <tr><td>I</td><td>Estiramento ligamentar sem ruptura</td><td>Não necessária — bota walker por conforto se necessário</td><td>5–7 dias</td></tr>
+          <tr><td>II</td><td>Ruptura parcial (LTFA geralmente)</td><td>Bota walker 1–2 semanas + fisioterapia</td><td>2–6 semanas</td></tr>
+          <tr><td>III</td><td>Ruptura total + instabilidade</td><td>Bota/imobilizador 4–6 semanas · Cirurgia rara (atleta de alto nível)</td><td>6–12 semanas</td></tr>
+        </table>
+        <br>
+        <strong>Regras de Ottawa (excluem fratura sem raio-X):</strong> RX necessário apenas se dor na zona maleolar + incapaz de suportar peso OU sensibilidade óssea no maleolo posterior/base do 5° metatarso/navicular<br><br>
+        <strong>Lesões musculares — classificação British Athletics:</strong><br>
+        <table>
+          <tr><th>Tipo</th><th>Lesão</th><th>Cicatrização</th></tr>
+          <tr><td>0 (fadiga)</td><td>Sem alteração estrutural · CK elevada</td><td>24–72h</td></tr>
+          <tr><td>1 (leve)</td><td>Microrrotura &lt;10% da área de corte transverso</td><td>1–2 semanas</td></tr>
+          <tr><td>2 (moderada)</td><td>Ruptura parcial 10–50%</td><td>4–8 semanas</td></tr>
+          <tr><td>3 (grave)</td><td>Ruptura quase total/total</td><td>8–24 semanas (cirurgia seletiva)</td></tr>
+        </table>
+        <br>
+        <strong>Tendinopatia patelar e do tendão de Aquiles:</strong><br>
+        Exercícios excêntricos (protocolo Alfredson — calcâneo sobre degrau, 3×15 2x/dia × 12 semanas) — evidência 1A para tendinopatia de Aquiles<br>
+        Heavy Slow Resistance (HSR): alternativa com menor dor que excêntrico puro · PRP: evidência controversa (não superior a exercício)<br>
+        NÃO injetar corticoide em tendão (↑ risco de ruptura)<br><br>
+        <strong>Fratura por estresse:</strong><br>
+        Classificação de risco (BSI — Bone Stress Injury):<br>
+        <span class="chip-verde">Baixo risco</span> (tíbia medial, metatarso 2–4, perônio): suporte de peso tolerado · Retorno 6–8 semanas<br>
+        <span class="chip-red">Alto risco</span> (colo do fêmur, tíbia anterior "dreaded black line", navicular, 1°/5° metatarso): afastar atividade 8–12 semanas · Considerar cirurgia<br><br>
+        <strong>Concussão — Protocolo SCAT6 (Sport Concussion Assessment Tool):</strong><br>
+        • Identificação em campo: "Maddocks questions" (o que aconteceu?, em qual minuto estamos?) + exame de equilíbrio<br>
+        • Qualquer suspeita → retirar do jogo imediatamente (no day return to play)<br>
+        • Retorno gradual ao esporte (6 etapas): repouso 24–48h → caminhada → corrida suave → treinamento específico → treino de contato → jogo (mínimo 24h entre cada etapa)<br>
+        • ALERTA: hemorragia intracraniana em atleta com trauma → TC crânio antes de liberar retorno<br><br>
+        <strong>Síndrome do Compartimento Agudo (pós-trauma/exercício extremo):</strong><br>
+        6 P's: Pain (desproporcionada) · Pressure (pressão >30 mmHg ou ΔP &lt;30 mmHg = pressão diastólica - compartimento) · Pallor · Pulselessness · Paresthesias · Paralysis<br>
+        Conduta: fasciotomia de emergência em ≤6h → reversão de necrose; &gt;6h → rabdomiólise + IR
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 1 — Suplementação -->
+  <div id="tab1" style="display:none">
+    <div id="suplList"></div>
+  </div>
+
+  <!-- TAB 2 — Doping & Rabdomiólise -->
+  <div id="tab2" style="display:none">
+    <div id="dopList"></div>
+  </div>
+</main>
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+<script src="js/db.js"></script>
+<script>
+function showTab(n){[0,1,2].forEach(i=>{document.getElementById('tab'+i).style.display=i===n?'block':'none';document.getElementById('tb'+i).classList.toggle('active',i===n);});if(n===1)renderSupl();if(n===2)renderDop();}
+
+function renderSupl(){
+  if(document.getElementById('suplList').innerHTML) return;
+  document.getElementById('suplList').innerHTML=`
+  <div class="esp-card" style="border-color:#16a34a">
+    <div class="esp-nome" style="color:#16a34a">Suplementos com Evidência — Classificação ABCD do AIS/ISSN</div>
+    <div class="esp-body">
+      <div class="ok-box">📊 Sistema ABCD (Australian Institute of Sport / ISSN 2023):<br>
+      A = Forte evidência de eficácia e segurança · B = Evidência promissora · C = Evidência insuficiente ou contraditória · D = Proibido ou sem evidência · Nível de evidência baseado em meta-análises e ensaios clínicos randomizados</div>
+      <br>
+      <strong>Suplementos Nível A (forte evidência — USAR com confiança):</strong><br>
+      <table>
+        <tr><th>Suplemento</th><th>Dose eficaz</th><th>Benefício comprovado</th><th>Segurança</th></tr>
+        <tr><td><strong>Creatina monoidratada</strong></td><td>Manutenção: 3–5 g/dia · Carga (opcional): 20 g/dia ÷ 4 doses × 5–7 dias (satura 25–30% mais rápido que sem carga)</td><td>↑ força máxima 5–15% · ↑ potência anaeróbia · Benefício em treinos de alta intensidade &lt;30s · Nenhum benefício em endurance puro · Uso contínuo sem pausa necessária</td><td>Muito seguro · Não lesiona rins em indivíduos saudáveis (revisão meta 2021) · Contra-indicado em IRC préexistente</td></tr>
+        <tr><td><strong>Cafeína</strong></td><td>3–6 mg/kg, 60 min antes do exercício · Dose máxima eficaz: ~6 mg/kg (acima = efeitos adversos sem ganho)</td><td>↑ endurance (principal efeito) · ↑ força ~3–5% · ↓ percepção de esforço (RPE) · Bloqueia adenosina · Menos eficaz em usuários crônicos (tolerância)</td><td>CI: arritmia, HAS não-controlada, ansiedade grave · Não é doping (WADA: retirado da lista proibida em 2004 · Monitorado mas sem limite)</td></tr>
+        <tr><td><strong>Proteína (whey, caseína, proteína vegetal)</strong></td><td>1,6–2,2 g/kg/dia para atleta de força · 1,2–1,6 g/kg/dia para endurance · 20–40 g/refeição (estimula MPS máxima) · Proteína de cama (caseína): ↑ MPS noturna</td><td>Síntese proteica muscular (MPS) · Prevenção de catabolismo · Recuperação muscular</td><td>Seguro até 3,4 g/kg/dia em estudos de 1 ano. Excesso → simplesmente oxidado (não vira gordura diretamente mas ↑ caloria total)</td></tr>
+        <tr><td><strong>Beta-alanina</strong></td><td>3,2–6,4 g/dia (dividido em doses de 0,8–1,6 g para minimizar parestesia) · Efeito após 4 semanas de uso contínuo</td><td>↑ carnosina muscular (tampão de H⁺) · Benefício específico para exercícios de alta intensidade 1–4 minutos (natação 200–400m, ciclismo de pista, HIIT) · SEM benefício em esforços &lt;60s ou &gt;10 min</td><td>Parestesia (formigamento inofensivo) é o principal efeito adverso — dose-dependente, passa em 30–60 min</td></tr>
+        <tr><td><strong>Nitrato (beterraba/suco de beterraba/nitrato de sódio)</strong></td><td>Suco de beterraba: 400–600 mg de NO₃⁻ (≈500 mL), 2–3h antes do exercício · Suplemento: nitrato de sódio 0,1 mmol/kg</td><td>↓ custo de O₂ muscular · ↑ eficiência mitocondrial · Benefício principalmente em atletas recreacionais e moderadamente treinados em exercício submáximo</td><td>Seguro · Urina/fezes podem ficar rosadas (betalaínas) — informar o paciente</td></tr>
+      </table>
+      <br>
+      <strong>Suplementos Nível B (evidência promissora):</strong><br>
+      <table>
+        <tr><th>Suplemento</th><th>Dose</th><th>Efeito potencial</th></tr>
+        <tr><td>Bicarbonato de sódio</td><td>0,3 g/kg, 60–90 min antes · Em jejum ou com refeição leve (minimiza náusea)</td><td>Tampão extracelular · Benefício em esforços máximos 1–8 min · Náusea/diarreia limitam uso</td></tr>
+        <tr><td>HMB (β-hidroxi-β-metilbutirato)</td><td>3 g/dia</td><td>Redução de catabolismo em situações específicas (atletas iniciantes, imobilização, sarcopenia em idosos)</td></tr>
+        <tr><td>Citrulina malato</td><td>6–8 g, 60 min antes</td><td>↑ síntese de NO (nitratos), reduz fadiga muscular · Evidência crescente em resistência e força</td></tr>
+      </table>
+      <br>
+      <strong>Suplementos SEM evidência (não recomendar):</strong><br>
+      Glutamina em indivíduos saudáveis · BCAA isolado (inferior a proteína completa) · Óxido nítrico "pré-treino" proprietários · CLA (ácido linoléico conjugado) para composição corporal · L-carnitina para perda de gordura · Aminoácidos isolados
+    </div>
+  </div>`;
+}
+
+function renderDop(){
+  if(document.getElementById('dopList').innerHTML) return;
+  document.getElementById('dopList').innerHTML=`
+  <div class="esp-card" style="border-color:#dc2626">
+    <div class="esp-nome" style="color:#dc2626">Lista de Substâncias Proibidas WADA 2024 — Resumo para o Farmacêutico</div>
+    <div class="esp-body">
+      <div class="alerta">🚨 ATENÇÃO: Responsabilidade do atleta (Strict Liability) — o atleta é responsável por qualquer substância proibida encontrada em seu organismo, independentemente de como chegou lá (suplemento contaminado, medicamento prescrito sem TUE, etc.)</div>
+      <br>
+      <strong>Proibidas a qualquer momento (competição E fora dela):</strong><br>
+      <table>
+        <tr><th>Classe</th><th>Exemplos</th><th>Efeito buscado</th></tr>
+        <tr><td>S1 — Agentes anabolizantes</td><td>Testosterona, nandrolona, DHEA, SARMs (ostarina, LGD-4033, RAD-140), clostebol, metenolona</td><td>↑ massa muscular, força, recuperação</td></tr>
+        <tr><td>S2 — Hormônios peptídicos</td><td>GH, IGF-1, EPO (eritropoetina), CERA, HCG (homens), gonadotrofinas, insulina (exceto DM1 com TUE)</td><td>↑ eritrócitos, GH, IGF-1, recuperação</td></tr>
+        <tr><td>S3 — Beta-2 agonistas</td><td>Salbutamol ≤1600 mcg/24h: PERMITIDO com TUE. Clenbuterol: proibido mesmo com TUE (anabolizante). Formoterol ≤54 mcg/24h: permitido com TUE. Salmeterol ≤200 mcg/24h: permitido</td><td>↑ capacidade respiratória, efeito anabólico (clenbuterol)</td></tr>
+        <tr><td>S4 — Moduladores hormonais e metabólicos</td><td>Tamoxifeno, clomifeno, anastrozol, letrozol (antiestrogênicos) · GW1516 (PPAR delta) · SR9009 · Meldonium (mildronate) · AICAR (AMPK ativador)</td><td>Mascarar uso de esteroides, ↑ metabolismo</td></tr>
+        <tr><td>S5 — Diuréticos e agentes mascarantes</td><td>Furosemida, hidroclorotiazida, espironolactona · Probenecida · Desmopressina · Albumina IV · Plasma expanders</td><td>Diluição de urina, mascarar substâncias</td></tr>
+      </table>
+      <strong>Proibidas apenas em competição:</strong><br>
+      <table>
+        <tr><th>Classe</th><th>Exemplos</th></tr>
+        <tr><td>S6 — Estimulantes</td><td>Anfetamina, cocaína, efedrina (&gt;10 mcg/mL), MDMA, metanfetamina · Pseudo-efedrina (&gt;150 mcg/mL) · Cafeína: NÃO proibida (monitorada)</td></tr>
+        <tr><td>S7 — Narcóticos</td><td>Morfina, oxicodona, petidina, tramadol (monitorado desde 2019 mas não proibido) · Codeína: PERMITIDA</td></tr>
+        <tr><td>S8 — Canabinóides</td><td>THC natural e sintético · CBD: PERMITIDO (WADA 2018). Atenção: produtos CBD podem conter THC residual</td></tr>
+        <tr><td>S9 — Glicocorticoides</td><td>Prednisolona, cortisona, betametasona etc. Proibidos por via sistêmica (oral, IV, IM). Tópicos/inalatórios/colírios: PERMITIDOS sem TUE. Necessita TUE para uso sistêmico.</td></tr>
+      </table>
+      <br>
+      <strong>Proibidas em esportes específicos:</strong><br>
+      P1 — Beta-bloqueadores (tiro, arco e flecha, golfe, bilhar) · P2 — Álcool (aeronáutica, automobilismo) · Solicitação de TUE via ADAMS<br><br>
+      <strong>TUE (Autorização de Uso Terapêutico):</strong><br>
+      Critérios: 1. Diagnóstico médico legítimo · 2. Ausência de alternativa não-proibida · 3. Não melhora performance além do nível normal · 4. Necessidade médica real<br>
+      Medicamentos comuns com TUE: salbutamol (asma) · insulina (DM1) · GC inalatório (asma) · agonistas alfa-adrenérgicos nasais (rinite) · anti-histamínicos (alergia)
+    </div>
+  </div>
+  <div class="esp-card" style="border-color:#b45309;margin-top:8px">
+    <div class="esp-nome" style="color:#b45309">Rabdomiólise por Exercício (Exertional Rhabdomyolysis)</div>
+    <div class="esp-body">
+      <strong>Definição:</strong> Necrose muscular com liberação de mioglobina, CK e eletrólitos para circulação<br><br>
+      <strong>Causas esportivas:</strong> Ultra endurance (maratona, ultratriatlo) · CrossFit excessivo · Exercício extremo em calor · 1ª sessão de exercício intenso não acostumado ("rhabdo do recruta") · Síndrome do compartimento · Doenças musculares subjacentes<br><br>
+      <strong>Fatores de risco:</strong> Desidratação · Hipertermia · Uso de estatinas (especialmente + exercício intenso) · Cocaína, anfetamina, cafeína em excesso · Hipocalemia, hipofosfatemia<br><br>
+      <strong>Tríade clássica:</strong> Mialgia intensa · Fraqueza muscular · Urina marrom/avermelhada (mioglobinúria)<br><br>
+      <strong>Diagnóstico:</strong><br>
+      CK &gt;1000 UI/L (normal &lt;200) → suspeita · &gt;5000 UI/L = confirmação rabdomiólise significativa · &gt;15.000 UI/L = alto risco de IRA<br>
+      Creatinina sérica, eletrólitos (K⁺, Ca²⁺, P), pH, bicarbonato, coagulograma · Urina: teste de sangue positivo + sedimento sem hemácias = mioglobinúria<br><br>
+      <strong>Tratamento:</strong><br>
+      <div class="ok-box">💧 HIDRATAÇÃO AGRESSIVA IV é o pilar do tratamento:<br>
+      SF 0,9%: 1–1,5 L/h nas primeiras horas · Débito urinário alvo: 200–300 mL/h · Manter até CK em queda e urina clara</div>
+      <table>
+        <tr><th>Gravidade</th><th>Definição</th><th>Conduta</th></tr>
+        <tr><td>Leve</td><td>CK 1.000–5.000 · Sem IR · Sintomático</td><td>Hidratação oral 3–6 L/dia · Repouso · Monitorar CK</td></tr>
+        <tr><td>Moderada</td><td>CK 5.000–15.000 · Sem IR ainda</td><td>Internação · SF IV 200–500 mL/h · Monitorar K⁺, Cr, diurese</td></tr>
+        <tr><td>Grave</td><td>CK &gt;15.000 · IRA · Hipercalemia · Coagulopatia</td><td>UTI · SF IV 1–1,5 L/h · Bicarbonato se pH &lt;7,2 · Hemodiálise se refratário</td></tr>
+      </table>
+      <div class="alerta">⚠️ NÃO usar AINEs (pioram função renal) · Evitar manitol rotineiramente (evidência controversa) · Hipercalemia: risco de arritmia — monitorizar ECG · Hipocalcemia assintomática: NÃO repor cálcio (pode se depositar no músculo) · Síndrome do compartimento associada: fasciotomia urgente</div>
+      <br>
+      <strong>Retorno ao exercício após rabdomiólise:</strong><br>
+      Aguardar normalização de CK → reiniciar exercício muito gradualmente com monitoramento de CK · Em atleta de alto nível: CK 24h pós-treino a cada reinício · Investigar doença muscular subjacente se rabdomiólise recorrente (síndrome de McArdle, carnitina palmitoiltransferase II — CPT2, doenças mitocondriais)
+    </div>
+  </div>`;
+}
+</script>
+</body>
+</html>

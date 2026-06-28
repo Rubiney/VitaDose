@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Saúde Feminina Avançada — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .fem-hdr{background:linear-gradient(135deg,#701a75,#c026d3);color:#fff;border-radius:14px;padding:18px;margin-bottom:14px}
+    .fem-title{font-size:1rem;font-weight:800;margin-bottom:4px}
+    .fem-sub{font-size:.73rem;opacity:.8}
+    label{font-size:.75rem;font-weight:700;color:#701a75;display:block;margin-bottom:4px}
+    select,input[type=number]{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:10px;padding:10px 12px;font-size:.85rem;background:#fff;margin-bottom:10px}
+    .btn-calc{width:100%;background:#c026d3;color:#fff;border:none;border-radius:12px;padding:13px;font-size:.87rem;font-weight:700;cursor:pointer;margin:8px 0}
+    .tab-bar{display:flex;gap:6px;margin-bottom:14px}
+    .tab-btn{flex:1;padding:9px 4px;border-radius:10px;border:2px solid #e2e8f0;background:#fff;font-size:.72rem;font-weight:700;cursor:pointer;color:#64748b}
+    .tab-btn.active{border-color:#c026d3;background:#fdf4ff;color:#701a75}
+    .fem-card{border-radius:10px;border-left:5px solid;padding:10px 14px;margin-bottom:8px;background:#fff}
+    .fem-nome{font-size:.83rem;font-weight:800;margin-bottom:4px}
+    .fem-body{font-size:.76rem;line-height:1.7;color:#374151}
+    .alerta{background:#fef2f2;border:2px solid #dc2626;border-radius:10px;padding:8px;margin:6px 0;font-size:.75rem;color:#7f1d1d;font-weight:700}
+    .atencao{background:#fffbeb;border:2px solid #d97706;border-radius:10px;padding:8px;margin:6px 0;font-size:.75rem;color:#78350f;font-weight:700}
+    .ok-box{background:#fdf4ff;border:2px solid #c026d3;border-radius:10px;padding:8px;margin:6px 0;font-size:.75rem;color:#701a75;font-weight:700}
+    table{width:100%;border-collapse:collapse;font-size:.73rem;margin-top:6px}
+    th{background:#c026d3;color:#fff;padding:5px 8px;text-align:left}
+    td{padding:5px 8px;border-bottom:1px solid #f1f5f9}
+    tr:nth-child(even) td{background:#fdf4ff}
+    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  </style>
+</head>
+<body>
+<header class="top-bar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <span class="top-title">Saúde Feminina Avançada</span>
+  <div class="top-right"></div>
+</header>
+<main class="container" style="padding-bottom:90px">
+  <div class="fem-hdr">
+    <div class="fem-title">♀ Saúde Feminina Avançada</div>
+    <div class="fem-sub">SOP · Endometriose · Infecções Vulvovaginais · Saúde Reprodutiva</div>
+  </div>
+  <div class="tab-bar">
+    <button class="tab-btn active" id="tb0" onclick="showTab(0)">SOP & Endometriose</button>
+    <button class="tab-btn" id="tb1" onclick="showTab(1)">Vulvovaginites & ITS</button>
+    <button class="tab-btn" id="tb2" onclick="showTab(2)">Contracepção & Reprodução</button>
+  </div>
+
+  <!-- TAB 0 — SOP & Endometriose -->
+  <div id="tab0">
+    <div class="fem-card" style="border-color:#c026d3">
+      <div class="fem-nome" style="color:#c026d3">SOP — Síndrome dos Ovários Policísticos (Critérios de Rotterdam)</div>
+      <div class="fem-body">
+        <strong>Diagnóstico (Rotterdam 2003 — 2 de 3 critérios):</strong><br>
+        1. Oligo/anovulação (ciclos &gt;35 dias ou &lt;8 ciclos/ano)<br>
+        2. Hiperandrogenismo clínico (acne, hirsutismo — Ferriman-Gallwey &gt;4) ou bioquímico (testosterona total ↑, androstenediona ↑, DHEA-S ↑)<br>
+        3. Ovários policísticos à USG (≥20 folículos 2–9 mm OU volume ovariano &gt;10 mL)<br>
+        Excluir: hiperprolactinemia, hipotireoidismo, hiperplasia adrenal congênita não-clássica (17-OHP basal)<br><br>
+        <strong>Investigação laboratorial:</strong><br>
+        FSH, LH (LH/FSH &gt;2: padrão clássico mas NÃO critério) · Testosterona total e livre · DHEA-S · 17-OHP (excluir HAC) · TSH · Prolactina · Glicemia de jejum + insulina (HOMA-IR) · Lipidograma · AMH (↑ em SOP)<br><br>
+        <div class="ok-box">🔄 HOMA-IR = (Insulina jejum × Glicemia jejum) / 405 — valor em mg/dL. HOMA ≥2,5 = resistência à insulina (em brasileiras com SOP, corte de 2,7 para maior especificidade)</div>
+        <br>
+        <strong>Tratamento por objetivo clínico:</strong><br>
+        <table>
+          <tr><th>Objetivo</th><th>1ª linha</th><th>Alternativa/Complemento</th></tr>
+          <tr><td>Regularização menstrual</td><td>ACO (anticoncepcional oral combinado): etinilestradiol 20–35 mcg + progestagênio antiandrogênico (acetato de ciproterona, drospirenona, desogestrel)</td><td>Progesterona cíclica 10d/mês (se CI para estrogênio) · Medroxiprogesterona</td></tr>
+          <tr><td>Resistência à insulina / anovulação</td><td>Metformina 500 mg/dia → titular até 1500–2000 mg/dia (reduz androgênios, melhora ciclos, facilita ovulação) · Perda de peso ≥5–10% → restaura ovulação em 55–90% das obesas</td><td>Inositol (mio-inositol 4 g/dia + D-chiro-inositol): evidência crescente em IR · Alimentação low glycemic index</td></tr>
+          <tr><td>Hiperandrogenismo (acne/hirsutismo)</td><td>ACO com progestagênio antiandrogênico · Espironolactona 50–200 mg/dia (off-label): antiandrogênico periférico — sempre com contracepção (teratogênica)</td><td>Flutamida (hepatotóxica — evitar) · Finasterida (masculinização em gestação — evitar) · Eflornithina tópica (hirsutismo facial)</td></tr>
+          <tr><td>Indução de ovulação (desejo de gestação)</td><td>Letrozol 2,5–7,5 mg D3–D7 do ciclo (superior ao clomifeno — NEJM 2014: maior taxa de nascimento vivo · Letrozol 27,5% vs Clomifeno 19,1%)</td><td>Clomifeno 50–150 mg D3–D7 (2ª opção) · Gonadotrofinas (FSH injetável) para falhas · FIV</td></tr>
+          <tr><td>Prevenção de câncer de endométrio</td><td>Progestagênio cíclico ou ACO para induzir menstruação pelo menos 4×/ano · Endométrio ≥12 mm: biópsia</td><td>DIU de levonorgestrel (proteção endometrial contínua)</td></tr>
+        </table>
+        <br>
+        <div class="atencao">⚠️ SOP + gravidez: maior risco de DMG, pré-eclâmpsia, parto pré-termo. Metformina pode ser continuada até 12ª semana para ↓ DMG (benefício modesto). Suspender letrozol/clomifeno assim que confirmada gravidez.</div>
+      </div>
+    </div>
+    <div class="fem-card" style="border-color:#7c3aed;margin-top:8px">
+      <div class="fem-nome" style="color:#7c3aed">Endometriose — Diagnóstico e Tratamento</div>
+      <div class="fem-body">
+        <strong>Epidemiologia:</strong> 10% das mulheres em idade reprodutiva · Atraso diagnóstico médio: 7–10 anos · 35–50% das mulheres inférteis têm endometriose<br><br>
+        <strong>Apresentação:</strong><br>
+        Dismenorreia progressiva (piora a cada ciclo) · Dispaurenia profunda · Dor pélvica crônica · Disquecia (dor ao evacuar) · Infertilidade · Disúria cíclica (endometriose vesical)<br><br>
+        <strong>Diagnóstico:</strong> Definitivo = laparoscopia + biópsia histológica · Presuntivo = USG transvaginal (endometrioma ≥2 cm) + MRI pélvico (endometriose profunda infiltrativa) · CA-125: não é triagem (inespecífico)<br><br>
+        <strong>Estadiamento (r-ASRM):</strong> I (mínima) → II (leve) → III (moderada) → IV (grave) — NÃO correlaciona com intensidade da dor<br><br>
+        <strong>Tratamento médico — escalonamento:</strong><br>
+        <table>
+          <tr><th>Linha</th><th>Medicamento</th><th>Mecanismo</th><th>Observações</th></tr>
+          <tr><td>1ª</td><td>ACO contínuo (sem pausa) OU DIU de levonorgestrel (Mirena®)</td><td>↓ estrogênio endometrial · Atrofia do implante</td><td>Mais barato, seguro a longo prazo · DIU LNG: eficaz para dor e menorragia associada</td></tr>
+          <tr><td>1ª</td><td>Progestagênio contínuo: desogestrel 75 mcg/dia · Noretisterona acetato 2,5–5 mg/dia · Dienogeste 2 mg/dia (Visanne®)</td><td>Supressão estrogênica + efeito anti-inflamatório do dienogeste</td><td>Dienogeste = eficácia semelhante a GnRH agonista sem efeitos do hipoestrogenismo · Preferido para uso longo prazo</td></tr>
+          <tr><td>2ª</td><td>GnRH agonistas: leuprorrelida (Lupron®) 3,75 mg IM/mês · Goserelina 3,6 mg SC/mês · Nafarrelina nasal</td><td>Supressão gonadal completa → hipoestrogenismo profundo</td><td>Duração máxima 6 meses sem add-back (osteoporose). Com add-back (estradiol + progestagênio): até 18–24 meses. Menopausa cirúrgica farmacológica.</td></tr>
+          <tr><td>2ª</td><td>GnRH antagonistas: elagolix (Orilissa®) 150 mg 1×/dia ou 200 mg 2×/dia</td><td>Supressão imediata sem flare inicial</td><td>Efeito dose-dependente (200 mg 2×/dia = supressão mais completa). Aprovado FDA. Add-back possível.</td></tr>
+          <tr><td>3ª</td><td>Danazol 200–400 mg/dia (derivado de 17-alfa-etiniltestosterona)</td><td>Androgênico/antiestrogênico</td><td>Efeitos androgênicos (acne, seborreira, voz grave irreversível) limitam uso. Muito eficaz mas 2ª linha por tolerabilidade.</td></tr>
+        </table>
+        <br>
+        <strong>Tratamento cirúrgico:</strong><br>
+        Laparoscopia: exérese de endometriomas (≥4 cm: cistectomia preferível a aspiração — menor recorrência · atenção à reserva ovariana · AMH pode cair) · Endometriose profunda: ressecção deve ser em centro especializado<br>
+        Cirurgia definitiva (histerectomia ± ooforectomia): apenas quando desejo reprodutivo encerrado e falha de tratamento clínico
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 1 — Vulvovaginites & ITS -->
+  <div id="tab1" style="display:none">
+    <div id="vvList"></div>
+  </div>
+
+  <!-- TAB 2 — Contracepção & Reprodução -->
+  <div id="tab2" style="display:none">
+    <div id="contList"></div>
+  </div>
+</main>
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+<script src="js/db.js"></script>
+<script>
+function showTab(n){[0,1,2].forEach(i=>{document.getElementById('tab'+i).style.display=i===n?'block':'none';document.getElementById('tb'+i).classList.toggle('active',i===n);});if(n===1)renderVV();if(n===2)renderCont();}
+
+function renderVV(){
+  if(document.getElementById('vvList').innerHTML) return;
+  document.getElementById('vvList').innerHTML=`
+  <div class="fem-card" style="border-color:#c026d3">
+    <div class="fem-nome" style="color:#c026d3">Vulvovaginites — Diagnóstico Diferencial e Tratamento</div>
+    <div class="fem-body">
+      <table>
+        <tr><th>Condição</th><th>Características</th><th>pH</th><th>Microscopia</th><th>Tratamento</th></tr>
+        <tr><td><strong>Candidíase vulvovaginal</strong></td><td>Corrimento branco, grumoso, "queijo cottage" · Prurido intenso · Ardência · Dispareunia · Eritema vulvar</td><td>&lt;4,5 (normal)</td><td>Pseudo-hifas, esporos (KOH 10%)</td><td>Não complicada (1 episódio): fluconazol 150 mg VO dose única · Miconazol/clotrimazol creme/óvulo 3–7 dias<br>Recorrente (≥4 episódios/ano): fluconazol 150 mg semanal × 6 meses (manutenção)<br>Grávida: apenas tópico (clotrimazol 7 dias) — azólicos orais CI na gestação</td></tr>
+        <tr><td><strong>Vaginose bacteriana</strong></td><td>Corrimento cinza, fluido, homogêneo · Odor de peixe (aminas) · Sem prurido intenso · Sem eritema (não é inflamação)</td><td>&gt;4,5 (alcalino)</td><td>Clue cells (células epiteliais cobertas por cocobacilos) · Flora mista</td><td>Metronidazol 500 mg VO 12/12h × 7 dias (1ª linha) · OU metronidazol gel vaginal 0,75% × 5 dias · OU clindamicina 300 mg VO 12/12h × 7 dias<br>Recorrente: ácido bórico vaginal 600 mg/dia × 14 dias + metronidazol gel manutenção 2×/semana × 4 meses</td></tr>
+        <tr><td><strong>Tricomoníase</strong></td><td>Corrimento amarelo-esverdeado, bolhoso, fétido · Prurido · Cérvice "em morango" (colpite macular)</td><td>&gt;4,5</td><td>Trichomonas vaginalis (protozoário móvel em fresco) · Teste NAAT: mais sensível</td><td>Metronidazol 2g VO dose única (paciente E parceiro) · OU 500 mg 12/12h × 7 dias (menor resistência)<br>Gestante: metronidazol 2g dose única (seguro após 1° trimestre)</td></tr>
+        <tr><td>Vaginite atrófica</td><td>Dispareunia, ressecura vaginal, ardência · Pós-menopausa / lactação / ooforectomia · Corrimento claro ou hemorrágico</td><td>&gt;5,0 (atrofia)</td><td>Células parabasais predominantes · Sem patógeno</td><td>Estradiol vaginal creme/anel/óvulo (dose mínima eficaz) · Ospemifeno 60 mg VO/dia (SERM — sem estrogênio sistêmico) · Lubricantes e umectantes para sintomas leves</td></tr>
+      </table>
+      <div class="ok-box" style="margin-top:8px">📋 Critérios de Amsel para VB (3 de 4): corrimento homogêneo/cinza · pH &gt;4,5 · Clue cells ≥20% (microscopia) · Teste da amina positivo (KOH + corrimento = odor de peixe)</div>
+    </div>
+  </div>
+  <div class="fem-card" style="border-color:#dc2626;margin-top:8px">
+    <div class="fem-nome" style="color:#dc2626">ITS — Infecções de Transmissão Sexual</div>
+    <div class="fem-body">
+      <table>
+        <tr><th>ITS</th><th>Tratamento preferido (CDC 2021)</th><th>Alternativa</th><th>Parceiro</th></tr>
+        <tr><td>Gonorreia (Neisseria gonorrhoeae)</td><td>Ceftriaxona 500 mg IM dose única (≥150 kg: 1g) — monoterapia (sem azitromicina)</td><td>Cefixima 800 mg VO dose única (menor eficácia) se IM não disponível</td><td>Tratar sempre</td></tr>
+        <tr><td>Clamídia (Chlamydia trachomatis)</td><td>Doxiciclina 100 mg 12/12h × 7 dias (superior à azitromicina dose única — CDC 2021 update)</td><td>Azitromicina 1g dose única (para populações com aderência baixa) · Ofloxacino 300 mg 12/12h × 7 dias</td><td>Tratar sempre</td></tr>
+        <tr><td>Sífilis (T. pallidum) — primária/secundária/latente recente (&lt;1 ano)</td><td>Penicilina G benzatina 2,4 milhões UI IM dose única</td><td>Doxiciclina 100 mg 12/12h × 14 dias (alérgico a penicilina — NÃO gestante)</td><td>Tratar sempre</td></tr>
+        <tr><td>Sífilis latente tardia (&gt;1 ano) / terciária / duração desconhecida</td><td>Penicilina G benzatina 2,4 milhões UI IM × 3 doses (semanal)</td><td>Doxiciclina × 28 dias (não gestante)</td><td>—</td></tr>
+        <tr><td>Herpes genital — 1° episódio</td><td>Aciclovir 400 mg TID × 7–10 dias · OU valaciclovir 1g BID × 7–10 dias</td><td>Fanciclovir 250 mg TID × 7–10 dias</td><td>Testagem HSV</td></tr>
+        <tr><td>HPV — condiloma acuminado</td><td>Imiquimode 5% creme (em casa, 3×/semana × 16 sem) · OU podofilox 0,5% (em casa, 2×/dia × 3d, descanso 4d, repetir)</td><td>Ácido tricloroacético 80–90% (ambulatorial) · Ressecção/criocirurgia</td><td>Exame clínico + vacinação</td></tr>
+        <tr><td>Donovanose (Klebsiella granulomatis)</td><td>Azitromicina 1g/semana × 3 semanas OU 500 mg/dia × 3 semanas</td><td>Doxiciclina 100 mg 12/12h × 21 dias</td><td>Tratar</td></tr>
+        <tr><td>Cancro mole (Haemophilus ducreyi)</td><td>Azitromicina 1g VO dose única · OU Ceftriaxona 250 mg IM dose única</td><td>Ciprofloxacino 500 mg BID × 3 dias (resistência crescente)</td><td>Tratar</td></tr>
+      </table>
+      <div class="alerta">🚨 Gonorreia + clamídia: tratar AMBAS presuntivamente na 1ª consulta (co-infecção em 20–30%). Sífilis na gestante: APENAS penicilina G benzatina (doxiciclina não atravessa placenta adequadamente) — dessensibilizar se alérgica.</div>
+    </div>
+  </div>`;
+}
+
+function renderCont(){
+  if(document.getElementById('contList').innerHTML) return;
+  document.getElementById('contList').innerHTML=`
+  <div class="fem-card" style="border-color:#7c3aed">
+    <div class="fem-nome" style="color:#7c3aed">Contracepção — Guia Completo de Escolha</div>
+    <div class="fem-body">
+      <strong>Índice de Pearl (falhas por 100 mulheres/ano — uso típico vs perfeito):</strong><br>
+      <table>
+        <tr><th>Método</th><th>Uso Perfeito</th><th>Uso Típico</th><th>Duração / Reverso</th></tr>
+        <tr><td>Implante subdérmico (etonogestrel)</td><td>0,05%</td><td>0,05%</td><td>3 anos · Rápida reversão</td></tr>
+        <tr><td>DIU de cobre (Cu-380)</td><td>0,6%</td><td>0,8%</td><td>10–12 anos · Contracepção de emergência (CE) até 5d</td></tr>
+        <tr><td>DIU hormonal levonorgestrel (Mirena 52mg)</td><td>0,1%</td><td>0,1%</td><td>8 anos · Reduz dismenorreia e menorragia</td></tr>
+        <tr><td>ACO combinado (pílula)</td><td>0,3%</td><td>9%</td><td>Uso diário · Reversão imediata</td></tr>
+        <tr><td>Pílula progestagênio isolado (mini-pílula)</td><td>0,3%</td><td>9%</td><td>Diária (horário fixo ±3h desogestrel, ±1h levonorgestrel)</td></tr>
+        <tr><td>Injetável mensal (cipionato de estradiol + MPA)</td><td>0,05%</td><td>3%</td><td>A cada 28–33 dias</td></tr>
+        <tr><td>Injetável trimestral (DMPA — Depo-Provera)</td><td>0,2%</td><td>4%</td><td>A cada 12–13 semanas · Amenorreia comum · Retardo de 1–2 anos na fertilidade</td></tr>
+        <tr><td>Preservativo masculino</td><td>2%</td><td>18%</td><td>Único método dual (ITS + gestação)</td></tr>
+        <tr><td>Laqueadura / Vasectomia</td><td>0,5% / 0,1%</td><td>0,5% / 0,15%</td><td>Permanente · Reversão possível mas não garantida</td></tr>
+      </table>
+      <br>
+      <strong>Contraindicações absolutas ao ACO combinado (estrogênio) — OMS Categoria 4:</strong><br>
+      Amamentação &lt;6 semanas pós-parto · Tabagismo ≥35 anos · Migrânea com aura · TEP/TVP prévio ou ativo · Cardiopatia valvar complicada · DM com complicações vasculares · Hipertensão ≥160/100 · Câncer de mama atual/recente · Hepatite ativa/cirrose descompensada · Uso de rifampicina/ritonavir (indutor CYP3A4 — reduz eficácia em 50%)<br><br>
+      <strong>Progestagênio isolado — indicações preferenciais:</strong><br>
+      Lactação · Contraindicação a estrogênio · Pós-parto imediato · SOP com RI (DIU LNG) · Endometriose (DIU LNG/implante)<br><br>
+      <strong>Contracepção de Emergência (CE):</strong><br>
+      <table>
+        <tr><th>Método</th><th>Prazo</th><th>Eficácia</th><th>Preferência</th></tr>
+        <tr><td>Levonorgestrel 1,5 mg VO dose única</td><td>Até 72h (pode usar até 120h — menor eficácia)</td><td>85% (72h) · 58% (72–120h)</td><td>1ª linha: acessível, sem receita · Menos eficaz se peso &gt;75 kg</td></tr>
+        <tr><td>Acetato de ulipristal (Ellaone®) 30 mg</td><td>Até 120h (5 dias)</td><td>98% até 120h (superior ao LNG)</td><td>Superior ao LNG · Eficácia não diminui com o tempo nas 120h · Melhor em &gt;75 kg</td></tr>
+        <tr><td>DIU de cobre</td><td>Até 120h (5 dias)</td><td>&gt;99%</td><td>Método mais eficaz de CE · Também oferece contracepção continuada por 10 anos</td></tr>
+        <tr><td>Método Yuzpe (ACO)</td><td>Até 72h</td><td>57%</td><td>Não recomendado — inferior e mais náuseas</td></tr>
+      </table>
+      <div class="atencao">⚠️ Ulipristal + progestagênio: não usar CE com ulipristal E iniciar pílula progestagênio no mesmo dia (antagonismo no receptor de progesterona). Aguardar 5 dias após ulipristal para iniciar método hormonal regular.</div>
+    </div>
+  </div>
+  <div class="fem-card" style="border-color:#c026d3;margin-top:8px">
+    <div class="fem-nome" style="color:#c026d3">Insuficiência Ovariana Prematura (IOP) e Menopausa Precoce</div>
+    <div class="fem-body">
+      <strong>Definição:</strong> Falência ovariana antes dos 40 anos · Afeta 1% das mulheres<br><br>
+      <strong>Diagnóstico:</strong> FSH &gt;25 UI/L (elevado) em 2 dosagens com intervalo de 4 semanas · Amenorreia ≥4 meses · Estradiol baixo · AMH indetectável<br><br>
+      <strong>Causas:</strong> Idiopática (70%) · Autoimune (auto-anticorpos anti-ovariano, associada a Addison, tireoidite de Hashimoto) · Genética (Síndrome de Turner, premutação FMR1/X frágil) · Iatrogênica (quimioterapia, radioterapia, ooforectomia)<br><br>
+      <strong>Rastreio em toda IOP:</strong> TSH, Ac anti-TPO (tireoidite) · Cortisol basal (Addison autoimune) · Cariótipo (>35 anos — síndrome de Turner mosaico) · Premutação FMR1 (X frágil) · Cálcio, PTH (hipoparatireoidismo autoimune)<br><br>
+      <strong>Tratamento:</strong><br>
+      TRH (Terapia de Reposição Hormonal): OBRIGATÓRIA até os 50 anos para prevenção de osteoporose, doença cardiovascular e sintomas · NÃO considerar como TRH de menopausa convencional (risco diferente) · Estradiol transdérmico 75–100 mcg/24h + progestagênio cíclico (ou DIU LNG se útero presente)<br>
+      Fertilidade: chance de gestação espontânea 5–10% (função ovariana flutuante) · FIV com doação de óvulos: principal opção para gravidez<br>
+      Suporte psicológico: diagnóstico impacta identidade feminina, fertilidade e sexualidade — fundamental
+    </div>
+  </div>`;
+}
+</script>
+</body>
+</html>
