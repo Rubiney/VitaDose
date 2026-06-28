@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Antibioticoterapia — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .ab-hdr { background:linear-gradient(135deg,#064e3b,#059669);color:#fff;border-radius:14px;padding:18px;margin-bottom:14px }
+    .ab-title{ font-size:1rem;font-weight:800;margin-bottom:4px }
+    .ab-sub  { font-size:.73rem;opacity:.8 }
+
+    label { font-size:.75rem;font-weight:700;color:#1e3a5f;display:block;margin-bottom:4px }
+    select, input[type=text] {
+      width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:10px;
+      padding:10px 12px;font-size:.85rem;background:#fff;outline:none;margin-bottom:10px }
+    select:focus,input:focus { border-color:#059669 }
+
+    .cat-chip { display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:999px;font-size:.7rem;font-weight:800;border:1.5px solid;cursor:pointer;margin:3px }
+    .cat-chip.active { color:#fff }
+
+    .ab-card { border-radius:14px;border:2px solid #059669;padding:14px;margin:10px 0 }
+    .ab-card-hdr { display:flex;align-items:center;gap:8px;margin-bottom:10px }
+    .ab-icone { font-size:1.3rem }
+    .ab-nome  { font-size:.9rem;font-weight:800;color:#065f46 }
+    .ab-cat   { font-size:.65rem;font-weight:800;color:#94a3b8;display:block }
+
+    .ab-row { padding:7px 0;border-bottom:1px dashed #d1fae5;font-size:.78rem }
+    .ab-row:last-child { border-bottom:none }
+    .ab-lbl { font-size:.65rem;font-weight:800;color:#6b7280;text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px }
+    .ab-val { color:#1e3a5f;line-height:1.5 }
+
+    .dur-chip { display:inline-block;padding:3px 10px;border-radius:999px;background:#d1fae5;color:#065f46;font-size:.72rem;font-weight:800;margin-top:4px }
+    .adj-chip { display:inline-block;padding:3px 10px;border-radius:999px;background:#fee2e2;color:#991b1b;font-size:.72rem;font-weight:800;margin-top:4px }
+
+    .warn-banner { background:#fff7ed;border-left:4px solid #d97706;border-radius:8px;padding:10px 12px;font-size:.75rem;color:#92400e;margin:8px 0 }
+
+    .search-wrap { position:relative;margin-bottom:10px }
+    .search-wrap input { padding-left:36px;margin-bottom:0 }
+    .search-icon { position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:.9rem }
+
+    .empty-state { text-align:center;padding:40px 20px;color:#94a3b8 }
+    .empty-state .emoji { font-size:2.5rem;display:block;margin-bottom:8px }
+  </style>
+</head>
+<body>
+
+<header class="top-bar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <span class="top-title">Antibioticoterapia Empírica</span>
+  <div class="top-right"></div>
+</header>
+
+<main class="container" style="padding-bottom:90px">
+
+  <div class="ab-hdr">
+    <div class="ab-title">🦠 Antibioticoterapia — Guia Prático</div>
+    <div class="ab-sub">1ª linha · Alternativas · Alergia · Duração · Cobertura MRSA/ESBL/Pseudomonas</div>
+  </div>
+
+  <div class="card" style="padding:10px 14px">
+    <div class="search-wrap">
+      <span class="search-icon">🔍</span>
+      <input type="text" id="abSearch" placeholder="Buscar infecção (ex.: pneumonia, ITU, celulite…)" oninput="renderAB()">
+    </div>
+    <div id="catChips" style="margin-top:2px"></div>
+  </div>
+
+  <div id="abList"></div>
+
+</main>
+
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+
+<script>
+const AB = [
+  /* ── RESPIRATÓRIAS ──────────────────────────────────────────────── */
+  { id:'pac_leve', cat:'Respiratórias', icone:'🫁',
+    nome:'PAC — Leve (ambulatorial / PSI I–II / CURB-65 0–1)',
+    patogenos:'S. pneumoniae, Mycoplasma pneumoniae, Chlamydophila pneumoniae, H. influenzae',
+    linha1:'Amoxicilina 1 g VO 3×/dia',
+    linha1b:'± Azitromicina 500 mg/dia VO 3–5d (se atípico suspeito ou sem melhora)',
+    alternativa:'Doxiciclina 100 mg VO 2×/dia',
+    alergia:'Levofloxacino 750 mg/dia VO · Moxifloxacino 400 mg/dia VO',
+    duracao:'5–7 dias',
+    ajuste_renal:false,
+    notas:'Reavaliar em 48–72h. Iniciar ATB em ≤4h do diagnóstico. Sem hospitalização se PSI I–II / CURB-65 0–1.' },
+
+  { id:'pac_mod', cat:'Respiratórias', icone:'🫁',
+    nome:'PAC — Moderada (internação, sem UTI / CURB-65 2–3)',
+    patogenos:'S. pneumoniae, H. influenzae, Legionella, Mycoplasma, Staphylococcus (pós-influenza)',
+    linha1:'Ceftriaxona 1–2 g IV/dia + Azitromicina 500 mg/dia IV/VO',
+    linha1b:'ou Ampicilina-sulbactam 3 g IV 6/6h + Azitromicina 500 mg/dia',
+    alternativa:'Levofloxacino 750 mg/dia IV (monoterapia se baixo risco)',
+    alergia:'Levofloxacino 750 mg IV + Aztreonam 2 g IV 8/8h (alergia grave a beta-lactâmico)',
+    duracao:'5–7 dias (critérios de switch oral após 48h afebril + melhora)',
+    ajuste_renal:true,
+    notas:'CURB-65 ≥2 = internação. Antígenos urinários (S. pneumoniae + Legionella) se grave. Culturas antes do ATB.' },
+
+  { id:'pac_uti', cat:'Respiratórias', icone:'🫁',
+    nome:'PAC — Grave (UTI / IDSA/ATS critérios maiores)',
+    patogenos:'S. pneumoniae, Legionella, S. aureus, gram-negativos, vírus influenza',
+    linha1:'Ceftriaxona 2 g IV 12/12h + Azitromicina 500 mg IV/dia',
+    linha1b:'ou Ceftriaxona 2 g IV + Levofloxacino 750 mg IV (Legionella suspeita)',
+    alternativa:'Piperacilina-tazobactam 4,5 g IV 6/6h + Azitromicina (se risco Pseudomonas)',
+    alergia:'Levofloxacino 750 mg IV + Aztreonam 2 g IV 8/8h',
+    duracao:'7–10 dias (Legionella: 14d · S. aureus: ≥14d)',
+    ajuste_renal:true,
+    notas:'Hemoculturas ×2 antes ATB. Oseltamivir se influenza suspeita. Vancomicina se MRSA suspeito (pós-influenza, heroinômano, DM, celulite).' },
+
+  { id:'pavm', cat:'Respiratórias', icone:'🏥',
+    nome:'PAVM / Pneumonia Hospitalar tardia (>4 dias internação)',
+    patogenos:'P. aeruginosa, K. pneumoniae ESBL, Acinetobacter baumannii, S. aureus (MRSA)',
+    linha1:'Piperacilina-tazobactam 4,5 g IV 6/6h (inf. ext. 4h) + Vancomicina 30 mg/kg/dia IV',
+    linha1b:'ou Meropeném 1 g IV 8/8h (se ESBL/PA multirresistente suspeito)',
+    alternativa:'Cefepima 2 g IV 8/8h + Vancomicina (se sensibilidade PA comprovada)',
+    alergia:'Aztreonam 2 g IV 8/8h + Vancomicina + avaliação de colistina (MDR)',
+    duracao:'7–8 dias (PCT para guiar; desescalonar 48–72h com base na cultura)',
+    ajuste_renal:true,
+    notas:'AUC:MIC para vancomicina (alvo 400–600). Solicitar cultura de aspirado traqueal + hemoculturas. CPIS para diagnóstico.' },
+
+  /* ── URINÁRIAS ──────────────────────────────────────────────────── */
+  { id:'itu_nc', cat:'Urinárias', icone:'🫧',
+    nome:'Cistite não complicada (mulher jovem)',
+    patogenos:'E. coli (80%), S. saprophyticus, Klebsiella pneumoniae, Proteus mirabilis',
+    linha1:'Nitrofurantoína 100 mg VO 2×/dia (macrocristais/liberação modificada)',
+    linha1b:'ou Fosfomicina trometamol 3 g VO dose única',
+    alternativa:'SMX-TMP 800/160 mg VO 2×/dia (se sensibilidade local >80%)',
+    alergia:'Cefalexina 500 mg VO 4×/dia',
+    duracao:'5 dias (nitrofurantoína) · dose única (fosfomicina) · 3 dias (SMX-TMP)',
+    ajuste_renal:true,
+    notas:'Nitrofurantoína CI se TFG <30. Fluoroquinolonas NÃO são primeira linha — preservar para resistência. Urina I sem cultura para casos simples.' },
+
+  { id:'pielonefrite_l', cat:'Urinárias', icone:'🫧',
+    nome:'Pielonefrite leve–moderada (ambulatorial ou internação leve)',
+    patogenos:'E. coli, Klebsiella pneumoniae, Proteus, ESBL possível (ITU recorrente)',
+    linha1:'Ciprofloxacino 500 mg VO 2×/dia (ambulatorial, se sensível)',
+    linha1b:'ou Ceftriaxona 1–2 g IV/dia (internação)',
+    alternativa:'Amoxicilina-clavulanato 875/125 mg VO 2×/dia (se sensível no antibiograma)',
+    alergia:'Aztreonam 1–2 g IV 8/8h (alergia grave a beta-lactâmico)',
+    duracao:'7–14 dias (7d se fluoroquinolona; 14d se beta-lactâmico)',
+    ajuste_renal:true,
+    notas:'Urocultura obrigatória antes ATB. Suspeitar ESBL se: ITU recorrente, cefalosporina recente, hospitalização recente, residência em instituição.' },
+
+  { id:'itu_esbl', cat:'Urinárias', icone:'🫧',
+    nome:'ITU / Pielonefrite grave — ESBL suspeito / KPC',
+    patogenos:'E. coli ESBL, K. pneumoniae ESBL ou KPC, Pseudomonas (sonda vesical)',
+    linha1:'Ertapeném 1 g IV/dia (ESBL confirmado/suspeito, sem Pseudomonas)',
+    linha1b:'Meropeném 1 g IV 8/8h (Pseudomonas suspeita / KPC)',
+    alternativa:'Piperacilina-tazobactam 4,5 g IV 6/6h (ESBL controverso — preferir carbapeném)',
+    alergia:'Aztreonam 2 g IV 8/8h + Amicacina 15 mg/kg/dia IV',
+    duracao:'10–14 dias',
+    ajuste_renal:true,
+    notas:'Urocultura + hemoculturas ×2. Desescalonar com antibiograma em 48–72h. Teste E-test ou CIM para decisão de carbapeném vs piperacilina-tazobactam em ESBL.' },
+
+  /* ── PELE E PARTES MOLES ─────────────────────────────────────────── */
+  { id:'celulite', cat:'Pele e Partes Moles', icone:'🦵',
+    nome:'Celulite / Erisipela — sem MRSA (SSTI não-purulenta)',
+    patogenos:'Streptococcus pyogenes (GAS), Staphylococcus aureus sensível (MSSA)',
+    linha1:'Cefalexina 500 mg VO 4×/dia (leve–moderada)',
+    linha1b:'Cefazolina 1–2 g IV 8/8h (moderada-grave, internação)',
+    alternativa:'Amoxicilina-clavulanato 875/125 mg VO 2×/dia (mordida, úlcera)',
+    alergia:'Clindamicina 300–450 mg VO 3×/dia (verificar resistência local)',
+    duracao:'5–7 dias (estender se sem melhora em 72h)',
+    ajuste_renal:false,
+    notas:'Marcar bordas com caneta antes do ATB. Elevar membro. Reavaliação 48–72h. Eritema progressivo além das bordas = agravar antibiótico.' },
+
+  { id:'celulite_mrsa', cat:'Pele e Partes Moles', icone:'🦵',
+    nome:'Celulite / Abscesso — CA-MRSA suspeito (SSTI purulenta)',
+    patogenos:'S. aureus resistente à meticilina comunitário (CA-MRSA)',
+    linha1:'SMX-TMP 800/160 mg VO 2×/dia (ambulatorial)',
+    linha1b:'Doxiciclina 100 mg VO 2×/dia (alternativa ambulatorial)',
+    alternativa:'Vancomicina 25–30 mg/kg/dia IV (grave, hospitalização)',
+    alergia:'Linezolida 600 mg VO ou IV 2×/dia (MRSA grave com intolerância ou falha à vancomicina)',
+    duracao:'5–10 dias',
+    ajuste_renal:true,
+    notas:'Abscesso: DRENAGEM é o tratamento principal; ATB adjuvante. Fatores de risco CA-MRSA: praticante de esporte coletivo, profissionais de saúde, contato com encarcerados, MSM, imunossuprimidos.' },
+
+  { id:'fasciite', cat:'Pele e Partes Moles', icone:'⛔',
+    nome:'Fasciíte necrotizante (emergência cirúrgica)',
+    patogenos:'Tipo I: polimicrobiana (gram+, gram−, anaeróbios). Tipo II: S. pyogenes (GAS)',
+    linha1:'Piperacilina-tazobactam 4,5 g IV 6/6h + Vancomicina 30 mg/kg/dia IV',
+    linha1b:'+ Clindamicina 900 mg IV 8/8h (inibição de toxinas — Tipo II)',
+    alternativa:'Meropeném 1 g IV 8/8h + Vancomicina + Clindamicina',
+    alergia:'Aztreonam 2 g IV 8/8h + Metronidazol 500 mg IV 8/8h + Vancomicina',
+    duracao:'Até ≥48h após controle cirúrgico e estabilidade clínica',
+    ajuste_renal:true,
+    notas:'⛔ EMERGÊNCIA: desbridamento cirúrgico imediato é o único tratamento definitivo. ATB são adjuvantes. Mortalidade 25–75% sem cirurgia precoce. LRINEC score para diagnóstico.' },
+
+  /* ── INTRA-ABDOMINAL ─────────────────────────────────────────────── */
+  { id:'intra_abd', cat:'Intra-Abdominal', icone:'🫀',
+    nome:'Infecção intra-abdominal — Comunitária (peritonite / abscesso)',
+    patogenos:'E. coli, Klebsiella, Bacteroides fragilis, Enterococcus, anaeróbios gram-negativos',
+    linha1:'Piperacilina-tazobactam 4,5 g IV 6/6h (leve–moderada)',
+    linha1b:'ou Cefoxitina 2 g IV 6/6h (perioperatória / leve)',
+    alternativa:'Meropeném 1 g IV 8/8h (grave / ESBL suspeito / falha prévia)',
+    alergia:'Ciprofloxacino 400 mg IV 12/12h + Metronidazol 500 mg IV 8/8h',
+    duracao:'4–7 dias após controle do foco (cirurgia / drenagem percutânea)',
+    ajuste_renal:true,
+    notas:'Controle do foco obrigatório. Enterococcus: tratar se hemoculturas positivas ou válvula cardíaca. Peritonite difusa: mínimo 5 dias. Cultura intraoperatória para guiar desescalonamento.' },
+
+  { id:'intra_hosp', cat:'Intra-Abdominal', icone:'🏥',
+    nome:'Infecção intra-abdominal — Hospitalar (pós-operatória / MDR risco)',
+    patogenos:'E. coli ESBL, Klebsiella KPC, P. aeruginosa, Enterococcus faecium, Candida spp.',
+    linha1:'Meropeném 1 g IV 8/8h + Vancomicina (se Enterococcus faecium suspeito)',
+    linha1b:'+ Micafungina 100 mg IV/dia (se Candida suspeita: cirurgia abdominal prévia, nutrição parenteral, imunossupressão)',
+    alternativa:'Piperacilina-tazobactam 4,5 g IV 6/6h (se MDR não suspeito)',
+    alergia:'Aztreonam 2 g IV 8/8h + Metronidazol + Vancomicina',
+    duracao:'5–10 dias após controle cirúrgico',
+    ajuste_renal:true,
+    notas:'Hemoculturas + cultura intraoperatória. b-D-glucano se Candida suspeita. Desescalonar com antibiograma.' },
+
+  /* ── SNC ─────────────────────────────────────────────────────────── */
+  { id:'meningite_c', cat:'SNC', icone:'🧠',
+    nome:'Meningite bacteriana — Comunitária (adulto)',
+    patogenos:'S. pneumoniae (30–50%), Neisseria meningitidis (10–35%), Listeria (>50a / imunossuprimido)',
+    linha1:'Ceftriaxona 2 g IV 12/12h + Dexametasona 0,15 mg/kg IV 6/6h ×4 dias (INICIAR ANTES OU JUNTO AO ATB)',
+    linha1b:'+ Ampicilina 2 g IV 4/4h se >50 anos, gestante ou imunossuprimido (Listeria)',
+    alternativa:'Vancomicina 30–45 mg/kg/dia IV (se pneumococo resistente suspeito — combinar com ceftriaxona)',
+    alergia:'Meropeném 2 g IV 8/8h + Vancomicina (alergia grave a penicilina)',
+    duracao:'N. meningitidis: 7d · S. pneumoniae: 10–14d · Listeria: 21d',
+    ajuste_renal:true,
+    notas:'⚠️ ATB em até 30 min do diagnóstico — NÃO atrasar aguardando TC ou punção. Dexametasona reduz mortalidade e surdez no pneumococo. Quimioprofilaxia contatos N. meningitidis: rifampicina 600 mg 2×/dia ×2d ou ciprofloxacino 500 mg dose única.' },
+
+  /* ── CARDIOVASCULAR ──────────────────────────────────────────────── */
+  { id:'endocardite_s', cat:'Cardiovascular', icone:'❤️',
+    nome:'Endocardite — Válvula nativa, Streptococcus spp.',
+    patogenos:'S. viridans, S. bovis/gallolyticus, Granulicatella, Abiotrophia',
+    linha1:'Ceftriaxona 2 g IV/dia ×4 semanas (regime simplificado — mesmo eficácia)',
+    linha1b:'ou Penicilina G cristalina 12–18 MUI/dia IV contínua ×4 semanas',
+    alternativa:'Ceftriaxona 2 g IV/dia + Gentamicina 3 mg/kg/dia ×2 semanas (regime 2 semanas se MIC ≤0,125)',
+    alergia:'Vancomicina 30 mg/kg/dia IV ×4 semanas',
+    duracao:'4 semanas (válvula nativa) · 6 semanas (prótese valvar)',
+    ajuste_renal:true,
+    notas:'Hemoculturas seriadas de controle. ETE (ecocardiograma transesofágico) para vegetação. Consulta cirurgia cardíaca se vegetação >10 mm, insuficiência valvar grave ou falha terapêutica.' },
+
+  { id:'endocardite_sa', cat:'Cardiovascular', icone:'❤️',
+    nome:'Endocardite — S. aureus (aguda / mais grave)',
+    patogenos:'Staphylococcus aureus (MSSA ou MRSA)',
+    linha1:'Oxacilina 2 g IV 4/4h ×6 semanas (MSSA — PREFERENCIAL)',
+    linha1b:'Vancomicina 30–45 mg/kg/dia IV ×6 semanas (MRSA ou alergia a beta-lactâmico)',
+    alternativa:'Daptomicina 8–10 mg/kg/dia IV (alternativa ao MRSA se vancomicina MIC >1)',
+    alergia:'Daptomicina 8–10 mg/kg/dia IV (sem atividade em pneumonias — NÃO usar se foco pulmonar)',
+    duracao:'6 semanas mínimo · Válvula protética: ≥6 semanas',
+    ajuste_renal:true,
+    notas:'Bacteriemia por S. aureus = endocardite até prova em contrário. ETE obrigatório. TC de tórax se suspeita de embolia séptica. Rifampicina 300 mg 3×/dia adjuvante em prótese (após ≥5 dias de ATB efetivo).' },
+
+  /* ── ONCOLÓGICA ──────────────────────────────────────────────────── */
+  { id:'neutropenia_h', cat:'Oncológica / Imunossuprimido', icone:'🩺',
+    nome:'Neutropenia Febril — Alto risco (MASCC <21 / neutrófilos <100)',
+    patogenos:'E. coli, Klebsiella, P. aeruginosa, S. aureus, Candida spp.',
+    linha1:'Piperacilina-tazobactam 4,5 g IV 6/6h',
+    linha1b:'ou Cefepima 2 g IV 8/8h (equivalente)',
+    alternativa:'Meropeném 1 g IV 8/8h (instabilidade hemodinâmica / MDR suspeito / falha prévia)',
+    alergia:'+ Vancomicina 30 mg/kg/dia (mucosite grave, CVC, bacteremia, MRSA risco)',
+    duracao:'Até neutrófilos >500/mm³ + afebril ≥48h',
+    ajuste_renal:true,
+    notas:'Hemoculturas ×2 (periférica + CVC). Antifúngico empírico se febre persistente >72–96h sem foco: caspofungina 70 mg IV (curativo) ou fluconazol (Candida não-albicans ausente). MASCC score para estratificação de risco.' },
+
+  { id:'neutropenia_b', cat:'Oncológica / Imunossuprimido', icone:'🩺',
+    nome:'Neutropenia Febril — Baixo risco (MASCC ≥21)',
+    patogenos:'Gram-negativos (menos provável), Streptococcus, estafilococos coagulase-negativos',
+    linha1:'Ciprofloxacino 750 mg VO 2×/dia + Amoxicilina-clavulanato 875/125 mg VO 2×/dia',
+    linha1b:'(paciente estável, sem foco aparente, possível alta com retorno precoce)',
+    alternativa:'Levofloxacino 750 mg/dia VO (se não em profilaxia com quinolona)',
+    alergia:'Cefalexina 500 mg VO 4×/dia + Ciprofloxacino',
+    duracao:'Até neutrófilos >500/mm³ + afebril ≥48h',
+    ajuste_renal:true,
+    notas:'Critérios MASCC: tumor sólido ou sem infecção fúngica ativa, ambulatorial na admissão, sem hipotensão, sem DPOC, sem desidratação, status performance ECOG ≤2, idade <60a.' },
+
+  /* ── SISTÊMICA ───────────────────────────────────────────────────── */
+  { id:'sepse', cat:'Sistêmica', icone:'🚨',
+    nome:'Sepse / Choque séptico — sem foco definido',
+    patogenos:'E. coli, Klebsiella, S. aureus, Streptococcus spp., P. aeruginosa (imunossuprimido)',
+    linha1:'Piperacilina-tazobactam 4,5 g IV 6/6h (inf. ext. 4h) + Vancomicina 30 mg/kg/dia',
+    linha1b:'ou Meropeném 1 g IV 8/8h (MDR suspeito / hospitalização recente / imunocompromisso)',
+    alternativa:'Cefepima 2 g IV 8/8h + Metronidazol 500 mg IV 8/8h (se foco abdominal suspeito)',
+    alergia:'Aztreonam 2 g IV 8/8h + Vancomicina + Metronidazol (alergia grave a penicilina)',
+    duracao:'7–10 dias · Desescalonar com cultura em 48–72h · PCT para guiar duração',
+    ajuste_renal:true,
+    notas:'Bundle 1h Surviving Sepsis: hemoculturas ×2, lactato, ATB IV em ≤1h, cristaloides 30 mL/kg se hipoperfusão, vasopressor se PAM <65 mmHg após ressuscitação. Pesquisar foco e drenar se necessário.' },
+];
+
+const CATS = [...new Set(AB.map(a=>a.cat))];
+let activecat = null;
+
+function buildCatChips() {
+  const wrap = document.getElementById('catChips');
+  const CHIP_COLORS = {
+    'Respiratórias':'#0369a1','Urinárias':'#7c3aed',
+    'Pele e Partes Moles':'#b45309','Intra-Abdominal':'#0f766e',
+    'SNC':'#4f46e5','Cardiovascular':'#dc2626',
+    'Oncológica / Imunossuprimido':'#6d28d9','Sistêmica':'#991b1b',
+  };
+  wrap.innerHTML = CATS.map(c=>{
+    const col = CHIP_COLORS[c]||'#64748b';
+    const act = activecat===c;
+    return `<span class="cat-chip${act?' active':''}" style="border-color:${col};${act?'background:'+col:''}" onclick="toggleCat('${c}')">${c}</span>`;
+  }).join('');
+}
+
+function toggleCat(cat) {
+  activecat = activecat===cat ? null : cat;
+  buildCatChips();
+  renderAB();
+}
+
+function renderAB() {
+  const q   = document.getElementById('abSearch').value.toLowerCase();
+  const list= document.getElementById('abList');
+
+  let items = AB;
+  if (activecat) items = items.filter(a=>a.cat===activecat);
+  if (q) items = items.filter(a=>`${a.nome} ${a.patogenos} ${a.cat} ${a.linha1} ${a.alternativa} ${a.notas}`.toLowerCase().includes(q));
+
+  if (!items.length) {
+    list.innerHTML=`<div class="empty-state"><span class="emoji">🔎</span>Nenhum resultado encontrado.</div>`;
+    return;
+  }
+
+  list.innerHTML = items.map(a=>`
+    <div class="ab-card">
+      <div class="ab-card-hdr">
+        <span class="ab-icone">${a.icone}</span>
+        <div>
+          <span class="ab-cat">${a.cat}</span>
+          <div class="ab-nome">${a.nome}</div>
+        </div>
+      </div>
+
+      <div class="ab-row">
+        <div class="ab-lbl">Patógenos prováveis</div>
+        <div class="ab-val" style="color:#64748b">${a.patogenos}</div>
+      </div>
+
+      <div class="ab-row">
+        <div class="ab-lbl">1ª Linha</div>
+        <div class="ab-val"><strong>${a.linha1}</strong></div>
+        ${a.linha1b?`<div class="ab-val" style="margin-top:3px;color:#64748b">${a.linha1b}</div>`:''}
+      </div>
+
+      <div class="ab-row">
+        <div class="ab-lbl">Alternativa</div>
+        <div class="ab-val">${a.alternativa}</div>
+      </div>
+
+      <div class="ab-row">
+        <div class="ab-lbl">Se alergia a beta-lactâmico</div>
+        <div class="ab-val" style="color:#7c3aed">${a.alergia}</div>
+      </div>
+
+      <div class="ab-row">
+        <div class="ab-lbl">Duração</div>
+        <div class="ab-val"><span class="dur-chip">${a.duracao}</span>${a.ajuste_renal?'<span class="adj-chip" style="margin-left:4px">Ajuste renal</span>':''}</div>
+      </div>
+
+      <div class="ab-row">
+        <div class="ab-lbl">Notas clínicas</div>
+        <div class="ab-val" style="color:#92400e">${a.notas}</div>
+      </div>
+    </div>`).join('');
+}
+
+buildCatChips();
+renderAB();
+</script>
+</body>
+</html>

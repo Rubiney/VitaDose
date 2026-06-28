@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Insulinoterapia — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .ins-hdr { background:linear-gradient(135deg,#1e3a8a,#2563eb);color:#fff;border-radius:14px;padding:18px;margin-bottom:14px }
+    .ins-title{ font-size:1rem;font-weight:800;margin-bottom:4px }
+    .ins-sub  { font-size:.73rem;opacity:.8 }
+
+    .tab-bar { display:flex;gap:5px;margin-bottom:14px }
+    .tab-btn { flex:1;padding:9px 4px;border-radius:10px;border:2px solid #e2e8f0;background:#fff;font-size:.7rem;font-weight:700;cursor:pointer;color:#64748b;text-align:center }
+    .tab-btn.active { border-color:#2563eb;background:#eff6ff;color:#1d4ed8 }
+
+    label { font-size:.75rem;font-weight:700;color:#1e3a5f;display:block;margin-bottom:4px }
+    select, input[type=number] {
+      width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:10px;
+      padding:10px 12px;font-size:.85rem;background:#fff;outline:none;margin-bottom:10px }
+    select:focus,input:focus { border-color:#2563eb }
+    .input-row { display:grid;grid-template-columns:1fr 1fr;gap:8px }
+
+    .btn-calc { width:100%;background:#2563eb;color:#fff;border:none;border-radius:12px;padding:13px;font-size:.87rem;font-weight:700;cursor:pointer;margin:8px 0 }
+    .btn-auto { background:#1e3a5f;color:#fff;border:none;border-radius:10px;padding:10px 16px;font-size:.8rem;font-weight:700;cursor:pointer;margin-bottom:10px }
+
+    .res-grid { display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px }
+    .res-card { border-radius:12px;border:2px solid;padding:12px;text-align:center }
+    .res-num  { font-size:1.8rem;font-weight:900;line-height:1.1 }
+    .res-lbl  { font-size:.62rem;font-weight:800;margin-top:3px }
+
+    .big-res  { border-radius:14px;border:3px solid #2563eb;padding:16px;margin-bottom:10px;text-align:center }
+    .big-num  { font-size:3rem;font-weight:900;color:#1d4ed8;line-height:1 }
+    .big-unit { font-size:.9rem;font-weight:700;color:#1d4ed8 }
+
+    .bolus-bar-wrap { display:flex;gap:8px;margin:10px 0 }
+    .bolus-seg { border-radius:8px;padding:10px 6px;text-align:center;flex:1 }
+    .bolus-seg .num { font-size:1.1rem;font-weight:900 }
+    .bolus-seg .sub { font-size:.63rem;font-weight:700;margin-top:2px }
+
+    .adj-row { display:grid;grid-template-columns:90px 1fr 1fr;gap:6px;align-items:center;padding:7px 0;border-bottom:1px solid #f1f5f9;font-size:.78rem }
+    .adj-row:last-child{ border-bottom:none }
+    .adj-gluc { color:#64748b }
+    .adj-cond { color:#1e3a5f;font-weight:700 }
+    .adj-act  { font-weight:800;text-align:center;padding:4px 6px;border-radius:6px }
+    .adj-act.plus  { background:#dcfce7;color:#166534 }
+    .adj-act.minus { background:#fee2e2;color:#991b1b }
+    .adj-act.maint { background:#f1f5f9;color:#475569 }
+
+    .cor-res { border-radius:12px;padding:14px;margin:8px 0;display:none;text-align:center }
+    .cor-num { font-size:2.4rem;font-weight:900;line-height:1 }
+    .cor-unit{ font-size:.8rem;font-weight:700 }
+    .cor-sub { font-size:.72rem;color:#64748b;margin-top:6px }
+
+    .ic-grid { display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:8px 0 }
+    .ic-card { border-radius:10px;padding:10px;text-align:center;background:#eff6ff;border:1.5px solid #bfdbfe }
+    .ic-num  { font-size:1.3rem;font-weight:900;color:#1d4ed8 }
+    .ic-lbl  { font-size:.62rem;color:#64748b;font-weight:700 }
+
+    .warn-box { background:#fff7ed;border-left:4px solid #d97706;border-radius:8px;padding:10px 12px;font-size:.75rem;color:#92400e;margin-bottom:8px }
+  </style>
+</head>
+<body>
+
+<header class="top-bar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <span class="top-title">Calculadora de Insulinoterapia</span>
+  <div class="top-right"></div>
+</header>
+
+<main class="container" style="padding-bottom:90px">
+
+  <div class="ins-hdr">
+    <div class="ins-title">💉 Insulinoterapia — Cálculo e Ajuste</div>
+    <div class="ins-sub">DTD · Basal/Bolus · Ajuste Glargina · Dose de Correção · Razão I:C</div>
+  </div>
+
+  <div class="tab-bar">
+    <button class="tab-btn active" id="tb0" onclick="showTab(0)">Início</button>
+    <button class="tab-btn"        id="tb1" onclick="showTab(1)">Ajuste Basal</button>
+    <button class="tab-btn"        id="tb2" onclick="showTab(2)">Correção</button>
+    <button class="tab-btn"        id="tb3" onclick="showTab(3)">I:C / FS</button>
+  </div>
+
+  <!-- ── TAB 0: INÍCIO ──────────────────────────────────────────────── -->
+  <div id="tab0">
+    <button class="btn-auto" onclick="autoFill()">⚡ Auto-preencher do paciente ativo</button>
+    <div class="card" style="padding:12px 14px">
+      <div class="input-row">
+        <div>
+          <label>Peso (kg)</label>
+          <input type="number" id="ini_peso" placeholder="ex.: 80" min="20" step="1">
+        </div>
+        <div>
+          <label>Tipo de paciente</label>
+          <select id="ini_tipo">
+            <option value="naive">Iniciando insulina</option>
+            <option value="hosp">Hospitalizado (jejum/TN)</option>
+            <option value="dci">DM2 descompensado com hipoglicemiante</option>
+          </select>
+        </div>
+      </div>
+      <label>Régime de insulina</label>
+      <select id="ini_regime">
+        <option value="basal_bolus">Basal-Bolus (glargina + análogo rápido)</option>
+        <option value="nph_reg">NPH + Regular (2× ou 3×/dia)</option>
+        <option value="basal_only">Basal apenas (insulinização inicial)</option>
+        <option value="bifasica">Bifásica (pré-mistura 70/30)</option>
+      </select>
+      <label>DTD total atual (UI) — <em>deixe 0 para calcular pelo peso</em></label>
+      <input type="number" id="ini_dtd" placeholder="0 = calcular pelo peso" min="0" step="1" value="0">
+    </div>
+    <button class="btn-calc" onclick="calcInicio()">💉 Calcular esquema inicial</button>
+
+    <div id="iniResult" style="display:none">
+      <div class="big-res">
+        <div class="big-num" id="dtdNum">—</div>
+        <div class="big-unit">UI/dia — Dose Total Diária (DTD)</div>
+      </div>
+      <div class="res-grid" id="iniGrid"></div>
+      <div class="card" style="padding:8px 14px" id="iniTabela"></div>
+      <div class="warn-box" id="iniWarn"></div>
+    </div>
+
+    <div class="card" style="font-size:.72rem;color:#64748b">
+      Ponto de partida baseado em 0,3–0,5 UI/kg/dia para início, com distribuição 50% basal + 50% bolus (dividido em 3 refeições iguais). Em hospitalizados a necessidade pode chegar a 0,6–0,8 UI/kg/dia.<br><br>
+      <em>Ref: ADA Standards of Care 2025. AACE/ADA Consensus Inpatient Diabetes Care 2023.</em>
+    </div>
+  </div>
+
+  <!-- ── TAB 1: AJUSTE BASAL ────────────────────────────────────────── -->
+  <div id="tab1" style="display:none">
+    <div class="card" style="padding:12px 14px">
+      <label>Insulina basal em uso</label>
+      <select id="adj_tipo">
+        <option value="glar">Glargina (Lantus / Basaglar / Toujeo)</option>
+        <option value="detemir">Detemir (Levemir)</option>
+        <option value="degu">Degludeca (Tresiba)</option>
+        <option value="nph">NPH (Humulin N / Novolin N)</option>
+      </select>
+      <div class="input-row">
+        <div>
+          <label>Dose atual (UI/dia)</label>
+          <input type="number" id="adj_dose" placeholder="ex.: 20" min="0" step="1">
+        </div>
+        <div>
+          <label>Média glicemia jejum (mg/dL)</label>
+          <input type="number" id="adj_gjejum" placeholder="ex.: 180" min="40">
+        </div>
+      </div>
+      <label>Regra de ajuste</label>
+      <select id="adj_regra">
+        <option value="3_0">Regra 3-0-3: ±3 UI se fora da meta por 3 dias</option>
+        <option value="2_0">Regra 2-0-2: ±2 UI (idosos / dose >40 UI)</option>
+        <option value="10pct">10% da dose basal (para doses altas)</option>
+      </select>
+    </div>
+    <button class="btn-calc" onclick="calcAjuste()">📊 Calcular ajuste</button>
+    <div id="adjResult" style="display:none">
+      <div class="card" style="padding:8px 14px">
+        <div id="adjRes"></div>
+      </div>
+    </div>
+
+    <div class="card" style="font-size:.72rem;color:#64748b;margin-top:8px">
+      <strong style="color:#1e3a5f;display:block;margin-bottom:4px">Guia de ajuste por glicemia de jejum (meta 80–130 mg/dL)</strong>
+      <div class="adj-row" style="font-size:.65rem;font-weight:800;color:#94a3b8;padding:4px 0">
+        <div>Glicemia Jejum</div><div>Condição</div><div style="text-align:center">Ajuste</div>
+      </div>
+      <div class="adj-row"><span class="adj-gluc">&lt;70</span><span class="adj-cond">Hipoglicemia</span><span class="adj-act minus">−4 UI (mín.)</span></div>
+      <div class="adj-row"><span class="adj-gluc">70–79</span><span class="adj-cond">Abaixo do alvo</span><span class="adj-act minus">−2 UI</span></div>
+      <div class="adj-row"><span class="adj-gluc">80–130</span><span class="adj-cond">Na meta</span><span class="adj-act maint">Manter</span></div>
+      <div class="adj-row"><span class="adj-gluc">131–180</span><span class="adj-cond">Acima do alvo</span><span class="adj-act plus">+2 UI</span></div>
+      <div class="adj-row"><span class="adj-gluc">181–240</span><span class="adj-cond">Bem acima</span><span class="adj-act plus">+4 UI</span></div>
+      <div class="adj-row"><span class="adj-gluc">&gt;240</span><span class="adj-cond">Descompensação</span><span class="adj-act plus">+6 UI</span></div>
+    </div>
+  </div>
+
+  <!-- ── TAB 2: DOSE DE CORREÇÃO ────────────────────────────────────── -->
+  <div id="tab2" style="display:none">
+    <div class="card" style="padding:12px 14px">
+      <div class="warn-box">
+        Dose de correção: quantidade de insulina rápida para reduzir a glicemia até a meta. Não sobrepor à dose de bolus alimentar — se ambas forem necessárias, somar.
+      </div>
+      <div class="input-row">
+        <div>
+          <label>Glicemia atual (mg/dL)</label>
+          <input type="number" id="cor_gluc" placeholder="ex.: 230" min="40" oninput="calcCorrecao()">
+        </div>
+        <div>
+          <label>Meta glicêmica (mg/dL)</label>
+          <input type="number" id="cor_meta" placeholder="ex.: 120" min="70" value="120" oninput="calcCorrecao()">
+        </div>
+      </div>
+      <label>Fator de sensibilidade (FS) — <em>deixe 0 para calcular pela DTD</em></label>
+      <div class="input-row">
+        <div>
+          <input type="number" id="cor_fs" placeholder="ex.: 50" min="0" oninput="calcCorrecao()">
+        </div>
+        <div>
+          <label>DTD total (se FS=0)</label>
+          <input type="number" id="cor_dtd" placeholder="ex.: 30" min="0" oninput="calcCorrecao()">
+        </div>
+      </div>
+    </div>
+
+    <div class="cor-res" id="corResBox">
+      <div class="cor-num" id="corNum">—</div>
+      <div class="cor-unit" id="corUnit"></div>
+      <div class="cor-sub" id="corSub"></div>
+    </div>
+
+    <div class="card" style="font-size:.72rem;color:#64748b">
+      <strong>Fórmula:</strong> Dose de correção = (Glicemia atual − Meta) ÷ Fator de Sensibilidade (FS)<br>
+      <strong>FS:</strong> 1700 ÷ DTD (análogos rápidos) ou 1800 ÷ DTD (insulina regular)<br>
+      Resultado ≤0 = não corrigir; arredondar para múltiplo de 0,5 UI.
+    </div>
+  </div>
+
+  <!-- ── TAB 3: I:C E FS ────────────────────────────────────────────── -->
+  <div id="tab3" style="display:none">
+    <div class="card" style="padding:12px 14px">
+      <label>DTD total (UI/dia)</label>
+      <input type="number" id="ic_dtd" placeholder="ex.: 40" min="1" oninput="calcIC()">
+      <label style="margin-top:4px">Tipo de insulina rápida</label>
+      <select id="ic_tipo" onchange="calcIC()">
+        <option value="analogo">Análogo ultra-rápido (lispro / aspart / glulisina)</option>
+        <option value="regular">Regular (RI convencional)</option>
+      </select>
+    </div>
+
+    <div id="icResult" style="display:none">
+      <div class="ic-grid" id="icCards"></div>
+      <div class="card" style="padding:8px 14px">
+        <div style="font-size:.72rem;color:#64748b">
+          <strong style="color:#1e3a5f;display:block;margin-bottom:4px">Como usar a razão I:C</strong>
+          Dose bolus refeição = Carboidratos ingeridos (g) ÷ Razão I:C<br>
+          Exemplo: se I:C = 10 e paciente consome 60g CHO → 60 ÷ 10 = <strong>6 UI</strong><br><br>
+          A razão pode variar ao longo do dia: manhã exige mais insulina (resistência matinal), noite menos. Recomenda-se ajuste individualizado com automonitorização.
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="font-size:.72rem;color:#64748b">
+      <strong>Fórmulas:</strong><br>
+      Razão I:C = 500 ÷ DTD (análogos) ou 450 ÷ DTD (regular)<br>
+      FS (Fator de Sensibilidade) = 1700 ÷ DTD (análogos) ou 1800 ÷ DTD (regular)<br>
+      Ambas as fórmulas são pontos de partida — individualizar com base na resposta glicêmica.<br><br>
+      <em>Ref: Walsh J et al. Using Insulin. Torrey Pines Press, 2003. ADA 2025.</em>
+    </div>
+  </div>
+
+</main>
+
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+
+<script src="js/db.js"></script>
+<script>
+const pid = localStorage.getItem('vd_active');
+
+async function autoFill() {
+  if (!pid) { alert('Nenhum paciente ativo.'); return; }
+  const pac = await dbGet('pacientes', parseInt(pid));
+  if (!pac) { alert('Paciente não encontrado.'); return; }
+  if (pac.pesoPac) document.getElementById('ini_peso').value = pac.pesoPac;
+}
+
+function showTab(n) {
+  [0,1,2,3].forEach(i=>{
+    document.getElementById('tab'+i).style.display=i===n?'block':'none';
+    document.getElementById('tb'+i).classList.toggle('active',i===n);
+  });
+}
+
+/* ── TAB 0: INÍCIO ──────────────────────────────────────────────────── */
+function calcInicio() {
+  const peso   = parseFloat(document.getElementById('ini_peso').value)||0;
+  const tipo   = document.getElementById('ini_tipo').value;
+  const regime = document.getElementById('ini_regime').value;
+  let   dtd    = parseFloat(document.getElementById('ini_dtd').value)||0;
+
+  if (!peso && !dtd) { alert('Informe o peso ou a DTD atual.'); return; }
+
+  // Calculate DTD by weight if not informed
+  if (!dtd) {
+    const fator = tipo==='hosp' ? 0.5 : tipo==='dci' ? 0.4 : 0.3;
+    dtd = Math.round(peso * fator);
+  }
+
+  document.getElementById('dtdNum').textContent = dtd;
+  document.getElementById('iniResult').style.display='block';
+
+  const basal = Math.round(dtd * 0.5);
+  const bolus = dtd - basal;
+  const b1 = Math.round(bolus/3);
+  const b2 = Math.round(bolus/3);
+  const b3 = bolus - b1 - b2;
+
+  const fs = Math.round(1700/dtd);
+  const ic = Math.round(500/dtd);
+
+  // Grid cards
+  document.getElementById('iniGrid').innerHTML = `
+    <div class="res-card" style="border-color:#1d4ed8;color:#1d4ed8">
+      <div class="res-num">${basal}</div>
+      <div class="res-lbl">UI Basal/dia (50%)</div>
+    </div>
+    <div class="res-card" style="border-color:#0f766e;color:#0f766e">
+      <div class="res-num">${bolus}</div>
+      <div class="res-lbl">UI Bolus/dia (50%)</div>
+    </div>
+    <div class="res-card" style="border-color:#7c3aed;color:#7c3aed">
+      <div class="res-num">${fs}</div>
+      <div class="res-lbl">Fator Sensib. (mg/dL/UI)</div>
+    </div>
+    <div class="res-card" style="border-color:#b45309;color:#b45309">
+      <div class="res-num">${ic}</div>
+      <div class="res-lbl">Razão I:C (g CHO/UI)</div>
+    </div>`;
+
+  // Tabela detalhada
+  let tabHTML = '';
+  if (regime==='basal_bolus') {
+    tabHTML = `
+      <div style="font-size:.72rem;font-weight:800;color:#1e3a5f;margin-bottom:8px">Distribuição Basal-Bolus</div>
+      <div class="bolus-bar-wrap">
+        <div class="bolus-seg" style="background:#eff6ff;border:1.5px solid #bfdbfe">
+          <div class="num" style="color:#1d4ed8">${basal} UI</div>
+          <div class="sub" style="color:#1d4ed8">Glargina / Detemir<br>1× noite ou manhã</div>
+        </div>
+        <div class="bolus-seg" style="background:#f0fdf4;border:1.5px solid #bbf7d0">
+          <div class="num" style="color:#166534">${b1}+${b2}+${b3} UI</div>
+          <div class="sub" style="color:#166534">Análogo rápido<br>Café/Almoço/Jantar</div>
+        </div>
+      </div>`;
+  } else if (regime==='nph_reg') {
+    const nph_m = Math.round(basal*0.67);
+    const nph_n = basal - nph_m;
+    const reg_m = Math.round(b1*1.5);
+    const reg_t = Math.round(b2*1.2);
+    const reg_j = bolus - reg_m - reg_t;
+    tabHTML = `
+      <div style="font-size:.72rem;font-weight:800;color:#1e3a5f;margin-bottom:6px">NPH + Regular (esquema 2 injeções)</div>
+      <div style="font-size:.78rem;padding:4px 0"><strong>Manhã:</strong> NPH ${nph_m} UI + Regular ${Math.max(reg_m,0)} UI</div>
+      <div style="font-size:.78rem;padding:4px 0"><strong>Noite:</strong> NPH ${nph_n} UI + Regular ${Math.max(reg_j,0)} UI</div>
+      <div style="font-size:.68rem;color:#64748b;margin-top:4px">Monitorar glicemia pré-refeições e às 3h (risco hipoglicemia noturna com NPH).</div>`;
+  } else if (regime==='basal_only') {
+    tabHTML = `
+      <div style="font-size:.72rem;font-weight:800;color:#1e3a5f;margin-bottom:6px">Insulinização inicial — Basal apenas</div>
+      <div style="font-size:.78rem;padding:4px 0"><strong>Glargina:</strong> ${basal} UI/dia (iniciar com ${Math.round(basal*0.7)} UI e titular)</div>
+      <div style="font-size:.68rem;color:#64748b;margin-top:4px">Titular conforme glicemia de jejum. Adicionar bolus se HbA1c não atingir meta em 3 meses.</div>`;
+  } else {
+    const bf_m = Math.round(dtd*0.67);
+    const bf_n = dtd - bf_m;
+    tabHTML = `
+      <div style="font-size:.72rem;font-weight:800;color:#1e3a5f;margin-bottom:6px">Insulina Bifásica 70/30 (NPH 70% + Regular 30%)</div>
+      <div style="font-size:.78rem;padding:4px 0"><strong>Manhã (2/3 do total):</strong> ${bf_m} UI antes do café</div>
+      <div style="font-size:.78rem;padding:4px 0"><strong>Jantar (1/3 do total):</strong> ${bf_n} UI antes do jantar</div>`;
+  }
+  document.getElementById('iniTabela').innerHTML = tabHTML;
+
+  const warnTxt = tipo==='hosp'
+    ? 'Paciente hospitalizado: monitorar glicemia capilar a cada 4–6h. Meta glicêmica: 140–180 mg/dL (UTI) ou 100–180 mg/dL (enfermaria). Protocolo de hipoglicemia obrigatório.'
+    : 'Iniciar com dose conservadora (0,3 UI/kg) e titular semanalmente. Instruir paciente sobre técnica de aplicação, rotação de sítios e reconhecimento/tratamento de hipoglicemia.';
+  document.getElementById('iniWarn').textContent = '⚠️ '+warnTxt;
+}
+
+/* ── TAB 1: AJUSTE BASAL ─────────────────────────────────────────────── */
+function calcAjuste() {
+  const dose   = parseFloat(document.getElementById('adj_dose').value)||0;
+  const gjejum = parseFloat(document.getElementById('adj_gjejum').value)||0;
+  const regra  = document.getElementById('adj_regra').value;
+  const tipo   = document.getElementById('adj_tipo').value;
+  if (!dose||!gjejum) { alert('Informe a dose atual e a média da glicemia de jejum.'); return; }
+
+  let adj=0, cond='', col='';
+  if      (gjejum < 70)  { adj=-4; cond='Hipoglicemia — reduzir imediatamente'; col='#dc2626'; }
+  else if (gjejum <= 79) { adj=-2; cond='Abaixo do alvo'; col='#f59e0b'; }
+  else if (gjejum <= 130){ adj=0;  cond='Na meta (80–130 mg/dL)'; col='#16a34a'; }
+  else if (gjejum <= 180){ adj=2;  cond='Acima do alvo'; col='#d97706'; }
+  else if (gjejum <= 240){ adj=4;  cond='Bem acima do alvo'; col='#ea580c'; }
+  else                   { adj=6;  cond='Descompensação grave'; col='#dc2626'; }
+
+  // Apply rule modifier
+  if (regra==='2_0') adj = Math.sign(adj)*Math.min(Math.abs(adj),2);
+  if (regra==='10pct') adj = Math.round(dose*0.1*Math.sign(adj));
+
+  const nova = Math.max(4, dose+adj);
+  document.getElementById('adjResult').style.display='block';
+  document.getElementById('adjRes').innerHTML = `
+    <div style="font-size:.78rem;font-weight:800;color:${col};margin-bottom:8px">${cond}</div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <div style="text-align:center">
+        <div style="font-size:1.8rem;font-weight:900;color:#64748b">${dose}</div>
+        <div style="font-size:.65rem;color:#94a3b8">Dose atual (UI)</div>
+      </div>
+      <div style="font-size:1.5rem;color:${col};font-weight:900">${adj>=0?'+'+adj:adj} UI</div>
+      <div style="text-align:center">
+        <div style="font-size:1.8rem;font-weight:900;color:${col}">${nova}</div>
+        <div style="font-size:.65rem;color:#94a3b8">Nova dose (UI)</div>
+      </div>
+    </div>
+    ${gjejum<70?'<div style="font-size:.72rem;color:#dc2626;background:#fee2e2;border-radius:6px;padding:6px 8px">⚠️ Investigar causa da hipoglicemia. Se <54 mg/dL: suspender dose noturna seguinte e reavaliação médica urgente.</div>':''}
+    <div style="font-size:.7rem;color:#64748b;margin-top:6px">Ajuste calculado pela <strong>regra ${regra==='3_0'?'3-0-3':regra==='2_0'?'2-0-2':'10%'}</strong>. Reavaliar em 3 dias.</div>`;
+}
+
+/* ── TAB 2: CORREÇÃO ─────────────────────────────────────────────────── */
+function calcCorrecao() {
+  const gluc = parseFloat(document.getElementById('cor_gluc').value)||0;
+  const meta = parseFloat(document.getElementById('cor_meta').value)||120;
+  let   fs   = parseFloat(document.getElementById('cor_fs').value)||0;
+  const dtd  = parseFloat(document.getElementById('cor_dtd').value)||0;
+
+  if (!gluc) { document.getElementById('corResBox').style.display='none'; return; }
+  if (!fs && dtd) fs = Math.round(1700/dtd);
+  if (!fs) { document.getElementById('corResBox').style.display='none'; return; }
+
+  const dose_raw = (gluc - meta) / fs;
+  const dose     = Math.max(0, Math.round(dose_raw * 2) / 2);  // round to 0.5 UI
+
+  const box = document.getElementById('corResBox');
+  box.style.display='block';
+  if (dose <= 0) {
+    box.style.background='#f0fdf4'; box.style.border='2px solid #86efac';
+    document.getElementById('corNum').textContent='0';
+    document.getElementById('corUnit').textContent='UI — Sem necessidade de correção';
+    document.getElementById('corNum').style.color='#16a34a';
+    document.getElementById('corSub').textContent=`Glicemia ${gluc} mg/dL ≤ meta ${meta} mg/dL`;
+  } else {
+    const col = dose<=2?'#d97706':dose<=4?'#ea580c':'#dc2626';
+    box.style.background='#fff7ed'; box.style.border=`2px solid ${col}`;
+    document.getElementById('corNum').textContent=dose;
+    document.getElementById('corNum').style.color=col;
+    document.getElementById('corUnit').textContent=`UI de insulina rápida`;
+    document.getElementById('corSub').textContent=`(${gluc} − ${meta}) ÷ ${fs} = ${dose_raw.toFixed(1)} UI → arredondado ${dose} UI. FS=${fs} mg/dL/UI`;
+  }
+}
+
+/* ── TAB 3: I:C / FS ─────────────────────────────────────────────────── */
+function calcIC() {
+  const dtd  = parseFloat(document.getElementById('ic_dtd').value)||0;
+  const tipo = document.getElementById('ic_tipo').value;
+  if (!dtd) { document.getElementById('icResult').style.display='none'; return; }
+
+  const ic_cafe  = Math.round((tipo==='analogo'?500:450)/dtd);
+  const ic_alm   = Math.round((tipo==='analogo'?500:450)/dtd * 1.1);  // slightly less insulin resistance at lunch
+  const ic_jan   = Math.round((tipo==='analogo'?500:450)/dtd * 1.2);  // evening = less resistance
+  const fs       = Math.round((tipo==='analogo'?1700:1800)/dtd);
+  const ic_medio = Math.round((tipo==='analogo'?500:450)/dtd);
+
+  document.getElementById('icResult').style.display='block';
+  document.getElementById('icCards').innerHTML = `
+    <div class="ic-card"><div class="ic-num">1:${ic_cafe}</div><div class="ic-lbl">Café da manhã<br>(1 UI : ${ic_cafe}g CHO)</div></div>
+    <div class="ic-card"><div class="ic-num">1:${ic_alm}</div><div class="ic-lbl">Almoço<br>(1 UI : ${ic_alm}g CHO)</div></div>
+    <div class="ic-card"><div class="ic-num">1:${ic_jan}</div><div class="ic-lbl">Jantar<br>(1 UI : ${ic_jan}g CHO)</div></div>
+    <div class="ic-card" style="border-color:#7c3aed;background:#f5f3ff"><div class="ic-num" style="color:#7c3aed">${fs}</div><div class="ic-lbl">Fator Sensib.<br>(mg/dL por UI)</div></div>
+    <div class="ic-card" style="border-color:#0f766e;background:#f0fdfa;grid-column:span 2"><div class="ic-num" style="color:#0f766e">1:${ic_medio}</div><div class="ic-lbl">I:C médio (fórmula ${tipo==='analogo'?500:450}÷DTD)</div></div>`;
+}
+</script>
+</body>
+</html>

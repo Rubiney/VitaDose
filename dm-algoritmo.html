@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Algoritmo DM2 — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .dm-hdr { background:linear-gradient(135deg,#7c2d12,#c2410c);color:#fff;border-radius:14px;padding:18px;margin-bottom:14px }
+    .dm-title{ font-size:1rem;font-weight:800;margin-bottom:4px }
+    .dm-sub  { font-size:.73rem;opacity:.8 }
+
+    label { font-size:.75rem;font-weight:700;color:#1e3a5f;display:block;margin-bottom:4px }
+    select, input[type=number] {
+      width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:10px;
+      padding:10px 12px;font-size:.85rem;background:#fff;outline:none;margin-bottom:10px }
+    select:focus,input:focus { border-color:#c2410c }
+    .input-row { display:grid;grid-template-columns:1fr 1fr;gap:8px }
+
+    .checkbox-group { display:flex;flex-direction:column;gap:6px;margin-bottom:10px }
+    .checkbox-item  { display:flex;align-items:center;gap:8px;font-size:.8rem;cursor:pointer }
+    .checkbox-item input[type=checkbox] { width:18px;height:18px;accent-color:#c2410c;cursor:pointer }
+
+    .btn-calc { width:100%;background:#c2410c;color:#fff;border:none;border-radius:12px;padding:13px;font-size:.87rem;font-weight:700;cursor:pointer;margin:8px 0 }
+    .btn-auto { background:#1e3a5f;color:#fff;border:none;border-radius:10px;padding:10px 16px;font-size:.8rem;font-weight:700;cursor:pointer;margin-bottom:10px }
+
+    .meta-box { border-radius:14px;border:3px solid;padding:14px;margin-bottom:10px;text-align:center }
+    .meta-hba { font-size:3rem;font-weight:900;line-height:1 }
+    .meta-unit{ font-size:.9rem;font-weight:700;margin-top:2px }
+    .meta-sub { font-size:.75rem;margin-top:8px;opacity:.8 }
+
+    .rec-card { border-radius:12px;border:2px solid;padding:14px;margin-bottom:10px }
+    .rec-priority { font-size:.65rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px }
+    .rec-class{ font-size:.95rem;font-weight:800;margin-bottom:6px }
+    .rec-badge{ display:inline-block;padding:2px 8px;border-radius:999px;font-size:.67rem;font-weight:800;color:#fff;margin:2px }
+    .rec-drugs{ font-size:.8rem;margin-top:6px;line-height:1.6 }
+    .rec-note { font-size:.72rem;color:#64748b;margin-top:6px;padding-top:6px;border-top:1px solid #f1f5f9 }
+    .rec-ci   { font-size:.7rem;background:#fee2e2;border-radius:6px;padding:4px 8px;margin-top:4px;color:#7f1d1d }
+
+    .classe-hdr { font-size:.65rem;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.06em;margin:12px 0 4px }
+    .classe-card{ border-radius:10px;border:1.5px solid #e2e8f0;padding:10px 12px;margin-bottom:6px }
+    .classe-nome{ font-size:.82rem;font-weight:800;color:#1e3a5f }
+    .classe-drugs{ font-size:.73rem;color:#374151;margin-top:3px }
+    .classe-ci  { font-size:.7rem;color:#dc2626;margin-top:3px }
+
+    .tab-bar { display:flex;gap:6px;margin-bottom:14px }
+    .tab-btn { flex:1;padding:10px;border-radius:10px;border:2px solid #e2e8f0;background:#fff;font-size:.78rem;font-weight:700;cursor:pointer;color:#64748b }
+    .tab-btn.active { border-color:#c2410c;background:#fff7ed;color:#9a3412 }
+
+    .hba1c-meter { height:12px;border-radius:6px;background:linear-gradient(to right,#16a34a,#d97706,#dc2626);margin:8px 0;position:relative }
+    .hba1c-needle{ position:absolute;top:-4px;width:4px;height:20px;background:#1e3a5f;border-radius:2px;transform:translateX(-50%) }
+  </style>
+</head>
+<body>
+
+<header class="top-bar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <span class="top-title">Algoritmo Farmacoterapêutico DM2</span>
+  <div class="top-right"></div>
+</header>
+
+<main class="container" style="padding-bottom:90px">
+
+  <div class="dm-hdr">
+    <div class="dm-title">🩸 Diabetes Mellitus Tipo 2 — Algoritmo Terapêutico</div>
+    <div class="dm-sub">SBD 2024 · ADA/EASD 2025 · Seleção por perfil clínico · Classes e fármacos disponíveis</div>
+  </div>
+
+  <div class="tab-bar">
+    <button class="tab-btn active" id="tb0" onclick="showTab(0)">Algoritmo</button>
+    <button class="tab-btn"        id="tb1" onclick="showTab(1)">Classes</button>
+    <button class="tab-btn"        id="tb2" onclick="showTab(2)">Metas</button>
+  </div>
+
+  <!-- ── TAB 0: ALGORITMO ──────────────────────────────────────────── -->
+  <div id="tab0">
+    <button class="btn-auto" onclick="autoFill()">⚡ Auto-preencher do paciente ativo</button>
+    <div class="card" style="padding:12px 14px">
+      <div class="input-row">
+        <div>
+          <label>HbA1c atual (%)</label>
+          <input type="number" id="hba1c" placeholder="ex.: 8.5" min="4" max="16" step="0.1">
+        </div>
+        <div>
+          <label>TFG CKD-EPI (mL/min)</label>
+          <input type="number" id="tfg" placeholder="ex.: 65" min="0">
+        </div>
+      </div>
+      <div class="input-row">
+        <div>
+          <label>IMC (kg/m²)</label>
+          <input type="number" id="imc" placeholder="ex.: 32" min="10" step="0.1">
+        </div>
+        <div>
+          <label>Idade (anos)</label>
+          <input type="number" id="dmidade" placeholder="ex.: 60" min="18">
+        </div>
+      </div>
+
+      <label>Tratamento atual</label>
+      <select id="tratAtual">
+        <option value="naive">Sem hipoglicemiante</option>
+        <option value="met">Metformina (monoterapia)</option>
+        <option value="met_2">Metformina + 1 agente</option>
+        <option value="met_3">Metformina + 2 agentes</option>
+        <option value="insulina">Em uso de insulina</option>
+      </select>
+
+      <label style="margin-top:4px">Comorbidades / Perfil clínico</label>
+      <div class="checkbox-group">
+        <label class="checkbox-item"><input type="checkbox" id="cb_dcv"> Doença cardiovascular aterosclerótica estabelecida (DCVA) — IAM, AVC, DAP</label>
+        <label class="checkbox-item"><input type="checkbox" id="cb_ic">  Insuficiência cardíaca (IC) com fração de ejeção reduzida ou preservada</label>
+        <label class="checkbox-item"><input type="checkbox" id="cb_drc">  DRC com TFG <60 mL/min ou albuminúria ≥30 mg/g</label>
+        <label class="checkbox-item"><input type="checkbox" id="cb_ob">   Obesidade significativa (IMC ≥30 kg/m²) como objetivo terapêutico</label>
+        <label class="checkbox-item"><input type="checkbox" id="cb_hipo"> Risco de hipoglicemia elevado (idoso frágil, multimedicado, CKD avançada)</label>
+        <label class="checkbox-item"><input type="checkbox" id="cb_custo">Restrição de custo — preferir genéricos de baixo custo</label>
+      </div>
+    </div>
+    <button class="btn-calc" onclick="calcDM()">🔬 Gerar recomendação</button>
+
+    <div id="dmResult" style="display:none">
+      <!-- Meta HbA1c -->
+      <div class="meta-box" id="metaBox">
+        <div class="meta-hba" id="metaVal">—</div>
+        <div class="meta-unit" id="metaUnit">Meta HbA1c</div>
+        <div class="meta-sub" id="metaSub"></div>
+      </div>
+
+      <!-- Recomendações por prioridade -->
+      <div id="recCards"></div>
+
+      <div class="card" style="font-size:.72rem;color:#64748b;margin-top:4px">
+        <em>Ref: Sociedade Brasileira de Diabetes — Diretriz 2024. ADA Standards of Care 2025. ADA/EASD Consensus Report 2022.</em>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── TAB 1: CLASSES ────────────────────────────────────────────── -->
+  <div id="tab1" style="display:none">
+    <div id="classesList"></div>
+  </div>
+
+  <!-- ── TAB 2: METAS ──────────────────────────────────────────────── -->
+  <div id="tab2" style="display:none">
+    <div class="card" style="padding:10px 14px">
+      <div style="font-size:.72rem;font-weight:800;color:#1e3a5f;margin-bottom:8px">Metas Glicêmicas Individualizadas (SBD/ADA 2024–2025)</div>
+      <div style="overflow-x:auto">
+        <table style="width:100%;border-collapse:collapse;font-size:.72rem">
+          <thead>
+            <tr style="background:#fff7ed">
+              <th style="padding:7px 8px;text-align:left;font-weight:800;color:#1e3a5f;border-bottom:2px solid #fed7aa">Perfil</th>
+              <th style="padding:7px 8px;text-align:center;font-weight:800;color:#1e3a5f;border-bottom:2px solid #fed7aa">HbA1c</th>
+              <th style="padding:7px 8px;text-align:center;font-weight:800;color:#1e3a5f;border-bottom:2px solid #fed7aa">Jejum</th>
+              <th style="padding:7px 8px;text-align:center;font-weight:800;color:#1e3a5f;border-bottom:2px solid #fed7aa">2h pós</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${[
+              ['Adulto geral (não idoso)', '<7%', '80–130', '<180'],
+              ['Menor risco hipoglicemia / jovem saudável', '<6,5%', '70–110', '<140'],
+              ['Idoso funcional ativo (autossuficiente)', '<7,5%', '90–130', '<180'],
+              ['Idoso frágil / demência / expectativa limitada', '<8–8,5%', '90–150', '<200'],
+              ['Gestação (DM pré-gestacional)', '<6%', '70–95', '<120 (1h) / <110 (2h)'],
+              ['DRC em hemodiálise', '<8%', '100–150', 'Individualizar'],
+              ['DM1 / Bomba de insulina', '<7%', '80–130', '<160'],
+            ].map(r=>`<tr style="border-bottom:1px solid #fef9c3">
+              <td style="padding:7px 8px">${r[0]}</td>
+              <td style="padding:7px 8px;text-align:center;font-weight:800;color:#c2410c">${r[1]}</td>
+              <td style="padding:7px 8px;text-align:center">${r[2]}</td>
+              <td style="padding:7px 8px;text-align:center">${r[3]}</td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card" style="padding:10px 14px">
+      <div style="font-size:.72rem;font-weight:800;color:#1e3a5f;margin-bottom:8px">Interpretação do HbA1c</div>
+      ${[
+        ['<5,7%','Normal','#16a34a'],['5,7–6,4%','Pré-diabetes','#d97706'],
+        ['6,5–7,9%','DM descompensado leve','#ea580c'],['8–9,9%','DM descompensado moderado','#dc2626'],
+        ['≥10%','DM descompensado grave','#7f1d1d'],
+      ].map(r=>`<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid #f1f5f9;font-size:.78rem">
+        <span><strong style="color:${r[2]}">${r[0]}</strong></span><span style="color:${r[2]};font-weight:700">${r[1]}</span>
+      </div>`).join('')}
+    </div>
+
+    <div class="card" style="font-size:.72rem;color:#64748b">
+      Monitorização: automonitorização glicêmica capilar 2–4×/dia para insulinizados; CGM (monitorização contínua) preferível. HbA1c a cada 3 meses até atingir meta, depois a cada 6 meses. TIR (tempo em alvo, 70–180 mg/dL) >70% como meta complementar ao HbA1c para usuários de CGM.<br><br>
+      <em>Ref: SBD 2024. ADA 2025. NDA Consensus Glycemic Targets 2022.</em>
+    </div>
+  </div>
+
+</main>
+
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+
+<script src="js/db.js"></script>
+<script>
+const pid = localStorage.getItem('vd_active');
+
+async function autoFill() {
+  if (!pid) { alert('Nenhum paciente ativo.'); return; }
+  const pac = await dbGet('pacientes', parseInt(pid));
+  if (!pac) return;
+  if (pac.idadePac) document.getElementById('dmidade').value = pac.idadePac;
+  // Check conditions
+  const conds = pac.condicoes || [];
+  if (conds.includes('ic'))  document.getElementById('cb_ic').checked=true;
+  if (conds.includes('dm'))  {}
+  if (conds.includes('has')) {}
+}
+
+function showTab(n) {
+  [0,1,2].forEach(i=>{
+    document.getElementById('tab'+i).style.display=i===n?'block':'none';
+    document.getElementById('tb'+i).classList.toggle('active',i===n);
+  });
+  if(n===1) renderClasses();
+}
+
+/* ── ALGORITMO ──────────────────────────────────────────────────────── */
+function calcDM() {
+  const hba1c  = parseFloat(document.getElementById('hba1c').value)||0;
+  const tfg    = parseFloat(document.getElementById('tfg').value)||90;
+  const imc    = parseFloat(document.getElementById('imc').value)||0;
+  const idade  = parseFloat(document.getElementById('dmidade').value)||0;
+  const trat   = document.getElementById('tratAtual').value;
+  const dcv    = document.getElementById('cb_dcv').checked;
+  const ic     = document.getElementById('cb_ic').checked;
+  const drc    = document.getElementById('cb_drc').checked || tfg<60;
+  const ob     = document.getElementById('cb_ob').checked || imc>=30;
+  const hipo   = document.getElementById('cb_hipo').checked || (idade>=75);
+  const custo  = document.getElementById('cb_custo').checked;
+
+  if (!hba1c) { alert('Informe o HbA1c atual.'); return; }
+  document.getElementById('dmResult').style.display='block';
+
+  // ── Meta HbA1c ──
+  let meta='<7%', metaSub='', metaCol='#c2410c';
+  if (idade>0&&idade>=75&&hipo) { meta='<8%'; metaSub='Idoso frágil / risco hipoglicemia — meta mais flexível'; metaCol='#d97706'; }
+  else if (idade>0&&idade>=65)  { meta='<7,5%'; metaSub='Idoso funcional ativo'; metaCol='#ea580c'; }
+  else if (!dcv&&!drc&&!ic&&hba1c<=7.5) { meta='<6,5%'; metaSub='Adulto jovem sem comorbidades, baixo risco hipoglicemia'; metaCol='#16a34a'; }
+
+  const box = document.getElementById('metaBox');
+  box.style.borderColor=metaCol; box.style.background=metaCol+'18';
+  document.getElementById('metaVal').textContent=meta;
+  document.getElementById('metaVal').style.color=metaCol;
+  document.getElementById('metaUnit').textContent='Meta HbA1c individualizada';
+  document.getElementById('metaSub').textContent=metaSub||'Adulto geral (SBD/ADA 2024–2025)';
+
+  // ── Recomendações ──
+  const recs = [];
+
+  // 0. Estilo de vida (sempre)
+  recs.push({
+    priority:'Base — sempre', priorityCol:'#16a34a',
+    classe:'Estilo de Vida + Educação em Saúde',
+    badges:[{t:'Essencial',c:'#16a34a'}],
+    drugs:'Atividade física ≥150 min/semana aeróbica + resistência · Dieta hipocalórica se sobrepeso/obesidade (restrição 500–750 kcal/dia) · Cessação tabagismo · Apoio psicossocial · Educação em DM.',
+    note:'Mudança de estilo de vida intensiva: redução de 1–2% no HbA1c. Base irrenunciável mesmo com farmacoterapia. Encaminhamento para profissional de nutrição se disponível.',
+    ci:null,
+  });
+
+  // 1. Metformina — base se não em uso
+  if (trat==='naive'||trat==='met'||trat==='met_2') {
+    const metCI = tfg<30;
+    const metWarn = tfg>=30&&tfg<45?'Reduzir dose (500 mg/dia) se TFG 30–45; suspender temporariamente em contraste IV / cirurgia':null;
+    recs.push({
+      priority:'Passo 1 — Base', priorityCol:'#1d4ed8',
+      classe:'Metformina — hipoglicemiante de 1ª linha',
+      badges:[{t:'Baixo custo',c:'#0f766e'},{t:'Genérico',c:'#0369a1'}],
+      drugs:`<strong>Metformina:</strong> iniciar 500 mg/dia com a refeição; titular até 1700–2000 mg/dia (máx. 2550 mg/dia). Forma de liberação prolongada (XR) tem menos efeitos GI.${metWarn?'<br><span style="color:#d97706">⚠️ '+metWarn+'</span>':''}`,
+      note:`Redução média de HbA1c: 1–2%. Não causa hipoglicemia. Benefício potencial em peso neutro/leve redução. Efeito cardiovascular neutro ou benéfico (UKPDS). ${metCI?'<strong style="color:#dc2626">CONTRAINDICADA com TFG <30.</strong>':''}`,
+      ci:metCI?'Contraindicada: TFG <30 mL/min':null,
+    });
+  }
+
+  // 2. Add-on baseado em perfil cardiometabólico
+  if (dcv||ic||drc) {
+    // iSGLT2 — benefit CV/renal
+    const sgltCI = tfg<25;
+    const dapaTFG = tfg>=25;
+    const empaTFG = tfg>=20;  // empa expanded indication CKD
+    recs.push({
+      priority:'Prioridade 1 — Benefício CV/Renal comprovado', priorityCol:'#dc2626',
+      classe:`Inibidor de SGLT2 (iSGLT2) — ${dcv?'DCV comprovada ':''} ${ic?'Insuficiência Cardíaca ':''} ${drc?'DRC':''} `,
+      badges:[
+        dcv?{t:'Reduz MACE',c:'#dc2626'}:null,
+        ic?{t:'Reduz hospit. IC',c:'#7c3aed'}:null,
+        drc?{t:'Nefroproteção',c:'#0369a1'}:null,
+      ].filter(Boolean),
+      drugs:`${dapaTFG?'<strong>Dapagliflozina</strong> 10 mg/dia (Forxiga®) — indicada em DRC (DAPA-CKD) e IC (DAPA-HF) <br>':''
+            }${empaTFG?'<strong>Empagliflozina</strong> 10–25 mg/dia (Jardiance®) — indicada em IC (EMPEROR) e DCV (EMPA-REG) <br>':''
+            }Canagliflozina 100–300 mg/dia (Invokana®) — nefroproteção (CREDENCE)`,
+      note:`Eficácia glicêmica (TFG ≥45): redução HbA1c 0,5–1%. Benefícios CV/renais independem do efeito glicêmico. Monitorar: ITU recorrente, candidíase genital, CAD euglicêmica (raro no DM2). NUNCA usar antes de cirurgia ou jejum prolongado.${sgltCI?'<br><strong style="color:#dc2626">⚠️ TFG <25: sem benefício glicêmico significativo.</strong>':''}`,
+      ci:tfg<25?'Eficácia glicêmica limitada com TFG <25; suspender se TFG <15':null,
+    });
+
+    // GLP-1 RA — add-on if dcv or obesity
+    if (dcv||ob) {
+      recs.push({
+        priority:'Prioridade 1 — Benefício CV / Redução de Peso', priorityCol:'#7c3aed',
+        classe:`Análogo de GLP-1 (GLP-1 RA) — ${dcv?'DCV comprovada ':''} ${ob?'Obesidade':''}`,
+        badges:[
+          dcv?{t:'Reduz MACE',c:'#dc2626'}:null,
+          ob?{t:'Redução de peso +++',c:'#0f766e'}:null,
+        ].filter(Boolean),
+        drugs:`<strong>Semaglutida SC</strong> 0,25 mg/sem → 0,5 mg → 1 mg/sem (Ozempic®) — maior redução de peso e HbA1c<br>
+          <strong>Semaglutida VO</strong> 7 mg → 14 mg/dia (Rybelsus®) — alternativa oral<br>
+          Liraglutida 0,6 → 1,2 → 1,8 mg/dia SC (Victoza®) — DCV comprovada (LEADER)<br>
+          Dulaglutida 0,75 → 1,5 → 3 → 4,5 mg/sem SC (Trulicity®)`,
+        note:`Redução HbA1c: 0,8–1,5%. Redução de peso: 3–7 kg (liraglutida) a 5–10 kg (semaglutida). Efeitos adversos: náusea, vômito, diarreia (transitórios). CI em neoplasia tireoidiana tipo medular ou MEN-2.`,
+        ci:null,
+      });
+    }
+  }
+
+  // 3. Se sem comorbidade cardiometabólica — baseado em objetivo
+  if (!dcv&&!ic&&!drc) {
+    if (ob) {
+      recs.push({
+        priority:'Add-on 2ª linha — Controle de Peso', priorityCol:'#7c3aed',
+        classe:'GLP-1 RA ou iSGLT2 — Obesidade sem DCV estabelecida',
+        badges:[{t:'Redução de peso',c:'#0f766e'},{t:'Baixo risco hipoglicemia',c:'#16a34a'}],
+        drugs:`<strong>Semaglutida</strong> 0,25→0,5→1 mg/sem SC (preferencial pela maior redução de peso)<br>Empagliflozina ou Dapagliflozina 10 mg/dia (mais acessível, perda de peso 2–4 kg)`,
+        note:'Escolha baseada em perfil: iSGLT2 se preferir via oral e menor custo; GLP-1 RA se maior perda de peso for o objetivo.',
+        ci:null,
+      });
+    }
+    if (hipo) {
+      recs.push({
+        priority:'Add-on 2ª linha — Sem Risco de Hipoglicemia', priorityCol:'#0369a1',
+        classe:'Inibidor de DPP-4 (iDPP-4) — Idoso / Risco hipoglicemia',
+        badges:[{t:'Neutro no peso',c:'#64748b'},{t:'Sem hipoglicemia',c:'#16a34a'}],
+        drugs:`<strong>Sitagliptina</strong> 100 mg/dia (Januvia® / genérico) — ajuste: TFG 30–49 → 50 mg; TFG <30 → 25 mg<br>Vildagliptina 50 mg 2×/dia (Galvus®) — ajuste: TFG <50 → 50 mg/dia<br>Saxagliptina 5 mg/dia (Onglyza®) — ajuste: TFG ≤50 → 2,5 mg`,
+        note:'Redução HbA1c 0,5–0,8%. Bem tolerado em idosos. Alerta: pancreatite (rara). Saxagliptina associada a aumento de hospitalizações por IC — EVITAR em IC.',
+        ci:null,
+      });
+    } else if (!ob) {
+      recs.push({
+        priority:'Add-on 2ª linha — Custo/Eficácia', priorityCol:'#0369a1',
+        classe:'iDPP-4 · iSGLT2 · Sulfonilureia — Sem comorbidade cardiometabólica',
+        badges:[custo?{t:'Baixo custo',c:'#16a34a'}:null,{t:'Versatilidade',c:'#0369a1'}].filter(Boolean),
+        drugs:custo
+          ? `<strong>Glicazida MR</strong> 30→60→90→120 mg/dia (uma tomada pela manhã) — baixo custo, eficaz<br>Glibenclamida 2,5→5 mg 1–2×/dia — mais barata, mais hipoglicemia<br>Metformina em dose plena (se tolerada)`
+          : `<strong>Sitagliptina</strong> 100 mg/dia (sem hipoglicemia) · <strong>Empagliflozina</strong> 10 mg/dia · Sulfonilureia se custo limitante`,
+        note:custo
+          ? 'Sulfonilureias disponíveis no SUS e Farmácia Popular. Glicazida MR preferível à glibenclamida (menor hipoglicemia, especialmente em idosos). Monitorar glicemia para ajuste de dose.'
+          : 'Sem prioridade clara: escolher com base em preferência do paciente, efeitos adversos e custo. iDPP-4 tem melhor perfil de segurança; iSGLT2 adiciona benefício metabólico.',
+        ci:null,
+      });
+    }
+  }
+
+  // 4. Insulina — se muito descompensado ou falha de múltiplos agentes
+  if (hba1c >= 10 || trat==='met_3' || trat==='insulina') {
+    recs.push({
+      priority:'Insulinoterapia — Descompensação Grave / Falha Múltipla', priorityCol:'#1e3a5f',
+      classe:'Insulina — Iniciar ou Intensificar',
+      badges:[{t:'Redução HbA1c potente',c:'#1e3a5f'}],
+      drugs:`<strong>Basal (início):</strong> Glargina 100 U (Lantus®/Basaglar®) ou Detemir (Levemir®) → iniciar 0,1–0,2 UI/kg/noite<br>
+        <strong>Basal-Bolus:</strong> distribuir DTD 50% basal + 50% bolus pré-refeições (análogo rápido: lispro, aspart, glulisina)<br>
+        ↪️ <a href="calculadora-insulina.html" style="color:#2563eb;font-weight:700">Usar Calculadora de Insulinoterapia</a>`,
+      note:`HbA1c ≥10% ou sintomas de hiperglicemia grave (poliúria/polidipsia/perda de peso): considerar insulinização inicial mesmo sem falha de outros agentes. Combinar com metformina (melhora controle e reduz dose de insulina).`,
+      ci:null,
+    });
+  }
+
+  document.getElementById('recCards').innerHTML = recs.map(r=>`
+    <div class="rec-card" style="border-color:${r.priorityCol}">
+      <div class="rec-priority" style="color:${r.priorityCol}">${r.priority}</div>
+      <div class="rec-class">${r.classe}</div>
+      <div>${r.badges.map(b=>`<span class="rec-badge" style="background:${b.c}">${b.t}</span>`).join('')}</div>
+      ${r.ci?`<div class="rec-ci">⛔ ${r.ci}</div>`:''}
+      <div class="rec-drugs">${r.drugs}</div>
+      <div class="rec-note">${r.note}</div>
+    </div>`).join('');
+}
+
+/* ── CLASSES ────────────────────────────────────────────────────────── */
+const CLASSES = [
+  { nome:'Metformina (Biguanida)', col:'#0369a1',
+    mecanismo:'Reduz produção hepática de glicose; aumenta sensibilidade à insulina periférica.',
+    drugs:'Metformina 500/850/1000 mg · Metformina XR 500/750/1000 mg',
+    hba1c_red:'1–2%', peso:'Neutro / leve redução', hipo:'Não', custo:'Muito baixo',
+    ci:'TFG <30 · Álcool excessivo · Insuficiência hepática grave · Contraste IV (suspender 48h antes)' },
+  { nome:'Inibidores de SGLT2', col:'#dc2626',
+    mecanismo:'Inibem reabsorção renal de glicose → glicosúria. Efeitos cardiorrenal independentes do efeito glicêmico.',
+    drugs:'Empagliflozina 10/25 mg · Dapagliflozina 10 mg · Canagliflozina 100/300 mg · Ertugliflozina 5/15 mg',
+    hba1c_red:'0,5–1%', peso:'Redução 2–5 kg', hipo:'Não', custo:'Alto',
+    ci:'TFG <25 (eficácia glicêmica) · Infecções urinárias recorrentes · Gravidez · DM1 (CAD risco)' },
+  { nome:'Análogos de GLP-1 (GLP-1 RA)', col:'#7c3aed',
+    mecanismo:'Ativam receptor GLP-1 → ↑ secreção de insulina glicose-dependente · ↓ glucagon · ↓ esvaziamento gástrico · saciedade central.',
+    drugs:'Semaglutida SC 0,5/1 mg/sem · Semaglutida VO 7/14 mg/dia · Liraglutida 1,2/1,8 mg/dia · Dulaglutida 0,75/1,5/3/4,5 mg/sem · Exenatida 5/10 mcg 2×/dia',
+    hba1c_red:'0,8–1,5%', peso:'Redução 3–10 kg', hipo:'Não', custo:'Alto',
+    ci:'Neoplasia medular de tireoide / MEN-2 · Pancreatite ativa · TFG <15 (cuidado)' },
+  { nome:'Inibidores de DPP-4 (iDPP-4 / Gliptinas)', col:'#0f766e',
+    mecanismo:'Inibem DPP-4, aumentando GLP-1 endógeno → secreção de insulina glicose-dependente e supressão de glucagon.',
+    drugs:'Sitagliptina 100 mg/dia · Vildagliptina 50 mg 2×/dia · Saxagliptina 5 mg/dia · Alogliptina 25 mg/dia · Linagliptina 5 mg/dia',
+    hba1c_red:'0,5–0,8%', peso:'Neutro', hipo:'Não', custo:'Moderado',
+    ci:'Saxagliptina: evitar em IC · Pancreatite ativa · Vildagliptina: hepatotóxica (monitorar TGP)' },
+  { nome:'Sulfonilureias', col:'#b45309',
+    mecanismo:'Estimulam secreção de insulina pelas células β independentemente da glicemia (risco hipoglicemia).',
+    drugs:'Glicazida MR 30–120 mg/dia · Glibenclamida 2,5–20 mg/dia · Glipizida 5–20 mg/dia · Glimepirida 1–8 mg/dia',
+    hba1c_red:'1–2%', peso:'Aumento 1–3 kg', hipo:'Sim — atenção em idosos', custo:'Muito baixo (SUS/FP)',
+    ci:'TFG <30 (glibenclamida) · Insuficiência hepática grave · Alergia a sulfa · Gravidez' },
+  { nome:'Insulinas', col:'#1e3a5f',
+    mecanismo:'Insulina exógena substitui/complementa a secreção endógena deficiente.',
+    drugs:'Basais: Glargina (Lantus/Basaglar) · Detemir · Degludeca<br>Bolus: Lispro · Aspart · Glulisina (análogos ultra-rápidos) · Regular<br>NPH (basal intermediária — baixo custo)',
+    hba1c_red:'Ilimitada (dose-dependente)', peso:'Aumento 2–6 kg', hipo:'Sim — monitorização obrigatória', custo:'Variável (NPH no SUS)',
+    ci:'Relativas: hipoglicemia recorrente sem percepção — individualizar regime' },
+  { nome:'Pioglitazona (Tiazolidinediona)', col:'#64748b',
+    mecanismo:'Ativador PPAR-γ → aumenta sensibilidade periférica à insulina.',
+    drugs:'Pioglitazona 15/30/45 mg/dia',
+    hba1c_red:'0,5–1,4%', peso:'Aumento 2–5 kg', hipo:'Não', custo:'Baixo',
+    ci:'IC classes III–IV · Osteoporose (aumenta risco de fratura) · Câncer de bexiga suspeito · Edema periférico grave' },
+];
+
+function renderClasses() {
+  document.getElementById('classesList').innerHTML = CLASSES.map(c=>`
+    <div class="classe-card" style="border-color:${c.col}">
+      <div class="classe-nome" style="color:${c.col}">${c.nome}</div>
+      <div style="font-size:.7rem;color:#64748b;margin-top:3px">${c.mecanismo}</div>
+      <div class="classe-drugs" style="margin-top:6px">${c.drugs}</div>
+      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:4px;margin-top:8px;font-size:.68rem">
+        <div><strong>Redução HbA1c:</strong> ${c.hba1c_red}</div>
+        <div><strong>Peso:</strong> ${c.peso}</div>
+        <div><strong>Hipoglicemia:</strong> ${c.hipo}</div>
+        <div><strong>Custo relativo:</strong> ${c.custo}</div>
+      </div>
+      <div class="classe-ci" style="margin-top:6px"><strong>CI/Cuidados:</strong> ${c.ci}</div>
+    </div>`).join('');
+}
+</script>
+</body>
+</html>
