@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Cirurgia Bariátrica — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .bar-hdr{background:linear-gradient(135deg,#422006,#b45309);color:#fff;border-radius:14px;padding:18px;margin-bottom:14px}
+    .bar-title{font-size:1rem;font-weight:800;margin-bottom:4px}
+    .bar-sub{font-size:.73rem;opacity:.8}
+    label{font-size:.75rem;font-weight:700;color:#422006;display:block;margin-bottom:4px}
+    select,input[type=number]{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:10px;padding:10px 12px;font-size:.85rem;background:#fff;margin-bottom:10px}
+    .btn-calc{width:100%;background:#b45309;color:#fff;border:none;border-radius:12px;padding:13px;font-size:.87rem;font-weight:700;cursor:pointer;margin:8px 0}
+    .tab-bar{display:flex;gap:6px;margin-bottom:14px}
+    .tab-btn{flex:1;padding:9px 4px;border-radius:10px;border:2px solid #e2e8f0;background:#fff;font-size:.72rem;font-weight:700;cursor:pointer;color:#64748b}
+    .tab-btn.active{border-color:#b45309;background:#fef3c7;color:#422006}
+    .bar-card{border-radius:10px;border-left:5px solid;padding:10px 14px;margin-bottom:8px;background:#fff}
+    .bar-nome{font-size:.83rem;font-weight:800;margin-bottom:4px}
+    .bar-body{font-size:.76rem;line-height:1.7;color:#374151}
+    .alerta{background:#fef2f2;border:2px solid #dc2626;border-radius:10px;padding:8px;margin:6px 0;font-size:.75rem;color:#7f1d1d;font-weight:700}
+    .atencao{background:#fffbeb;border:2px solid #d97706;border-radius:10px;padding:8px;margin:6px 0;font-size:.75rem;color:#78350f;font-weight:700}
+    .ok-box{background:#fef3c7;border:2px solid #b45309;border-radius:10px;padding:8px;margin:6px 0;font-size:.75rem;color:#422006;font-weight:700}
+    table{width:100%;border-collapse:collapse;font-size:.73rem;margin-top:6px}
+    th{background:#b45309;color:#fff;padding:5px 8px;text-align:left}
+    td{padding:5px 8px;border-bottom:1px solid #f1f5f9}
+    tr:nth-child(even) td{background:#fefce8}
+    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  </style>
+</head>
+<body>
+<header class="top-bar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <span class="top-title">Cirurgia Bariátrica</span>
+  <div class="top-right"></div>
+</header>
+<main class="container" style="padding-bottom:90px">
+  <div class="bar-hdr">
+    <div class="bar-title">⚖️ Cirurgia Bariátrica</div>
+    <div class="bar-sub">Técnicas · Deficiências Nutricionais · Ajuste de Medicamentos · Complicações</div>
+  </div>
+  <div class="tab-bar">
+    <button class="tab-btn active" id="tb0" onclick="showTab(0)">Técnicas & Deficiências</button>
+    <button class="tab-btn" id="tb1" onclick="showTab(1)">Ajuste de Medicamentos</button>
+    <button class="tab-btn" id="tb2" onclick="showTab(2)">Complicações & Dumping</button>
+  </div>
+
+  <!-- TAB 0 -->
+  <div id="tab0">
+    <div class="bar-card" style="border-color:#b45309">
+      <div class="bar-nome" style="color:#b45309">Procedimentos Bariátricos — Mecanismo e Risco Nutricional</div>
+      <div class="bar-body">
+        <table>
+          <tr><th>Técnica</th><th>Mecanismo</th><th>% Excesso peso perdido</th><th>Risco nutricional</th></tr>
+          <tr><td><strong>Sleeve gástrico (LSG)</strong></td><td>Restritivo: ressecção de 75–80% do estômago · NÃO altera trânsito intestinal</td><td>60–70% em 12–18 meses</td><td>Moderado: B12, D, ferro, zinco (absorção normal mas ↓ produção ácida → ↓ absorção ferro/B12)</td></tr>
+          <tr><td><strong>Bypass gástrico em Y-de-Roux (BGYR / RYGB)</strong></td><td>Restritivo + Má-absortivo: bolsa gástrica (30 mL) + alça de Roux excluindo 150 cm de intestino proximal</td><td>70–80% em 18–24 meses</td><td>ALTO: ferro, B12, folato, cálcio, vitamina D, tiamina (B1), zinco, vitaminas lipossolúveis (A, D, E, K)</td></tr>
+          <tr><td>Banda gástrica ajustável (BGA)</td><td>Restritivo: anel inflável ao redor do estômago proximal</td><td>45–55% (inferior)</td><td>Baixo (deficiências menores mas pode ter vômitos → ↑ risco tiamina)</td></tr>
+          <tr><td>Derivação biliopancreática (DBP / BPD-DS)</td><td>Má-absortivo agressivo: deixa apenas 100–150 cm de intestino comum</td><td>80–90% — mais eficaz</td><td>MUITO ALTO: vitaminas lipossolúveis, proteína, ferro, Ca²⁺, zinco, vitaminas B. Raro no Brasil.</td></tr>
+        </table>
+        <br>
+        <strong>Rastreio nutricional pré-operatório (obrigatório):</strong><br>
+        Hemograma completo · Ferro sérico, ferritina, saturação transferrina · B12, folato · 25-OH-Vitamina D · PTH · Zinco, cobre (se DBP/BPD) · TSH · Albumina, pré-albumina · Cálcio, fósforo, magnésio · HbA1c · Lipidograma
+      </div>
+    </div>
+    <div class="bar-card" style="border-color:#dc2626;margin-top:8px">
+      <div class="bar-nome" style="color:#dc2626">Deficiências Nutricionais Pós-Bariátrica — Prevenção e Tratamento</div>
+      <div class="bar-body">
+        <div class="alerta">🚨 TIAMINA (B1) — EMERGÊNCIA NUTRICIONAL:<br>
+        Encefalopatia de Wernicke em até 16 semanas pós-op · Triada: confusão mental + oftalmoplegia + ataxia · Deficiência pode precipitar com ↑ carboidratos (soro glicosado em paciente depletado)<br>
+        NUNCA administrar glicose sem tiamina em pós-bariátrico com vômitos<br>
+        Tratamento: tiamina 100–200 mg IV 3×/dia × 7 dias → tiamina oral 100 mg/dia manutenção</div>
+        <br>
+        <table>
+          <tr><th>Nutriente</th><th>Risco/Procedimento</th><th>Suplementação preventiva</th><th>Monitoramento</th><th>Reposição se deficiente</th></tr>
+          <tr><td><strong>Ferro</strong></td><td>ALTO — BGYR/Sleeve (↓ ácido gástrico → ↓ conversão Fe³⁺→Fe²⁺)</td><td>45–60 mg de ferro elementar/dia · Mulheres menstruando: 45–60 mg 2×/dia</td><td>Ferritina, Hb, saturação transferrina a cada 3–6 meses por 2 anos, depois anual</td><td>Iron IV (ferrocarboxidextrose 1000 mg): se intolerância oral ou má absorção · Oral com vitamina C (↑ absorção)</td></tr>
+          <tr><td><strong>Vitamina B12</strong></td><td>ALTO — BGYR (↓ fator intrínseco: estômago excluído)</td><td>350–500 mcg/dia VO · OU B12 sublingual 500 mcg/dia · OU B12 IM 1000 mcg/mês</td><td>B12 sérica a cada 6 meses (1° ano), depois anual</td><td>B12 IM 1000 mcg/semana × 4 semanas → mensal. Via oral menos eficaz em BGYR.</td></tr>
+          <tr><td><strong>Vitamina D + Cálcio</strong></td><td>ALTO — todos os procedimentos (↓ ingesta + ↓ absorção duodenal)</td><td>Vitamina D₃ 3000 UI/dia (mínimo) · Cálcio citrato 1200–1500 mg/dia ÷ 2–3 doses (citrato ≠ carbonato — independe de ácido gástrico)</td><td>25-OH-D a cada 3–6 meses · Alvo: 25-OH-D &gt;30 ng/mL · Ca, PTH anual</td><td>D₃ 50.000 UI/semana × 8 semanas se deficiência · Ca IV se hipocalcemia sintomática</td></tr>
+          <tr><td><strong>Tiamina (B1)</strong></td><td>ALTO — qualquer procedimento com vômitos persistentes</td><td>Tiamina 100 mg/dia (incluída no polivitamínico)</td><td>Avaliação clínica; dosagem sérica se suspeita</td><td>IV urgente se Wernicke (ver alerta acima)</td></tr>
+          <tr><td><strong>Folato</strong></td><td>Moderado — BGYR (duodeno excluído)</td><td>400–800 mcg/dia (incluído no multivitamínico)</td><td>Folato eritrocitário ou sérico anual</td><td>Ácido fólico 5 mg/dia se deficiência</td></tr>
+          <tr><td><strong>Zinco</strong></td><td>Moderado — BGYR/DBP (duodeno excluído)</td><td>8–22 mg/dia de zinco elementar</td><td>Zinco sérico anual · Sinais: alopecia, hipogeusia, dermatite, imunossupressão</td><td>Gluconato de zinco 50 mg/dia (elemental)</td></tr>
+          <tr><td><strong>Vitaminas lipossolúveis (A, E, K)</strong></td><td>ALTO em DBP/BPD-DS · Moderado em BGYR</td><td>Incluso em polivitamínico específico bariátrico com doses maiores</td><td>Vitamina A anual (xeroftalmia), vitamina K (TP/INR), vitamina E</td><td>Vitamina A: 10.000 UI/dia se deficiência · Vitamina K: 1 mg SC se coagulopatia</td></tr>
+          <tr><td><strong>Proteína</strong></td><td>Risco em todos — menor ingestão + má absorção em DBP</td><td>Alvo: 60–120 g de proteína/dia · Suplemento proteico se não atingir pela dieta</td><td>Albumina, pré-albumina a cada 3 meses (1° ano)</td><td>Suplemento hipercalórico-hiperproteico · Aminoácidos IV se grave</td></tr>
+        </table>
+        <div class="ok-box">💊 POLIVITAMÍNICO BARIÁTRICO: produto específico com doses dobradas para bariátrica (ex: Centro-vin B®, Sanus-T®, Bariatric Advantage®). Polivitamínico comum NÃO tem doses suficientes para BGYR. Iniciar no D1 pós-op e usar para a vida toda.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 1 — Ajuste de Medicamentos -->
+  <div id="tab1" style="display:none">
+    <div id="medBarList"></div>
+  </div>
+
+  <!-- TAB 2 — Complicações -->
+  <div id="tab2" style="display:none">
+    <div id="compList"></div>
+  </div>
+</main>
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+<script src="js/db.js"></script>
+<script>
+function showTab(n){[0,1,2].forEach(i=>{document.getElementById('tab'+i).style.display=i===n?'block':'none';document.getElementById('tb'+i).classList.toggle('active',i===n);});if(n===1)renderMedBar();if(n===2)renderComp();}
+
+function renderMedBar(){
+  if(document.getElementById('medBarList').innerHTML) return;
+  document.getElementById('medBarList').innerHTML=`
+  <div class="bar-card" style="border-color:#b45309">
+    <div class="bar-nome" style="color:#b45309">Ajuste de Medicamentos Pós-Cirurgia Bariátrica</div>
+    <div class="bar-body">
+      <div class="atencao">⚠️ BGYR exclui duodeno e jejuno proximal: área de maior absorção. Medicamentos absorvidos nessa região têm biodisponibilidade reduzida. Sleeve gástrico reduz volume mas mantém absorção.</div>
+      <br>
+      <strong>Formas farmacêuticas problemáticas pós-BGYR:</strong><br>
+      <div class="alerta">🚨 PROIBIDOS ou NÃO RECOMENDADOS após BGYR:<br>
+      • Comprimidos de liberação prolongada (XR, CR, SR, LA, ER): não dissolvem adequadamente no estômago reduzido → absorção errática OU purgação intacta<br>
+      • Cápsulas entérico-revestidas (EC): dissolvem no intestino excluído → absorção mínima<br>
+      • Comprimidos grandes não divisíveis<br>
+      • AINEs: ↑ risco de úlcera marginal (anastomose gastrojejunal) — CONTRAINDICADOS pós-BGYR</div>
+      <br>
+      <strong>Substituições por forma de liberação imediata:</strong><br>
+      <table>
+        <tr><th>Formulação problemática</th><th>Alternativa</th></tr>
+        <tr><td>Metformina XR / SR</td><td>Metformina comprimido 500 mg liberação imediata (fragmentar dose ao longo do dia) · OU liraglutida/semaglutida (GLP-1) pós-bariátrica se DM2 persiste</td></tr>
+        <tr><td>Nifedipina de liberação prolongada (OROS)</td><td>Anlodipina 5–10 mg (liberação imediata naturalmente) OU nifedipina cápsulas IR</td></tr>
+        <tr><td>Venlafaxina XR</td><td>Venlafaxina comprimido IR 25/50 mg ÷ 2×/dia OU trocar para duloxetina cápsulas (pode ser aberta sobre comida)</td></tr>
+        <tr><td>Metoprolol ER/XL</td><td>Metoprolol tartarato IR 25–50 mg 2×/dia OU carvedilol (IR)</td></tr>
+        <tr><td>Omeprazol cápsula EC</td><td>Omeprazol cápsula pode ser aberta e grânulos adicionados a alimento ácido (suco de maçã) · OU pantoprazol sachê · OU IBP injetável/sache temporariamente pós-op</td></tr>
+        <tr><td>Levotiroxina comprimido</td><td>Manter comprimido (absorção aceitável) · Dosar TSH com maior frequência — doses mais altas podem ser necessárias</td></tr>
+        <tr><td>Carbonato de cálcio</td><td>TROCAR para citrato de cálcio (não precisa de ácido gástrico para absorção)</td></tr>
+        <tr><td>Sulfato ferroso</td><td>Preferir fumarato ferroso ou ferro quelato aminoácido · Associar vitamina C 500 mg · Não tomar com cálcio (competição)</td></tr>
+      </table>
+      <br>
+      <strong>Ajuste de medicamentos para DM2 pós-bariátrica:</strong><br>
+      <table>
+        <tr><th>Medicamento</th><th>Conduta pós-bariátrica</th></tr>
+        <tr><td>Insulina</td><td>Reduzir dose 50–80% no D1 pós-op (melhora dramática da resistência à insulina) · Monitorar glicemia 4×/dia · Muitos DM2 entram em remissão completa em 1–12 meses (suspender insulina)</td></tr>
+        <tr><td>Sulfonilureias (glibenclamida, glimepirida)</td><td>Suspender ou reduzir drasticamente — risco de hipoglicemia grave · Glibenclamida: suspender no D1</td></tr>
+        <tr><td>Metformina</td><td>Pode manter se DM2 persiste · Preferir IR · Suspender se má absorção ou IR aguda pós-op</td></tr>
+        <tr><td>SGLT2i (empagliflozina, dapagliflozina)</td><td>Suspender peri-op (risco euDKA) · Reintroduzir se DM persiste após 4–6 semanas e dieta oral normalizada</td></tr>
+        <tr><td>GLP-1 RA (semaglutida, liraglutida)</td><td>Podem ser mantidos se DM persiste · Injetável subcutâneo sem problema de absorção</td></tr>
+      </table>
+      <br>
+      <strong>Anticoagulação pós-BGYR:</strong><br>
+      DOACs (rivaroxabana, apixabana): absorção reduzida em BGYR (duodeno excluído — área preferencial de absorção de rivaroxabana especialmente) · Preferir varfarina com monitoramento frequente de INR OU apixabana (absorção menos dependente de duodeno) · Dabigatrana: NÃO recomendada (absorção muito errática pós-BGYR) · Heparina SC: sem problema de absorção
+    </div>
+  </div>`;
+}
+
+function renderComp(){
+  if(document.getElementById('compList').innerHTML) return;
+  document.getElementById('compList').innerHTML=`
+  <div class="bar-card" style="border-color:#dc2626">
+    <div class="bar-nome" style="color:#dc2626">Síndrome de Dumping — Diagnóstico e Manejo</div>
+    <div class="bar-body">
+      <strong>Fisiopatologia:</strong> Esvaziamento gástrico rápido de alimentos hiperosmolares para o jejuno → sobrecarga osmótica → entrada de líquido intraluminal + liberação de hormônios GI<br><br>
+      <table>
+        <tr><th></th><th>Dumping Precoce</th><th>Dumping Tardio</th></tr>
+        <tr><td>Tempo pós-prandial</td><td>15–30 minutos após refeição</td><td>1–3 horas após refeição</td></tr>
+        <tr><td>Fisiopatologia</td><td>Efeito osmótico: distensão intestinal + liberação de VIP, serotonina, bradicinina</td><td>Hiperinsulinismo reativo (↑ GLP-1 → pico insulínico → hipoglicemia pós-prandial)</td></tr>
+        <tr><td>Sintomas GI</td><td>Náusea, vômitos, diarreia, dor abdominal, borborigmos</td><td>Sudorese, tremor, palpitações, lipotímia (hipoglicemia)</td></tr>
+        <tr><td>Sintomas vasomotores</td><td>Palpitações, rubor, hipotensão, síncope</td><td>Fogachos, taquicardia</td></tr>
+        <tr><td>Diagnóstico</td><td>Clínico · Glasgow Dumping Scale · Teste de provocação (refeição hiperosmolar)</td><td>Curva glicêmica pós-prandial: hipoglicemia &lt;70 mg/dL em 2–3h</td></tr>
+      </table>
+      <br>
+      <strong>Tratamento do Dumping:</strong><br>
+      <table>
+        <tr><th>Etapa</th><th>Medida</th><th>Detalhes</th></tr>
+        <tr><td>1ª linha</td><td>Orientação dietética</td><td>Fracionar em 5–6 refeições pequenas · Evitar carboidratos simples/açúcares de absorção rápida · Não beber durante as refeições (separar sólidos e líquidos por 30 min) · Mastigar bem · Deitar após refeição (posição supina retarda esvaziamento gástrico)</td></tr>
+        <tr><td>2ª linha</td><td>Acarbose (dumping tardio)</td><td>Acarbose 50–100 mg antes das refeições: inibidor alfa-glicosidase → ↓ absorção de carboidratos → ↓ pico insulínico · Principal indicação: hipoglicemia pós-prandial hiperinsulinêmica</td></tr>
+        <tr><td>2ª linha</td><td>Octreotida (ambos)</td><td>Octreotida 50–100 mcg SC antes das refeições OU LAR 10–30 mg IM mensal: inibe GLP-1, insulina, VIP · Reservar para casos moderados/graves refratários · Custo elevado</td></tr>
+        <tr><td>3ª linha</td><td>Diazóxido</td><td>5 mg/kg/dia ÷ 2–3 doses: supressor da secreção de insulina · Off-label para hipoglicemia hiperinsulinêmica pós-bariátrica refratária</td></tr>
+        <tr><td>Cirúrgico</td><td>Revisão cirúrgica</td><td>Interposição de alça jejunal · Reconversão de BGYR para sleeve · Apenas refratários graves</td></tr>
+      </table>
+    </div>
+  </div>
+  <div class="bar-card" style="border-color:#b45309;margin-top:8px">
+    <div class="bar-nome" style="color:#b45309">Outras Complicações e Acompanhamento Crônico</div>
+    <div class="bar-body">
+      <strong>Úlcera marginal (anastomose gastrojejunal) — pós-BGYR:</strong><br>
+      Incidência: 1–16% · Fatores de risco: tabagismo (↑ 5×), AINEs, H. pylori, álcool, volume gástrico grande · Sintomas: epigastralgia, náusea, hematêmese<br>
+      Diagnóstico: endoscopia digestiva alta · Tratamento: IBP dose dobrada por 8–12 semanas (pantoprazol 80 mg/dia) · Sucralfato · Erradicar H. pylori se presente · Suspender TODOS os AINEs (contraindicados vitaliciamente pós-BGYR)<br><br>
+      <strong>Litíase biliar pós-bariátrica:</strong><br>
+      Incidência: 30–40% no 1° ano (perda rápida de peso → supersaturação biliar com colesterol) · Profilaxia: ácido ursodesoxicólico (UDCA) 300–600 mg/dia por 6–12 meses pós-op — reduz litíase em 40%<br><br>
+      <strong>Osteoporose pós-bariátrica:</strong><br>
+      Densitometria óssea: no pré-op e a cada 2 anos pós-op · Cálcio citrato + vitamina D obrigatórios (vide Tab 0) · Bifosfonatos: preferir IV (zoledronato 5 mg/ano) se DXA patológico — comprimidos orais podem causar esofagite e têm absorção errática pós-BGYR<br><br>
+      <strong>Cronograma de acompanhamento pós-bariátrica:</strong><br>
+      <table>
+        <tr><th>Período</th><th>Avaliações</th></tr>
+        <tr><td>1, 3, 6, 12 meses</td><td>Nutricional completo (ferro, B12, D, zinco, folato, albumina) · Glicemia/HbA1c · PA · Peso · %PEP</td></tr>
+        <tr><td>Anual (a partir do 2° ano)</td><td>Idem + DXA (2° e 5° ano) · Endoscopia se sintomas · Psicológico · Revisão de medicamentos</td></tr>
+        <tr><td>Lifetime</td><td>Polivitamínico bariátrico · Citrato de cálcio 1200–1500 mg/dia · Vitamina D₃ 3000 UI/dia · Abstinência de AINEs (pós-BGYR)</td></tr>
+      </table>
+      <div class="ok-box">📊 %PEP (Percentual de Excesso de Peso): [(Peso atual – Peso ideal) / (Peso pré-op – Peso ideal)] × 100 · Sucesso &lt;50% de PEP · Excelente resultado: &lt;25% de PEP em 2 anos</div>
+    </div>
+  </div>`;
+}
+</script>
+</body>
+</html>

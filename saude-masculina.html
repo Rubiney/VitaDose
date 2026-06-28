@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Saúde Masculina — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .mas-hdr{background:linear-gradient(135deg,#1e3a5f,#1d4ed8);color:#fff;border-radius:14px;padding:18px;margin-bottom:14px}
+    .mas-title{font-size:1rem;font-weight:800;margin-bottom:4px}
+    .mas-sub{font-size:.73rem;opacity:.8}
+    label{font-size:.75rem;font-weight:700;color:#1e3a5f;display:block;margin-bottom:4px}
+    select,input[type=number]{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:10px;padding:10px 12px;font-size:.85rem;background:#fff;margin-bottom:10px}
+    .btn-calc{width:100%;background:#1d4ed8;color:#fff;border:none;border-radius:12px;padding:13px;font-size:.87rem;font-weight:700;cursor:pointer;margin:8px 0}
+    .tab-bar{display:flex;gap:6px;margin-bottom:14px}
+    .tab-btn{flex:1;padding:9px 4px;border-radius:10px;border:2px solid #e2e8f0;background:#fff;font-size:.72rem;font-weight:700;cursor:pointer;color:#64748b}
+    .tab-btn.active{border-color:#1d4ed8;background:#eff6ff;color:#1e3a5f}
+    .mas-card{border-radius:10px;border-left:5px solid;padding:10px 14px;margin-bottom:8px;background:#fff}
+    .mas-nome{font-size:.83rem;font-weight:800;margin-bottom:4px}
+    .mas-body{font-size:.76rem;line-height:1.7;color:#374151}
+    .alerta{background:#fef2f2;border:2px solid #dc2626;border-radius:10px;padding:8px;margin:6px 0;font-size:.75rem;color:#7f1d1d;font-weight:700}
+    .atencao{background:#fffbeb;border:2px solid #d97706;border-radius:10px;padding:8px;margin:6px 0;font-size:.75rem;color:#78350f;font-weight:700}
+    .ok-box{background:#eff6ff;border:2px solid #1d4ed8;border-radius:10px;padding:8px;margin:6px 0;font-size:.75rem;color:#1e3a5f;font-weight:700}
+    table{width:100%;border-collapse:collapse;font-size:.73rem;margin-top:6px}
+    th{background:#1d4ed8;color:#fff;padding:5px 8px;text-align:left}
+    td{padding:5px 8px;border-bottom:1px solid #f1f5f9}
+    tr:nth-child(even) td{background:#eff6ff}
+    .result-box{background:#eff6ff;border-radius:10px;padding:14px;margin-top:8px}
+    .result-val{font-size:1.3rem;font-weight:900;color:#1d4ed8}
+    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  </style>
+</head>
+<body>
+<header class="top-bar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <span class="top-title">Saúde Masculina</span>
+  <div class="top-right"></div>
+</header>
+<main class="container" style="padding-bottom:90px">
+  <div class="mas-hdr">
+    <div class="mas-title">♂ Saúde Masculina</div>
+    <div class="mas-sub">Hipogonadismo · Disfunção Erétil · HPB · Alopecia Androgênica</div>
+  </div>
+  <div class="tab-bar">
+    <button class="tab-btn active" id="tb0" onclick="showTab(0)">Hipogonadismo & TRT</button>
+    <button class="tab-btn" id="tb1" onclick="showTab(1)">Disfunção Erétil</button>
+    <button class="tab-btn" id="tb2" onclick="showTab(2)">HPB & Alopecia</button>
+  </div>
+
+  <!-- TAB 0 — Hipogonadismo -->
+  <div id="tab0">
+    <div class="card" style="padding:12px 14px;margin-bottom:10px">
+      <div style="font-size:.8rem;font-weight:800;color:#1e3a5f;margin-bottom:8px">Sintomas de Hipogonadismo (AMS Score — Aging Males' Symptoms)</div>
+      <div style="font-size:.74rem;color:#374151;margin-bottom:8px">Pontue cada sintoma: 1=nenhum · 2=leve · 3=moderado · 4=grave · 5=muito grave</div>
+      <div id="ams_items">
+        <div style="display:grid;grid-template-columns:1fr auto;align-items:center;gap:8px;background:#f8fafc;border-radius:8px;padding:8px;margin-bottom:6px">
+          <span style="font-size:.74rem">Diminuição do bem-estar geral</span>
+          <select id="ams1" style="width:90px;margin:0"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr auto;align-items:center;gap:8px;background:#f8fafc;border-radius:8px;padding:8px;margin-bottom:6px">
+          <span style="font-size:.74rem">Dores articulares / musculares</span>
+          <select id="ams2" style="width:90px;margin:0"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr auto;align-items:center;gap:8px;background:#f8fafc;border-radius:8px;padding:8px;margin-bottom:6px">
+          <span style="font-size:.74rem">Sudorese excessiva / fogachos</span>
+          <select id="ams3" style="width:90px;margin:0"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr auto;align-items:center;gap:8px;background:#f8fafc;border-radius:8px;padding:8px;margin-bottom:6px">
+          <span style="font-size:.74rem">Distúrbios do sono</span>
+          <select id="ams4" style="width:90px;margin:0"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr auto;align-items:center;gap:8px;background:#f8fafc;border-radius:8px;padding:8px;margin-bottom:6px">
+          <span style="font-size:.74rem">Cansaço / fadiga frequente</span>
+          <select id="ams5" style="width:90px;margin:0"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr auto;align-items:center;gap:8px;background:#f8fafc;border-radius:8px;padding:8px;margin-bottom:6px">
+          <span style="font-size:.74rem">Irritabilidade</span>
+          <select id="ams6" style="width:90px;margin:0"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr auto;align-items:center;gap:8px;background:#f8fafc;border-radius:8px;padding:8px;margin-bottom:6px">
+          <span style="font-size:.74rem">Nervosismo / ansiedade</span>
+          <select id="ams7" style="width:90px;margin:0"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr auto;align-items:center;gap:8px;background:#f8fafc;border-radius:8px;padding:8px;margin-bottom:6px">
+          <span style="font-size:.74rem">Diminuição da atividade física</span>
+          <select id="ams8" style="width:90px;margin:0"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr auto;align-items:center;gap:8px;background:#f8fafc;border-radius:8px;padding:8px;margin-bottom:6px">
+          <span style="font-size:.74rem">Diminuição do desempenho físico</span>
+          <select id="ams9" style="width:90px;margin:0"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr auto;align-items:center;gap:8px;background:#f8fafc;border-radius:8px;padding:8px;margin-bottom:6px">
+          <span style="font-size:.74rem">Diminuição dos pelos pubianos/axilares</span>
+          <select id="ams10" style="width:90px;margin:0"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr auto;align-items:center;gap:8px;background:#f8fafc;border-radius:8px;padding:8px;margin-bottom:6px">
+          <span style="font-size:.74rem">Diminuição da potência/frequência sexual</span>
+          <select id="ams11" style="width:90px;margin:0"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr auto;align-items:center;gap:8px;background:#f8fafc;border-radius:8px;padding:8px;margin-bottom:6px">
+          <span style="font-size:.74rem">Diminuição das ereções matinais</span>
+          <select id="ams12" style="width:90px;margin:0"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr auto;align-items:center;gap:8px;background:#f8fafc;border-radius:8px;padding:8px;margin-bottom:6px">
+          <span style="font-size:.74rem">Diminuição do desejo sexual</span>
+          <select id="ams13" style="width:90px;margin:0"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr auto;align-items:center;gap:8px;background:#f8fafc;border-radius:8px;padding:8px;margin-bottom:6px">
+          <span style="font-size:.74rem">Barba crescendo mais devagar</span>
+          <select id="ams14" style="width:90px;margin:0"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr auto;align-items:center;gap:8px;background:#f8fafc;border-radius:8px;padding:8px;margin-bottom:6px">
+          <span style="font-size:.74rem">Declínio da capacidade / memória</span>
+          <select id="ams15" style="width:90px;margin:0"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr auto;align-items:center;gap:8px;background:#f8fafc;border-radius:8px;padding:8px;margin-bottom:6px">
+          <span style="font-size:.74rem">Depressão / sentimento de estar no limite</span>
+          <select id="ams16" style="width:90px;margin:0"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr auto;align-items:center;gap:8px;background:#f8fafc;border-radius:8px;padding:8px;margin-bottom:6px">
+          <span style="font-size:.74rem">Sentir que piorou no trabalho/na vida</span>
+          <select id="ams17" style="width:90px;margin:0"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select>
+        </div>
+      </div>
+      <button class="btn-calc" onclick="calcAMS()">♂ Calcular AMS Score</button>
+    </div>
+    <div id="amsResult" style="display:none"></div>
+
+    <div class="mas-card" style="border-color:#1d4ed8;margin-top:4px">
+      <div class="mas-nome" style="color:#1d4ed8">Hipogonadismo Masculino — Diagnóstico e Tratamento</div>
+      <div class="mas-body">
+        <strong>Diagnóstico laboratorial (AUA/EAU 2023):</strong><br>
+        Testosterona total (TT): dosar 2 amostras às 7h–10h (pico matinal) · Hipogonadismo: TT &lt;300 ng/dL (10,4 nmol/L)<br>
+        Testosterona livre (TL): calcular ou dosar por diálise de equilíbrio · TL &lt;65 pg/mL em jovens / &lt;50 pg/mL em idosos = deficiência<br>
+        SHBG (glicoproteína ligadora de hormônios sexuais): alta SHBG → TT normal mas TL baixa (obesos têm SHBG baixa → TT subestima)<br>
+        LH + FSH: ↑ (hipogonadismo primário — testicular) vs ↓/normal (hipogonadismo secundário — hipofisário)<br>
+        Prolactina, hemograma, lipidograma, PSA (antes de iniciar TRT em &gt;45 anos), hematócrito<br><br>
+        <div class="ok-box">⚗️ Diagnóstico de hipogonadismo requer: SINTOMAS + TT &lt;300 ng/dL em 2 amostras. Sintomas ISOLADOS sem deficiência hormonal = NÃO hipogonadismo.</div>
+        <br>
+        <strong>Terapia de Reposição de Testosterona (TRT) — formas e doses:</strong><br>
+        <table>
+          <tr><th>Formulação</th><th>Dose</th><th>Frequência</th><th>Vantagens</th><th>Desvantagens</th></tr>
+          <tr><td><strong>Undecanoato de testosterona IM (Nebido®)</strong></td><td>1000 mg/4 mL IM</td><td>A cada 10–14 semanas (após dose inicial e reforço em 6 semanas)</td><td>Posologia cômoda (4–5 injeções/ano) · Níveis estáveis · Sem transferência cutânea</td><td>Volume grande (4 mL) · Dor local · Níveis podem variar no final do intervalo</td></tr>
+          <tr><td>Cipionato de testosterona IM (Deposteron®)</td><td>200–250 mg IM</td><td>A cada 2–3 semanas · OU 50–100 mg semanal (mais estável)</td><td>Barato · Amplamente disponível</td><td>Picos e vales pronunciados com biossemanal (↑ policitemia no pico)</td></tr>
+          <tr><td><strong>Gel de testosterona (AndroGel®/Testim®/Axiron®)</strong></td><td>Testogel 50 mg/dia (5 g gel 1%) · Ajustar para 25–100 mg</td><td>Aplicação diária (ombro, braço, abdômen — NÃO genitália)</td><td>Níveis estáveis · Fácil ajuste de dose · Sem injeção</td><td>Risco de transferência para parceira/crianças · Irritação local · Adesão diária · Custo</td></tr>
+          <tr><td>Adesivo transdérmico (Androderm®)</td><td>2–4 mg/24h</td><td>Diário (trocar adesivo)</td><td>Níveis estáveis</td><td>Irritação cutânea frequente · Custo</td></tr>
+          <tr><td>Undecanoato oral (Andriol®)</td><td>40–80 mg 2×/dia com gordura (absorção linfática)</td><td>2×/dia</td><td>Via oral</td><td>Absorção errática · Menos eficaz · 1ª passagem hepática mínima (linfático)</td></tr>
+        </table>
+        <br>
+        <strong>Contraindicações à TRT:</strong><br>
+        <div class="alerta">🚨 CONTRAINDICAÇÕES ABSOLUTAS:<br>
+        • Câncer de próstata conhecido ou suspeito · Câncer de mama masculino · Policitemia não tratada (Ht &gt;54%) · Síndrome da apneia obstrutiva grave não tratada · Desejo de paternidade futura (TRT suprime espermatogênese → infertilidade reversível em 90% após suspensão, mas pode demorar 12–24 meses)</div>
+        <br>
+        <strong>Monitoramento da TRT:</strong><br>
+        <table>
+          <tr><th>Parâmetro</th><th>Frequência</th><th>Alvo / Ação</th></tr>
+          <tr><td>Testosterona total</td><td>3 e 6 meses, depois anual</td><td>Alvo: 400–700 ng/dL (pico); coleta no ponto médio do intervalo (IM) ou 2–4h após gel</td></tr>
+          <tr><td>Hematócrito / Hemoglobina</td><td>3 e 6 meses, depois anual</td><td>Ht &gt;54%: reduzir dose, aumentar intervalo, avaliar flebotomia · Maior risco tromboembólico</td></tr>
+          <tr><td>PSA (antígeno prostático)</td><td>3 e 6 meses, depois anual (≥45 anos)</td><td>Aumento &gt;1,4 ng/mL em 12 meses ou PSA &gt;4 ng/mL: encaminhar urologia</td></tr>
+          <tr><td>Estradiol (E2)</td><td>Se sintomas de excesso: ginecomastia, edema, humor</td><td>E2 &gt;40 pg/mL + sintomas: anastrozol 0,25–0,5 mg 2×/semana (off-label) · Monitorar densidade óssea</td></tr>
+          <tr><td>Lipidograma, glicemia</td><td>Anual</td><td>TRT melhora RI em geral · ↓ HDL possível com TRT IM (menos com gel)</td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 1 — Disfunção Erétil -->
+  <div id="tab1" style="display:none">
+    <div id="deList"></div>
+  </div>
+
+  <!-- TAB 2 — HPB & Alopecia -->
+  <div id="tab2" style="display:none">
+    <div id="hpbList"></div>
+  </div>
+</main>
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+<script src="js/db.js"></script>
+<script>
+function showTab(n){[0,1,2].forEach(i=>{document.getElementById('tab'+i).style.display=i===n?'block':'none';document.getElementById('tb'+i).classList.toggle('active',i===n);});if(n===1)renderDE();if(n===2)renderHPB();}
+
+function calcAMS(){
+  let total=0;
+  for(let i=1;i<=17;i++) total+=parseInt(document.getElementById('ams'+i).value);
+  let nivel,cor,rec;
+  if(total<=26){nivel='Sem/Mínimo';cor='#15803d';rec='Score AMS baixo. Sintomas de hipogonadismo improváveis. Reavaliar em 6–12 meses se surgirem novas queixas.';}
+  else if(total<=36){nivel='Leve';cor='#b45309';rec='Score leve. Investigar testosterona total (coleta matinal 7–10h, 2 amostras). Avaliar causas reversíveis: obesidade, sedentarismo, alcoolismo, medicamentos (opioides, corticoides, antipsicóticos).';}
+  else if(total<=49){nivel='Moderado';cor='#dc2626';rec='Score moderado. Alta suspeita de hipogonadismo. Dosar TT, TL calculada, SHBG, LH, FSH, prolactina. Avaliação médica especializada.';}
+  else{nivel='Grave';cor='#7f1d1d';rec='Score grave. Sintomas intensos de hipogonadismo. Investigação laboratorial urgente. Tratar causa base. Se confirmado déficit hormonal: discutir TRT com médico.';}
+  document.getElementById('amsResult').style.display='block';
+  document.getElementById('amsResult').innerHTML=`
+  <div class="result-box">
+    <div class="grid2">
+      <div><div class="result-val" style="color:${cor}">${total}/85</div><div style="font-size:.7rem;color:#475569">AMS Score</div></div>
+      <div><div style="font-size:.88rem;font-weight:800;color:${cor};padding-top:6px">${nivel}</div></div>
+    </div>
+    <div style="font-size:.74rem;margin-top:8px;color:#374151">${rec}</div>
+    <div style="font-size:.68rem;color:#64748b;margin-top:6px">Pontuação: ≤26 mínimo · 27–36 leve · 37–49 moderado · ≥50 grave</div>
+  </div>`;
+  document.getElementById('amsResult').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+function renderDE(){
+  if(document.getElementById('deList').innerHTML) return;
+  document.getElementById('deList').innerHTML=`
+  <div class="mas-card" style="border-color:#1d4ed8">
+    <div class="mas-nome" style="color:#1d4ed8">Disfunção Erétil — Abordagem Diagnóstica e Terapêutica</div>
+    <div class="mas-body">
+      <strong>Definição (NIH Consensus):</strong> Incapacidade persistente (≥3 meses) de obter e/ou manter ereção suficiente para atividade sexual satisfatória<br><br>
+      <strong>Etiologia:</strong><br>
+      Orgânica (80%): vascular (↓ fluxo arterial peniano — FR cardiovascular, DM, HAS) · Neurogênica (DM, cirurgia pélvica/próstata, neuropatia periférica, esclerose múltipla) · Hormonal (hipogonadismo, hiperprolactinemia, hipotireoidismo) · Medicamentosa<br>
+      Psicogênica (20%): ansiedade de desempenho, depressão, relacional<br><br>
+      <strong>Medicamentos que causam DE (revisar na consulta farmacêutica):</strong><br>
+      <table>
+        <tr><th>Classe</th><th>Exemplos</th><th>Mecanismo</th></tr>
+        <tr><td>Anti-hipertensivos</td><td>Betabloqueadores (atenolol, propranolol) · Tiazídicos (HCTZ) · Espironolactona</td><td>↓ débito cardíaco/fluxo pélvico · Ação androgênica antagonista</td></tr>
+        <tr><td>Antidepressivos</td><td>ISRS (todos) · Venlafaxina · TCA · IMAO</td><td>↑ serotonina → inibição de centros eróticos · Anorgasmia, ejaculação retardada</td></tr>
+        <tr><td>Antipsicóticos</td><td>Haloperidol · Risperidona · Olanzapina</td><td>↑ prolactina → ↓ LH/testosterona · Bloqueio colinérgico/adrenérgico</td></tr>
+        <tr><td>Antiandrogênicos</td><td>Espironolactona · Finasterida · Bicalutamida · Cetoconazol</td><td>↓ testosterona ou bloqueio receptor androgênico</td></tr>
+        <tr><td>Opioides</td><td>Morfina, oxicodona, metadona (uso crônico)</td><td>↓ LH/testosterona (hipogonadismo opioid-induzido)</td></tr>
+        <tr><td>Outros</td><td>Cimetidina · Digoxina · Clofibrato · Álcool crônico</td><td>Efeitos hormonais e vasculares variados</td></tr>
+      </table>
+      <br>
+      <strong>Inibidores da PDE-5 — Comparação detalhada:</strong><br>
+      <table>
+        <tr><th>Fármaco</th><th>Dose</th><th>Onset</th><th>Duração</th><th>Refeição</th><th>Uso diário possível</th></tr>
+        <tr><td><strong>Sildenafila (Viagra®/gen.)</strong></td><td>25–100 mg (iniciar 50 mg)</td><td>30–60 min</td><td>4–6h</td><td>Alimentos gordurosos retardam absorção</td><td>Sildenafila 25 mg/dia (off-label)</td></tr>
+        <tr><td><strong>Tadalafila (Cialis®/gen.)</strong></td><td>5–20 mg (iniciar 10 mg sob demanda · 2,5–5 mg diário)</td><td>30–45 min</td><td>36h ("fim de semana")</td><td>NÃO afetada por alimentos</td><td>SIM — 2,5–5 mg/dia: melhora DE + HPB simultaneamente</td></tr>
+        <tr><td>Vardenafila (Levitra®)</td><td>5–20 mg (iniciar 10 mg)</td><td>25–60 min</td><td>4–5h</td><td>Alimentos gordurosos retardam</td><td>Não recomendado</td></tr>
+        <tr><td>Avanafila (Stendra®)</td><td>50–200 mg</td><td>15–30 min (mais rápida)</td><td>6h</td><td>NÃO afetada</td><td>Não disponível no Brasil</td></tr>
+      </table>
+      <div class="alerta">🚨 CONTRAINDICAÇÕES iPDE5:<br>
+      • Nitratos orgânicos (nitroglicerina, ISDN, ISMN, nitrato de amila): hipotensão grave fatal — CONTRAINDICAÇÃO ABSOLUTA. Intervalo de segurança: sildenafila/vardenafila: 24h; tadalafila: 48h antes de administrar nitrato.<br>
+      • Doxazosina/outros alfa-bloqueadores: iniciar iPDE5 com cautela (hipotensão ortostática) — tomar com intervalo de 4h · Tadalafila 5 mg/dia: cuidado com tamsulosina (menos hipotensão que outros alfa-bloqueadores)</div>
+      <br>
+      <strong>Quando iPDE5 são ineficazes — causas e próximos passos:</strong><br>
+      • Técnica incorreta: deve haver estimulação sexual prévia · Dose insuficiente (aumentar) · Tempo insuficiente de espera pós-dose · Formulação genérica de qualidade questionável<br>
+      • Causa não tratada: hipogonadismo (TT &lt;300 ng/dL → TRT + iPDE5) · Doença vascular grave · Fibrose pós-prostatectomia<br><br>
+      <strong>2ª e 3ª linha para DE refratária:</strong><br>
+      Alprostadil (PGE1) intracavernoso 5–20 mcg · Alprostadil MUSE (uretral) 125–1000 mcg · Bomba de vácuo (VED) · Prótese peniana (3ª linha cirúrgica definitiva)
+    </div>
+  </div>`;
+}
+
+function renderHPB(){
+  if(document.getElementById('hpbList').innerHTML) return;
+  document.getElementById('hpbList').innerHTML=`
+  <div class="mas-card" style="border-color:#1d4ed8">
+    <div class="mas-nome" style="color:#1d4ed8">Hiperplasia Prostática Benigna (HPB)</div>
+    <div class="mas-body">
+      <strong>Sintomas do trato urinário inferior (STUI):</strong><br>
+      Obstrutivos: hesitância, jato fraco, gotejamento pós-miccional, sensação de esvaziamento incompleto<br>
+      Irritativos: urgência, frequência, noctúria, incontinência por urgência<br>
+      Escore IPSS (International Prostate Symptom Score): 0–7 leve · 8–19 moderado · 20–35 grave<br><br>
+      <strong>Tratamento farmacológico por gravidade:</strong><br>
+      <table>
+        <tr><th>IPSS</th><th>1ª linha</th><th>2ª linha / Combinação</th></tr>
+        <tr><td>Leve (0–7)</td><td>Conduta expectante · Orientações comportamentais</td><td>—</td></tr>
+        <tr><td>Moderado (8–19)</td><td>Alfa-1 bloqueador seletivo (uretra/colo vesical) OU 5-alfa-redutase inibidor (próstata grande &gt;30g)</td><td>Combinação: alfa-bloqueador + 5-ARI se próstata &gt;30g (CombAT trial)</td></tr>
+        <tr><td>Grave (20–35)</td><td>Combinação + avaliação urológica</td><td>Tadalafila 5 mg/dia (STUI + DE · FDA aprovado) · Cirurgia: RTUP se falha clínica</td></tr>
+      </table>
+      <br>
+      <strong>Alfa-1 bloqueadores (relaxamento muscular liso — efeito rápido, dias):</strong><br>
+      <table>
+        <tr><th>Fármaco</th><th>Dose</th><th>Seletividade</th><th>RAM</th></tr>
+        <tr><td><strong>Tansulosina (Secotex®)</strong></td><td>0,4 mg/dia (após refeição)</td><td>Α1A (urorsseletivo) · menor hipotensão</td><td>Ejaculação retrógrada (comum) · Síndrome da íris flácida (peri-op oftalmo) · Menos hipotensão</td></tr>
+        <tr><td>Silodosina (Urorec®)</td><td>8 mg/dia</td><td>Α1A altamente seletivo</td><td>Ejaculação retrógrada muito frequente (28%) · Menos hipotensão</td></tr>
+        <tr><td>Doxazosina (Carduran®)</td><td>1–8 mg/dia (titular)</td><td>Α1 não seletivo</td><td>Hipotensão ortostática · Tontura · Síncope na 1ª dose · Edema</td></tr>
+        <tr><td>Alfuzosina</td><td>10 mg/dia (liberação prolongada)</td><td>Α1 (menor seletividade urospecífica)</td><td>Hipotensão · Menos ejaculação retrógrada</td></tr>
+      </table>
+      <div class="atencao">⚠️ SÍNDROME DA ÍRIS FLÁCIDA INTRAOPERATÓRIA (IFIS): alfa-bloqueadores — especialmente tansulosina — causam IFIS mesmo após suspensão. Informar ao oftalmologista antes de qualquer cirurgia de catarata. NÃO iniciar tansulosina se cirurgia de catarata planejada.</div>
+      <br>
+      <strong>Inibidores da 5-alfa-redutase (5-ARI) — efeito em 3–6 meses, próstata &gt;30g:</strong><br>
+      <table>
+        <tr><th>Fármaco</th><th>Dose</th><th>Tipo 5-AR bloqueado</th><th>RAM</th></tr>
+        <tr><td><strong>Finasterida (Proscar®)</strong></td><td>5 mg/dia (indefinidamente)</td><td>Tipo II (próstata)</td><td>↓ libido · DE · Ginecomastia · Ejaculação anormal · PSA cai 50% (considerar ao interpretar PSA)</td></tr>
+        <tr><td>Dutasterida (Avodart®)</td><td>0,5 mg/dia</td><td>Tipo I + II (mais completo)</td><td>Mesmos que finasterida · PSA ↓ 50–70%</td></tr>
+      </table>
+      <div class="ok-box">📊 PSA e 5-ARI: finasterida/dutasterida reduzem PSA em ~50%. Dobrar o PSA medido para estimar o valor "real" em pacientes em uso. Queda insuficiente (&lt;50%) em 6 meses = suspeita de Ca próstata.</div>
+    </div>
+  </div>
+  <div class="mas-card" style="border-color:#7c3aed;margin-top:8px">
+    <div class="mas-nome" style="color:#7c3aed">Alopecia Androgênica (AGA) — Hamilton-Norwood Scale</div>
+    <div class="mas-body">
+      <strong>Fisiopatologia:</strong> DHT (di-hidrotestosterona) → miniaturização progressiva dos folículos capilares em couro cabeludo sensível · Enzima 5-alfa-redutase tipo I e II no folículo<br><br>
+      <strong>Tratamento farmacológico (evidência nível I):</strong><br>
+      <table>
+        <tr><th>Fármaco</th><th>Dose e Via</th><th>Mecanismo</th><th>Eficácia</th><th>Limitações</th></tr>
+        <tr><td><strong>Minoxidil tópico (Rogaine®/genéricos)</strong></td><td>2% (mulheres) ou 5% (homens): aplicar 1 mL 2×/dia no couro cabeludo seco · Foam 5%: 1 aplicador 1×/dia</td><td>Vasodilatador (mecanismo capilar: abre canais K⁺ ATP-dependentes → ↑ fluxo sanguíneo folicular · prolonga fase anágena)</td><td>Estabilização em 80–90% · Crescimento em 30–40% · Efeito visível em 4–6 meses · Uso contínuo obrigatório</td><td>Hipertricose facial (mulheres) · Dermatite de contato ao propilenoglicol (mudar para foam) · Regressão 3–6 meses após suspensão</td></tr>
+        <tr><td><strong>Minoxidil oral (low-dose)</strong></td><td>0,5–2,5 mg/dia (homens) · 0,25–1,25 mg/dia (mulheres) — off-label</td><td>Sistêmico — mais potente que tópico</td><td>Superior ao tópico em estudos diretos · Mais prático · Sem irritação local</td><td>Hipertricose (corpo todo) · Retenção hídrica · Taquicardia reflexa · Hipotensão</td></tr>
+        <tr><td><strong>Finasterida oral (Propecia®)</strong></td><td>1 mg/dia (indefinidamente) — AGA (vs 5 mg para HPB)</td><td>Inibidor 5-alfa-redutase tipo II → ↓ DHT no couro cabeludo em 60%</td><td>Estabilização em 90% · Crescimento em 65% em 2 anos · Efeito máximo em 12–24 meses</td><td>RAM sexual: ↓ libido, DE, ejaculação diminuída — em 2–3% dos usuários (reversível em maioria) · Síndrome pós-finasterida: controversa. TERATOGÊNICO — não tocar comprimidos triturados se gravidez</td></tr>
+        <tr><td>Dutasterida oral 0,5 mg/dia</td><td>Off-label para AGA · Bloqueia tipo I + II</td><td>↓ DHT em 90% (vs 60% finasterida)</td><td>Superior à finasterida em estudos asiáticos · BASP2019</td><td>Mesmos efeitos de finasterida + mais completo · Meia-vida muito longa (5 semanas)</td></tr>
+        <tr><td>Minoxidil + Finasterida</td><td>Combinação</td><td>Dupla via: vasodilatação + anti-DHT</td><td>Sinergia: superior a cada um isolado</td><td>Custo duplo · Adesão</td></tr>
+      </table>
+      <br>
+      <strong>Outras abordagens:</strong><br>
+      PRP (plasma rico em plaquetas): injeções intradérmicas mensais × 3 → manutenção trimestral · Evidência moderada (meta-análise 2019: melhora densidade e espessura do fio)<br>
+      Transplante capilar (FUE/FUT): cirurgia definitiva para áreas já calvas · NÃO substitui tratamento farmacológico (continuar para evitar progressão nas áreas nativas)
+    </div>
+  </div>`;
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Hipertensão Pulmonar — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .hp-hdr{background:linear-gradient(135deg,#1e1b4b,#7c3aed);color:#fff;border-radius:14px;padding:18px;margin-bottom:14px}
+    .hp-title{font-size:1rem;font-weight:800;margin-bottom:4px}
+    .hp-sub{font-size:.73rem;opacity:.8}
+    label{font-size:.75rem;font-weight:700;color:#4c1d95;display:block;margin-bottom:4px}
+    select,input[type=number]{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:10px;padding:10px 12px;font-size:.85rem;background:#fff;margin-bottom:10px}
+    .btn-calc{width:100%;background:#7c3aed;color:#fff;border:none;border-radius:12px;padding:13px;font-size:.87rem;font-weight:700;cursor:pointer;margin:8px 0}
+    .tab-bar{display:flex;gap:6px;margin-bottom:14px}
+    .tab-btn{flex:1;padding:9px 4px;border-radius:10px;border:2px solid #e2e8f0;background:#fff;font-size:.72rem;font-weight:700;cursor:pointer;color:#64748b}
+    .tab-btn.active{border-color:#7c3aed;background:#f5f3ff;color:#4c1d95}
+    .hp-card{border-radius:10px;border-left:5px solid;padding:10px 14px;margin-bottom:8px;background:#fff}
+    .hp-nome{font-size:.83rem;font-weight:800;margin-bottom:4px}
+    .hp-body{font-size:.76rem;line-height:1.7;color:#374151}
+    .alerta{background:#fef2f2;border:2px solid #dc2626;border-radius:10px;padding:8px;margin:6px 0;font-size:.75rem;color:#7f1d1d;font-weight:700}
+    .atencao{background:#fffbeb;border:2px solid #d97706;border-radius:10px;padding:8px;margin:6px 0;font-size:.75rem;color:#78350f;font-weight:700}
+    .ok-box{background:#f5f3ff;border:2px solid #7c3aed;border-radius:10px;padding:8px;margin:6px 0;font-size:.75rem;color:#4c1d95;font-weight:700}
+    table{width:100%;border-collapse:collapse;font-size:.73rem;margin-top:6px}
+    th{background:#7c3aed;color:#fff;padding:5px 8px;text-align:left}
+    td{padding:5px 8px;border-bottom:1px solid #f1f5f9}
+    tr:nth-child(even) td{background:#f5f3ff}
+    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .result-box{background:#f5f3ff;border-radius:10px;padding:14px;margin-top:8px}
+    .result-val{font-size:1.3rem;font-weight:900;color:#7c3aed}
+  </style>
+</head>
+<body>
+<header class="top-bar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <span class="top-title">Hipertensão Pulmonar</span>
+  <div class="top-right"></div>
+</header>
+<main class="container" style="padding-bottom:90px">
+  <div class="hp-hdr">
+    <div class="hp-title">🫁 Hipertensão Pulmonar</div>
+    <div class="hp-sub">Classificação OMS · HAP Grupos 1–5 · Farmacoterapia Específica · Monitoramento</div>
+  </div>
+  <div class="tab-bar">
+    <button class="tab-btn active" id="tb0" onclick="showTab(0)">Diagnóstico & Classificação</button>
+    <button class="tab-btn" id="tb1" onclick="showTab(1)">Farmacoterapia HAP</button>
+    <button class="tab-btn" id="tb2" onclick="showTab(2)">Grupos 2–5 & Monitoramento</button>
+  </div>
+
+  <!-- TAB 0 -->
+  <div id="tab0">
+    <div class="hp-card" style="border-color:#7c3aed">
+      <div class="hp-nome" style="color:#7c3aed">Definição e Diagnóstico Hemodinâmico</div>
+      <div class="hp-body">
+        <strong>Definição (ESC/ERS 2022):</strong><br>
+        Pressão arterial pulmonar média (PAPm) &gt;20 mmHg em repouso medida por cateterismo cardíaco direito (CCD)<br>
+        (Critério anterior era &gt;25 mmHg — revisado para &gt;20 mmHg em 2022)<br><br>
+        <strong>Subtipos hemodinâmicos:</strong><br>
+        <table>
+          <tr><th>Subtipo</th><th>PAPm</th><th>POAP</th><th>RVP</th><th>Significado</th></tr>
+          <tr><td>HP pré-capilar</td><td>&gt;20 mmHg</td><td>≤15 mmHg</td><td>≥2 UW</td><td>Grupos 1, 3, 4, 5 — doença vascular pulmonar primária</td></tr>
+          <tr><td>HP pós-capilar isolada</td><td>&gt;20 mmHg</td><td>&gt;15 mmHg</td><td>&lt;2 UW</td><td>Grupo 2 — IC esquerda (não trata com vasodilatadores)</td></tr>
+          <tr><td>HP pós-capilar combinada</td><td>&gt;20 mmHg</td><td>&gt;15 mmHg</td><td>≥2 UW</td><td>IC + componente vascular — IC avançada</td></tr>
+        </table>
+        <div class="atencao">⚠️ CCD obrigatório antes de iniciar terapia específica para HAP. Ecocardiograma é triagem (PAPsist estimada pelo jato de IT), NÃO diagnóstico definitivo.</div>
+        <br>
+        <strong>Classificação por Grupos OMS (Simonneau 2019/ESC 2022):</strong><br>
+        <table>
+          <tr><th>Grupo</th><th>Etiologia</th><th>Exemplos</th></tr>
+          <tr><td><strong>1 — HAP</strong></td><td>Hipertensão Arterial Pulmonar idiopática/hereditária/associada</td><td>HAP idiopática (HAPI) · HAP hereditária (BMPR2, ALK1) · HAP associada a: conectivopatias (esclerodermia 30%), HIV, hipertensão portal, cardiopatias congênitas (Eisenmenger), drogas/toxinas (aminorex, fenfluramina, metilanfetamina, dasatinibe)</td></tr>
+          <tr><td><strong>2 — HP cardíaca esquerda</strong></td><td>IC sistólica ou diastólica · Valvulopatia esquerda</td><td>ICFEr, ICFEp, estenose/insuficiência mitral ou aórtica</td></tr>
+          <tr><td><strong>3 — HP pulmonar</strong></td><td>Doença pulmonar e/ou hipóxia</td><td>DPOC · FPI (fibrose) · Hipoventilação alveolar · Altitude</td></tr>
+          <tr><td><strong>4 — HPTEC</strong></td><td>HP tromboembólica crônica</td><td>TEP não resolvido → endarterectomia pulmonar (cirurgia) · Riociguata (inoperável)</td></tr>
+          <tr><td><strong>5 — HP multifatorial</strong></td><td>Mecanismos obscuros/multifatoriais</td><td>Doenças hematológicas (anemia hemolítica, esplenectomia) · Sarcoidose · Histiocitose · Compressão vascular</td></tr>
+        </table>
+        <br>
+        <strong>Classe Funcional OMS (FC-OMS) — orientação terapêutica:</strong><br>
+        <table>
+          <tr><th>FC</th><th>Sintomas</th><th>Capacidade</th></tr>
+          <tr><td>I</td><td>Sem limitação</td><td>Atividade física habitual NÃO causa sintomas</td></tr>
+          <tr><td>II</td><td>Leve limitação</td><td>Atividade habitual causa dispneia, fadiga ou síncope</td></tr>
+          <tr><td>III</td><td>Marcada limitação</td><td>Atividade menor que habitual já causa sintomas · Confortável em repouso</td></tr>
+          <tr><td>IV</td><td>Sintomas em repouso</td><td>Qualquer atividade agrava · IC direita manifesta</td></tr>
+        </table>
+        <br>
+        <strong>Avaliação de risco inicial (ESC 2022 — estratificação 4 estratos):</strong><br>
+        Baixo risco: FC-OMS I–II + TC6 &gt;440m + BNP &lt;50 pg/mL + sem congestão direita + IC/VD preservada<br>
+        Intermediário-baixo · Intermediário-alto · Alto risco: FC-OMS IV + TC6 &lt;165m + BNP &gt;800 pg/mL + derrame pericárdico + ICD
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 1 — Farmacoterapia HAP -->
+  <div id="tab1" style="display:none">
+    <div id="hapList"></div>
+  </div>
+
+  <!-- TAB 2 — Grupos 2–5 & Monitoramento -->
+  <div id="tab2" style="display:none">
+    <div id="monList"></div>
+  </div>
+</main>
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+<script src="js/db.js"></script>
+<script>
+function showTab(n){[0,1,2].forEach(i=>{document.getElementById('tab'+i).style.display=i===n?'block':'none';document.getElementById('tb'+i).classList.toggle('active',i===n);});if(n===1)renderHAP();if(n===2)renderMon();}
+
+function renderHAP(){
+  if(document.getElementById('hapList').innerHTML) return;
+  document.getElementById('hapList').innerHTML=`
+  <div class="hp-card" style="border-color:#7c3aed">
+    <div class="hp-nome" style="color:#7c3aed">Farmacoterapia Específica para HAP (Grupo 1)</div>
+    <div class="hp-body">
+      <div class="ok-box">🎯 Três vias terapêuticas alvejadas simultaneamente em HAP grave: 1) via da prostaciclina (↑AMPc) · 2) via da endotelina (ET-1 vasoconstrição) · 3) via do NO/GMPc (vasodilatação)</div>
+      <br>
+      <strong>Via da Endotelina — Antagonistas do Receptor de Endotelina (ARE):</strong><br>
+      <table>
+        <tr><th>Fármaco</th><th>Receptor</th><th>Dose</th><th>RAM principais</th><th>Evidência</th></tr>
+        <tr><td><strong>Ambrisentana (Volibris®)</strong></td><td>ETA seletivo</td><td>5 mg VO/dia · pode ↑ 10 mg/dia após 4 sem</td><td>Edema periférico (comum) · Cefaleia · Congestão nasal · Anemia · Teratogênica (REMS)</td><td>ARIES-1/2: melhora TC6 · Sem hepatotoxicidade clinicamente significativa</td></tr>
+        <tr><td><strong>Bosentana (Tracleer®)</strong></td><td>ETA + ETB dual</td><td>62,5 mg VO 12/12h × 4 sem → 125 mg VO 12/12h (manutenção)</td><td>Hepatotoxicidade (↑TGP em 10% → monitorar hepático mensal) · Edema · Teratogênica · Induz CYP3A4/2C9</td><td>BREATHE-1: 1° ARE aprovado. BREATHE-5: Eisenmenger.</td></tr>
+        <tr><td><strong>Macitentana (Opsumit®)</strong></td><td>ETA + ETB dual</td><td>10 mg VO/dia (dose única)</td><td>Anemia (↓Hb em 8% dos pacientes) · Edema · Nasofaringite · Teratogênica</td><td>SERAPHIN: ↓ morbidade/mortalidade 45% (desfecho composto) — estudo mais robusto em ARE</td></tr>
+      </table>
+      <div class="alerta">🚨 TODOS os ARE são TERATOGÊNICOS — Categoria X. Contracepção obrigatória (dupla barreira OU hormonal) em toda mulher em idade fértil. Teste de gravidez mensal durante REMS. NÃO iniciar ARE sem confirmar teste de gravidez negativo.</div>
+      <br>
+      <strong>Via do NO/GMPc — Inibidores da PDE-5 e Estimuladores da GC:</strong><br>
+      <table>
+        <tr><th>Fármaco</th><th>Mecanismo</th><th>Dose</th><th>RAM</th><th>Interação crítica</th></tr>
+        <tr><td><strong>Sildenafila (Revatio®)</strong></td><td>iPDE5 → ↑GMPc → vasodilatação</td><td>20 mg VO 3×/dia (diferente de 25–100 mg para DE)</td><td>Cefaleia · Rubor · Dispepsia · Distúrbios visuais (azul) · Hipotensão</td><td>CONTRAINDICADO com nitratos (hipotensão grave) · Ajuste com ritonavir (↑ 11× sildenafila)</td></tr>
+        <tr><td><strong>Tadalafila (Adcirca®)</strong></td><td>iPDE5</td><td>40 mg VO/dia (dose única)</td><td>Mialgia/dor lombar (diferencia de sildenafila) · Cefaleia · Rubor</td><td>CONTRAINDICADO com nitratos · Guanilato ciclase: NÃO combinar com riociguata</td></tr>
+        <tr><td><strong>Riociguata (Adempas®)</strong></td><td>Estimulador solúvel da guanilato ciclase (sGC) — independente do NO</td><td>1 mg VO 3×/dia → titular 0,5 mg a cada 2 semanas → máx 2,5 mg 3×/dia</td><td>Hipotensão · Síncope · Hemoptise (atenção) · Dispepsia · Tontura</td><td>CONTRAINDICADO com: iPDE5 (sildenafila/tadalafila) · Nitratos · Nitrito de amila · Antiácidos (espaçar 1h)</td></tr>
+      </table>
+      <div class="alerta">🚨 Riociguata: ÚNICO aprovado também para HPTEC (Grupo 4 inoperável) — CHEST-1 trial. Riociguata + iPDE5 = hipotensão grave fatal = CONTRAINDICAÇÃO ABSOLUTA. Riociguata também é teratogênica — REMS obrigatório.</div>
+      <br>
+      <strong>Via da Prostaciclina — Análogos e Agonistas IP:</strong><br>
+      <table>
+        <tr><th>Fármaco</th><th>Via</th><th>Dose</th><th>RAM</th><th>Peculiaridades</th></tr>
+        <tr><td><strong>Epoprostenol (Flolan®/Veletri®)</strong></td><td>IV contínuo (bomba)</td><td>Iniciar 2 ng/kg/min → titular ↑ 1–2 ng/kg/min a cada semanas · Dose alvo: 20–40 ng/kg/min</td><td>Rubor facial · Cefaleia · Diarreia · Dor mandibular (síndrome da 1ª dose) · Trombocitopenia · Infecção de cateter</td><td>Meia-vida de 3–5 min (instável em temperatura ambiente — Flolan exige bolsa de gelo · Veletri mais estável). Nunca interromper abruptamente — morte por rebote. Cateter central tunelizado permanente.</td></tr>
+        <tr><td><strong>Treprostinil (Remodulin®)</strong></td><td>SC, IV ou inalado</td><td>SC: 1,25 ng/kg/min → titular · Inalado: 3 ampolas 4×/dia → até 9 amp 4×/dia</td><td>Dor/eritema no sítio SC (limitante) · Cefaleia · Diarreia · Rubor</td><td>Meia-vida 4h (mais manuseável que epoprostenol) · SC evita cateter central · Treprostinil oral (Orenitram®): biodisponibilidade variável — menos eficaz</td></tr>
+        <tr><td><strong>Iloprost (Ventavis®)</strong></td><td>Inalatório</td><td>2,5 mcg → 5 mcg por inalação · 6–9 inalações/dia com nebulizador específico</td><td>Tosse · Broncoespasmo (atenção em DPOC) · Rubor · Cefaleia · Síncope com esforço pós-dose</td><td>Atuação local pulmonar com mínimo efeito sistêmico · Curto efeito (30–60 min) → necessidade de múltiplas doses/dia · Disponível no Brasil (RENAME)</td></tr>
+        <tr><td><strong>Selexipague (Uptravi®)</strong></td><td>VO</td><td>200 mcg 2×/dia → ↑ 200 mcg 2×/dia a cada semana → máx 1600 mcg 2×/dia</td><td>Cefaleia intensa (no início) · Diarreia · Náusea · Dor mandibular · Mialgia</td><td>Agonista seletivo do receptor IP (NÃO é análogo de prostaciclina) · GRIPHON: ↓ 40% desfecho composto morbidade/mortalidade · Não é afetado por moduladores de CYP2C8 (clopidogrel → dobra exposição: reduzir dose)</td></tr>
+      </table>
+    </div>
+  </div>
+  <div class="hp-card" style="border-color:#1e3a8a;margin-top:8px">
+    <div class="hp-nome" style="color:#1e3a8a">Estratégia de Tratamento Combinado — ESC/ERS 2022</div>
+    <div class="hp-body">
+      <strong>Abordagem por risco:</strong><br>
+      <table>
+        <tr><th>Risco inicial</th><th>Terapia recomendada</th><th>Evidência</th></tr>
+        <tr><td>Baixo/Intermediário-baixo</td><td>Dupla terapia oral: ARE + iPDE5 (ambrisentana + tadalafila — AMBITION trial)</td><td>AMBITION: ↓ 50% falha de tratamento vs monoterapia</td></tr>
+        <tr><td>Intermediário-alto</td><td>Dupla oral (ARE + iPDE5) OU tríplice (+ prostaciclina inalada/SC)</td><td>Individualizar conforme progressão e FC-OMS</td></tr>
+        <tr><td>Alto risco (FC-OMS IV)</td><td>Tríplice desde o início: ARE + iPDE5 + epoprostenol/treprostinil IV</td><td>Epoprostenol IV = único com impacto em sobrevida demonstrado em HAP grave</td></tr>
+      </table>
+      <div class="ok-box">✅ Teste de vasodilatação aguda (TVA) com NO inalado ou adenosina IV: realizado no CCD. Positivo (↓PAPm ≥10 mmHg e PAPm ≤40 mmHg): candidato a bloqueador de canal de cálcio (BCC) em alta dose — apenas 5–10% dos HAPI. Negativo: NÃO usar BCC (piora hemodinâmica).</div>
+      <br>
+      <strong>Bloqueadores de Canal de Cálcio (BCC) — Apenas em TVA+:</strong><br>
+      Nifedipina 120–240 mg/dia OU diltiazem 240–720 mg/dia OU anlodipina 20 mg/dia<br>
+      Verapamil: CONTRAINDICADO (efeito inotrópico negativo → piora VD)<br><br>
+      <strong>Terapêutica de suporte:</strong><br>
+      Anticoagulação: varfarina (INR 1,5–2,5) — benefício apenas em HAPI/HAP hereditária (NÃO em HAP associada a esclerodermia — maior sangramento) · Diuréticos para congestão VD · Oxigenoterapia domiciliar se SpO₂ &lt;91% · Reabilitação supervisionada (FC-OMS II–III estável) · Transplante pulmonar bilateral (falha de tratamento máximo)
+    </div>
+  </div>`;
+}
+
+function renderMon(){
+  if(document.getElementById('monList').innerHTML) return;
+  document.getElementById('monList').innerHTML=`
+  <div class="hp-card" style="border-color:#b45309">
+    <div class="hp-nome" style="color:#b45309">Grupos 2–5 — HP Não-Arterial (Manejo Específico)</div>
+    <div class="hp-body">
+      <table>
+        <tr><th>Grupo</th><th>Tratamento</th><th>PROIBIDO</th></tr>
+        <tr><td><strong>Grupo 2 — HP cardíaca esquerda (IC/valvulopatia)</strong></td><td>Tratar a doença de base (otimizar IC: IECA/BRA + BB + MRA + SGLT2i · Diurético para congestão) · Corrigir valvulopatia se possível · Transplante cardíaco em refratários</td><td>ARE, iPDE5, análogos de prostaciclina e riociguata: CONTRAINDICADOS — não melhoram desfechos e podem PIORAR congestão pulmonar (MELODY-1, RED ROSE: resultados negativos com macitentan/riociguata em ICFEp)</td></tr>
+        <tr><td><strong>Grupo 3 — HP em doença pulmonar (DPOC/FPI)</strong></td><td>O₂ domiciliar (único com evidência em DPOC hipoxêmico) · Tratar doença de base · HP grave (PAPm &gt;35 mmHg): encaminhar para centro especializado</td><td>Vasodilatadores pulmonares em HP leve de DPOC: podem ↑ shunt → piorar oxigenação. Nintedanibe/pirfenidona em FPI: não atuam diretamente na HP mas podem estabilizar progressão</td></tr>
+        <tr><td><strong>Grupo 4 — HPTEC</strong></td><td>ANTICOAGULAÇÃO VITALÍCIA (varfarina · INR 2–3 · ou DOAC) · Avaliação para endarterectomia pulmonar (EAP — cirurgia curativa em HPTEC operável) · Inoperável ou residual pós-EAP: RIOCIGUATA (Adempas® — único aprovado) · Angioplastia pulmonar por balão (APB/BPA): centros especializados</td><td>iPDE5, ARE, análogos de prostaciclina: fora de label — riociguata é o medicamento ESPECÍFICO para este grupo</td></tr>
+        <tr><td><strong>Grupo 5 — HP multifatorial</strong></td><td>Tratar doença de base · Drepanocitose: hidroxiureia · Sarcoidose: corticoide · Schistosomíase: antiparasitário</td><td>Terapia específica HAP: dados insuficientes — não recomendar de rotina</td></tr>
+      </table>
+    </div>
+  </div>
+  <div class="hp-card" style="border-color:#7c3aed;margin-top:8px">
+    <div class="hp-nome" style="color:#7c3aed">Monitoramento e Interações Medicamentosas em HAP</div>
+    <div class="hp-body">
+      <strong>Monitoramento recomendado (ESC/ERS 2022):</strong><br>
+      <table>
+        <tr><th>Parâmetro</th><th>Frequência</th><th>Alvo</th></tr>
+        <tr><td>TC6M (Teste de Caminhada 6 minutos)</td><td>A cada 3–6 meses</td><td>&gt;440m = baixo risco · &lt;165m = alto risco</td></tr>
+        <tr><td>BNP / NT-proBNP</td><td>A cada 3–6 meses</td><td>BNP &lt;50 pg/mL · NT-proBNP &lt;300 pg/mL = baixo risco</td></tr>
+        <tr><td>Ecocardiograma</td><td>Anual ou com piora</td><td>TAPSE &gt;18 mm · Derrame pericárdico: ausente</td></tr>
+        <tr><td>Hepático (bosentana)</td><td>Mensal</td><td>TGP &lt;3× LSN · Suspender se &gt;5× LSN</td></tr>
+        <tr><td>Hemograma (macitentana)</td><td>A cada 3 meses</td><td>Hb &gt;10 g/dL</td></tr>
+        <tr><td>CCD reavaliação</td><td>3–6 meses após início de terapia e com piora clínica</td><td>RVP alvo &lt;4 UW · IC &gt;2,5 L/min/m²</td></tr>
+        <tr><td>Teste de gravidez (ARE/riociguata)</td><td>Mensal</td><td>Negativo — contraindicados na gestação</td></tr>
+      </table>
+      <br>
+      <strong>Interações medicamentosas críticas em HAP:</strong><br>
+      <table>
+        <tr><th>Par proibido</th><th>Consequência</th></tr>
+        <tr><td>iPDE5 (sildenafila/tadalafila) + Nitratos</td><td>Hipotensão grave fatal — CONTRAINDICAÇÃO ABSOLUTA</td></tr>
+        <tr><td>Riociguata + iPDE5 OU Nitratos</td><td>Hipotensão grave fatal — CONTRAINDICAÇÃO ABSOLUTA</td></tr>
+        <tr><td>Bosentana + Ciclosporina A</td><td>↑ 30× bosentana + ↑ ciclosporina → CONTRAINDICADO</td></tr>
+        <tr><td>Bosentana + Glibenclamida</td><td>↑ hepatotoxicidade — CONTRAINDICADO</td></tr>
+        <tr><td>Bosentana + Varfarina</td><td>↓ INR (indutor CYP2C9) → monitorar INR mais frequente</td></tr>
+        <tr><td>Sildenafila + Ritonavir/cetoconazol</td><td>↑ 11× sildenafila → toxicidade — ajuste: sildenafila 25 mg/dia máximo</td></tr>
+        <tr><td>Selexipague + Clopidogrel (inibidor CYP2C8)</td><td>↑ 2× selexipague — reduzir dose selexipague à metade</td></tr>
+        <tr><td>Treprostinil + Anticoagulante/AAS</td><td>↑ risco de sangramento — monitorar</td></tr>
+      </table>
+      <div class="alerta">🚨 GESTAÇÃO E HAP: Mortalidade materna de 25–56% na gravidez com HAP grave (mesmo com tratamento). Gravidez CONTRAINDICADA em HAP: HAP associada a esclerodermia tem pior prognóstico gestacional. Aconselhamento pré-gestacional obrigatório.</div>
+    </div>
+  </div>`;
+}
+</script>
+</body>
+</html>
