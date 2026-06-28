@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Osteoporose — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .ost-hdr{background:linear-gradient(135deg,#78350f,#92400e);color:#fff;border-radius:14px;padding:18px;margin-bottom:14px}
+    .ost-title{font-size:1rem;font-weight:800;margin-bottom:4px}
+    .ost-sub{font-size:.73rem;opacity:.8}
+    label{font-size:.75rem;font-weight:700;color:#1e3a5f;display:block;margin-bottom:4px}
+    input[type=number]{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:10px;padding:10px 12px;font-size:.85rem;background:#fff;outline:none;margin-bottom:10px}
+    input:focus{border-color:#78350f}
+    select{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:10px;padding:10px 12px;font-size:.85rem;background:#fff;margin-bottom:10px}
+    .checkbox-group{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
+    .checkbox-item{display:flex;align-items:center;gap:8px;font-size:.8rem;cursor:pointer}
+    .checkbox-item input[type=checkbox]{width:18px;height:18px;accent-color:#78350f;cursor:pointer}
+    .btn-calc{width:100%;background:#78350f;color:#fff;border:none;border-radius:12px;padding:13px;font-size:.87rem;font-weight:700;cursor:pointer;margin:8px 0}
+    .btn-auto{background:#0f766e;color:#fff;border:none;border-radius:10px;padding:10px 16px;font-size:.8rem;font-weight:700;cursor:pointer;margin-bottom:10px}
+    .tab-bar{display:flex;gap:6px;margin-bottom:14px}
+    .tab-btn{flex:1;padding:9px 4px;border-radius:10px;border:2px solid #e2e8f0;background:#fff;font-size:.76rem;font-weight:700;cursor:pointer;color:#64748b}
+    .tab-btn.active{border-color:#78350f;background:#fef3c7;color:#78350f}
+    .risk-card{border-radius:14px;border:4px solid;padding:16px;margin-bottom:10px;text-align:center}
+    .risk-pct{font-size:2rem;font-weight:900;line-height:1}
+    .risk-lbl{font-size:.85rem;font-weight:800;margin-top:4px}
+    .risk-sub{font-size:.72rem;margin-top:6px;opacity:.85}
+    .rec-card{border-radius:12px;border:2px solid;padding:14px;margin-bottom:10px}
+    .rec-hdr{font-size:.63rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+    .rec-nome{font-size:.88rem;font-weight:800;margin-bottom:6px}
+    .rec-badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:.65rem;font-weight:800;color:#fff;margin:2px}
+    .rec-body{font-size:.78rem;margin-top:6px;line-height:1.7}
+    .rec-note{font-size:.71rem;color:#64748b;margin-top:6px;padding-top:6px;border-top:1px solid #f1f5f9}
+    .drug-card{border-radius:10px;border:2px solid #e2e8f0;padding:12px 14px;margin-bottom:8px}
+    .drug-nome{font-size:.84rem;font-weight:800;color:#78350f;margin-bottom:4px}
+    .drug-dose{font-size:.77rem;line-height:1.6;color:#1e3a5f}
+    .drug-note{font-size:.7rem;color:#64748b;margin-top:4px}
+    .adm-step{border-radius:10px;border:2px solid #fef3c7;background:#fffbeb;padding:12px 14px;margin-bottom:8px}
+    .adm-drug{font-size:.82rem;font-weight:800;color:#78350f;margin-bottom:6px}
+    .adm-list{font-size:.77rem;line-height:1.7;color:#374151}
+    .mon-row{padding:8px 0;border-bottom:1px solid #f1f5f9;font-size:.77rem}
+    .mon-row:last-child{border-bottom:none}
+    .mon-lbl{font-weight:800;color:#1e3a5f;margin-bottom:2px}
+    .mon-when{font-size:.7rem;color:#64748b;margin-bottom:2px}
+    .mon-meta{font-size:.71rem;color:#78350f;font-weight:700}
+    .input-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  </style>
+</head>
+<body>
+<header class="top-bar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <span class="top-title">Osteoporose — Algoritmo</span>
+  <div class="top-right"></div>
+</header>
+<main class="container" style="padding-bottom:90px">
+
+  <div class="ost-hdr">
+    <div class="ost-title">🦴 Osteoporose — Diagnóstico, Risco e Tratamento</div>
+    <div class="ost-sub">FRAX simplificado · Bisfosfonatos · Denosumabe · Teriparatida · Cálcio + Vit D · GIOP · Férias do bisfosfonato</div>
+  </div>
+
+  <div class="tab-bar">
+    <button class="tab-btn active" id="tb0" onclick="showTab(0)">Risco & DXA</button>
+    <button class="tab-btn" id="tb1" onclick="showTab(1)">Tratamento</button>
+    <button class="tab-btn" id="tb2" onclick="showTab(2)">Adm. & Monit.</button>
+  </div>
+
+  <!-- TAB 0 – RISCO & DXA -->
+  <div id="tab0">
+    <button class="btn-auto" onclick="autoFill()">⚡ Auto-preencher do paciente ativo</button>
+    <div class="card" style="padding:12px 14px">
+      <div class="input-row">
+        <div><label>Idade (anos)</label><input type="number" id="os_idade" placeholder="ex.: 68" min="40" max="100"></div>
+        <div><label>Sexo</label><select id="os_sexo"><option value="F">Feminino</option><option value="M">Masculino</option></select></div>
+      </div>
+      <div class="input-row">
+        <div><label>T-score (menor valor DXA)</label><input type="number" id="os_tscore" placeholder="ex.: -2.8" step="0.1" min="-5" max="2"></div>
+        <div><label>Z-score (DXA)</label><input type="number" id="os_zscore" placeholder="ex.: -1.5" step="0.1" min="-5" max="2"></div>
+      </div>
+      <label>Fatores de risco para fratura</label>
+      <div class="checkbox-group">
+        <label class="checkbox-item"><input type="checkbox" id="fr_prev"> Fratura por fragilidade prévia (&gt;50 anos)</label>
+        <label class="checkbox-item"><input type="checkbox" id="fr_hx"> Histórico familiar de fratura de quadril</label>
+        <label class="checkbox-item"><input type="checkbox" id="fr_gluco"> Uso de corticoide ≥5 mg/dia ≥3 meses (GIOP)</label>
+        <label class="checkbox-item"><input type="checkbox" id="fr_tab"> Tabagismo ativo</label>
+        <label class="checkbox-item"><input type="checkbox" id="fr_alc"> Álcool ≥3 doses/dia</label>
+        <label class="checkbox-item"><input type="checkbox" id="fr_ar"> Artrite reumatoide</label>
+        <label class="checkbox-item"><input type="checkbox" id="fr_meno"> Menopausa precoce (&lt;45 anos) / hipogonadismo</label>
+        <label class="checkbox-item"><input type="checkbox" id="fr_queda"> Risco de quedas (histórico de quedas, sarcopenia, visão)</label>
+      </div>
+    </div>
+    <button class="btn-calc" onclick="calcRisco()">🦴 Avaliar risco e indicação de tratamento</button>
+    <div id="riscoResult" style="display:none"></div>
+  </div>
+
+  <!-- TAB 1 – TRATAMENTO -->
+  <div id="tab1" style="display:none">
+    <div id="treatList"></div>
+  </div>
+
+  <!-- TAB 2 – ADMINISTRAÇÃO & MONITORAMENTO -->
+  <div id="tab2" style="display:none">
+    <div class="card" style="padding:10px 14px;margin-bottom:10px">
+      <div style="font-size:.78rem;font-weight:800;color:#78350f;margin-bottom:10px">📋 Técnica de Administração dos Bisfosfonatos</div>
+      <div id="admList"></div>
+    </div>
+    <div class="card" style="padding:10px 14px">
+      <div style="font-size:.78rem;font-weight:800;color:#0369a1;margin-bottom:10px">🔬 Monitoramento e Seguimento</div>
+      <div id="monList"></div>
+    </div>
+  </div>
+
+</main>
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+<script src="js/db.js"></script>
+<script>
+const pid=localStorage.getItem('vd_active');
+
+function showTab(n){
+  [0,1,2].forEach(i=>{document.getElementById('tab'+i).style.display=i===n?'block':'none';document.getElementById('tb'+i).classList.toggle('active',i===n);});
+  if(n===1) renderTreat();
+  if(n===2){renderAdm();renderMon();}
+}
+
+async function autoFill(){
+  if(!pid){alert('Nenhum paciente ativo.');return;}
+  const pac=await dbGet('pacientes',parseInt(pid));
+  if(!pac) return;
+  if(pac.idadePac) document.getElementById('os_idade').value=pac.idadePac;
+  if(pac.sexoPac)  document.getElementById('os_sexo').value=pac.sexoPac;
+}
+
+function recHTML(r){return `<div class="rec-card" style="border-color:${r.col}"><div class="rec-hdr" style="color:${r.col}">${r.hdr}</div><div class="rec-nome">${r.nome}</div><div>${(r.badges||[]).map(b=>`<span class="rec-badge" style="background:${b.c}">${b.t}</span>`).join('')}</div><div class="rec-body">${r.body}</div>${r.note?`<div class="rec-note">${r.note}</div>`:''}</div>`;}
+
+/* ── RISCO & DIAGNÓSTICO ─────────────────────────────────────────────── */
+function calcRisco(){
+  const idade  = parseInt(document.getElementById('os_idade').value)||0;
+  const sexo   = document.getElementById('os_sexo').value;
+  const tscore = parseFloat(document.getElementById('os_tscore').value)||null;
+  const zscore = parseFloat(document.getElementById('os_zscore').value)||null;
+  const fr_prev  = document.getElementById('fr_prev').checked;
+  const fr_hx    = document.getElementById('fr_hx').checked;
+  const fr_gluco = document.getElementById('fr_gluco').checked;
+  const fr_tab   = document.getElementById('fr_tab').checked;
+  const fr_alc   = document.getElementById('fr_alc').checked;
+  const fr_ar    = document.getElementById('fr_ar').checked;
+  const fr_meno  = document.getElementById('fr_meno').checked;
+  const fr_queda = document.getElementById('fr_queda').checked;
+
+  if(!idade){alert('Informe a idade.');return;}
+
+  // FRAX simplificado: estimar risco de fratura maior em 10 anos (Brasil)
+  // Abordagem simplificada baseada em faixas de risco
+  let score=0;
+  if(idade>=75) score+=3; else if(idade>=70) score+=2; else if(idade>=65) score+=1;
+  if(sexo==='F') score+=2;
+  if(fr_prev) score+=4;
+  if(fr_hx) score+=1;
+  if(tscore!==null&&tscore<=-2.5) score+=3; else if(tscore!==null&&tscore<=-1.5) score+=2;
+  if(fr_gluco) score+=2;
+  if(fr_tab) score+=1;
+  if(fr_alc) score+=1;
+  if(fr_ar) score+=1;
+  if(fr_meno) score+=1;
+
+  // Risco estimado (calibrado para Brasil)
+  let risco10, riscoCor, riscoClass;
+  if(score>=10){risco10='≥30%';riscoCor='#7f1d1d';riscoClass='Muito alto';}
+  else if(score>=7){risco10='20–30%';riscoCor='#dc2626';riscoClass='Alto';}
+  else if(score>=4){risco10='10–20%';riscoCor='#d97706';riscoClass='Moderado';}
+  else{risco10='<10%';riscoCor='#16a34a';riscoClass='Baixo';}
+
+  const recs=[];
+
+  // DXA diagnóstico
+  let dxaDiag='Sem DXA disponível', dxaCor='#64748b';
+  if(tscore!==null){
+    if(tscore<=-2.5){dxaDiag=`Osteoporose (T-score ${tscore})`;dxaCor='#7f1d1d';}
+    else if(tscore<=-1.0){dxaDiag=`Osteopenia (T-score ${tscore})`;dxaCor='#d97706';}
+    else{dxaDiag=`Normal (T-score ${tscore})`;dxaCor='#16a34a';}
+  }
+
+  document.getElementById('riscoResult').style.display='block';
+  const stageHTML=`<div class="risk-card" style="border-color:${riscoCor};background:${riscoCor}15">
+    <div class="risk-pct" style="color:${riscoCor}">${risco10}</div>
+    <div class="risk-lbl" style="color:${riscoCor}">Risco de fratura maior em 10 anos (FRAX estimado)</div>
+    <div class="risk-sub" style="color:${riscoCor}">${riscoClass} · DXA: ${dxaDiag}</div>
+    ${zscore!==null&&zscore<=-2?`<div class="risk-sub" style="color:#0369a1;margin-top:4px">Z-score ${zscore} — investigar osteoporose secundária (Z-score ≤-2 para a idade)</div>`:''}
+  </div>`;
+
+  // Indicação de tratamento
+  const indicar=tscore!==null&&tscore<=-2.5||fr_prev||(score>=7)||(fr_gluco&&tscore!==null&&tscore<=-1.5);
+  recs.push({hdr:'Indicação de Tratamento Farmacológico',col:indicar?'#78350f':'#16a34a',nome:indicar?'Tratamento recomendado (ver aba Tratamento)':'Sem indicação de farmacoterapia agora',
+    badges:[{t:riscoClass,c:riscoCor},{t:indicar?'Tratar':'Não tratar / Monitorar',c:indicar?'#78350f':'#16a34a'}],
+    body:indicar?`<strong>Indicações presentes:</strong><br>${tscore!=null&&tscore<=-2.5?`• T-score ≤-2,5 (diagnóstico de osteoporose)<br>`:''
+      }${fr_prev?'• Fratura por fragilidade prévia (indica tratamento independente do T-score)<br>':''
+      }${score>=7?'• Risco FRAX ≥20% em 10 anos<br>':''
+      }${fr_gluco&&tscore!=null&&tscore<=-1.5?'• GIOP: corticoide + T-score ≤-1,5<br>':''
+      }<br>Iniciar: Cálcio + Vitamina D + antirreabsortivo de 1ª linha (ver aba Tratamento)`
+    :`<strong>Conduta atual:</strong><br>• Suplementar cálcio e vitamina D<br>• Exercícios de resistência e equilíbrio<br>• Modificar fatores de risco (tabagismo, álcool, quedas)<br>• Repetir DXA em 2 anos${zscore!==null&&zscore<=-2?'<br>• Z-score ≤-2: investigar causas secundárias (hiperPTH, celíaca, mieloma, hipertireoidismo, hipogonadismo, DRC)':`${fr_queda?'<br>• Avaliar risco de quedas — programa de prevenção e vitamina D 2000 UI/dia':''}`}`,
+    note:zscore!==null&&zscore<=-2?'Z-score ≤-2: investigar causas secundárias de osteoporose. Solicitar: cálcio sérico, PTH intacto, 25-OH vitamina D, TSH, cortisol urinário (se suspeita Cushing), eletroforese de proteínas (mieloma), estradiol/testosterona.':''});
+
+  if(fr_queda) recs.push({hdr:'Prevenção de Quedas',col:'#0369a1',nome:'Redução do risco de queda reduz fraturas mesmo sem ↑ DMO',badges:[{t:'Quedas',c:'#0369a1'}],
+    body:'• Vitamina D 800–2000 UI/dia (reduz quedas ~22% — metanálise Cochrane)<br>• Exercícios de equilíbrio e fortalecimento (Tai Chi, treino de força — NNT 16 para prevenir 1 fratura)<br>• Revisão de medicamentos poliquimioterapia: BZD, hipnóticos, antipsicóticos, anti-hipertensivos ortostáticos<br>• Avaliação oftalmológica e auditiva<br>• Adaptações domiciliares: corrimão, tapetes antiderrapantes, iluminação adequada',
+    note:''});
+
+  document.getElementById('riscoResult').innerHTML=stageHTML+recs.map(recHTML).join('');
+  document.getElementById('riscoResult').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+/* ── TRATAMENTO ──────────────────────────────────────────────────────── */
+function renderTreat(){
+  const DRUGS=[
+    {nome:'Cálcio + Vitamina D — BASE UNIVERSAL',col:'#0f766e',
+     dose:'<strong>Cálcio elemental:</strong> 1000–1200 mg/dia (via dieta + suplemento)<br>Via dieta: 1 copo de leite (~300 mg) · 1 pote de iogurte (~250 mg) · queijo (~200–400 mg por fatia)<br>Suplemento: Carbonato de cálcio 1250 mg = 500 mg Ca elemental (com refeições — acidez gástrica necessária) · Citrato de cálcio: absorção independente da refeição (preferível em uso de IBP)<br>Dose máxima em 1 tomada: 500–600 mg (acima disso, absorção cai)<br><br><strong>Vitamina D:</strong> 800–2000 UI/dia de colecalciferol (D3) · Meta: 25-OH VitD sérica 30–50 ng/mL<br>Deficiência grave (<20 ng/mL): dose de ataque 50.000 UI/sem × 8–12 sem, depois manutenção',
+     note:'Cálcio separado do ferro, levotiroxina, bisfosfonato (≥2h) e tetraciclines/quinolonas. Excesso de cálcio (>2500 mg/dia): hipercalcemia, litíase renal, possível ↑ risco CV (controverso — metanálise Reid).'},
+    {nome:'Bisfosfonatos — 1ª Linha Antirreabsortiva',col:'#78350f',
+     dose:'<strong>Alendronato</strong> 70 mg 1×/semana VO (mais utilizado) ou 10 mg/dia<br><strong>Risedronato</strong> 35 mg 1×/semana ou 150 mg 1×/mês (menos dispepsia que alendronato)<br><strong>Ibandronato</strong> 150 mg 1×/mês VO ou 3 mg IV a cada 3 meses<br><strong>Ácido Zoledrônico</strong> 5 mg IV 1×/ano (infusão 15 min) — maior comodidade, maior eficácia em osteoporose grave<br><br>Eficácia: redução de 40–70% de fraturas vertebrais e 40% de fraturas de quadril (alendronato)<br><strong>Férias do bisfosfonato:</strong> após 5 anos VO ou 3 anos IV → avaliar risco: se T-score >-2,5 e sem fratura: pausa 1–2 anos; se alto risco: continuar ou trocar',
+     note:'CIs: esofagopatias ativas, incapacidade de manter-se ereto 30 min, TFG <35 (bifosf. VO) / <35 (ZA IV). Efeitos adversos raros mas graves: osteonecrose de mandíbula (ONM) — evitar procedimentos dentários invasivos sem profilaxia; fratura atípica de fêmur (subtrocantérica — dor prévia na coxa).'},
+    {nome:'Denosumabe (Prolia) — Alternativa / 2ª Linha',col:'#0369a1',
+     dose:'<strong>Dose:</strong> 60 mg SC a cada 6 meses (injeção subcutânea na coxa, abdome ou braço)<br>Mecanismo: anticorpo anti-RANKL → bloqueia osteoclastogênese<br>Eficácia: redução de 68% de fraturas vertebrais, 40% de quadril (FREEDOM trial)<br>Sem necessidade de ajuste renal (eliminar por vias não renais — pode ser usado em DRC grave e diálise)<br><br><strong>⚠️ NUNCA suspender abruptamente:</strong> rebote de osteoclastogênese após suspensão → fraturas vertebrais múltiplas<br>Ao descontinuar: fazer ácido zoledrônico IV 6 meses após última dose de denosumabe para prevenir rebote',
+     note:'RAM: infecções de pele (celulite) — reforçar higiene local. Hipocalcemia: monitorar Ca⁺ antes de cada dose (especialmente em DRC). Avaliação dentária antes de iniciar. ONM raro mas reportado.'},
+    {nome:'Teriparatida / Abaloparatida — Anabólica',col:'#7c3aed',
+     dose:'<strong>Teriparatida</strong> (PTH 1-34) 20 mcg SC/dia × 18–24 meses (auto-injeção com caneta)<br><strong>Abaloparatida</strong> 80 mcg SC/dia × 18 meses (análogo PTHrP)<br>Mecanismo: estimula osteoblastos → formação óssea (único anabólico aprovado)<br>Eficácia: ↑ DMO vertebral 9–13% e quadril 3–6% em 18–24 meses · ↓ 65% fraturas vertebrais<br><br><strong>Indicações:</strong> osteoporose muito grave (≥2 fraturas vertebrais) · falha de bisfosfonato · risco fratura muito alto · GIOP grave<br>Após suspender: OBRIGATÓRIO iniciar bisfosfonato ou denosumabe para manter ganho de DMO',
+     note:'CI: hipercalcemia, hiperPTH primário, doença de Paget óssea, radioterapia prévia do esqueleto, osteossarcoma (preocupação teórica). Máximo 18–24 meses de tratamento cumulativo. RAM: náusea, cefaleia, hipotensão postural nas primeiras horas — aplicar deitado ou sentado.'},
+    {nome:'GIOP — Osteoporose Induzida por Corticoide (ACR 2022)',col:'#dc2626',
+     dose:'<strong>Indicação:</strong> corticoide ≥5 mg/dia ≥3 meses (qualquer rota sistêmica)<br><strong>Cálcio + Vit D:</strong> iniciar simultaneamente com o corticoide<br><br><strong>Risco alto (FRAX ≥20%, T-score ≤-2,5 ou fratura prévia):</strong><br>→ Teriparatida (preferencial por ACR 2022 vs bisfosfonatos em GIOP mais grave)<br>→ ou Ácido Zoledrônico 5 mg IV/ano<br><br><strong>Risco moderado (FRAX 10–20% ou T-score -1 a -2,5):</strong><br>→ Alendronato 70 mg/sem VO ou Risedronato 35 mg/sem<br><br><strong>Risco baixo (&lt;50 anos, FRAX &lt;10%, T-score &gt;-1):</strong><br>→ Cálcio + Vit D + monitorar (DXA a cada 1–2 anos)<br><br>Descontinuar corticoide ou reduzir para mínima dose eficaz assim que possível',
+     note:'GIOP: corticoide inibe formação óssea + aumenta reabsorção + inibe absorção intestinal de Ca. Risco de fratura já aumenta após 3 meses com qualquer dose acima de 2,5 mg/dia de prednisona equivalente. Prednisona ≥30 mg/dia por >3 meses: risco de fratura vertebral 17%.'},
+    {nome:'Raloxifeno — SERM (Modulador Seletivo do RE)',col:'#9d174d',
+     dose:'<strong>Dose:</strong> 60 mg/dia VO — pós-menopáusicas sem CI cardiovascular<br>Mecanismo: agonista RE no osso e lipídeos; antagonista no endométrio e mama<br>Eficácia: ↓ 30–50% fraturas vertebrais (não quadril); ↓ risco de CA de mama ER+ 72% (benefício adicional)<br><br><strong>Indicação preferencial:</strong> osteoporose vertebral em pós-menopausa + risco elevado de CA de mama<br>CI: TVP / TEP / imobilização prolongada',
+     note:'Não usar em homens. Aumenta risco de TVP/TEP (2–3× vs placebo) — suspender 72h antes de cirurgias ou imobilização. Não protege fratura de quadril (diferente de bisfosfonatos).'},
+    {nome:'Romosozumabe — Anabólico/Antirreabsortivo (dupla ação)',col:'#0f766e',
+     dose:'<strong>Dose:</strong> 210 mg SC (2 injeções de 105 mg) 1×/mês × 12 meses<br>Mecanismo: anticorpo anti-esclerostina → ↑ formação óssea + ↓ reabsorção (efeito dual único)<br>Após 12 meses: obrigatoriamente seguir de antirreabsortivo (ZA ou denosumabe)<br><br><strong>CI:</strong> infarto ou AVC no último ano (ARCH trial mostrou ↑ eventos CV com romosozumabe vs alendronato em pacientes de alto risco CV)',
+     note:'Indicado em osteoporose muito grave com alto risco de fratura cardiovascular aceitável. Avaliação cardiológica prévia recomendada.'},
+  ];
+  document.getElementById('treatList').innerHTML=DRUGS.map(d=>`<div class="drug-card"><div class="drug-nome" style="color:${d.col}">${d.nome}</div><div class="drug-dose">${d.dose}</div><div class="drug-note">💡 ${d.note}</div></div>`).join('');
+}
+
+/* ── ADMINISTRAÇÃO ───────────────────────────────────────────────────── */
+function renderAdm(){
+  const ADM=[
+    {drug:'Alendronato 70 mg — Oral semanal',
+     list:'1. Tomar <strong>em jejum</strong>, ao acordar, com 200 mL de água em pé ou sentado<br>2. NÃO deitar por <strong>30–60 min</strong> após (risco de esofagite grave)<br>3. NÃO comer, beber (exceto água) ou tomar outros medicamentos por <strong>30 min</strong><br>4. Engolir inteiro — NÃO mastigar, chupar ou partir o comprimido<br>5. Separar ≥2h de cálcio, ferro, antiácidos, IBP'},
+    {drug:'Risedronato 35 mg — Oral semanal',
+     list:'Mesma técnica do alendronato (água + jejum + ereto 30 min)<br>Alternativa: risedronato com gastrorresistente tomado logo após o café (menor dispepsia — DRD = gastro-delayed release)'},
+    {drug:'Ácido Zoledrônico 5 mg — IV anual',
+     list:'Infusão em 100–250 mL SF/SG em 15–30 min (mínimo 15 min)<br>Hidratação oral ≥500 mL antes da infusão<br>Síndrome pseudogripal (febre, mialgia, artralgia) em ~30% da 1ª infusão — 1–3 dias: paracetamol 750 mg 6/6h por 3 dias<br>Paracetamol 500 mg oral preventivo 30 min antes reduz reação<br>Não reutilizar solução após abertura<br>CI: TFG &lt;35 mL/min — medir creatinina antes de cada dose'},
+    {drug:'Ibandronato 3 mg — IV trimestral',
+     list:'Injeção IV bolus lenta em 15–30 seg (via venosa de boa calibre)<br>Não associar a outras drogas na mesma seringa<br>Menor risco de síndrome pseudogripal que ZA'},
+    {drug:'Denosumabe 60 mg — SC semestral',
+     list:'Injeção subcutânea: coxa, abdome (5 cm do umbigo) ou braço posterior<br>Temperatura ambiente 30 min antes (retirar da geladeira)<br>Não agitar · Área sem hematoma, eritema ou endurecimento<br>Não pular dose — intervalo máximo entre aplicações: 6 meses +/- 1 semana<br><strong>NUNCA suspender sem transição para bisfosfonato</strong> (rebote com fraturas vertebrais múltiplas)'},
+    {drug:'Teriparatida 20 mcg — SC diária',
+     list:'Caneta de injeção (Forteo) — 28 doses por caneta (1 mês)<br>Refrigerar (2–8°C) — não congelar<br>Injetar na coxa ou abdome · Rodízio de local a cada injeção<br>Sentar ou deitar na 1ª injeção: hipotensão postural possível nas primeiras semanas<br>Pode ser aplicada a qualquer hora do dia, inclusive noite'},
+  ];
+  document.getElementById('admList').innerHTML=ADM.map(a=>`<div class="adm-step"><div class="adm-drug">📌 ${a.drug}</div><div class="adm-list">${a.list}</div></div>`).join('');
+}
+
+/* ── MONITORAMENTO ───────────────────────────────────────────────────── */
+function renderMon(){
+  const MON=[
+    {lbl:'DXA — Densitometria óssea',when:'Baseline → 1–2 anos após início do tratamento → a cada 2 anos',meta:'Metas: T-score melhora (qualquer ↑ é positivo) · Resposta incompleta: sem ganho após 2 anos → revisar diagnóstico, aderência, causas secundárias'},
+    {lbl:'25-OH Vitamina D sérica',when:'Baseline; após 3 meses de suplementação se deficiente; anualmente',meta:'Meta: 30–50 ng/mL. <20 ng/mL = deficiência grave — usar dose de ataque. >100 ng/mL = toxicidade (hipercalcemia)'},
+    {lbl:'Cálcio sérico e PTH',when:'Baseline; antes de cada dose de denosumabe; 1–2 semanas pós ácido zoledrônico IV',meta:'Ca sérico 8,5–10,2 mg/dL. PTH basal: excluir hiperPTH primário antes de iniciar. Hipocalcemia pós-denosumabe: repor Ca + Vit D agressivamente'},
+    {lbl:'Creatinina / TFG',when:'Antes de cada dose de ácido zoledrônico IV; anualmente no VO',meta:'TFG >35 para bisfosfonatos IV e VO. Denosumabe: sem ajuste renal (pode usar em qualquer TFG)'},
+    {lbl:'Marcadores de remodelação óssea (opcional)',when:'Antes e 3–6 meses após início de tratamento',meta:'CTX (marcador de reabsorção): ↓ 50–70% com bisfosfonato/denosumabe confirma resposta. P1NP (formação): ↑ com teriparatida/romosozumabe'},
+    {lbl:'Avaliação odontológica',when:'Antes de iniciar bisfosfonato ou denosumabe; anualmente',meta:'Extrações, implantes, cirurgias ósseas: proceder ANTES de iniciar terapia (ou 3–6 meses depois). ONM: necrose mandibular/maxilar — maior risco em câncer + altas doses IV'},
+    {lbl:'Férias do bisfosfonato (Drug Holiday)',when:'Após 5 anos de VO (alendronato/risedronato) ou 3 anos de IV (ZA)',meta:'Reavaliar: T-score >-2,5 + sem fratura recente → pausa 1–2 anos. T-score <-2,5 ou histórico de fratura → continuar ou trocar para denosumabe/teriparatida. DXA anual durante a pausa'},
+    {lbl:'Fraturas atípicas de fêmur',when:'Se dor na coxa ou fêmur em uso de bisfosfonato — Rx urgente',meta:'Localização subtrocantérica ou diáfise · Cortical lateral espessada ("bico") no Rx · Suspender bisfosfonato imediatamente · Teriparatida acelera cicatrização'},
+  ];
+  document.getElementById('monList').innerHTML=MON.map(m=>`<div class="mon-row"><div class="mon-lbl">${m.lbl}</div><div class="mon-when">⏱ ${m.when}</div><div class="mon-meta">🎯 ${m.meta}</div></div>`).join('');
+}
+</script>
+</body>
+</html>

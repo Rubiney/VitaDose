@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Epilepsia — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .ep-hdr{background:linear-gradient(135deg,#4c1d95,#7c3aed);color:#fff;border-radius:14px;padding:18px;margin-bottom:14px}
+    .ep-title{font-size:1rem;font-weight:800;margin-bottom:4px}
+    .ep-sub{font-size:.73rem;opacity:.8}
+    label{font-size:.75rem;font-weight:700;color:#1e3a5f;display:block;margin-bottom:4px}
+    select{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:10px;padding:10px 12px;font-size:.85rem;background:#fff;margin-bottom:10px}
+    select:focus{border-color:#4c1d95;outline:none}
+    .checkbox-group{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
+    .checkbox-item{display:flex;align-items:center;gap:8px;font-size:.8rem;cursor:pointer}
+    .checkbox-item input[type=checkbox]{width:18px;height:18px;accent-color:#4c1d95;cursor:pointer}
+    .btn-calc{width:100%;background:#4c1d95;color:#fff;border:none;border-radius:12px;padding:13px;font-size:.87rem;font-weight:700;cursor:pointer;margin:8px 0}
+    .btn-auto{background:#0f766e;color:#fff;border:none;border-radius:10px;padding:10px 16px;font-size:.8rem;font-weight:700;cursor:pointer;margin-bottom:10px}
+    .tab-bar{display:flex;gap:6px;margin-bottom:14px}
+    .tab-btn{flex:1;padding:9px 4px;border-radius:10px;border:2px solid #e2e8f0;background:#fff;font-size:.76rem;font-weight:700;cursor:pointer;color:#64748b}
+    .tab-btn.active{border-color:#4c1d95;background:#f5f3ff;color:#4c1d95}
+    .rec-card{border-radius:12px;border:2px solid;padding:14px;margin-bottom:10px}
+    .rec-hdr{font-size:.63rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+    .rec-nome{font-size:.88rem;font-weight:800;margin-bottom:6px}
+    .rec-badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:.65rem;font-weight:800;color:#fff;margin:2px}
+    .rec-body{font-size:.78rem;margin-top:6px;line-height:1.7}
+    .rec-note{font-size:.71rem;color:#64748b;margin-top:6px;padding-top:6px;border-top:1px solid #f1f5f9}
+    .step-card{border-radius:12px;border-left:5px solid;padding:14px;margin-bottom:10px;background:#fff}
+    .step-num{font-size:.65rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+    .step-nome{font-size:.88rem;font-weight:800;margin-bottom:6px}
+    .step-body{font-size:.78rem;line-height:1.7}
+    .step-time{display:inline-block;background:#f1f5f9;border-radius:6px;padding:2px 8px;font-size:.68rem;font-weight:800;color:#475569;margin-bottom:6px}
+    .mon-row{padding:8px 0;border-bottom:1px solid #f1f5f9;font-size:.77rem}
+    .mon-row:last-child{border-bottom:none}
+    .mon-lbl{font-weight:800;color:#1e3a5f;margin-bottom:2px}
+    .mon-alvo{font-size:.71rem;color:#4c1d95;font-weight:700;margin-bottom:2px}
+    .mon-sub{font-size:.7rem;color:#64748b}
+    .inter-card{border-radius:10px;border-left:4px solid;padding:10px 12px;margin-bottom:8px;font-size:.76rem}
+    .inter-nome{font-weight:800;margin-bottom:4px}
+    .inter-list{line-height:1.7;color:#374151}
+  </style>
+</head>
+<body>
+<header class="top-bar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <span class="top-title">Epilepsia — Algoritmo Terapêutico</span>
+  <div class="top-right"></div>
+</header>
+<main class="container" style="padding-bottom:90px">
+
+  <div class="ep-hdr">
+    <div class="ep-title">⚡ Epilepsia — Escolha de DEA e Manejo</div>
+    <div class="ep-sub">Seleção de DEA por tipo de crise · Status Epilepticus · Monitoramento de níveis séricos · Interações</div>
+  </div>
+
+  <div class="tab-bar">
+    <button class="tab-btn active" id="tb0" onclick="showTab(0)">Escolha DEA</button>
+    <button class="tab-btn" id="tb1" onclick="showTab(1)">Status Epilepticus</button>
+    <button class="tab-btn" id="tb2" onclick="showTab(2)">Monitoramento</button>
+  </div>
+
+  <!-- TAB 0 – ESCOLHA DE DEA -->
+  <div id="tab0">
+    <button class="btn-auto" onclick="autoFill()">⚡ Auto-preencher do paciente ativo</button>
+    <div class="card" style="padding:12px 14px">
+      <label>Tipo de crise epiléptica (ILAE 2017)</label>
+      <select id="ep_tipo">
+        <option value="focal">Focal (início focal com/sem generalização)</option>
+        <option value="gen_tc">Generalizada tônico-clônica (GTC)</option>
+        <option value="ausencia">Ausência (epilepsia infância/juvenil)</option>
+        <option value="mioclonica">Mioclônica (EMJ — Epilepsia Mioclônica Juvenil)</option>
+        <option value="atonica">Atônica / Tônica (Lennox-Gastaut)</option>
+        <option value="desconhecida">Crise de início desconhecido</option>
+      </select>
+      <label>Perfil do paciente</label>
+      <select id="ep_perfil">
+        <option value="adulto">Adulto (&gt;18 anos)</option>
+        <option value="idoso">Idoso (&gt;65 anos)</option>
+        <option value="gestante">Gestante / Potencial fértil</option>
+        <option value="crianca">Criança / Adolescente (&lt;18 anos)</option>
+      </select>
+      <label>Comorbidades relevantes</label>
+      <div class="checkbox-group">
+        <label class="checkbox-item"><input type="checkbox" id="ep_humor"> Transtorno humor/depressão</label>
+        <label class="checkbox-item"><input type="checkbox" id="ep_drc"> DRC (TFG &lt;60)</label>
+        <label class="checkbox-item"><input type="checkbox" id="ep_hepato"> Hepatopatia (Child B/C)</label>
+        <label class="checkbox-item"><input type="checkbox" id="ep_anticoag"> Em uso de anticoagulante / antiagregante</label>
+        <label class="checkbox-item"><input type="checkbox" id="ep_acv"> AVC / Lesão estrutural (epilepsia focal sintomática)</label>
+      </div>
+    </div>
+    <button class="btn-calc" onclick="calcDEA()">💊 Gerar algoritmo de DEA</button>
+    <div id="deaResult" style="display:none"></div>
+  </div>
+
+  <!-- TAB 1 – STATUS EPILEPTICUS -->
+  <div id="tab1" style="display:none">
+    <div class="card" style="padding:10px 14px;margin-bottom:10px;border-left:4px solid #dc2626">
+      <div style="font-size:.78rem;font-weight:800;color:#dc2626;margin-bottom:6px">🚨 Status Epilepticus — Protocolo Sequencial</div>
+      <div style="font-size:.72rem;color:#374151;line-height:1.6">
+        Definição: crise &gt;5 min ou ≥2 crises sem recuperação da consciência.<br>
+        Mortalidade: 20% se refratário. ABCDE + glicemia imediata + acesso venoso.
+      </div>
+    </div>
+    <div id="statusList"></div>
+  </div>
+
+  <!-- TAB 2 – MONITORAMENTO -->
+  <div id="tab2" style="display:none">
+    <div class="card" style="padding:10px 14px;margin-bottom:10px">
+      <div style="font-size:.78rem;font-weight:800;color:#4c1d95;margin-bottom:10px">🩸 Nível Sérico dos DEAs</div>
+      <div id="monList"></div>
+    </div>
+    <div class="card" style="padding:10px 14px;margin-bottom:10px">
+      <div style="font-size:.78rem;font-weight:800;color:#dc2626;margin-bottom:10px">⚠️ Interações Medicamentosas dos DEAs</div>
+      <div id="interList"></div>
+    </div>
+    <div class="card" style="padding:10px 14px">
+      <div style="font-size:.78rem;font-weight:800;color:#9d174d;margin-bottom:10px">🤰 Epilepsia na Gestação</div>
+      <div id="gestList"></div>
+    </div>
+  </div>
+
+</main>
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+<script src="js/db.js"></script>
+<script>
+const pid=localStorage.getItem('vd_active');
+
+function showTab(n){
+  [0,1,2].forEach(i=>{document.getElementById('tab'+i).style.display=i===n?'block':'none';document.getElementById('tb'+i).classList.toggle('active',i===n);});
+  if(n===1) renderStatus();
+  if(n===2){renderMon();renderInter();renderGest();}
+}
+
+async function autoFill(){
+  if(!pid){alert('Nenhum paciente ativo.');return;}
+  const pac=await dbGet('pacientes',parseInt(pid));
+  if(!pac) return;
+  if(pac.idadePac&&parseInt(pac.idadePac)>=65) document.getElementById('ep_perfil').value='idoso';
+  if(pac.sexoPac==='F') document.getElementById('ep_perfil').value='gestante';
+}
+
+function recHTML(r){return `<div class="rec-card" style="border-color:${r.col}"><div class="rec-hdr" style="color:${r.col}">${r.hdr}</div><div class="rec-nome">${r.nome}</div><div>${(r.badges||[]).map(b=>`<span class="rec-badge" style="background:${b.c}">${b.t}</span>`).join('')}</div><div class="rec-body">${r.body}</div>${r.note?`<div class="rec-note">${r.note}</div>`:''}</div>`;}
+
+/* ── ESCOLHA DE DEA ──────────────────────────────────────────────────── */
+function calcDEA(){
+  const tipo    = document.getElementById('ep_tipo').value;
+  const perfil  = document.getElementById('ep_perfil').value;
+  const humor   = document.getElementById('ep_humor').checked;
+  const drc     = document.getElementById('ep_drc').checked;
+  const hepato  = document.getElementById('ep_hepato').checked;
+  const anticoag= document.getElementById('ep_anticoag').checked;
+  const acv     = document.getElementById('ep_acv').checked;
+  const recs=[];
+
+  const DEA={
+    focal:{
+      primeiro:'Lamotrigina 25–50 mg/dia → 100–200 mg/dia (titular lentamente); <strong>ou</strong> Levetiracetam 500 mg 2×/dia → 1000–3000 mg/dia',
+      segundo:'Oxcarbazepina 300 mg 2×/dia → 600–1200 mg 2×/dia; <strong>ou</strong> Carbamazepina 200 mg 2×/dia → 400–600 mg 2×/dia',
+      terceiro:'Lacosamida 50 mg 2×/dia → 100–200 mg 2×/dia (add-on); <strong>ou</strong> Topiramato 25 mg → 100–200 mg/dia; <strong>ou</strong> Brivaracetam 50–100 mg 2×/dia',
+      evitar:'Etosuximida (ausências apenas); ácido valproico se mulher fértil'
+    },
+    gen_tc:{
+      primeiro:'Ácido valproico 250 mg 2×/dia → 500–1500 mg/dia (ER); <strong>ou</strong> Levetiracetam 500 mg 2×/dia → 1500–3000 mg/dia',
+      segundo:'Lamotrigina 25 mg/dia → 100–400 mg/dia; <strong>ou</strong> Topiramato 25 mg → 100–400 mg/dia',
+      terceiro:'Perampanel 2 mg → 8–12 mg/dia (noite); <strong>ou</strong> Clobazam 10–20 mg/dia add-on',
+      evitar:'Carbamazepina, oxcarbazepina, fenitoína → podem agravar EMJ e crises GTC em síndromes idiopáticas'
+    },
+    ausencia:{
+      primeiro:'Etosuximida 250 mg 2×/dia → 500 mg 2–3×/dia (ausências puras, sem GTC); <strong>ou</strong> Ácido valproico (1ª linha se GTC associada)',
+      segundo:'Lamotrigina 25 mg → 100–200 mg/dia',
+      terceiro:'Clonazepam 0,5–1 mg/dia add-on (uso limitado por tolerância)',
+      evitar:'Carbamazepina, oxcarbazepina, fenitoína, gabapentina, vigabatrina → pioram ausências'
+    },
+    mioclonica:{
+      primeiro:'Ácido valproico (maior eficácia pan-sindrômica em EMJ) 500–1500 mg/dia; <strong>ou</strong> Levetiracetam 1000–3000 mg/dia',
+      segundo:'Clonazepam 0,5–2 mg/dia; <strong>ou</strong> Lamotrigina (menos eficaz em mioclonias, mas útil para GTC)',
+      terceiro:'Perampanel 4–8 mg/dia; <strong>ou</strong> Brivaracetam 50–100 mg 2×/dia',
+      evitar:'Carbamazepina, oxcarbazepina, fenitoína, gabapentina, pregabalina, lacosamida → agravam mioclonias'
+    },
+    atonica:{
+      primeiro:'Valproato 500–1500 mg/dia; <strong>ou</strong> Lamotrigina 100–400 mg/dia (combinação valproato + lamotrigina sinérgica no Lennox-Gastaut)',
+      segundo:'Clobazam 10–30 mg/dia; <strong>ou</strong> Clonazepam 1–4 mg/dia',
+      terceiro:'Rufinamida 200 mg/dia → 1600–3200 mg/dia (Lennox-Gastaut); <strong>ou</strong> Topiramato 100–400 mg/dia; <strong>ou</strong> Cannab. (CBD) se refratário',
+      evitar:'Carbamazepina → agravam crises atônicas e tônicas no Lennox-Gastaut'
+    },
+    desconhecida:{
+      primeiro:'Levetiracetam 500 mg 2×/dia → 1500–3000 mg/dia (perfil seguro, amplo espectro); <strong>ou</strong> Lamotrigina',
+      segundo:'Lacosamida ou Topiramato enquanto se aguarda investigação',
+      terceiro:'Reavaliar após EEG e neuroimagem para reclassificar o tipo de crise',
+      evitar:'Carbamazepina se suspeita de síndrome generalizada idiopática'
+    }
+  };
+  const d=DEA[tipo];
+
+  recs.push({hdr:'1ª Escolha (monoterapia inicial)',col:'#16a34a',nome:tipo==='focal'?'Lamotrigina ou Levetiracetam':tipo==='ausencia'?'Etosuximida ou Valproato':tipo==='mioclonica'?'Valproato ou Levetiracetam':tipo==='atonica'?'Valproato + Lamotrigina':tipo==='gen_tc'?'Valproato ou Levetiracetam':'Levetiracetam ou Lamotrigina',
+    badges:[{t:'Monoterapia',c:'#16a34a'},{t:'1ª linha',c:'#059669'}],
+    body:d.primeiro,note:'Iniciar com dose baixa e titular lentamente para reduzir tolerabilidade (2–4 semanas por degrau de titulação).'});
+
+  recs.push({hdr:'2ª Escolha / Alternativa',col:'#d97706',nome:'Se falha na 1ª opção ou intolerância',badges:[{t:'Alternativa',c:'#d97706'}],
+    body:d.segundo,note:'Após 2 DEAs em monoterapia sem controle → epilepsia refratária potencial — referenciar para neurologista.'});
+
+  recs.push({hdr:'3ª Linha / Terapia Add-on',col:'#dc2626',nome:'Terapia combinada — 2+ crises refratárias',badges:[{t:'Add-on',c:'#dc2626'},{t:'Refratária',c:'#7f1d1d'}],
+    body:d.terceiro,note:d.evitar?`⚠️ <strong>Evitar neste tipo:</strong> ${d.evitar}`:''});
+
+  // Perfil-specific
+  if(perfil==='gestante'){
+    recs.push({hdr:'⚠️ Gestante / Potencial Fértil',col:'#9d174d',nome:'Ácido valproico CONTRAINDICADO — risco teratogênico maior',badges:[{t:'Gestação',c:'#9d174d'}],
+      body:'<strong>Evitar sempre:</strong> Valproato (↑ risco de espinha bífida 5–9%, malformações cardíacas, déficit cognitivo fetal — risco 3–4× maior que outros DEAs)<br><strong>Preferir:</strong> Lamotrigina (menor risco, mas doses aumentam durante gestação) · Levetiracetam (dados crescentes, segurança razoável)<br><strong>Ácido fólico:</strong> 4–5 mg/dia antes da concepção e no 1T (não 0,4 mg padrão — dose maior para DEAs que inibem folato)<br><strong>Monitorar:</strong> nível de lamotrigina a cada trimestre (metabolismo ↑ 200–300% na gestação — ajustar dose)',
+      note:'Registro de epilepsia na gestação (EURAP/NAAED): malformações maiores ~2% (LEV, LTG) vs ~5–10% (VPA). Qualquer DEA no menor número possível e menor dose eficaz.'});
+  }
+  if(perfil==='idoso'){
+    recs.push({hdr:'Idoso — Considerações específicas',col:'#0369a1',nome:'Lamotrigina e Levetiracetam são preferidos no idoso',badges:[{t:'Idoso',c:'#0369a1'}],
+      body:'<strong>Preferir:</strong> Lamotrigina (sem indução enzimática, boa tolerabilidade) · Levetiracetam (requer ajuste em DRC)<br><strong>Evitar:</strong> Carbamazepina (hiponatremia, interações, sedação) · Fenitoína (osteoporose, metabolismo saturável) · Fenobarbital (sedação, quedas, demência)<br><strong>Menor dose inicial:</strong> metabolismo mais lento, maior sensibilidade ao SNC<br><strong>Quedas:</strong> DEAs sedativos aumentam risco — preferir não-sedativos',
+      note:'AVC é a causa mais comum de epilepsia em >65 anos — considerar etiologia focal sintomática antes de tratar.'});
+  }
+  if(humor) recs.push({hdr:'Transtorno de Humor Comórbido',col:'#7c3aed',nome:'DEA com perfil psicotrópico favorável',badges:[{t:'Humor',c:'#7c3aed'}],
+    body:'<strong>Favoráveis:</strong> Lamotrigina (ação estabilizadora de humor, aprovada para TB bipolar), Valproato (estabilizador clássico)<br><strong>Neutros:</strong> Levetiracetam<br><strong>Cuidado:</strong> Levetiracetam pode causar irritabilidade, agitação e disforia em ~10% (considerar breve piracetam se severo)<br><strong>Evitar:</strong> Topiramato (lentidão cognitiva) · Fenobarbital (depressão)',note:'Depressão em epilépticos é subdiagnosticada e subestimada — triagem ativa com PHQ-9 recomendada.'});
+  if(anticoag) recs.push({hdr:'Em uso de Anticoagulante / Antiagregante',col:'#b45309',nome:'Indutores enzimáticos reduzem efeito de warfarina e NOACs',badges:[{t:'Interação crítica',c:'#b45309'}],
+    body:'<strong>Indutores (reduzem efeito de warfar/NOAC/anticoncepcionais):</strong> Carbamazepina, Fenitoína, Fenobarbital, Primidona, Oxcarbazepina<br><strong>Preferir DEAs não-indutores:</strong> Lamotrigina, Levetiracetam, Lacosamida, Gabapentina, Pregabalina, Brivaracetam<br>Valproato: inibe CYP2C9 → ↑ INR da warfarina — monitorar INR de perto',note:'Ao trocar DEA indutor por não-indutor: nível de NOAC/warfarina sobe — reavaliar anticoagulação em 4–6 semanas.'});
+  if(drc) recs.push({hdr:'DRC (TFG <60)',col:'#0f766e',nome:'Ajuste de dose renal em DEAs com excreção renal',badges:[{t:'DRC',c:'#0f766e'}],
+    body:'Levetiracetam: reduzir dose proporcionalmente à TFG (TFG 30–59: 500–1500 mg/dia; <30: 250–750 mg/dia)<br>Gabapentina / Pregabalina: redução significativa de dose por TFG<br>Lamotrigina: sem ajuste significativo renal (excreção hepática/glucuronidação)<br>Valproato: sem ajuste renal (mas monitorar amônia em DRC avançada)<br>Topiramato: reduzir 50% se TFG <70 mL/min',note:'Diálise remove levetiracetam — suplementar após hemodiálise.'});
+
+  document.getElementById('deaResult').style.display='block';
+  document.getElementById('deaResult').innerHTML=recs.map(recHTML).join('');
+  document.getElementById('deaResult').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+/* ── STATUS EPILEPTICUS ──────────────────────────────────────────────── */
+function renderStatus(){
+  const STEPS=[
+    {t:'0–5 min',col:'#16a34a',nome:'Fase Pré-hospitalar / Estabilização',
+     body:`• Posição de segurança (decúbito lateral) · Proteger cabeça<br>• Acesso venoso + coleta: glicemia capilar (urgente!), eletrólitos, hemograma, CPK, nível sérico DEA<br>• O₂ suplementar se SpO₂ &lt;90%<br>• <strong>Hipoglicemia:</strong> Glicose 50 mL 50% IV + tiamina 100 mg IV (em etilistas)<br>• Cronometrar início da crise`},
+    {t:'5–20 min (1ª linha)',col:'#d97706',nome:'Benzodiazepínico — Tratamento de Emergência',
+     body:`<strong>Acesso IV disponível:</strong><br>Diazepam 10 mg IV (2 mg/min) — pode repetir 1× em 5 min <em>ou</em><br>Lorazepam 4 mg IV (2 mg/min) — pode repetir 1× em 5 min (preferido se disponível — ação mais prolongada)<br><br><strong>Sem acesso IV:</strong><br>Midazolam 10 mg IM (adulto &gt;40 kg) — primeira escolha pré-hospitalar (tão eficaz quanto IV no RAMPART trial)<br>Midazolam intranasal 0,2 mg/kg · Diazepam retal 0,2–0,5 mg/kg<br><br>Meta: controle da crise em <strong>20 min</strong> do início`},
+    {t:'20–40 min (2ª linha)',col:'#ea580c',nome:'DEA de Emergência — Se falha ao BZD',
+     body:`Iniciar imediatamente se crise persistir após BZD:<br><br><strong>Fenitoína / Fosfenitoína:</strong> Fenitoína 20 mg/kg IV (velocidade máx 50 mg/min) em SF 0,9% · Monitorar ECG (arritmia, hipotensão) — NÃO diluir em SG<br><em>ou</em><br><strong>Valproato IV:</strong> 40 mg/kg IV em 10 min (máx 3 g) — mais seguro hemodinamicamente que fenitoína<br><em>ou</em><br><strong>Levetiracetam IV:</strong> 60 mg/kg IV em 10 min (máx 4,5 g) — tolerabilidade superior<br><em>ou</em><br><strong>Lacosamida IV:</strong> 200–400 mg IV em 15 min (se focal)`},
+    {t:'40–60 min (3ª linha)',col:'#dc2626',nome:'Status Refratário — Anestesia Geral',
+     body:`Status refratário = falha após BZD + 1 DEA de 2ª linha. UTI obrigatória.<br><br><strong>Midazolam IV contínuo:</strong> 0,2 mg/kg bolus → 0,05–0,5 mg/kg/h (mais usado, rápida titulação)<br><em>ou</em><br><strong>Propofol IV:</strong> 1–2 mg/kg bolus → 2–10 mg/kg/h (síndrome do propofol se &gt;48h: acidose, rabdomiólise)<br><em>ou</em><br><strong>Barbitúricos (Pentobarbital/Tiopental):</strong> indução de burst-suppression no EEG — se refratário às opções acima<br>Cetamina IV: opção emergente (antagonista NMDA — complementar com BZD)`},
+    {t:'>60 min',col:'#7f1d1d',nome:'Super-Refratário — Tratamento Especializado',
+     body:`Status super-refratário: persiste &gt;24h mesmo com anestesia geral.<br><br>• Imunoterapia: IVIG, plasmaférese, metilprednisolona IV (suspeitar de encefalite autoimune — anti-NMDAR, LGI1, CASPR2)<br>• Cetamina IV alta dose (opção crescente)<br>• Hipotermia terapêutica<br>• Dieta cetogênica via SNG<br>• Estimulação magnética transcraniana (rTMS) — centers especializados<br><br>Painel de encefalite autoimune: sorologias LCR + sangue urgente`},
+  ];
+  document.getElementById('statusList').innerHTML=STEPS.map(s=>`<div class="step-card" style="border-left-color:${s.col}"><div class="step-num" style="color:${s.col}">⏱ ${s.t}</div><div class="step-nome">${s.nome}</div><div class="step-body">${s.body}</div></div>`).join('');
+}
+
+/* ── MONITORAMENTO ───────────────────────────────────────────────────── */
+function renderMon(){
+  const MON=[
+    {lbl:'Fenitoína',alvo:'10–20 mcg/mL (livre: 1–2 mcg/mL)',sub:'Nível sérico 7–14 dias após dose estável · Coletar antes da dose matinal (vale) · Farmacoci. saturável (Michaelis-Menten) — pequenos ajustes = grandes variações de nível · Monitorar em hipoalbuminemia (corrigir nível para albumina)'},
+    {lbl:'Ácido Valproico (VPA)',alvo:'50–100 mcg/mL',sub:'Nível em 5–7 dias; vale antes da dose · Mais eficaz em GTC e EMJ · Monitorar TGP, amônia, plaquetas · Hiperamoniemia: suplementar carnitina 50 mg/kg/dia'},
+    {lbl:'Carbamazepina (CBZ)',alvo:'4–12 mcg/mL',sub:'Autoindutor: nível cai nas primeiras 4–6 semanas (autindução de CYP3A4) → reavaliar dose após 1–2 meses · Nível 12–14 dias após estabilização · Monitorar Na⁺ (síndrome de SIADH em ~10%)'},
+    {lbl:'Lamotrigina (LTG)',alvo:'3–14 mcg/mL (alvo ~5 mcg/mL)',sub:'Na gestação: nível cai até 65% (↑ glucuronidação) → monitorar a cada trimestre e 6–8 sem pós-parto · Em uso de VPA: clearance ↓ → nível ↑ (usar doses menores) · Em uso de CBZ: clearance ↑ → nível ↓'},
+    {lbl:'Levetiracetam (LEV)',alvo:'20–40 mcg/mL (orientativo)',sub:'Monitoramento rotineiro de nível sérico não obrigatório · Ajuste por TFG essencial em DRC · Efeito colateral comportamental (irritabilidade): considerar ajuste de dose ou troca'},
+    {lbl:'Oxcarbazepina (OXC)',alvo:'MHD (metabólito ativo): 10–40 mcg/mL',sub:'Monitorar Na⁺ sérico — hiponatremia em 25% (mais que CBZ) · Menor efeito indutor que CBZ'},
+    {lbl:'Fenobarbital (PB)',alvo:'15–40 mcg/mL',sub:'Sedação dose-dependente · Meia-vida longa (72–120h) → equilíbrio em 3–4 semanas · Forte indutor enzimático — múltiplas interações'},
+    {lbl:'Topiramato (TPM)',alvo:'2–25 mcg/mL (variável)',sub:'RAM: lentidão cognitiva ("dumbig down"), perda de peso (benéfica em obesos), litíase renal (↑ ingestão hídrica), acidose metabólica (inibição da anidrase carbônica) · Teratogênico: fenda palatina (3–4×)'},
+  ];
+  document.getElementById('monList').innerHTML=MON.map(m=>`<div class="mon-row"><div class="mon-lbl">${m.lbl}</div><div class="mon-alvo">🎯 ${m.alvo}</div><div class="mon-sub">${m.sub}</div></div>`).join('');
+}
+
+function renderInter(){
+  const INTER=[
+    {nome:'Indutores Enzimáticos (↑ CYP3A4/2C9/2C19/UGT)',col:'#dc2626',
+     list:'Carbamazepina, Fenitoína, Fenobarbital, Primidona, Oxcarbazepina<br>Reduzem nível de: warfarina, NOACs, anticoncepcionais hormonais, imunossupressores (ciclosporina, tacrolimo), antirretrovirais, corticosteroides, digitálicos, verapamil'},
+    {nome:'Inibidores Enzimáticos (↑ nível de outros DEAs e fármacos)',col:'#d97706',
+     list:'Valproato: inibe UGT e CYP2C9 → ↑ lamotrigina (2–3×), ↑ fenitoína (variável), ↑ warfarina<br>Combinação valproato + lamotrigina: nível de LTG deve ser mais baixo para evitar toxicidade'},
+    {nome:'Anticonceptivos Hormonais + DEAs indutores',col:'#9d174d',
+     list:'CBZ, PHT, PB, OXC, Primidona, Topiramato &gt;200 mg/dia: reduzem eficácia contraceptiva → falha anticoncepcional<br>Recomendação: usar contraceptivo não-hormonal (dispositivo intrauterino de cobre) ou anticoncepcional com &gt;50 mcg de EE (não disponível no Brasil) + método de barreira'},
+    {nome:'DEAs com Poucos Efeitos Sobre o CYP',col:'#16a34a',
+     list:'Levetiracetam, Lamotrigina (sem interação CYP), Lacosamida, Gabapentina, Pregabalina, Brivaracetam: baixo potencial de interação enzimática — preferidos em politerapia ou quando interações são preocupantes'},
+  ];
+  document.getElementById('interList').innerHTML=INTER.map(i=>`<div class="inter-card" style="border-color:${i.col}"><div class="inter-nome" style="color:${i.col}">${i.nome}</div><div class="inter-list">${i.list}</div></div>`).join('');
+}
+
+function renderGest(){
+  const items=[
+    '⚠️ <strong>Valproato: evitar em toda mulher em idade fértil que possa engravidar</strong> — malformações 3–4× maior (VPA ER, qualquer dose) · Quando essencial e sem alternativa: consentimento informado, dose mínima eficaz, ácido fólico 4–5 mg/dia',
+    '🟡 <strong>Lamotrigina 1ª opção na gestação:</strong> monitorar nível a cada trimestre — clearance ↑ 200–300%; ajustar dose conforme nível sérico; reduzir dose 25–50% após parto para evitar toxicidade',
+    '🟡 <strong>Levetiracetam:</strong> dados crescentes de segurança; também sofre clearance aumentado na gestação',
+    '🔴 <strong>Topiramato:</strong> risco de fenda oral (0,7% vs 0,1% base) — evitar ou usar dose mínima; dados de restrição de crescimento fetal',
+    '💊 <strong>Ácido fólico 4–5 mg/dia:</strong> iniciar antes da concepção e manter no 1T (DEAs antifólicos: VPA, carbamazepina, topiramato, fenitoína)',
+    '💉 <strong>Vitamina K 10 mg/dia via oral:</strong> último mês de gestação se em uso de indutor enzimático (prevenção de doença hemorrágica neonatal)',
+    '🤱 <strong>Amamentação:</strong> maioria dos DEAs é segura — levetiracetam e lamotrigina passam ao leite (monitorar sonolência no lactente); fenobarbital: sedação neonatal — evitar',
+  ];
+  document.getElementById('gestList').innerHTML=items.map(t=>`<div style="font-size:.76rem;line-height:1.7;padding:6px 0;border-bottom:1px dashed #e2e8f0">${t}</div>`).join('');
+}
+</script>
+</body>
+</html>
