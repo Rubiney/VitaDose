@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Pneumologia Avançada — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .pneu-hdr{background:linear-gradient(135deg,#0c4a6e,#0369a1);color:#fff;border-radius:14px;padding:18px;margin-bottom:14px}
+    .pneu-title{font-size:1rem;font-weight:800;margin-bottom:4px}
+    .pneu-sub{font-size:.73rem;opacity:.8}
+    label{font-size:.75rem;font-weight:700;color:#1e3a5f;display:block;margin-bottom:4px}
+    select{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:10px;padding:10px 12px;font-size:.85rem;background:#fff;margin-bottom:10px}
+    select:focus{border-color:#0369a1;outline:none}
+    .checkbox-group{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
+    .checkbox-item{display:flex;align-items:center;gap:8px;font-size:.8rem;cursor:pointer}
+    .checkbox-item input[type=checkbox]{width:18px;height:18px;accent-color:#0369a1;cursor:pointer}
+    .btn-calc{width:100%;background:#0369a1;color:#fff;border:none;border-radius:12px;padding:13px;font-size:.87rem;font-weight:700;cursor:pointer;margin:8px 0}
+    .tab-bar{display:flex;gap:6px;margin-bottom:14px}
+    .tab-btn{flex:1;padding:9px 4px;border-radius:10px;border:2px solid #e2e8f0;background:#fff;font-size:.72rem;font-weight:700;cursor:pointer;color:#64748b}
+    .tab-btn.active{border-color:#0369a1;background:#e0f2fe;color:#0369a1}
+    .rec-card{border-radius:12px;border:2px solid;padding:14px;margin-bottom:10px}
+    .rec-hdr{font-size:.63rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+    .rec-nome{font-size:.88rem;font-weight:800;margin-bottom:6px}
+    .rec-badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:.65rem;font-weight:800;color:#fff;margin:2px}
+    .rec-body{font-size:.78rem;margin-top:6px;line-height:1.7}
+    .rec-note{font-size:.71rem;color:#64748b;margin-top:6px;padding-top:6px;border-top:1px solid #f1f5f9}
+    .pn-card{border-radius:10px;border-left:5px solid;padding:10px 14px;margin-bottom:8px;background:#fff}
+    .pn-nome{font-size:.83rem;font-weight:800;margin-bottom:4px}
+    .pn-body{font-size:.76rem;line-height:1.7;color:#374151}
+  </style>
+</head>
+<body>
+<header class="top-bar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <span class="top-title">Pneumologia Avançada</span>
+  <div class="top-right"></div>
+</header>
+<main class="container" style="padding-bottom:90px">
+  <div class="pneu-hdr">
+    <div class="pneu-title">🫁 Pneumologia Avançada — Algoritmos Clínicos</div>
+    <div class="pneu-sub">Fibrose Pulmonar · Hipertensão Pulmonar · SARA · Derrame Pleural</div>
+  </div>
+  <div class="tab-bar">
+    <button class="tab-btn active" id="tb0" onclick="showTab(0)">FPI & HP</button>
+    <button class="tab-btn" id="tb1" onclick="showTab(1)">SARA & Derrame</button>
+    <button class="tab-btn" id="tb2" onclick="showTab(2)">Outras Doenças</button>
+  </div>
+
+  <!-- TAB 0 — FPI & HP -->
+  <div id="tab0">
+    <div class="card" style="padding:12px 14px">
+      <label>Condição</label>
+      <select id="fpi_cond">
+        <option value="fpi">FPI — Fibrose Pulmonar Idiopática</option>
+        <option value="hp1">HP Grupo 1 — HAP (Hipertensão Arterial Pulmonar)</option>
+        <option value="hp2">HP Grupo 2 — Cardiopatia Esquerda</option>
+        <option value="hp3">HP Grupo 3 — Doenças Pulmonares / Hipóxia</option>
+        <option value="hp4">HP Grupo 4 — CTEPH (Tromboembólica Crônica)</option>
+        <option value="hap_class">HAP — Classificação funcional e escalonamento</option>
+      </select>
+    </div>
+    <button class="btn-calc" onclick="calcFPIHP()">🫁 Gerar protocolo</button>
+    <div id="fpihpResult" style="display:none"></div>
+  </div>
+
+  <!-- TAB 1 — SARA & DERRAME -->
+  <div id="tab1" style="display:none">
+    <div id="saraList"></div>
+  </div>
+
+  <!-- TAB 2 — OUTRAS -->
+  <div id="tab2" style="display:none">
+    <div id="outrosList"></div>
+  </div>
+</main>
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+<script src="js/db.js"></script>
+<script>
+function showTab(n){[0,1,2].forEach(i=>{document.getElementById('tab'+i).style.display=i===n?'block':'none';document.getElementById('tb'+i).classList.toggle('active',i===n);});if(n===1)renderSARA();if(n===2)renderOutros();}
+function recHTML(r){return `<div class="rec-card" style="border-color:${r.col}"><div class="rec-hdr" style="color:${r.col}">${r.hdr}</div><div class="rec-nome">${r.nome}</div><div>${(r.badges||[]).map(b=>`<span class="rec-badge" style="background:${b.c}">${b.t}</span>`).join('')}</div><div class="rec-body">${r.body}</div>${r.note?`<div class="rec-note">${r.note}</div>`:''}</div>`;}
+
+/* ─── FPI & HIPERTENSÃO PULMONAR ─────────────────────────────────────── */
+function calcFPIHP(){
+  const cond=document.getElementById('fpi_cond').value;
+  const PROTO={
+    fpi:{hdr:'FPI — Fibrose Pulmonar Idiopática',col:'#0369a1',
+      nome:'Nintedanibe ou Pirfenidona — Antifibróticos',
+      body:`<strong>Diagnóstico (IDSA/ATS/ERS 2022):</strong><br>
+TCAR com padrão UIP: "faveolamento" ± bronquiectasias de tração · gradiente basal-posterior<br>
+Excluir causas secundárias (exposição, CTD, drogas) → confirmação sem biópsia se UIP típico &gt;60 anos<br>
+Biópsia cirúrgica (VATS): TCAR indeterminado em <60 anos ou DPI-CTD suspeita<br><br>
+<strong>Pirfenidona (Esbriet) 267 mg:</strong><br>
+• Semana 1–2: 1 cp 3×/dia (801 mg/dia) · Semana 3–4: 2 cp 3×/dia · Manutenção: 3 cp 3×/dia (2403 mg/dia)<br>
+• Tomar com alimento (↓ RAM GI e fotossensibilidade) · Evitar sol direto — protetor solar obrigatório<br>
+• RAM: fotossensibilidade, náusea, fadiga, ↑ TGP · Monitorar TGP a 1, 3, 6 meses → suspender se &gt;3× LSN<br>
+• Interação: ciprofloxacino e fluvoxamina (inibidores CYP1A2) → aumentam nível; tabagismo reduz nível<br><br>
+<strong>Nintedanibe (Ofev) 150 mg:</strong><br>
+• 150 mg 2×/dia VO com alimento · Reduzir para 100 mg 2×/dia se intolerância<br>
+• RAM: diarreia (em 60% — geralmente maneja com loperamida), ↑ TGP, ↑ risco de sangramento<br>
+• CI: anticoagulação plena (risco hemorrágico aumentado) · Monitorar TGP · NÃO em gestação<br>
+• Interação: rifampicina (potente indutor P-gp → ↓ nintedanibe 50%) · Ketoconazol ↑ nível<br><br>
+<strong>Comparação:</strong> Ambos reduzem declínio de CVF em ~50% (não revertem fibrose). Escolha por perfil de tolerabilidade e comorbidades.<br><br>
+<strong>Suporte não-farmacológico:</strong><br>
+• Oxigenoterapia domiciliar se SpO₂ &lt;88% em repouso ou esforço<br>
+• Reabilitação pulmonar (melhora tolerância ao exercício e QoL)<br>
+• Antirrefluxo (omeprazol/pantoprazol): DRGE associada a progressão da FPI<br>
+• Transplante pulmonar: indicar precocemente (PF &lt;80% ou declínio &gt;10% CVF em 6 meses)`,
+      note:'FPI vs DPID-CTD: importante distinguir — FPI não tem imunossupressor eficaz (corticosteroides e azatioprina PIORA prognóstico — PANTHER trial). DPI associada a CTD (esclerodermia, miosite): nintedanibe aprovado + imunossupressor (micofenolato, rituximabe).'},
+    hp1:{hdr:'HP Grupo 1 — HAP (Hipertensão Arterial Pulmonar)',col:'#7c3aed',
+      nome:'Tratamento combinado escalonado — ERA + PDE5i + Prostanoides',
+      body:`<strong>Diagnóstico (ESC/ERS 2022):</strong><br>
+Cateterismo cardíaco direito: PAPm ≥20 mmHg + PCP ≤15 mmHg + RVP ≥2 UW<br>
+Avaliação de risco: FC, caminhada 6 min (TC6M), NT-proBNP, TAPSE, IC (REVEAL 2.0 / COMPERA)<br><br>
+<strong>Tratamento por risco:</strong><br>
+<strong>Baixo risco (CF I–II, TC6M &gt;440m, NT-proBNP normal, sem sinais de IVD):</strong><br>
+• Combinação oral dupla desde o diagnóstico (AMBITION trial)<br>
+• <strong>Ambrisentan 10 mg 1×/dia</strong> (ERA seletivo ETA) + <strong>Tadalafila 40 mg 1×/dia</strong> (PDE5i)<br>
+• OU Macitentan 10 mg + Tadalafila 40 mg<br><br>
+<strong>Risco intermediário (CF III ou piora):</strong><br>
+• Tripla terapia: ERA + PDE5i + <strong>Selexipague 200 mcg 2×/dia → titular até máx 1600 mcg 2×/dia</strong> (prostaciclin receptor agonist oral — GRIPHON trial)<br>
+• OU substituir selexipague por prostanoides inalatórios: Iloprost inalatório 2,5–5 mcg 6–9×/dia<br><br>
+<strong>Alto risco / deterioração (CF IV, IVD, síncope):</strong><br>
+• <strong>Epoprosterenol IV contínuo</strong> (Flolan): iniciar 2 ng/kg/min → titular 20–40 ng/kg/min · cateter central dedicado · meia-vida 3–5 min (NUNCA interromper abruptamente)<br>
+• OU Treprostinila SC/IV contínua (mais estável que epoprosterenol)<br>
+• Transplante bilateral de pulmão: indicar em alto risco refratário<br><br>
+<strong>Anticoagulação:</strong><br>
+• HAP idiopática, hereditária, anorexígenos: warfarina INR 1,5–2,5 (evidência controversa — ESCP 2022 não recomenda de rotina; avaliar individualmente)<br>
+• HAP-CTD (esclerodermia): anticoagular se TEP/TVP concomitante`,
+      note:'Teste vasodilatador agudo (TVA): óxido nítrico inalado 40 ppm × 5 min no cateterismo. Resposta positiva: queda ≥10 mmHg na PAPm com PAPm final &lt;40 mmHg. Se respondedor: tentar bloqueador canal cálcio (nifedipino/diltiazem) — 10% dos pacientes. Não testar com BCC sem TVA positivo (risco de piora hemodinâmica grave).'},
+    hp2:{hdr:'HP Grupo 2 — Cardiopatia Esquerda',col:'#dc2626',
+      nome:'Tratar a doença cardíaca de base — ERA e PDE5i geralmente contraindicados',
+      body:`<strong>Etiologias:</strong> IC com fração de ejeção reduzida (ICFEr) · IC com FE preservada (ICFEp) · doença valvar<br>
+PCP &gt;15 mmHg = fator diferenciador de Grupo 1 · RVP pode estar elevada (componente pré-capilar "misto")<br><br>
+<strong>Tratamento:</strong><br>
+• Tratar IC otimamente: IECA/ARNI + beta-bloqueador + MRA + SGLT2i (ICFEr)<br>
+• Se IC-FEp: SGLT2i (empagliflozina/dapagliflozina — reduzem HP em FEp)<br>
+• Valvopatia: cirurgia/intervenção percutânea quando indicada<br><br>
+<strong>PDE5i e ERA em HP-Grupo 2:</strong><br>
+• Sildenafila/tadalafila: NÃO recomendados de rotina em HP Grupo 2 (pioram congestão pulmonar) — somente em componente pré-capilar misto documentado em centro de referência<br>
+• Bosentana: CONTRAINDICADA (retém líquido, piora IC descompensada)<br><br>
+<strong>Semaglutida 2,4 mg SC/sem:</strong><br>
+• STEP-HFpEF trial: melhora HP e remodeling em IC-FEp com obesidade — nova indicação emergente`,
+      note:'Hemoglobina elevada (policitemia) + HP Grupo 2: flebotomia somente se Hb >18 g/dL — não reduz HP por si só. Focos de HAP sobrepostos a doença esquerda: avaliar em centro de HP especializado (difícil distinção sem cateterismo seriado).'},
+    hp3:{hdr:'HP Grupo 3 — Doenças Pulmonares e Hipóxia',col:'#065f46',
+      nome:'Tratar a doença de base + Oxigenoterapia',
+      body:`<strong>Etiologias:</strong> DPOC · FPI · Pneumopatias intersticiais (FAN, esclerodermia) · Apneia do sono grave · Altitude<br><br>
+<strong>Tratamento:</strong><br>
+• Oxigenoterapia: corrigir hipóxia crônica (SpO₂ alvo ≥90–92%) — mais eficaz em HP Grupo 3<br>
+• CPAP / VNI: apneia do sono → reduz HP efetivamente<br>
+• Tratar a doença de base (DPOC, FPI, etc.)<br><br>
+<strong>Treprostinila inalatória (Tyvaso):</strong><br>
+• Aprovada FDA 2021 para HP Grupo 3 associada a FPI/pneumopatia intersticial (INCREASE trial)<br>
+• Dose: 3 puffs 4×/dia → titular até 9 puffs 4×/dia (inalador ultrassônico)<br>
+• Melhora TC6M +31m vs placebo · Redução hospitalização<br><br>
+<strong>Drogas não recomendadas em HP Grupo 3:</strong><br>
+PDE5i, ERA orais: sem evidência consistente e potencial de piora VQ (vasodilatam vasos mal-ventilados → ↑ hipóxia)`,
+      note:'HP Grupo 3 "desproporcional" (RVP ≥5 UW, PAPm ≥35 mmHg, IC baixo com doença pulmonar leve): avaliar em centro de HP como possível HAP ou HP-CTEPH sobrepostos.'},
+    hp4:{hdr:'HP Grupo 4 — CTEPH (Hipertensão Pulmonar Tromboembólica Crônica)',col:'#b45309',
+      nome:'Riociguate + Tromboendarterectomia Pulmonar (TEA)',
+      body:`<strong>Diagnóstico:</strong><br>
+CTEPH = HP persistente (≥3 meses de anticoagulação adequada pós-TEP) com obstrução arterial por trombo organizado<br>
+Cintilografia V/Q: padrão segmentar de não-correspondência · Angiotomografia pulmonar: defects crônicos<br>
+Cateterismo + angiografia pulmonar: diagnóstico definitivo antes de TEA<br><br>
+<strong>Anticoagulação vitalícia:</strong><br>
+• Warfarina INR 2–3 (DOAC: estudos menores mostram eficácia — usar se warfarina inviável; ESCP 2022 ainda prefere VKA)<br><br>
+<strong>Tromboendarterectomia Pulmonar (TEA):</strong><br>
+• Tratamento curativo em doença operável (centros experientes)<br>
+• Candidatos: obstrução central/lobar acessível; capacidade cirúrgica<br>
+• Mortalidade perioperatória em centros experientes: &lt;3%<br><br>
+<strong>Riociguate (Adempas) — para CTEPH inoperável ou persistente pós-TEA:</strong><br>
+• Estimulador de guanilato-ciclase solúvel (mecanismo distinto dos PDE5i)<br>
+• Iniciar 1 mg 3×/dia → titular 0,5 mg a cada 2 sem → máx 2,5 mg 3×/dia<br>
+• CHEST-1 trial: melhora significativa TC6M, RVP e NT-proBNP<br>
+• CI absoluta: PDE5i concomitante (hipotensão grave) · Gestação (teratogênico)<br>
+• NÃO combinar com sildenafila/tadalafila<br><br>
+<strong>Angioplastia Pulmonar por Balão (BPA):</strong><br>
+• Para doença distal inacessível à TEA (Japão — 98% centros; Europa em expansão)<br>
+• Múltiplas sessões: melhora hemodinâmica comparável à TEA em centros experientes`,
+      note:'Após TEA bem-sucedida: manter anticoagulação vitalícia (risco de recorrência). HP persistente pós-TEA (&gt;6 meses): iniciar riociguate. CTEPH com síndrome antifosfolipídeo: warfarina obrigatória (não DOAC).'},
+    hap_class:{hdr:'HAP — Escalonamento por Classe Funcional OMS',col:'#0c4a6e',
+      nome:'ERA · PDE5i / sGC · Prostanoides — guia de fármacos',
+      body:`<strong>Antagonistas dos Receptores de Endotelina (ERA):</strong><br>
+• <strong>Ambrisentan</strong> 5–10 mg 1×/dia: seletivo ETA · menos hepatotóxico · pode usar em FEr leve<br>
+• <strong>Macitentan</strong> 10 mg 1×/dia: duplo ETA/ETB · mais potente; SERAPHIN trial: ↓ morbi-mortalidade 45%<br>
+• <strong>Bosentana</strong> 62,5 mg 2×/dia × 4 sem → 125 mg 2×/dia: duplo ETA/ETB; mais hepatotóxico; TGP mensal<br>
+• ERA CI em gestação (teratogênicos — 2 métodos contraceptivos obrigatórios)<br><br>
+<strong>PDE5 Inibidores / sGC Estimulador:</strong><br>
+• <strong>Sildenafila</strong> 20 mg 3×/dia (HAP) — diferente da dose DE (50–100 mg)<br>
+• <strong>Tadalafila</strong> 40 mg 1×/dia (HAP) — mesma base que DE mas dose maior<br>
+• <strong>Riociguate</strong> 1→2,5 mg 3×/dia: CTEPH e HAP; NÃO combinar com PDE5i<br><br>
+<strong>Prostanoides:</strong><br>
+• <strong>Iloprost inalatório</strong> 2,5–5 mcg 6–9×/dia: broncospasmo (evitar em asma/DPOC)<br>
+• <strong>Treprostinila SC</strong> 1,25 ng/kg/min → titular: dor no sítio de infusão; mais estável que epoprosterenol<br>
+• <strong>Selexipague</strong> (agonista IP oral, não-prostanóide) 200 mcg 2×/dia → 1600 mcg 2×/dia<br>
+• <strong>Epoprosterenol IV</strong> (Flolan): mais eficaz em CF IV; meia-vida 3–5 min; via central dedicada; nunca interromper abruptamente (risco de morte por efeito rebote)`,
+      note:'Alvo de tratamento (CF I/II, TC6M >440m, NT-proBNP normal, sem sinais IVD, TAPSE >2,0 cm): reavaliar a cada 3–6m. Piorar de CF II→III apesar de terapia dupla: adicionar 3ª classe (selexipague ou prostanóide inalatório). Evitar viagens a altitude &gt;2000m sem oxigênio suplementar.'},
+  };
+  const p=PROTO[cond];
+  document.getElementById('fpihpResult').style.display='block';
+  document.getElementById('fpihpResult').innerHTML=recHTML({hdr:p.hdr,col:p.col,nome:p.nome,badges:[{t:'PNEUMOLOGIA',c:p.col}],body:p.body,note:p.note});
+  document.getElementById('fpihpResult').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+/* ─── SARA & DERRAME PLEURAL ─────────────────────────────────────────── */
+function renderSARA(){
+  if(document.getElementById('saraList').innerHTML) return;
+  const CARDS=[
+    {col:'#0369a1',nome:'SARA — Síndrome do Desconforto Respiratório Agudo',
+     body:`<strong>Critérios de Berlim (2012):</strong><br>
+• Início agudo (&lt;7 dias de insulto ou piora respiratória conhecida)<br>
+• Imagem bilateral em Rx/TC (não totalmente explicada por efusão, colapso ou nódulo)<br>
+• Não totalmente explicada por IC ou sobrecarga volêmica (EAP cardiogênico: avaliar)<br>
+• PaO₂/FiO₂ com PEEP ≥5 cmH₂O:<br>
+  Leve: 200–300 mmHg · Moderada: 100–200 mmHg · Grave: &lt;100 mmHg<br><br>
+<strong>Ventilação Protetora (ARDSNet):</strong><br>
+• <strong>VC 4–6 mL/kg de peso corporal predito</strong> (não peso real)<br>
+  Peso predito ♂ = 50 + 0,91 × (altura cm − 152,4) · ♀ = 45,5 + 0,91 × (altura cm − 152,4)<br>
+• <strong>Pressão de platô ≤30 cmH₂O</strong> · Driving pressure (Pplat−PEEP) &lt;15 cmH₂O<br>
+• PEEP: tabela ARDSNet (alto PEEP preferido em SARA moderada-grave)<br>
+• FR: 20–35 ipm para manter pH 7,30–7,45 (permissividade de hipercapnia)<br><br>
+<strong>Posição prona:</strong><br>
+• <strong>Indicação: PaO₂/FiO₂ &lt;150 mmHg com FiO₂ ≥0,6 e PEEP ≥5</strong><br>
+• <strong>Duração mínima: 16h/sessão</strong> (PROSEVA trial: mortalidade 16% vs 32%)<br>
+• Contra: instabilidade de coluna, HTCranianaC elevada, CEC, fístula traqueobrônquica<br>
+• Equipe treinada: 4–5 pessoas; monitorar pressão de capete<br><br>
+<strong>Dexametasona (COVID-ARDS / SARA moderada-grave):</strong><br>
+• Dexametasona 6 mg/dia IV ou VO × 10 dias (RECOVERY trial) — reduz mortalidade se em O₂ ou VM<br>
+• SARS-CoV-2 ou SARA com necessidade de VM: iniciar se não houver CI<br>
+• Metilprednisolona 1 mg/kg/dia: alternativa (escalonamento ARDS tardio → fibrose)<br><br>
+<strong>Outras intervenções:</strong><br>
+• Neurobloqueio (cisatracúrio 37,5 mg/h): SARA grave &lt;48h — ACURASYS trial (redução mortalidade questionada em ROSE trial — não rotineiro)<br>
+• Óxido nítrico inalado: melhora oxigenação temporariamente (bridge antes de ECMO) — sem benefício em mortalidade<br>
+• ECMO VV: PaO₂/FiO₂ &lt;80 + pH &lt;7,25 refratário após 16h de prona + medidas máximas (EOLIA trial)`,
+     note:'Balanço hídrico restritivo (FACTT trial): após estabilização hemodinâmica, balanço zero ou negativo → menos dias de VM, mais dias fora de UTI. Albumina alvo ≥3 g/dL (não há evidência de repor albumina de rotina para elevar nível). Terlipressina: NÃO em SARA (piora oxigenação). Metilprednisolona precoce (&lt;72h): sem benefício — iniciar somente SARA persistente &gt;7 dias (padrão fiboproliferativo).'},
+    {col:'#065f46',nome:'Derrame Pleural — Diagnóstico e Manejo',
+     body:`<strong>Toracocentese diagnóstica:</strong><br>
+Indicada em derrame novo &gt;1 cm em decúbito lateral e causa não clara<br>
+Análise do líquido pleural:<br><br>
+<strong>Critérios de Light (Exsudato vs Transudato):</strong><br>
+Exsudato = ≥1 dos seguintes:<br>
+1. Proteína LP / Proteína sérica &gt; 0,5<br>
+2. DHL LP / DHL sérico &gt; 0,6<br>
+3. DHL LP &gt; 2/3 do limite superior normal sérico<br><br>
+<strong>Transsudato (critérios Light negativos):</strong><br>
+IC · Cirrose hepática (hidrotórax) · Síndrome nefrótica · Hipotireoidismo · TEP (pode ser exsudato)<br>
+• Tratamento: da causa base<br>
+• IC: diuréticos (furosemida + espironolactona); drenagem apenas se refratário<br><br>
+<strong>Exsudato — principais causas:</strong><br>
+• <strong>Parapneumônico / Empiema:</strong> neutrófilos &gt;50% · Glicose &lt;40 · pH &lt;7,2 · Gram+ · LDH alto → drenagem imediata (tubo de tórax ou drenagem guiada por US)<br>
+  ATB: ceftriaxona 2 g 1×/dia + metronidazol 500 mg 8/8h (anaeróbios em empiema) IV × 2–4 sem → VOcomo<br>
+• <strong>Tuberculose:</strong> linfócitos &gt;80% · adenosina-desaminase (ADA) &gt;40 UI/L → alta especificidade · biópsia pleural fechada ou VATS<br>
+• <strong>Neoplásico:</strong> citologia do LP (sensibilidade 60–80%) · glicose &lt;60 · pH &lt;7,2 (pior prognóstico) · pleurodese química (talco 4g) se derrame recidivante<br>
+• <strong>TEP:</strong> exsudato hemossangüíneo · DHL elevado · glicose normal<br><br>
+<strong>Hemotórax:</strong> LP/Hb sérica &gt;0,5 → drenagem cirúrgica imediata (trauma, rotura vascular)<br><br>
+<strong>Quilotórax:</strong> LP triglicerídeos &gt;110 mg/dL (LP leitoso) · Causa: trauma/pós-cirúrgico/linfoma · Dieta com TCM ou NPT · octreotida 100–200 mcg SC 3×/dia · cirurgia em refratários`,
+     note:'pH pleural &lt;7,2 e/ou glicose &lt;40 = indicação de drenagem mesmo sem Gram+ (exsudato complicado). US pleural: guiar toracocentese — reduz pneumotórax de 18% para &lt;3%. pH pleural: obtido em gasômetro (igual protocolo de ABG). Derrame neoplásico recidivante: cateter pleural de longa permanência (Pleurx) como alternativa à pleurodese.'},
+    {col:'#7c3aed',nome:'Sarcoidose — Diagnóstico e Tratamento',
+     body:`<strong>Característica:</strong> granuloma não-caseoso · envolvimento multissistêmico · diagnóstico de exclusão<br><br>
+<strong>Apresentações:</strong><br>
+• Pulmonar (90%): adenopatia hilar bilateral simétrica (estágio I) ± infiltrado (II/III) ± fibrose (IV)<br>
+• Extrapulmonar: pele (lúpus pérnio, eritema nodoso), olhos (uveíte), coração (bloqueio AV, TV), SNC, rim, fígado<br><br>
+<strong>Diagnóstico:</strong><br>
+• Broncoscopia + BAL (linfócitos CD4/CD8 &gt;3,5) + BT (granuloma na biópsia tranbrônquica)<br>
+• ECA sérica: elevada em 60% (inespecífico) · Hipercalcemia (20%): produção de calcitriol pelos granulomas<br>
+• TC tórax: adenopatia hilar bilateral, nódulos perilinfáticos distribuição broncovascular<br><br>
+<strong>Tratamento:</strong><br>
+• <strong>Estágios I e II assintomático:</strong> observação (remissão espontânea em 50–70% em 2–5 anos)<br>
+• <strong>Sintomático ou progressivo:</strong> <strong>Prednisolona 20–40 mg/dia × 4–8 sem → desmame por 12–24 meses</strong><br>
+• <strong>Refratário ou recidivante:</strong> Metotrexato 10–15 mg/sem (poupador de corticoide) · Hidroxicloroquina (pele/hipercalcemia) · Azatioprina 100 mg/dia<br>
+• <strong>Refratário severo (neurossarcoidose, cardíaco, ocular):</strong> Infliximabe 3–5 mg/kg IV (SARCOIDOSIS trial)<br><br>
+<strong>Hipercalcemia:</strong> hidratação + corticoide → ↓ produção 1,25-OH-VitD · Evitar sol excessivo e suplementação de VitD`,
+     note:'Sarcoidose cardíaca: BAV de 2º/3º grau inexplicado em jovem → pensar sarcoidose. PET-FDG + RM cardíaca: avaliação de atividade. CDI: se TV/FV documentadas ou FEVE &lt;35%. Prednisolona reverte bloqueio cardíaco em 30–50%. Nifedipino/diltiazem em sarcoidose pulmonar com HP: raramente eficaz (HP pós-capilar ou capiler obliterativo).'},
+  ];
+  document.getElementById('saraList').innerHTML=CARDS.map(c=>`<div class="pn-card" style="border-color:${c.col}"><div class="pn-nome" style="color:${c.col}">${c.nome}</div><div class="pn-body">${c.body}</div>${c.note?`<div style="font-size:.7rem;color:#64748b;margin-top:6px">💡 ${c.note}</div>`:''}</div>`).join('');
+}
+
+/* ─── OUTRAS DOENÇAS PULMONARES ─────────────────────────────────────── */
+function renderOutros(){
+  if(document.getElementById('outrosList').innerHTML) return;
+  const CARDS=[
+    {col:'#b45309',nome:'Pneumonia Eosinofílica, BOOP e DPI-CTD',
+     body:`<strong>Pneumonia Eosinofílica Aguda (PEA):</strong><br>
+Febre aguda + infiltrados bilaterais + eosinófilos BAL &gt;25% (eosinofilia periférica pode ser normal inicialmente)<br>
+Causas: idiopática, tabagismo, exposição inalatória, drogas (nitrofurantoína, sulfasalazina, daptomicina, AINE, antidepressivos)<br>
+Tratamento: <strong>Prednisolona 40–60 mg/dia × 2–4 sem</strong> → resposta rápida (diagnóstica e terapêutica) · suspender fármaco causal<br><br>
+<strong>BOOP / COP (Bronquiolite Obliterante Organizante Pneumônica):</strong><br>
+Padrão migratório em consolidações peribrônquicas → TCAR: "reversed halo" (sinal do anel de coral)<br>
+Etiologias: pós-infecção (COVID-19 longo), doenças do colágeno, drogas, pós-transplante, idiopática<br>
+Tratamento: <strong>Prednisolona 0,75–1 mg/kg/dia × 4–8 sem → desmame lento por 6–12 meses</strong><br>
+Recidiva em 50% ao tentar retirar corticoide — adicionar azatioprina ou micofenolato para poupar<br><br>
+<strong>DPI associada a CTD (DPI-CTD — ex: esclerodermia, miosite):</strong><br>
+Padrão NSIP (mais comum que UIP em CTD) · TC: vidro fosco bilateral, faveolamento mínimo<br>
+• <strong>Micofenolato de mofetila 1500–3000 mg/dia:</strong> 1ª linha (SLS II trial: não-inferior a ciclofosfamida + menos tóxico)<br>
+• <strong>Nintedanibe (Ofev):</strong> aprovado para DPI-esclerodermia (SENSCIS trial: ↓ declínio CVF)<br>
+• Ciclofosfamida IV 600 mg/m²/mês × 6–12 meses: doença grave ou resposta insuficiente ao MMF<br>
+• Rituximabe 1000 mg IV × 2 doses (D1 e D15): DPI-miosite refratária (evidência crescente)`,
+     note:'DPI-CTD: diagnóstico de CTD subadiagnósticada em 15% dos "IPF" — pesquisar ANA, FR, anti-CCP, anti-Scl70, anti-Jo1, anti-MDA5, CADM (CPK, aldolase). CADM com anti-MDA5: DPI rapidamente progressiva — alta mortalidade sem tratamento imunossupressor agressivo precoce.'},
+    {col:'#0369a1',nome:'DPOC — Exacerbação e Prevenção (Complemento)',
+     body:`<strong>Exacerbação Aguda de DPOC (EADPOC):</strong><br>
+GOLD A/B leve-moderada: <strong>broncodilatadores + prednisolona 40 mg/dia × 5 dias</strong> (REDUCE trial: 5 dias = 14 dias)<br>
+ATB: apenas se 2 critérios de Anthonisen: ↑ dispneia, ↑ volume escarro, escarro purulento<br>
+• Amoxicilina-clavulanato 500/125 mg 3×/dia × 5–7 dias OU Doxiciclina 100 mg 2×/dia<br>
+• Hospitalização: EADPOC grave (SpO₂ &lt;90%, pH &lt;7,35, FR &gt;30) → VNI (BiPAP) 8–10 cmH₂O EPAP + 14–18 IPAP<br><br>
+<strong>VNI (BiPAP) em DPOC exacerbado com hipercapnia (pH 7,25–7,35):</strong><br>
+Reduz intubação em 50% · mortalidade em 50% (Cochrane) · Preferir VNI antes de entubação<br>
+Falha de VNI em 1–2h: pCO₂ não ↓, pH piora, SpO₂ &lt;88% → IOT<br><br>
+<strong>Prevenção de exacerbações (GOLD 2023):</strong><br>
+• LAMA: umeclidínio, tiotrópio, aclidínio — reduz exacerbações mais que LABA isolado<br>
+• LAMA + LABA: combinação fixa preferida em GOLD B/C/D<br>
+• ICS: adicionar apenas em eosinófilos ≥300 células/µL (risco de exacerbação alto) · NÃO de rotina (risco de pneumonia)<br>
+• Roflumilaste 250 mcg/dia × 4 sem → 500 mcg/dia: DPOC com bronquite crônica, ≥2 exacerbações/ano · RAM: perda de peso, diarreia, ansiedade<br>
+• Azitromicina 250 mg/dia ou 500 mg 3×/sem: em ex-fumantes com exacerbações frequentes (reduz 27%) · Audiometria antes + QTc<br>
+• N-acetilcisteína 600 mg 2×/dia: benefício modesto em exacerbações`,
+     note:'Oxigenoterapia em DPOC: alvo SpO₂ 88–92% (não 98–100% — hipercapnia permissiva). Oxigênio a 100% em DPOC descompensado piora retenção de CO₂ (efeito Haldane e perda do drive hipóxico). Vacinação: influenza anual + pneumocócica (PCV15 ou PCV20) + TDAP + COVID-19 — reduzem exacerbações.'},
+    {col:'#1e3a8a',nome:'Hipertensão Pulmonar — Tabela de Fármacos Específicos',
+     body:`<strong>Fármaco · Dose · Classe · Evidência:</strong><br><br>
+<strong>ERA (Antagonistas de Receptores de Endotelina):</strong><br>
+• Bosentana 125 mg 2×/dia (BREATHE-1) — TGP mensal; CI gestação<br>
+• Ambrisentan 10 mg 1×/dia (ARIES) — seletivo ETA; menor hepatotoxicidade<br>
+• Macitentan 10 mg 1×/dia (SERAPHIN) — ↓ morbi-mortalidade 45% vs placebo<br><br>
+<strong>PDE5-inibidores:</strong><br>
+• Sildenafila 20 mg 3×/dia (SUPER-1) — diferente da dose DE!<br>
+• Tadalafila 40 mg 1×/dia (PHIRST) — posologia mais conveniente<br><br>
+<strong>sGC Estimulador:</strong><br>
+• Riociguate 1–2,5 mg 3×/dia (PATENT-1/CHEST-1) — CI absoluta: PDE5i; gestação<br><br>
+<strong>Prostanoides e Análogos:</strong><br>
+• Iloprost inalatório 2,5–5 mcg 6–9×/dia (AIR) — tosse, rubor, cefaleia<br>
+• Treprostinila SC 1,25 ng/kg/min → titular (BREATHE-6) — dor no sítio<br>
+• Epoprosterenol IV (Flolan) → ativo apenas IV; t½ 3–5 min — NUNCA interromper abruptamente<br>
+• Selexipague oral 200 mcg → 1600 mcg 2×/dia (GRIPHON) — agonista receptor IP2<br><br>
+<strong>Diretrizes de combinação (ESC/ERS 2022):</strong><br>
+CF I–II baixo risco: Macitentan + Tadalafila (AMBITION)<br>
+CF III inter-risco: tripla terapia + selexipague (TRITON)<br>
+CF IV alto risco: epoprosterenol IV + ERA + PDE5i → transplante`,
+     note:'Transição epoprosterenol IV → treprostinila SC: iniciar treprostinila SC + reduzir epoprosterenol gradualmente (protocolo de 72–96h); NUNCA interromper epoprosterenol de forma abrupta (rebote fatal). Gestação em HAP: mortalidade materna 30–56% — desaconselhar fortemente; contracepção dupla obrigatória com ERA.'},
+  ];
+  document.getElementById('outrosList').innerHTML=CARDS.map(c=>`<div class="pn-card" style="border-color:${c.col}"><div class="pn-nome" style="color:${c.col}">${c.nome}</div><div class="pn-body">${c.body}</div>${c.note?`<div style="font-size:.7rem;color:#64748b;margin-top:6px">💡 ${c.note}</div>`:''}</div>`).join('');
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Endocrinologia Avançada — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .end-hdr{background:linear-gradient(135deg,#4a1942,#7e22ce);color:#fff;border-radius:14px;padding:18px;margin-bottom:14px}
+    .end-title{font-size:1rem;font-weight:800;margin-bottom:4px}
+    .end-sub{font-size:.73rem;opacity:.8}
+    label{font-size:.75rem;font-weight:700;color:#1e3a5f;display:block;margin-bottom:4px}
+    select{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:10px;padding:10px 12px;font-size:.85rem;background:#fff;margin-bottom:10px}
+    select:focus{border-color:#7e22ce;outline:none}
+    .checkbox-group{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
+    .checkbox-item{display:flex;align-items:center;gap:8px;font-size:.8rem;cursor:pointer}
+    .checkbox-item input[type=checkbox]{width:18px;height:18px;accent-color:#7e22ce;cursor:pointer}
+    .btn-calc{width:100%;background:#7e22ce;color:#fff;border:none;border-radius:12px;padding:13px;font-size:.87rem;font-weight:700;cursor:pointer;margin:8px 0}
+    .tab-bar{display:flex;gap:6px;margin-bottom:14px}
+    .tab-btn{flex:1;padding:9px 4px;border-radius:10px;border:2px solid #e2e8f0;background:#fff;font-size:.72rem;font-weight:700;cursor:pointer;color:#64748b}
+    .tab-btn.active{border-color:#7e22ce;background:#f5f3ff;color:#7e22ce}
+    .rec-card{border-radius:12px;border:2px solid;padding:14px;margin-bottom:10px}
+    .rec-hdr{font-size:.63rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+    .rec-nome{font-size:.88rem;font-weight:800;margin-bottom:6px}
+    .rec-badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:.65rem;font-weight:800;color:#fff;margin:2px}
+    .rec-body{font-size:.78rem;margin-top:6px;line-height:1.7}
+    .rec-note{font-size:.71rem;color:#64748b;margin-top:6px;padding-top:6px;border-top:1px solid #f1f5f9}
+    .en-card{border-radius:10px;border-left:5px solid;padding:10px 14px;margin-bottom:8px;background:#fff}
+    .en-nome{font-size:.83rem;font-weight:800;margin-bottom:4px}
+    .en-body{font-size:.76rem;line-height:1.7;color:#374151}
+  </style>
+</head>
+<body>
+<header class="top-bar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <span class="top-title">Endocrinologia Avançada</span>
+  <div class="top-right"></div>
+</header>
+<main class="container" style="padding-bottom:90px">
+  <div class="end-hdr">
+    <div class="end-title">🔬 Endocrinologia Avançada — Algoritmos</div>
+    <div class="end-sub">Adrenal · Cushing · Feocromocitoma · Hiperaldosteronismo · Acromegalia · Prolactina</div>
+  </div>
+  <div class="tab-bar">
+    <button class="tab-btn active" id="tb0" onclick="showTab(0)">Adrenal & Cushing</button>
+    <button class="tab-btn" id="tb1" onclick="showTab(1)">Hiperaldost. & Feo</button>
+    <button class="tab-btn" id="tb2" onclick="showTab(2)">Hipófise & Outros</button>
+  </div>
+
+  <!-- TAB 0 — ADRENAL & CUSHING -->
+  <div id="tab0">
+    <div class="card" style="padding:12px 14px">
+      <label>Condição</label>
+      <select id="end_cond">
+        <option value="ia_primaria">Insuficiência Adrenal Primária (Doença de Addison)</option>
+        <option value="ia_crise">Crise Adrenal Aguda — EMERGÊNCIA</option>
+        <option value="ia_sec">Insuficiência Adrenal Secundária (hipofisária)</option>
+        <option value="cushing_diag">Síndrome de Cushing — Diagnóstico</option>
+        <option value="cushing_trat">Síndrome de Cushing — Tratamento</option>
+        <option value="cushing_iat">Cushing Iatrogênico / Uso crônico de corticoide</option>
+      </select>
+    </div>
+    <button class="btn-calc" onclick="calcAdrenal()">🔬 Gerar protocolo</button>
+    <div id="adrenalResult" style="display:none"></div>
+  </div>
+
+  <!-- TAB 1 — HIPERALDOSTERONISMO & FEOCROMOCITOMA -->
+  <div id="tab1" style="display:none">
+    <div id="haldList"></div>
+  </div>
+
+  <!-- TAB 2 — HIPÓFISE & OUTROS -->
+  <div id="tab2" style="display:none">
+    <div id="hipofList"></div>
+  </div>
+</main>
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+<script src="js/db.js"></script>
+<script>
+function showTab(n){[0,1,2].forEach(i=>{document.getElementById('tab'+i).style.display=i===n?'block':'none';document.getElementById('tb'+i).classList.toggle('active',i===n);});if(n===1)renderHald();if(n===2)renderHipof();}
+function recHTML(r){return `<div class="rec-card" style="border-color:${r.col}"><div class="rec-hdr" style="color:${r.col}">${r.hdr}</div><div class="rec-nome">${r.nome}</div><div>${(r.badges||[]).map(b=>`<span class="rec-badge" style="background:${b.c}">${b.t}</span>`).join('')}</div><div class="rec-body">${r.body}</div>${r.note?`<div class="rec-note">${r.note}</div>`:''}</div>`;}
+
+/* ─── ADRENAL & CUSHING ─────────────────────────────────────────────── */
+function calcAdrenal(){
+  const cond=document.getElementById('end_cond').value;
+  const PROTO={
+    ia_primaria:{hdr:'Insuficiência Adrenal Primária — Doença de Addison',col:'#7e22ce',
+      nome:'Hidrocortisona + Fludrocortisona — reposição fisiológica',
+      body:`<strong>Diagnóstico:</strong><br>
+Cortisol basal 8h: &lt;3 µg/dL (insuficiência) · 3–18 µg/dL (duvidoso) · &gt;18 µg/dL (provável normal)<br>
+Teste de estimulação com cortrosina (ACTH sintético 250 mcg IV): cortisol &lt;18 µg/dL após 30–60 min = insuficiência<br>
+ACTH sérico elevado (IA primária) vs suprimido (IA secundária) · Autoanticorpos anti-21-hidroxilase (80% em Addison autoimune)<br>
+Eletrólitos: hiponatremia + hipercalemia (primária); na secundária: hiponatremia sem hipercalemia (falta glicocorticoide, mineralocorticoide preservado)<br><br>
+<strong>Reposição:</strong><br>
+• <strong>Hidrocortisona</strong> 15–25 mg/dia em 2–3 tomadas<br>
+  Preferência: 2/3 pela manhã ao acordar (simula pico circadiano) + 1/3 no início da tarde<br>
+  Ex: 10 mg (7h) + 5 mg (14h) OU 10 mg (7h) + 5 mg (12h) + 5 mg (16h)<br>
+  Sinais de superdosagem: ganho de peso, HAS, hiperglicemia, osteoporose<br>
+  Subdosagem: fadiga, hipotensão, náusea, hiponatremia<br>
+• <strong>Prednisolona</strong> 3–5 mg/dia (única dose matinal): alternativa; menor pico matinal fisiológico<br>
+• <strong>Fludrocortisona</b> 0,05–0,2 mg/dia (mineralocorticoide) → IA PRIMÁRIA apenas<br>
+  Titular: PA em pé vs deitado (ortostase → subdose), edema/HAS (superdose), sódio/potássio<br>
+  Aumentar em calor extremo ou exercício intenso (perdas de sódio pelo suor)<br><br>
+<strong>Ajuste em situações de estresse ("sick day rules"):</strong><br>
+• Infecção/febre leve: dobrar dose de hidrocortisona por 2–3 dias<br>
+• Cirurgia/procedimento invasivo: hidrocortisona 100 mg IV no início → 50 mg IV 8/8h × 24h → retornar à dose oral<br>
+• Vômito (não consegue tomar oral): ir ao PS para hidrocortisona IV/IM<br>
+• Pré-cirúrgico: orientar paciente e equipe + pulseira de alerta médico`,
+      note:'Pulseira de alerta obrigatória ("ADRENAL INSUFFICIENCY — needs hydrocortisone in emergency"). Kit de emergência domiciliar: hidrocortisona injetável 100 mg + seringa para crise. Educação de paciente: sick day rules são a intervenção que salva mais vidas em Addison.'},
+    ia_crise:{hdr:'CRISE ADRENAL AGUDA — EMERGÊNCIA',col:'#dc2626',
+      nome:'Hidrocortisona 100 mg IV + Soro Fisiológico — IMEDIATO',
+      body:`<div style="background:#fef2f2;border:2px solid #dc2626;border-radius:8px;padding:10px;margin-bottom:10px"><strong>🚨 NÃO aguardar resultado de cortisol para tratar se alta suspeita clínica!</strong></div>
+<strong>Gatilhos:</strong> infecção, cirurgia, trauma, vômito prolongado (impedindo medicação oral), calor extremo, evento estressante grave<br><br>
+<strong>Tratamento imediato:</strong><br>
+1. <strong>Hidrocortisona 100 mg IV em bolus</strong> → imediatamente<br>
+2. <strong>SF 0,9% 1 L IV nos primeiros 30–60 min</strong> → corrigir hipovolemia/hiponatremia<br>
+3. <strong>Hidrocortisona 200 mg/dia IV contínuo</strong> OU 50 mg IV 6/6h após bolus inicial<br>
+4. Glicose IV: se hipoglicemia documentada → SG 10% concomitante<br>
+5. Colher cortisol e ACTH ANTES do hidrocortisona (se possível sem atrasar tratamento); Na, K, glicose<br><br>
+<strong>Desmame (após estabilização):</strong><br>
+• 48–72h: reduzir para 50 mg IV 6/6h → 25 mg IV 8/8h<br>
+• Estabilidade: transição para oral (hidrocortisona VO dobro da manutenção) → retornar à dose habitual em 3–7 dias<br>
+• Fludrocortisona: retornar quando hidrocortisona &lt;50 mg/dia (alta dose tem efeito mineralocorticoide intrínseco)<br><br>
+<strong>Investigar e tratar o gatilho:</strong><br>
+• ATB se infecção suspeita · Controle glicêmico · Monitorar K+ (hipercalemia da crise)<br><br>
+<strong>Crise em paciente não-diagnosticado (primeira crise):</strong><br>
+• Colher ACTH + cortisol + aldosterona antes do tratamento se possível<br>
+• Anti-21-hidroxilase e anti-17-alfa-hidroxilase para etiologia`,
+      note:'Dexametasona 4 mg IV: alternativa se não tiver hidrocortisona (não interfere no cortisol do teste de estimulação posterior). Mas a hidrocortisona em dose alta também é mineralocorticoide — dexametasona NÃO tem efeito mineralocorticoide.'},
+    ia_sec:{hdr:'Insuficiência Adrenal Secundária (Hipofisária)',col:'#4a1942',
+      nome:'Hidrocortisona — sem necessidade de fludrocortisona',
+      body:`<strong>Causas:</strong> uso crônico de corticoide exógeno (mais comum) · tumor hipofisário · cirurgia/radioterapia hipofisária · traumatismo craniano · síndrome de Sheehan (necrose hipofisária pós-parto)<br><br>
+<strong>Diferença da primária:</strong><br>
+• ACTH BAIXO (supprimido) vs primária (ACTH ALTO)<br>
+• Mineralocorticoide (fludrocortisona) NÃO necessário (eixo aldosterona-SRAA preservado)<br>
+• Pigmentação: NÃO ocorre (hiperpigmentação = ACTH alto) · Na/K: normal (sem hipercalemia)<br><br>
+<strong>Reposição:</strong><br>
+• <strong>Hidrocortisona 15–20 mg/dia</strong> (dose menor que IA primária): manhã + tarde<br>
+• Sick day rules: idênticas à IA primária<br><br>
+<strong>Retirada de corticoide exógeno:</strong><br>
+• Uso &gt;3 semanas de prednisolona &gt;10 mg/dia (ou equivalente): risco de supressão do eixo HHA<br>
+• Desmame gradual: reduzir 10–20% a cada 1–2 semanas ao chegar em doses fisiológicas (prednisolona 5–7,5 mg = dose de substituição)<br>
+• Testar cortisol basal antes de suspender completamente; se &lt;5 µg/dL: manter hidrocortisona até recuperação do eixo<br>
+• Recuperação do eixo: pode levar 6–12 meses após suspensão`,
+      note:'Síndrome de Sheehan: pensar em puérpera que não consegue amamentar (PRL suprimida) + amenorreia + astenia intensa pós-parto hemorrágico. Panhipopituitarismo: repor todos os eixos (GH, TSH, FSH/LH, ADH se DI) — PRIORIDADE: corticoide antes de levotiroxina (levotiroxina antes de corticoide pode precipitar crise adrenal).'},
+    cushing_diag:{hdr:'Síndrome de Cushing — Diagnóstico',col:'#b45309',
+      nome:'Rastreio → Confirmação → Etiologia',
+      body:`<strong>Suspeitar em:</strong> obesidade centrípeta + estrias violáceas largas + hirsutismo + acne + osteoporose jovem + fraqueza muscular + HAS + DM2 difícil controle + face de lua cheia + giba dorsal<br><br>
+<strong>Rastreio (≥1 exame positivo):</strong><br>
+1. <strong>Cortisol livre urinário (CLU) 24h</strong>: &gt;3–4× LSN = Cushing confirmado · &gt;LSN mas &lt;3× = repetir<br>
+2. <strong>Supressão com dexametasona 1 mg</strong> (11h da noite): cortisol 8h seguinte &gt;1,8 µg/dL = falha de supressão<br>
+3. <strong>Cortisol salivar noturno (23–24h):</strong> &gt;4 nmol/L = suspeita<br>
+Repetir 2 testes diferentes para confirmação<br><br>
+<strong>Determinar etiologia após confirmação:</strong><br>
+• <strong>ACTH sérico:</strong><br>
+  ACTH &lt;5 pg/mL = ACTH-independente → adenoma/carcinoma adrenal (TC abdome)<br>
+  ACTH &gt;15 pg/mL = ACTH-dependente → Doença de Cushing (hipófise 85%) OU ACTH ectópico (15%)<br>
+• <strong>RM hipofisária:</strong> adenoma em 60% (microadenoma &lt;6 mm em muitos → pode ser normal)<br>
+• <strong>Supressão com dexametasona 8 mg (alta dose):</strong><br>
+  Cushing doença: CLU suprime &gt;50% (tumor pituitário se regula por feedback · ectópico NÃO)<br>
+• <strong>CRH (teste de estímulo):</strong> ACTH ↑ &gt;35% = hipofisário<br>
+• <strong>Cateterismo de seio petroso inferior (IPSS):</strong> padrão-ouro para distinguir hipofisário vs ectópico; gradiente central/periférico ACTH &gt;2 (basal) ou &gt;3 (pós-CRH)`,
+      note:'Pseudo-Cushing: alcoolismo e depressão grave podem dar CLU ligeiramente elevado e falha de supressão. Diferenciar: cortisol retorna ao normal após abstinência. Hipercortisolismo cíclico: CLU pode ser normal em fases quiescentes — repetir em período sintomático.'},
+    cushing_trat:{hdr:'Síndrome de Cushing — Tratamento',col:'#dc2626',
+      nome:'Cirurgia (1ª linha) → Medicamentos para controle do hipercortisolismo',
+      body:`<strong>Doença de Cushing (hipofisária):</strong><br>
+• <strong>Ressecção transesfenoidal:</strong> cirurgia de primeira linha; remissão 70–80% em adenoma identificado<br>
+• Recidiva (20–30%): re-cirurgia, radioterapia estereotáxica (Gamma Knife) OU adrenalectomia bilateral<br><br>
+<strong>Adrenal (adenoma):</strong> adrenalectomia laparoscópica unilateral → remissão em maioria<br>
+<strong>Carcinoma adrenal:</strong> adrenalectomia + mitotano (adrenolítico) 1–6 g/dia + nível sérico 14–20 mg/L<br><br>
+<strong>Controle médico pré-operatório ou quando cirurgia não possível:</strong><br>
+• <strong>Osilodrostat</strong> (Isturisa) 2 mg 2×/dia → máx 30 mg 2×/dia: inibidor 11β-hidroxilase; mais potente; LINC-3/LINC-4 trial<br>
+• <strong>Metirapona</b> 500 mg 3×/dia → 4,5 g/dia: inibidor 11β-hidroxilase; disponível no Brasil; cuidado com hipocalemia e hirsutismo (↑ precursores androgênicos)<br>
+• <strong>Cetoconazol</b> 400–1200 mg/dia: inibidor CYP11A1/CYP17A1/CYP11B1; hepatotóxico (TGP mensal); interações CYP3A4 extensas; FDA alerta de hepatotoxicidade 2013<br>
+• <strong>Pasireotida SC</b> 0,3–0,9 mg 2×/dia: análogo somatostatina (receptores SST1/2/3/5) · controla 15–25% dos Cushing · RAM: HIPERGLICEMIA em 73% (monitorar intensamente)<br>
+• <strong>Etomidato IV</b> 0,04–0,1 mg/kg/h: único IV; emergências de hipercortisolismo grave; UTI<br>
+• <strong>Mifepristona</b> (bloqueador de receptor de glicocorticoide): não monitora CLU (bloqueado) — monitorar por glicemia e K+<br><br>
+<strong>Monitoramento de controle:</strong><br>
+Cortisol urinário livre normalizado · Cortisol salivar noturno · Clínico (PA, glicemia, força muscular)`,
+      note:'Nelson: após adrenalectomia bilateral, ACTH hipofisário explode (feedback removido) → adenoma agressivo → monitorar com RM seriada e ACTH. Pode-se prevenir com radioterapia hipofisária prévia à adrenalectomia bilateral.'},
+    cushing_iat:{hdr:'Cushing Iatrogênico — Uso Crônico de Corticoide',col:'#065f46',
+      nome:'Prevenção de complicações + Desmame gradual',
+      body:`<strong>Complicações do uso crônico (prednisolona &gt;7,5 mg/dia por &gt;3 meses):</strong><br><br>
+<strong>1. Osteoporose induzida por corticoide (OIC):</strong><br>
+• Iniciar com o corticoide: Cálcio 1200 mg/dia + Vitamina D 800–2000 UI/dia<br>
+• Alendronato 70 mg/sem (1ª linha se espera ≥3 meses de corticoide): reduz fraturas 40%<br>
+• DXA basal e a cada 12 meses · Se T-score &lt;−2,5: bisfosfonato obrigatório; se &lt;−3 ou fratura: denosumabe 60 mg SC/6m ou teriparatida 20 mcg/dia SC<br><br>
+<strong>2. Hiperglicemia / DM corticoide:</strong><br>
+• Pico glicêmico pós-prandial (11–16h) com corticoide matinal<br>
+• Insulina NPH 0,1–0,2 UI/kg/dia: insulina de ação intermediária que cobre pico pós-prednisolona<br>
+• Alternativa: metformina ou iDPP4 em DM leve<br><br>
+<strong>3. HAS corticoide-induzida:</strong><br>
+• IECA + espironolactona (espirono: antagoniza mineralocorticoide)<br>
+• Dieta hipossódica<br><br>
+<strong>4. Profilaxia de PCP:</strong><br>
+• Prednisolona &gt;20 mg/dia por &gt;4 semanas + linfócito CD4 não disponível: TMP-SMX 400/80 mg 3×/sem OU pentamidina inalatória 300 mg/mês<br><br>
+<strong>5. Proteção gástrica:</strong><br>
+• Corticoide + AINE ou anticoagulante: IBP obrigatório · Corticoide isolado: IBP apenas se histórico de úlcera`,
+      note:'Desmame de corticoide após uso prolongado: reduzir ≤10% da dose a cada 1–2 semanas. Abaixo de dose equivalente a 5 mg prednisolona: muito lento (2,5 mg a cada 3–4 semanas). Testar eixo adrenal antes de suspender completamente.'},
+  };
+  const p=PROTO[cond];
+  document.getElementById('adrenalResult').style.display='block';
+  document.getElementById('adrenalResult').innerHTML=recHTML({hdr:p.hdr,col:p.col,nome:p.nome,badges:[{t:'ENDOCRINOLOGIA',c:p.col}],body:p.body,note:p.note});
+  document.getElementById('adrenalResult').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+/* ─── HIPERALDOSTERONISMO & FEOCROMOCITOMA ───────────────────────────── */
+function renderHald(){
+  if(document.getElementById('haldList').innerHTML) return;
+  const CARDS=[
+    {col:'#0369a1',nome:'Hiperaldosteronismo Primário (Síndrome de Conn)',
+     body:`<strong>Suspeitar em:</strong> HAS resistente (≥3 drogas) · HAS com hipocalemia espontânea · incidentaloma adrenal + HAS · HAS de início precoce · apneia do sono + HAS<br><br>
+<strong>Rastreio:</strong><br>
+• <strong>Relação Aldosterona/Renina (RAR):</strong><br>
+  Coletar: suspender por 4 semanas os espironolactona, amilorida, triantereno; 2 semanas de outros anti-HAS<br>
+  Manter: verapamil, hidralazina, doxazosina (não interferem significativamente)<br>
+  RAR &gt;30 (aldosterona ng/dL / renina ng/mL/h) = suspeita → confirmar<br>
+• <strong>Teste de confirmação (teste de sobrecarga salina 2 L SF 4h):</strong> aldosterona &lt;5 ng/dL após = normal; &gt;10 ng/dL = HA confirmado<br><br>
+<strong>Subtipagem (TC + cateterismo de veias adrenais):</strong><br>
+• TC: adenoma unilateral vs hiperplasia bilateral<br>
+• <strong>Cateterismo de veias adrenais (CVA):</strong> padrão-ouro · lateralização → cirurgia; sem lateralização → medicamento<br>
+  (TC pode errar em 30% dos casos — pequenos adenomas invisíveis, hiperplasia bilateral com aparência nodular)<br><br>
+<strong>Tratamento:</strong><br>
+• <strong>Adenoma unilateral confirmado por CVA: Adrenalectomia laparoscópica</strong><br>
+  Cura de HAS em 35–40%; normalização do K+ e redução de HAS em 90%<br>
+• <strong>Hiperplasia bilateral (ou recusa/inviabilidade cirúrgica): Espironolactona</b> 12,5–50 mg/dia → 400 mg/dia<br>
+  Efeitos androgênicos: ginecomastia, disfunção erétil, alteração menstrual → titular mínima dose eficaz<br>
+• <strong>Eplerenona</b> 25–50 mg 2×/dia: seletivo mineralocorticoide; sem efeitos androgênicos; mais caro<br>
+• Corrigir hipocalemia: KCl + espironolactona (aldosterona causa excreção de K+)`,
+     note:'Espironolactona em fertilidade feminina: teratogênica (antiandrógeno) — contracepção obrigatória em mulheres em idade fértil. Hiperaldosteronismo familial tipo I (glucocorticoide-remissível): dexametasona 0,125–0,25 mg/dia suprime produção de aldosterona (gene quimérico CYP11B1/B2).'},
+    {col:'#dc2626',nome:'Feocromocitoma e Paraganglioma',
+     body:`<strong>Suspeitar em:</strong> HAS paroxística (cefaleias, palpitações, sudorese) · HAS refratária jovem · hipertensão em cirurgia/anestesia · incidentaloma adrenal · historia familiar (NEM 2, VHL, SDH)<br><br>
+<strong>Diagnóstico bioquímico:</strong><br>
+• <strong>Metanefrinas fracionadas plasmáticas</strong> (metanefrina + normetanefrina): sensibilidade 98% — 1ª linha<br>
+• Metanefrinas urinárias 24h: alternativa (coleta complexa mas especificidade um pouco maior)<br>
+• 3-Metoxitiramina: paraganglioma dopaminérgico (localização abdominal, maligno maior risco)<br>
+• Falso-positivo: estresse agudo, antidepressivos (TCA), vasoconstritores, acetaminofeno, cafeína → repetir em ambiente calmo<br><br>
+<strong>PRINCÍPIO FUNDAMENTAL DO TRATAMENTO PRÉ-OPERATÓRIO:</strong><br>
+<div style="background:#fef2f2;border:2px solid #dc2626;border-radius:8px;padding:8px;margin:8px 0"><strong>⚠️ ALFA-BLOQUEIO PRIMEIRO — BETA-BLOQUEIO APENAS DEPOIS DO ALFA</strong><br>
+Iniciar propranolol ou metoprolol SEM alfa-bloqueio → crise hipertensiva grave (vasoconstrição por receptor α2 sem oposição)</div>
+<strong>Passo 1 — Alfa-bloqueio (iniciar 10–14 dias antes da cirurgia):</strong><br>
+• <strong>Fenoxibenzamina</b> 10 mg 2×/dia → titular 20–40 mg 2×/dia (bloqueio alfa não-seletivo, não-competitivo)<br>
+  Monitor: hipotensão ortostática (sinal de alfa-bloqueio adequado); estimular hidratação oral e dieta rica em sal<br>
+• <strong>Doxazosina</b> 2–8 mg/dia: alternativa (alfa-1 seletivo; menos RAM; menos usado em EUA, mais na Europa)<br>
+<strong>Passo 2 — Beta-bloqueio (após 3–5 dias de alfa-bloqueio):</strong><br>
+• <strong>Propranolol</b> 10–40 mg 3×/dia OU Metoprolol 25–100 mg 2×/dia<br>
+  Indicação: taquicardia reflexa após alfa-bloqueio (FC &gt;100 bpm em repouso)<br><br>
+<strong>Passo 3 — Cirurgia:</strong><br>
+• Adrenalectomia laparoscópica (tumor &lt;6 cm) OU aberta (tumor &gt;6 cm, maligno suspeito)<br>
+• Anestesia: preparar nitroprussiato de sódio e fentolamina para crises intraoperatórias<br>
+• Pós-operatório: hipoglicemia e hipotensão (sem mais catecolaminas) — SF + glicose IV<br><br>
+<strong>Feocromocitoma maligno:</strong><br>
+• 131I-MIBG terapêutico: específico para células cromafins<br>
+• Sunitinibe, cabozantinibe: mTOR/VEGFR inibidores<br>
+• 177Lu-DOTATATE: paraganglioma/neuroendócrino somatostatina-positivo`,
+     note:'Screening genético: mutação encontrada em 30–40% dos feocromocitomas (especialmente em jovens, bilateral, extra-adrenal). Testar: SDH-A/B/C/D, VHL, RET (NEM2), NF1, TMEM127, MAX. Após cirurgia: bioquímica anual por 10 anos (recorrência/malignidade pode ser tardia).'},
+  ];
+  document.getElementById('haldList').innerHTML=CARDS.map(c=>`<div class="en-card" style="border-color:${c.col}"><div class="en-nome" style="color:${c.col}">${c.nome}</div><div class="en-body">${c.body}</div>${c.note?`<div style="font-size:.7rem;color:#64748b;margin-top:6px">💡 ${c.note}</div>`:''}</div>`).join('');
+}
+
+/* ─── HIPÓFISE & OUTROS ─────────────────────────────────────────────── */
+function renderHipof(){
+  if(document.getElementById('hipofList').innerHTML) return;
+  const CARDS=[
+    {col:'#7e22ce',nome:'Acromegalia — Diagnóstico e Tratamento',
+     body:`<strong>Diagnóstico:</strong><br>
+• IGF-1 sérico: elevado para idade e sexo = rastreio inicial<br>
+• Teste de supressão com glicose (OGTT 75 g): GH &lt;0,4 µg/L após 2h = normal; &gt;1 µg/L = acromegalia confirmada<br>
+• RM hipofisária: macroadenoma em 70%, microadenoma em 30%<br><br>
+<strong>Tratamento:</strong><br>
+• <strong>Cirurgia transesfenoidal:</strong> 1ª linha; remissão em 50–80% (dependente do tamanho e invasão)<br>
+• <strong>Análogos de somatostatina (AS) de 1ª geração:</strong><br>
+  <strong>Octreotida LAR</b> 20 mg IM/mês → 30–40 mg IM/mês: controla GH/IGF-1 em 55%<br>
+  <strong>Lanreotida Autogel</b> 60–120 mg SC/mês: equivalente ao octreotida LAR; SC (fácil aplicação)<br>
+  RAM: litíase biliar (vigilância anual) · esteatorreia · bradicardia · hiperglicemia<br>
+• <strong>Pasireotida LAR</b> 40–60 mg IM/mês: 2ª geração; maior potência (cobre SST5 > GH); mais hiperglicemia (45%)<br>
+• <strong>Pegvisomanto</b> (Somavert) 10–30 mg SC/dia: antagonista do receptor de GH; normaliza IGF-1 em &gt;90%<br>
+  NÃO reduz tumor · monitorar IGF-1 (não GH) e TGP · acne e lipodistrofia no sítio de injeção<br>
+• <strong>Cabergolina</b> 1–3,5 mg/sem: se co-secreção de prolactina ou resistência a AS<br>
+• Radioterapia estereotáxica: controle GH/IGF-1 em 50% após 5–10 anos<br><br>
+<strong>Alvo terapêutico:</strong> GH &lt;1 µg/L e IGF-1 normal para sexo/idade<br>
+<strong>Complicações:</strong> acroparalgias, apneia do sono, DM2, HAS, cardiopatia (arritmias, MCPH) → avaliar e tratar`,
+     note:'Acromegalia ativa e gestação: continuar octreotida LAR (categoria B) se necessário; suspender antes do parto. Colecistectomia profilática: não indicada de rotina com AS — ecografia anual suficiente (litíase sintomática em 25%).'},
+    {col:'#b45309',nome:'Hiperprolactinemia e Prolactinoma',
+     body:`<strong>Diagnóstico:</strong><br>
+• Prolactina &gt;20 ng/mL (F) / &gt;15 ng/mL (M): elevada<br>
+• Prolactina &gt;200 ng/mL: quase certamente prolactinoma<br>
+• <strong>Excluir causas:</strong> antipsicóticos (haloperidol, risperidona, olanzapina, sulpiride, metoclopramida → 1ª causa medicamentosa), hipotireoidismo (↑ TRH estimula PRL), gestação, macroprolactinemia (PRL inativa — colher "hook effect" diluído)<br>
+• RM hipofisária após confirmar hiperprolactinemia não-medicamentosa<br><br>
+<strong>Tratamento (agonistas dopaminérgicos):</strong><br>
+• <strong>Cabergolina</b> 0,5 mg 2×/sem → titular 1–3,5 mg/sem (doses divididas 2–3×): 1ª linha<br>
+  Normaliza PRL em 85–90% · Reduz tumor em 70% (macroadenoma)<br>
+  RAM: náusea (tomar com alimento), cefaleia, hipotensão postural · Fibrose valvular (rara — em Parkinson use &gt;3 mg/dia; doses de prolactinoma: seguro)<br>
+• <strong>Bromocriptina</b> 1,25 mg/dia → 7,5–15 mg/dia: mais antigas; menos eficaz; mais RAM<br>
+  Gestação: bromocriptina é mais estudada (segura no 1T) · Cabergolina: evidência crescente de segurança gestacional<br><br>
+<strong>Cirurgia transesfenoidal:</strong> microprolactinoma sintomático com intolerância/resistência a agonistas · macroadenoma não-controlado farmacologicamente · tumor encroachando quiasma óptico sem resposta ao DA<br><br>
+<strong>Suspensão do agonista:</strong><br>
+PRL normal × 2 anos + tumor reduzido &gt;50% → tentar retirada gradual (recorrência em 30–50%)<br><br>
+<strong>Hiperprolactinemia por antipsicótico:</strong><br>
+• Considerar trocar para aripiprazol (agonista parcial D2 → pode normalizar PRL sem perder eficácia)<br>
+• NÃO usar cabergolina/bromocriptina sem avaliar com psiquiatra (risco de descompensação psiquiátrica)`,
+     note:'Macroadenoma em gestação: risco de expansão com PRL fisiologicamente alta. Monitorar campo visual; se expansão: retomar cabergolina (2ª trimestre — risco teratogênico menor). Não amamentar se retomando cabergolina.'},
+    {col:'#065f46',nome:'Hipopituitarismo — Reposição Múltipla de Eixos',
+     body:`<strong>Causas:</strong> adenoma hipofisário (mais comum) · cirurgia/RT hipofisária · traumatismo cranioencefálico grave · síndrome de Sheehan · meningite/encefalite · sarcoidose hipofisária<br><br>
+<strong>ORDEM DE REPOSIÇÃO (crítica):</strong><br>
+<div style="background:#ecfdf5;border:2px solid #065f46;border-radius:8px;padding:8px;margin:8px 0">
+<strong>1º Corticoide (eixo HHA)</strong> → 2º Tireoide → 3º Hormônio sexual → 4º GH<br>
+Razão: levotiroxina aumenta clearance de cortisol → repor corticoide ANTES de tiróide evita crise adrenal
+</div>
+<strong>Eixo HHA (corticoide):</strong><br>
+Hidrocortisona 15–25 mg/dia (manhã + tarde); sick day rules · NÃO precisa fludrocortisona (mineralocorticoide preservado na maioria)<br><br>
+<strong>Eixo Tireóide (TSH):</strong><br>
+Levotiroxina: iniciar APÓS corticoide · Alvo: T4 livre na metade superior do normal (TSH não interpretável — suprimido pela doença)<br><br>
+<strong>Eixo Gonadal (FSH/LH):</strong><br>
+♂: Testosterona IM 250 mg/sem ou gel dérmico 50–100 mg/dia · Monitorar PSA, hemograma, SHBG<br>
+♀ pré-menopausa: estrógeno + progestogênio (reposição ovum-like)<br>
+Fertilidade: gonadotrofinas exógenas (FSH + LH/hCG) para indução de ovulação/espermatogênese<br><br>
+<strong>GH (Deficiência de GH em adulto — não rotina, indicar em centro especializado):</strong><br>
+Somatropina 0,1–0,3 mg/dia SC → titular por IGF-1 · Benefício: composição corporal, massa óssea, qualidade de vida · Contraindicação: neoplasia ativa<br><br>
+<strong>ADH (DI Central — Diabetes Insipidus Neurogênico):</strong><br>
+Desmopressina (DDAVP) 0,1–0,4 mg VO 2–3×/dia OU 10–20 mcg intranasal à noite · Titular: diurese &lt;3 L/dia e Na &lt;145`,
+     note:'Diabetes insipidus pós-operatório: monitorar diurese horária + Na+ seriado. Polifasia/poliúria: DI ou diurese osmótica? Calcular osmolalidade urinária. DI neurogênico: osmolalidade urinária &lt;300 mOsm/kg + débito urinário &gt;200 mL/h + Na &gt;145 → DDAVP 1 mcg SC/IV; evitar hiponatremia (overcorrection).'},
+    {col:'#1e3a8a',nome:'Incidentaloma Adrenal — Abordagem Diagnóstica',
+     body:`<strong>Definição:</strong> massa adrenal ≥1 cm descoberta incidentalmente em imagem (TC, RM, US)<br>
+Prevalência: 4% das TC de abdome; 7% na autopsia<br><br>
+<strong>Avaliação obrigatória em TODO incidentaloma adrenal:</strong><br>
+1. <strong>Funcional — pesquisar hipersecreção:</strong><br>
+   • Cortisol: supressão 1 mg dexametasona (cortisol &gt;1,8 µg/dL = hipercortisolismo subclínico)<br>
+   • Catecolaminas: metanefrinas fracionadas plasmáticas (excluir feocromocitoma ANTES de biópsia ou cirurgia)<br>
+   • Aldosterona/Renina: se hipertenso e/ou hipocalêmico<br>
+   • DHEA-S, androstenediona, 17-OH-progesterona: suspeita de carcinoma<br><br>
+2. <strong>Imagem — critérios de malignidade:</strong><br>
+   • TC sem contraste: &lt;10 UH = adenoma lipídico rico (benigno)<br>
+   • Adenoma: &gt;60% de washout absoluto em 15 min após contraste<br>
+   • Suspeito maligno: &gt;10 UH · heterogêneo · &gt;4 cm · crescimento &gt;1 cm/ano · calcificação irregular<br>
+   • &lt;4 cm + benign imaging: followup TC em 6–12 meses · repetir bioquímica anual × 5 anos<br>
+   • &gt;4 cm OU crescimento: adrenalectomia (risco carcinoma &gt;25% em &gt;6 cm)<br><br>
+<strong>Hipercortisolismo subclínico:</strong><br>
+Sem sinais Cushing mas cortisol não suprime adequadamente → maior risco de DM, HAS, osteoporose, mortalidade CV<br>
+Adrenalectomia: considerar se paciente jovem, DM/HAS não-controlada, osteoporose em progressão`,
+     note:'NUNCA biopsiar incidentaloma adrenal sem excluir feocromocitoma (crise hipertensiva grave peri-biópsia). Carcinoma adrenocortical: massa &gt;6 cm, heterogênea, washout &lt;40% → ressecção aberta (não laparoscópica para evitar ruptura). Mitotano: adjuvante pós-ressecção de CA adrenal.'},
+  ];
+  document.getElementById('hipofList').innerHTML=CARDS.map(c=>`<div class="en-card" style="border-color:${c.col}"><div class="en-nome" style="color:${c.col}">${c.nome}</div><div class="en-body">${c.body}</div>${c.note?`<div style="font-size:.7rem;color:#64748b;margin-top:6px">💡 ${c.note}</div>`:''}</div>`).join('');
+}
+</script>
+</body>
+</html>

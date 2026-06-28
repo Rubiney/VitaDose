@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Toxicologia e Antídotos — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .tox-hdr{background:linear-gradient(135deg,#1c1917,#44403c);color:#fff;border-radius:14px;padding:18px;margin-bottom:14px}
+    .tox-title{font-size:1rem;font-weight:800;margin-bottom:4px}
+    .tox-sub{font-size:.73rem;opacity:.8}
+    label{font-size:.75rem;font-weight:700;color:#1e3a5f;display:block;margin-bottom:4px}
+    select{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:10px;padding:10px 12px;font-size:.85rem;background:#fff;margin-bottom:10px}
+    select:focus{border-color:#44403c;outline:none}
+    input[type=number]{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:10px;padding:10px 12px;font-size:.85rem;background:#fff;outline:none;margin-bottom:10px}
+    input:focus{border-color:#44403c}
+    .btn-calc{width:100%;background:#44403c;color:#fff;border:none;border-radius:12px;padding:13px;font-size:.87rem;font-weight:700;cursor:pointer;margin:8px 0}
+    .tab-bar{display:flex;gap:6px;margin-bottom:14px}
+    .tab-btn{flex:1;padding:9px 4px;border-radius:10px;border:2px solid #e2e8f0;background:#fff;font-size:.72rem;font-weight:700;cursor:pointer;color:#64748b}
+    .tab-btn.active{border-color:#44403c;background:#f5f5f4;color:#1c1917}
+    .rec-card{border-radius:12px;border:2px solid;padding:14px;margin-bottom:10px}
+    .rec-hdr{font-size:.63rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+    .rec-nome{font-size:.88rem;font-weight:800;margin-bottom:6px}
+    .rec-badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:.65rem;font-weight:800;color:#fff;margin:2px}
+    .rec-body{font-size:.78rem;margin-top:6px;line-height:1.7}
+    .rec-note{font-size:.71rem;color:#64748b;margin-top:6px;padding-top:6px;border-top:1px solid #f1f5f9}
+    .tox-card{border-radius:10px;border-left:5px solid;padding:10px 14px;margin-bottom:8px;background:#fff}
+    .tox-nome{font-size:.83rem;font-weight:800;margin-bottom:4px}
+    .tox-body{font-size:.76rem;line-height:1.7;color:#374151}
+    .dose-box{background:#f5f5f4;border:2px solid #44403c;border-radius:12px;padding:14px;margin:8px 0;text-align:center}
+    .dose-num{font-size:1.4rem;font-weight:900;color:#1c1917;line-height:1.2}
+    .dose-lbl{font-size:.8rem;font-weight:700;color:#1c1917;margin-top:4px}
+    .dose-sub{font-size:.7rem;color:#64748b;margin-top:4px;line-height:1.5}
+    .emerg-box{background:#fef2f2;border:2px solid #dc2626;border-radius:10px;padding:10px;margin:8px 0;font-size:.77rem;color:#7f1d1d;font-weight:700}
+    .input-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .nac-step{background:#ecfdf5;border:2px solid #059669;border-radius:10px;padding:10px;margin:6px 0;font-size:.77rem}
+    .nac-hdr{font-weight:800;color:#065f46;margin-bottom:4px}
+  </style>
+</head>
+<body>
+<header class="top-bar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <span class="top-title">Toxicologia & Antídotos</span>
+  <div class="top-right"></div>
+</header>
+<main class="container" style="padding-bottom:90px">
+  <div class="tox-hdr">
+    <div class="tox-title">☠️ Toxicologia Clínica & Antídotos</div>
+    <div class="tox-sub">Paracetamol · Organofosforado · Metanol · Digitálico · Tricíclico · Beta/BCC · CO</div>
+  </div>
+  <div class="tab-bar">
+    <button class="tab-btn active" id="tb0" onclick="showTab(0)">Antídotos Rápidos</button>
+    <button class="tab-btn" id="tb1" onclick="showTab(1)">Paracetamol / NAC</button>
+    <button class="tab-btn" id="tb2" onclick="showTab(2)">Toxíndromes</button>
+  </div>
+
+  <!-- TAB 0 — ANTÍDOTOS RÁPIDOS -->
+  <div id="tab0">
+    <div class="card" style="padding:12px 14px">
+      <label>Substância / Intoxicação</label>
+      <select id="tox_sub">
+        <option value="para">Paracetamol / Acetaminofeno</option>
+        <option value="orgfos">Organofosforado / Carbamato (inseticida)</option>
+        <option value="bzd">Benzodiazepínico</option>
+        <option value="opioide">Opioide / Morfina / Heroína</option>
+        <option value="digital">Digitálico (Digoxina)</option>
+        <option value="salicil">Salicilato / AAS</option>
+        <option value="metanol">Metanol / Etilenoglicol</option>
+        <option value="co">Monóxido de Carbono (CO)</option>
+        <option value="tca">Antidepressivo Tricíclico (TCA)</option>
+        <option value="betabc">Betabloqueador / Bloqueador de Canal de Cálcio</option>
+        <option value="cianeto">Cianeto / Fumaça de Incêndio</option>
+        <option value="ferro">Ferro (intoxicação ferrosa)</option>
+        <option value="litio">Lítio</option>
+        <option value="isoniazida">Isoniazida</option>
+        <option value="metahemo">Metemoglobinizantes (nitritos, dapsona)</option>
+      </select>
+    </div>
+    <button class="btn-calc" onclick="calcAntidoto()">☠️ Consultar antídoto</button>
+    <div id="toxResult" style="display:none"></div>
+  </div>
+
+  <!-- TAB 1 — PARACETAMOL / NAC -->
+  <div id="tab1" style="display:none">
+    <div class="card" style="padding:12px 14px">
+      <div style="font-size:.78rem;font-weight:800;color:#065f46;margin-bottom:8px">Calculadora NAC — N-Acetilcisteína IV</div>
+      <div class="input-row">
+        <div><label>Peso (kg)</label><input type="number" id="nac_peso" placeholder="ex: 70" min="1" max="200"></div>
+        <div><label>Paracetamol (mcg/mL)</label><input type="number" id="nac_nivel" placeholder="ex: 150" min="0"></div>
+      </div>
+      <label>Tempo após ingestão (horas)</label>
+      <input type="number" id="nac_tempo" placeholder="ex: 4" min="0" max="24">
+    </div>
+    <button class="btn-calc" onclick="calcNAC()">💊 Calcular doses de NAC</button>
+    <div id="nacResult" style="display:none"></div>
+  </div>
+
+  <!-- TAB 2 — TOXÍNDROMES -->
+  <div id="tab2" style="display:none">
+    <div id="toxindList"></div>
+  </div>
+</main>
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+<script src="js/db.js"></script>
+<script>
+function showTab(n){[0,1,2].forEach(i=>{document.getElementById('tab'+i).style.display=i===n?'block':'none';document.getElementById('tb'+i).classList.toggle('active',i===n);});if(n===2)renderToxind();}
+function recHTML(r){return `<div class="rec-card" style="border-color:${r.col}"><div class="rec-hdr" style="color:${r.col}">${r.hdr}</div><div class="rec-nome">${r.nome}</div><div>${(r.badges||[]).map(b=>`<span class="rec-badge" style="background:${b.c}">${b.t}</span>`).join('')}</div><div class="rec-body">${r.body}</div>${r.note?`<div class="rec-note">${r.note}</div>`:''}</div>`;}
+
+/* ─── ANTÍDOTOS ─────────────────────────────────────────────────────── */
+const ANTIDOTOS={
+  para:{hdr:'Paracetamol',col:'#065f46',nome:'N-Acetilcisteína (NAC) IV',
+    body:`<strong>Consulte a aba "Paracetamol/NAC" para cálculo de doses por peso</strong><br><br>
+<strong>Nomograma de Rumack-Matthew:</strong><br>
+Nível sérico de paracetamol plotado no tempo pós-ingestão (linha de tratamento = 150 µg/mL às 4h, 37,5 µg/mL às 12h)<br>
+Se nível acima da linha de tratamento → NAC indicado<br>
+Se ingestão desconhecida ou nivel não disponível em tempo &lt;8h → iniciar NAC empiricamente<br><br>
+<strong>NAC IV — Protocolo 3 bolsas (padrão):</strong><br>
+Bolsa 1: 150 mg/kg em 200 mL SG5% em 1h<br>
+Bolsa 2: 50 mg/kg em 500 mL SG5% em 4h<br>
+Bolsa 3: 100 mg/kg em 1000 mL SG5% em 16h<br>
+Total: 300 mg/kg em 21h<br><br>
+<strong>Critérios de King's College (transplante hepático urgente em intoxicação por paracetamol):</strong><br>
+pH &lt;7,3 (após ressuscitação) OU {PT &gt;100 s + Cr &gt;3,4 mg/dL + encefalopatia grau III/IV}`,
+    note:'NAC oral (70 mg/kg a cada 4h × 17 doses): alternativa se IV indisponível; mais RAM GI. A descontaminação com carvão ativado é eficaz se &lt;1–2h da ingestão (não retarda absorção de NAC). Paracetamol + álcool: NAC deve ser iniciado mesmo com níveis borderline (maior risco de hepatotoxicidade).'},
+  orgfos:{hdr:'Organofosforado / Carbamato',col:'#dc2626',nome:'Atropina + Pralidoxima (2-PAM)',
+    body:`<strong>Mecanismo:</strong> inibição de acetilcolinesterase → acúmulo de acetilcolina → síndrome colinérgica<br><br>
+<strong>Síndrome SLUDGE (muscarínica):</strong><br>
+Salivação · Lacrimejamento · Urinação · Defecação · Distúrbios GI · Emese<br>
++ DUMBELS: Diarreia, Urinação, Miose, Bradicardia, Emese, Lacrimejamento, Salivação<br>
++ Nicotínica: fasciculações, fraqueza muscular, paralisia, taquicardia (adrenal)<br>
++ SNC: ansiedade, convulsão, coma<br><br>
+<strong>1. Atropina (bloqueia muscarínico):</strong><br>
+Dose inicial: 2–4 mg IV bolus · Repetir a cada 5–10 min até broncodilatação e secreção seca<br>
+Doses totais de 20–100 mg podem ser necessárias em intoxicações graves<br>
+Alvo: broncoespasmo e broncorreia controlados (NÃO midríase ou FC — enganosos)<br><br>
+<strong>2. Pralidoxima (2-PAM) (reativa colinesterase — antes do "envelhecimento"):</strong><br>
+Dose: 1–2 g IV em 15–30 min → infusão 200–400 mg/h (máx 12 g/dia)<br>
+Janela: eficaz se administrada &lt;24–48h (antes do "envelhecimento" da ligação organofosforado-AChE)<br>
+Carbamatos: 2-PAM geralmente não necessária (ligação reversível)<br><br>
+<strong>3. Benzodiazepínico (convulsão):</strong><br>
+Diazepam 5–10 mg IV a cada 5–10 min OU midazolam 0,1 mg/kg IV`,
+    note:'Atropina em organofosforado: doses heroicas são necessárias (não se preocupar com "superdosagem" de atropina se o paciente está colinérgico). Sinal de atropinização adequada: boca seca + HR controlada. 2-PAM NÃO é necessária em carbamato (metomil, aldicarb) — mas atropina é essencial.'},
+  bzd:{hdr:'Benzodiazepínico',col:'#7c3aed',nome:'Flumazenil — usar com CAUTELA',
+    body:`<strong>Flumazenil (Lanexat) 0,2 mg IV em 30 seg → 0,3 mg depois → 0,5 mg:</strong><br>
+Dose total máx: 3 mg (maioria responde com ≤1 mg)<br>
+Duração de ação: 45–90 min (BZD de longa ação tem duração maior → repetir ou infusão)<br><br>
+<strong>CONTRAINDICAÇÕES importantes:</strong><br>
+• Paciente com uso crônico de BZD → síndrome de abstinência aguda grave (convulsão, delirium)<br>
+• Paciente com convulsão controlada por BZD → reverter pode precipitar status epilepticus<br>
+• Co-ingestão de TCA ou AINEs (convulsão é risco real)<br>
+• Dependência crônica de BZD ou álcool (IAM de abstinência)<br><br>
+<strong>Indicações relativas:</strong><br>
+• Diagnóstico: responsividade de coma a BZD (uso diagnóstico)<br>
+• Intoxicação aguda isolada por BZD com depressão respiratória grave<br><br>
+<strong>Na maioria dos casos: suporte clínico é suficiente</strong><br>
+VM se SpO₂ &lt;90% · Decúbito lateral (prevenir aspiração) · Hidratação IV`,
+    note:'Flumazenil e TCA: em co-ingestão, o flumazenil pode precipitar convulsão grave por mecanismo da TCA (inibição canal Na). Nunca usar flumazenil de rotina em overdose desconhecida — risco de piora se dependência ou co-ingestão convulsivante.'},
+  opioide:{hdr:'Opioide',col:'#b45309',nome:'Naloxona — dose por via e resposta',
+    body:`<strong>Sinais de intoxicação opioide (TRÍADE):</strong><br>
+Miose puntiforme · Depressão respiratória · Coma (nível de consciência deprimido)<br><br>
+<strong>Naloxona 0,4–2 mg IV/IM/SC/IN:</strong><br>
+• Resposta esperada em 1–2 min (IV) ou 3–5 min (IM/SC/IN)<br>
+• Se sem resposta após 2 mg IV → reconsiderar diagnóstico<br>
+• Infusão contínua (opioides de longa ação — metadona, fentanil TD): 2/3 da dose de resposta/hora<br>
+  Duração naloxona &lt;90 min; metadona &gt;24h → vigilância obrigatória por 12–24h<br><br>
+<strong>Intranasal (2 mg/0,1 mL/narina): uso pré-hospitalar e leigos</strong><br>
+<strong>Auto-injetor (Evzio) 0,4 mg IM coxa: treinamento de familiares de usuários de opioides</strong><br><br>
+<strong>Síndrome de abstinência aguda por naloxona:</strong><br>
+Agitação, vômito, taquicardia, convulsão (em dependentes crônicos) — titular em vez de bolus grande<br>
+Em dependente: iniciar 0,04–0,1 mg IV e titular`,
+    note:'Naloxona não reverte buprenorfina efetivamente em doses habituais (alta afinidade receptor µ) — dose maior (8–16 mg IV) necessária. Fentanil 100× mais potente que morfina → dose mais alta de naloxona pode ser necessária (2–4 mg). Naloxona não reverte ketamina, GHB, álcool ou TCA.'},
+  digital:{hdr:'Digitálico / Digoxina',col:'#1e3a8a',nome:'Anticorpo Anti-Digoxina Fab (Digifab / Digibind)',
+    body:`<strong>Sinais de toxicidade digitálica:</strong><br>
+GI: náusea, vômito, dor abdominal · Visuais: halo amarelo-verde, xantopsia<br>
+Cardíacos: qualquer arritmia mas CLÁSSICO: BAV 2º/3º grau + taquicardia ventricular bidirecional + TV polimórfica<br>
+Eletrolítico: HIPERCALEMIA (grave — bloqueia Na/K-ATPase)<br><br>
+<strong>Indicação de Digifab/Digibind:</strong><br>
+• Hipercalemia &gt;5 mEq/L com toxicidade digital<br>
+• Qualquer arritmia grave (TV, FV, BAV total)<br>
+• Nível de digoxina &gt;10 ng/mL (com sintomas) OU &gt;15 ng/mL (assintomático)<br>
+• Ingestão de dose desconhecida com instabilidade hemodinâmica<br><br>
+<strong>Cálculo de dose de Fab:</strong><br>
+Se nível sérico conhecido: Dose (frascos) = [digoxina ng/mL × peso kg] / 100<br>
+Se nível desconhecido / emergência: 10 frascos IV (pode repetir 10 frascos se sem resposta)<br>
+1 frasco (40 mg) neutraliza 0,5 mg de digoxina<br><br>
+<strong>Monitoramento pós-Fab:</strong><br>
+Nível total de digoxina aumenta (Fab-digoxina complexo é detectado) → usar nível LIVRE<br>
+Hipocalemia (redistribuição K+) comum após Fab — monitorar<br><br>
+<strong>Glicosídeos cardiotônicos naturais (dedaleira — Digitalis purpurea, oleandro, beijo-da-mulher-brasileira):</strong><br>
+Reagem cruzado com Fab — usar Digifab nas mesmas indicações`,
+    note:'Cardioversão elétrica em toxicidade digitálica: EVITAR (risco de FV refratária). Marca-passo temporário: BAV sintomático sem Fab disponível. Atropina pode ser usada para bradicardia digitálica (menor eficácia). NUNCA gluconato de cálcio em hipercalemia por digitálico (aggrava toxicidade cardíaca — efeito "pedra do rim" de cálcio).'},
+  salicil:{hdr:'Salicilato / AAS',col:'#dc2626',nome:'Bicarbonato de Sódio IV + Diálise se grave',
+    body:`<strong>Apresentação clínica:</strong><br>
+Leve: tinido, náusea, vômito, zumbido, hiperventilação (alcalose respiratória)<br>
+Moderada: febre, taquicardia, letargia, alcalose respiratória + acidose metabólica (anion gap elevado)<br>
+Grave: coma, edema pulmonar não-cardiogênico, hipoglicemia, acidemia (pH &lt;7,35)<br><br>
+<strong>Nível sérico de salicilato:</strong><br>
+&lt;30 mg/dL: leve · 30–70 mg/dL: moderada · &gt;70 mg/dL: grave<br>
+NB: em intoxicação crônica, sintomas surgem com níveis menores<br><br>
+<strong>Tratamento:</strong><br>
+1. <strong>Bicarbonato de Sódio 1–2 mEq/kg IV bolus</strong> → alcalinizar urina para pH 7,5–8 (ionização do salicilato no túbulo → ↓ reabsorção = "ion trapping")<br>
+   Infusão: 100 mEq NaHCO3 em 1 L SG5% (150 mEq/L) a 200 mL/h; adicionar 20–40 mEq KCl por litro<br>
+   Monitorar urina pH horário · Manter pH sérico 7,45–7,55<br>
+2. <strong>Glicose IV:</strong> manter glicemia &gt;100 mg/dL (hipoglicemia do SNC ocorre com glicemia periférica normal)<br>
+3. <strong>Hemodiálise:</strong> nível &gt;100 mg/dL (crônico) ou &gt;120 mg/dL (agudo) · pH &lt;7,2 · falência orgânica · edema pulmonar · deterioração neurológica apesar do tratamento`,
+    note:'Contraindicação à alcalinização com bicarbonato: alcalemia grave (pH &gt;7,55). Hipocalemia impede alcalinização urinária (K+ preenche espaço antes do HCO3 no túbulo) — corrigir K+ simultaneamente. NUNCA hiperventilar para "compensar" acidose (piora ionização cerebral do salicilato).'},
+  metanol:{hdr:'Metanol / Etilenoglicol',col:'#7c3aed',nome:'Fomepizol (4-MP) ou Etanol IV + Diálise',
+    body:`<strong>Mecanismo de toxicidade:</strong><br>
+• Metanol → álcool desidrogenase → formaldeído → ácido fórmico → cegueira, acidose grave<br>
+• Etilenoglicol → acetaldeído → ácido glicólico/oxálico → cristais de oxalato de cálcio renal → IRA, hipocalcemia<br><br>
+<strong>Clínica:</strong><br>
+Metanol: anion gap elevado + osmolal gap + visão turva / cegueira + cefaleia<br>
+Etilenoglicol: anion gap + osmolal gap + cristalúria (oxalato) + IRA + hipocalcemia + cristais em urina<br>
+Osmolal gap = osmolalidade medida − (2×Na + Glicose/18 + Ureia/6) &gt;10 = suspeita de álcool tóxico<br><br>
+<strong>Antídoto: Fomepizol (4-metilpirazol / Antizol) — 1ª linha:</strong><br>
+15 mg/kg IV em 30 min → 10 mg/kg IV 12/12h × 4 doses → 15 mg/kg 12/12h<br>
+Mecanismo: inibidor competitivo da álcool desidrogenase (mais potente que etanol, sem efeitos de embriaguez)<br><br>
+<strong>Etanol IV (alternativa se fomepizol indisponível):</strong><br>
+Alvo de etanolemia: 100–150 mg/dL · Diluir etanol absoluto em SG5% (10% v/v → 100 mg/mL)<br>
+Dose ataque: 0,6 g/kg IV → manutenção 66–154 mg/kg/h (não-etilista) ou 154 mg/kg/h (etilista crônico)<br>
+Monitorar glicemia (hipoglicemia por etanol) e estado mental<br><br>
+<strong>Hemodiálise — indicações:</strong><br>
+Nível metanol &gt;50 mg/dL · Nível etilenoglicol &gt;50 mg/dL · Acidose grave (pH &lt;7,2) · IRA · Deterioração clínica · Cegueira`,
+    note:'Piridoxina 100 mg IV e Tiamina 100 mg IV: adjuvantes no etilenoglicol (desviam metabolismo do oxalato para vias menos tóxicas). Ácido fólico 1 mg/kg IV + leucovorin: em intoxicação por metanol (auxilia eliminação do formiato). Metanol produz cegueira irreversível — tratamento precoce é crítico.'},
+  co:{hdr:'Monóxido de Carbono (CO)',col:'#b45309',nome:'Oxigênio 100% + Câmara Hiperbárica',
+    body:`<strong>Fontes:</strong> incêndio/fumaça, motor de combustão em espaços fechados, aquecedores a gás com combustão incompleta<br><br>
+<strong>Clínica (COHb %):</strong><br>
+10–20%: cefaleia, náusea · 20–40%: confusão, dispneia · 40–60%: coma, convulsão · &gt;60%: morte<br>
+COHb elevada não é necessária para intoxicação grave (pacientes graves chegam com COHb "normalizada" após O2 pré-hospitalar)<br><br>
+<strong>Tratamento:</strong><br>
+1. <strong>O2 100% por máscara de não-reinalação:</strong> reduz meia-vida de COHb de 4–5h → 60–90 min<br>
+   Manter até COHb &lt;5% e sintomas resolvidos (mínimo 4h em exposição grave)<br>
+2. <strong>Câmara Hiperbárica (HBO) — indicações:</strong><br>
+   COHb &gt;25% · Sintomas neurológicos (confusão, coma, convulsão, déficit focal)<br>
+   Gravidez com COHb &gt;20% OU qualquer sintoma<br>
+   Cardiotoxicidade (arritmia, troponina elevada, isquemia)<br>
+   HBO a 2,4–3 ATM: reduz meia-vida de COHb para 20–30 min + reduz síndrome neurológica tardia 3×<br><br>
+<strong>Síndrome Neurológica Tardia (DNS):</strong><br>
+2–40 dias após exposição: parkinsonismo, demência, psicose<br>
+Risco: CO2 grave + perda de consciência · HBO reduz DNA em 25% vs O2 normobar`,
+    note:'Oxímetro de pulso em CO: FALSO NORMAL (COHb absorve luz como OxyHb) — usar CO-oxímetro do gasômetro arterial. Fumantes: COHb basal 2–5% (ajustar interpretação). Cianeto concomitante (fumaça de incêndio): hidroxocobalamina + O2 100% (NÃO usar tiosulfato em inundação porque nitrito piora CO).'},
+  tca:{hdr:'Antidepressivo Tricíclico (TCA)',col:'#dc2626',nome:'Bicarbonato de Sódio IV — tratamento do bloqueio de canal de sódio',
+    body:`<strong>TCAs:</strong> amitriptilina, imipramina, clomipramina, nortriptilina, desipramina<br><br>
+<strong>Mecanismo de toxicidade:</strong><br>
+• Bloqueio do canal de Na (cardiotoxicidade) → QRS alargado → TV/FV<br>
+• Bloqueio alfa1 → hipotensão · Anticolinérgico · Antihistamínico (sedação)<br><br>
+<strong>Sinais de alarme (alarga QRS):</strong><br>
+QRS &gt;100 ms → risco de convulsão · QRS &gt;160 ms → alto risco de arritmia ventricular<br>
+Onda R &gt;3 mm em aVR: marcador de toxicidade do canal de Na<br><br>
+<strong>Tratamento (Bicarbonato de Sódio — 1ª linha):</strong><br>
+<strong>NaHCO3 1–2 mEq/kg IV bolus → infusão para alvo pH sérico 7,45–7,55</strong><br>
+Mecanismo duplo: alcalinização + aumento Na+ extravascular → reverte bloqueio de canal<br>
+Infusão: 100 mEq NaHCO3 em 1 L SF 1% a 200–300 mL/h · ECG contínuo<br>
+Rever arritmia e QRS — se normaliza → titule a infusão<br><br>
+<strong>Convulsão:</strong> Benzodiazepínico (diazepam 10 mg IV / midazolam 5 mg IV) · Bicarbonato mesmo em convulsão<br>
+<strong>Hipotensão refratária:</strong> SF 1–2 L + noradrenalina 0,1–0,5 mcg/kg/min<br>
+<strong>NUNCA:</strong> flumazenil (ver BZD), fisostigmina, antiarrítmico classe IA/IC/III (piora bloqueio de Na)<br>
+<strong>EVITAR:</strong> procainamida, amiodarona, flecainida (mesmo mecanismo de toxicidade)<br><br>
+<strong>Emulsão lipídica (lipid rescue) 20% — em colapso cardiovascular refratário:</strong><br>
+1,5 mL/kg IV bolus → 0,25 mL/kg/min × 30 min`,
+    note:'TCA + flumazenil: combinação letal (flumazenil revela a convulsão "silenciada" pelo BZD). Monitorar ECG contínuo por 6h sem sintomas ou 24h em sintomático. Carvão ativado: eficaz se &lt;1h (TCAs muito anticolinérgicos — retardam esvaziamento gástrico → janela pode ser maior).'},
+  betabc:{hdr:'Betabloqueador / Bloqueador de Canal de Cálcio (BCC)',col:'#0369a1',nome:'Glucagon + Insulina-Dextrose + Lipid Rescue + ECMO',
+    body:`<strong>Clínica (bradicardia + hipotensão + choque):</strong><br>
+BB: bradicardia sinusal ou BAV · BCC não-dihidropiridínico (diltiazem, verapamil): bradicardia · BCC dihidropiridínico (nifedipino): taquicardia reflexa + hipotensão<br>
+Diferencial: BB x BCC → Glicemia (BCC: hiperglicemia — bloqueia insulina pancreática; BB: hipoglicemia)<br><br>
+<strong>Tratamento escalonado:</strong><br>
+1. <strong>Atropina 0,5–1 mg IV:</strong> bradicardia (frequentemente insuficiente)<br>
+2. <strong>SF 500 mL–1 L IV:</strong> se hipovolemia<br>
+3. <strong>Glucagon 3–5 mg IV bolus → 3–5 mg/h infusão:</strong><br>
+   Adenilciclase via receptor não-adrenérgico → ↑ AMPc → inotropia/cronotropia<br>
+   Náusea grave é RAM frequente · Preparar antieméticos<br>
+4. <strong>Marcapasso transdérmico / transvenoso:</strong> BAV sintomático refratário<br>
+5. <strong>Insulina de alta dose (HAIET — Hyperinsulinemic Euglycemic Therapy):</strong><br>
+   Insulina regular 1 UI/kg bolus → 1 UI/kg/h infusão contínua<br>
+   Glicose IV 25 g/h concomitante (alvo glicemia 100–200 mg/dL — monitorar a cada 30 min)<br>
+   Potássio: monitorar e repor (hipocalemia pelo efeito insulínico)<br>
+   Evidência crescente em intoxicação por BCC (favorece metabolismo cardíaco por glicose vs ácidos graxos)<br>
+6. <strong>Emulsão lipídica 20% (Lipid Rescue):</strong><br>
+   1,5 mL/kg IV em 1 min → 0,25 mL/kg/min × 30–60 min<br>
+   Para BCC/BB lipofílicos (verapamil, metoprolol, propranolol) — cria "sink" lipídico<br>
+7. <strong>Vasopressores:</strong> noradrenalina 0,1–1 mcg/kg/min ± adrenalina<br>
+8. <strong>ECMO (VV ou VA):</strong> colapso cardiovascular refratário a tudo → suporte mecânico como ponte para recuperação`,
+    note:'Cálcio IV em intoxicação por BCC: gluconato de cálcio 1 g IV (3 g em 10 min para overdose grave) → não restaura condução mas melhora inotropia/PA temporariamente. Verapamil: BB + verapamil juntos = extremamente perigoso (sinergismo de depressão hemodinâmica). ECMO precoce em BCC grave salva vidas — acionar equipe especializada imediatamente.'},
+  cianeto:{hdr:'Cianeto / Fumaça de Incêndio',col:'#1c1917',nome:'Hidroxocobalamina (Cyanokit) + O2 100%',
+    body:`<strong>Fontes:</strong> fumaça de incêndio (plásticos PVC, poliuretano, lã, seda) · inalação industrial · mandioca brava não processada<br><br>
+<strong>Clínica (rapidíssima):</strong> Cefaleia → tontura → náusea → convulsão → coma → parada cardíaca (minutos)<br>
+Anion gap elevado + lactato &gt;8 mmol/L em vítima de incêndio = CN suspeito<br>
+"Pele rósea" (pele venosa rosada) clássico mas inconsistente<br><br>
+<strong>Hidroxocobalamina 5 g IV em 15 min (CVANOKIT):</strong><br>
+• Liga ao CN → cianocobalamina (não tóxica) → excretada renalmente<br>
+• 5 g = dose padrão adulto · Pode repetir 5 g · Máx 15 g<br>
+• Seguros com CO simultâneo (NÃO causa metemoglobina)<br>
+• RAM: urina vermelha (alarmar equipe), interferência em gasômetro / oxímetro por dias<br><br>
+<strong>Antídoto alternativo (se hidroxocobalamina indisponível):</strong><br>
+Kit dicobalt EDTA OU nitrito de amila inalado → nitrito de sódio 300 mg IV (gera metemoglobina) → tiosulfato de sódio 12,5 g IV (metaboliza CN em tiocianato)<br>
+NB: nitritos CONTRAINDICADOS se co-intoxicação por CO (piora hipóxia)`,
+    note:'Fumaça de incêndio = cocktail de CO + CN. Hidroxocobalamina: droga de escolha em emergência pré-hospitalar por segurança com CO. No hospital, adicionar O2 100% e tratar sintomas. Lactato elevado em vítima de incêndio sem hipotensão = suspeitar CN.'},
+  ferro:{hdr:'Intoxicação por Ferro',col:'#b45309',nome:'Desferrioxamina IV',
+    body:`<strong>Apresentação em 5 fases:</strong><br>
+F1 (0–6h): vômito/diarreia com sangue · F2 (6–24h): melhora aparente (enganosa)<br>
+F3 (12–24h): choque, acidose grave, coma · F4 (2–5 dias): hepatotoxicidade<br>
+F5 (semanas): estenose pilórica (cicatriz GI)<br><br>
+<strong>Desferrioxamina (Desferal):</strong><br>
+15 mg/kg/h IV contínuo (máx 6 g/dia) até:<br>
+• Urina "vin rosé" desaparecer (ferridesferrioxamina → urina rosada = ferro sendo quelado)<br>
+• Estabilidade clínica<br>
+• Nível sérico de ferro &lt;350 mcg/dL<br>
+Monitorar: hipotensão durante infusão (reduzir taxa); ARDS com uso prolongado (&gt;24h) — minimizar duração<br><br>
+Carvão ativado NÃO adsorve ferro · Lavagem gástrica se comprimidos visíveis na Rx`,
+    note:'Ferro sérico &gt;500 mcg/dL (independente de sintomas) ou &gt;350 com sintomas: desferrioxamina indicada. Doses pediátricas de ferro: sulfato ferroso em excesso de 20–60 mg/kg causa toxicidade severa. Quelação pode ser iniciada sem nível disponível se sintomas graves.'},
+  litio:{hdr:'Intoxicação por Lítio',col:'#065f46',nome:'Hemodiálise + Hidratação',
+    body:`<strong>Fatores de risco para toxicidade:</strong><br>
+Desidratação (diarreia, vômito, baixa ingesta) · IECA/ARA-II (↑ reabsorção de Li renal) · AINE · Tiazídico · Cirurgia<br><br>
+<strong>Nível sérico e sintomas:</strong><br>
+0,8–1,2 mEq/L: nível terapêutico · &gt;1,5 mEq/L: toxicidade possível · &gt;2 mEq/L: toxicidade moderada-grave · &gt;4 mEq/L: emergência dialítica<br><br>
+<strong>Sintomas neurotóxicos:</strong><br>
+Leve: tremor, polidipsia, poliúria · Moderada: confusão, ataxia, disartria · Grave: coma, convulsão, arritmia<br><br>
+<strong>Tratamento:</strong><br>
+1. <strong>SF 0,9% 1–2 L/h:</strong> repor sódio/volume (rim retém Li em hipovolemia)<br>
+2. <strong>Suspender lítio e medicamentos que elevam seu nível</strong><br>
+3. <strong>Hemodiálise (HD intermitente preferida sobre HDF):</strong><br>
+   Li &gt;4 mEq/L · Li &gt;2,5 com sintomas graves · IRA · Convulsão ou coma<br>
+   Li redistribui de SNC → plasma após HD → nível sobe de volta após sessão: repetir HD<br>
+4. <strong>Monitoramento pós-HD:</strong> repetir lítio 6–8h após fim da sessão (rebote)`,
+    note:'Carvão ativado NÃO adsorve lítio (íon inorgânico pequeno). Poliestireno sulfonato de sódio (Kayexalate): liga Li no trato GI — evidência fraca. Síndrome SILENT (síndrome de neurotoxicidade irreversível por lítio) pode persistir meses após normalização do nível.'},
+  isoniazida:{hdr:'Isoniazida (INH)',col:'#7e22ce',nome:'Piridoxina (B6) IV',
+    body:`<strong>Mecanismo:</strong> depleta piridoxal-5-fosfato (forma ativa de B6) → inibe síntese de GABA → convulsão refratária<br><br>
+<strong>Clínica:</strong> convulsão refratária a BZD, acidose lática grave, coma (onset 30 min–2h após ingestão)<br>
+Dose tóxica: 30–40 mg/kg (adulto) · Dose letal: &gt;80 mg/kg<br><br>
+<strong>Piridoxina IV — ANTÍDOTO ESPECÍFICO:</strong><br>
+Dose igual em gramas à quantidade de INH ingerida (se conhecida): ex. ingeriu 3 g INH → piridoxina 3 g IV<br>
+Se quantidade desconhecida: 5 g IV adulto (70 mg/kg em crianças) · Infundir em 5–10 min<br>
+Repetir a cada 5–20 min se convulsão persistir<br><br>
+<strong>Benzodiazepínico CONCOMITANTE:</strong><br>
+Diazepam 5–10 mg IV a cada 5 min: controla convulsão temporariamente (sem piridoxina, BZD pode ser insuficiente)<br><br>
+Fenitoína: INEFICAZ para convulsão por INH (não é mecanismo GABAérgico)`,
+    note:'Isoniazida overdose é rara mas deve-se suspeitar em: paciente com TB em tratamento, imigrante, população vulnerável com convulsão refratária. Acidose metabólica grave (pH &lt;7,0) por lactato: bicarbonato IV + piridoxina. Estoque de piridoxina IV: vital em serviços de emergência de referência.'},
+  metahemo:{hdr:'Metemoglobinizantes (Nitritos, Dapsona, Benzocaína)',col:'#dc2626',nome:'Azul de Metileno IV',
+    body:`<strong>Agentes:</strong> dapsona · nitrito de amila/sódio · benzocaína tópica (em procedimentos de intubação) · anilinas · nitritos (salsicharia — meta-hemoglobinemia alimentar em lactentes)<br><br>
+<strong>Clínica:</strong> Cianose que NÃO melhora com O2 · SpO₂ falsamente normal no oxímetro de pulso (absorção semelhante ao HbO2) · PaO₂ NORMAL · Gasômetro com CO-oximetria: metaHb elevada<br><br>
+<strong>Azul de Metileno (antídoto):</strong><br>
+<strong>1–2 mg/kg IV em 5 min</strong> → repetir 1 mg/kg se sem resposta em 30–60 min · Máx 7 mg/kg<br>
+Mecanismo: reduz metaHb via NADPH-metaHb redutase<br>
+RAM: urina azul · Dor no sítio IV · Hemólise em doses altas<br><br>
+<strong>Contraindicações ao Azul de Metileno:</strong><br>
+• Deficiência de G6PD: hemólise grave → usar ácido ascórbico IV 1 g 6/6h (mecanismo alternativo)<br>
+• MetaHb por cianocobalamina: não aplicável<br><br>
+<strong>Oxigênio a 100% + carvão ativado (dapsona):</strong> dapsona tem circulação enterohepática (repetir carvão a cada 4h × 3)`,
+    note:'Lactentes com meta-Hb por nitritos (água de poço): azul de metileno é seguro e eficaz mesmo em lactentes — dose igual. Benzocaína tópica: causa meta-Hb em intubação acordada — usar alternativas (lidocaína 4%). Dapsona: meta-Hb recorre após 24–48h → manter carvão ativado multipleselect e monitorar metaHb.'},
+};
+
+function calcAntidoto(){
+  const sub=document.getElementById('tox_sub').value;
+  const p=ANTIDOTOS[sub];
+  document.getElementById('toxResult').style.display='block';
+  document.getElementById('toxResult').innerHTML=recHTML({hdr:p.hdr,col:p.col,nome:p.nome,badges:[{t:'ANTÍDOTO',c:p.col}],body:p.body,note:p.note});
+  document.getElementById('toxResult').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+/* ─── NAC CALCULATOR ─────────────────────────────────────────────────── */
+function calcNAC(){
+  const peso=parseFloat(document.getElementById('nac_peso').value)||0;
+  const nivel=parseFloat(document.getElementById('nac_nivel').value)||0;
+  const tempo=parseFloat(document.getElementById('nac_tempo').value)||0;
+  if(!peso){alert('Informe o peso do paciente.');return;}
+
+  const d1=Math.round(150*peso);
+  const d2=Math.round(50*peso);
+  const d3=Math.round(100*peso);
+  const total=d1+d2+d3;
+
+  let nomograma='';
+  if(nivel&&tempo){
+    const LINHA_TRATAMENTO=[
+      [4,150],[5,119],[6,94],[7,75],[8,60],[9,47],[10,38],[12,30],[14,24],[16,19],[18,15],[20,12],[24,9.4]
+    ];
+    const interp=LINHA_TRATAMENTO.findIndex(p=>tempo<=p[0]);
+    let limiar=150;
+    if(interp>0){
+      const a=LINHA_TRATAMENTO[interp-1];const b=LINHA_TRATAMENTO[interp];
+      limiar=a[1]+(b[1]-a[1])*(tempo-a[0])/(b[0]-a[0]);
+    }else if(tempo>=24){limiar=9.4;}
+    const tratar=nivel>=limiar;
+    nomograma=`<div style="background:${tratar?'#fef2f2':'#ecfdf5'};border:2px solid ${tratar?'#dc2626':'#059669'};border-radius:10px;padding:10px;margin:8px 0;font-size:.78rem">
+<strong>${tratar?'⚠️ TRATAR — nível ACIMA da linha de tratamento':'✅ BAIXO RISCO — nível abaixo da linha de tratamento'}</strong><br>
+Nível: ${nivel} µg/mL às ${tempo}h · Limiar nessa hora: ${limiar.toFixed(0)} µg/mL<br>
+${tratar?'NAC indicado — calcule as doses abaixo':'NAC pode ser desnecessário — reavalie se ingestão &gt;7,5 g ou incerteza na hora de ingestão'}
+</div>`;
+  }
+
+  document.getElementById('nacResult').style.display='block';
+  document.getElementById('nacResult').innerHTML=`
+${nomograma}
+<div style="font-size:.78rem;font-weight:800;color:#065f46;margin:10px 0 6px">Protocolo NAC IV — 3 bolsas (300 mg/kg em 21h)</div>
+<div class="nac-step"><div class="nac-hdr">Bolsa 1 — 150 mg/kg em 200 mL SG5% em 1h</div>
+N-Acetilcisteína: <strong>${d1} mg</strong> em 200 mL SG5% · Taxa: ${(200/1).toFixed(0)} mL/h × 1h</div>
+<div class="nac-step"><div class="nac-hdr">Bolsa 2 — 50 mg/kg em 500 mL SG5% em 4h</div>
+N-Acetilcisteína: <strong>${d2} mg</strong> em 500 mL SG5% · Taxa: ${(500/4).toFixed(0)} mL/h × 4h</div>
+<div class="nac-step"><div class="nac-hdr">Bolsa 3 — 100 mg/kg em 1000 mL SG5% em 16h</div>
+N-Acetilcisteína: <strong>${d3} mg</strong> em 1000 mL SG5% · Taxa: ${(1000/16).toFixed(0)} mL/h × 16h</div>
+<div style="font-size:.73rem;background:#f8fafc;border-radius:10px;padding:10px;margin-top:6px">
+<strong>Dose total: ${total} mg de NAC · Peso: ${peso} kg</strong><br>
+NAC disponível: ampola 3 g/15 mL (200 mg/mL) OU 600 mg/3 mL · Calcule nº de ampolas: Bolsa 1: ${Math.ceil(d1/200)} amp (200 mg/mL); Bolsa 2: ${Math.ceil(d2/200)} amp; Bolsa 3: ${Math.ceil(d3/200)} amp<br>
+RAM: anafilactoide em 10–20% (flush, urticária, broncoespasmo) — geralmente durante bolsa 1 (infusão mais rápida) → reduzir taxa ou pausar 15 min + anti-histamínico → retomar em taxa menor<br>
+Ampliar tratamento (além de 21h): TGP ↑, INR ↑, encefalopatia → continuar bolsa 3 em loop até normalização ou transplante
+</div>`;
+  document.getElementById('nacResult').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+/* ─── TOXÍNDROMES ─────────────────────────────────────────────────────── */
+function renderToxind(){
+  if(document.getElementById('toxindList').innerHTML) return;
+  const CARDS=[
+    {col:'#dc2626',nome:'Reconhecimento de Toxíndromes — Diagnóstico Diferencial Rápido',
+     body:`<strong>1. COLINÉRGICO (organofosforado, carbamato, fisostigmina, pilocarpina):</strong><br>
+SLUDGE/DUMBELS: Salivação · Lacrimejamento · Urinação · Defecação · Emese · Broncoespasmo + Miose + Bradicardia · Fasciculações (nicotínico)<br>
+Antídoto: Atropina + Pralidoxima<br><br>
+<strong>2. ANTICOLINÉRGICO (TCA, antihistamínico, escopolamina, belladona, cogumelo Amanita):</strong><br>
+"Seco como osso, vermelho como beterraba, quente como lebre, cego como morcego, louco como chapeleiro"<br>
+Midríase · Taquicardia · Pele seca/rubra · Retenção urinária · Hipertermia · Delírio<br>
+Antídoto: fisostigmina (com cautela — CI em TCA) · Suporte<br><br>
+<strong>3. OPIÁCEO:</strong><br>
+Miose puntiforme · Depressão respiratória · Coma · Bradicardia/hipotensão<br>
+Antídoto: Naloxona IV/IM/IN<br><br>
+<strong>4. SIMPATICOMIMÉTICO (cocaína, anfetamina, MDMA, metilfenidato, descongestionante):</strong><br>
+Midríase · Taquicardia · HAS · Hipertermia · Agitação · Convulsão<br>
+Tratamento: BZD (diazepam) · Resfriamento ativo · NÃO beta-bloqueador isolado (piora vasoconstrição pelo alfa)<br><br>
+<strong>5. SEDATIVO-HIPNÓTICO (BZD, barbitúrico, álcool, GHB):</strong><br>
+Depressão do SNC · Ataxia · Fala arrastada · Hiporreflexia<br>
+Tratamento: suporte; flumazenil em BZD (com cautela)<br><br>
+<strong>6. HALOGENADO/SOLVENTE (clorofórmio, tetracloreto de carbono, tolueno):</strong><br>
+Hepatotoxicidade · Nefrotoxicidade · Arritmia · Anion gap · Aroma característico`,
+     note:'SLUDGE e DUMBELS: mesmas siglas, diferente ordem. Memorizar DUMBELS: Defecação, Urinação, Miose, Bradicardia (também broncoespasmo!), Emese, Lacrimejamento, Salivação. Toxíndrome colinérgico = oposto do anticolinérgico.'},
+    {col:'#b45309',nome:'Síndrome Serotoninérgica vs Síndrome Neuroléptica Maligna',
+     body:`<strong>Síndrome Serotoninérgica (SS) — excesso de serotonina:</strong><br>
+Causas: ISRS + tramadol · ISRS + triptano · ISRS + linezolida/azul de metileno · IMAO + ISRS · IMAO + meperidina<br>
+Tríade: Hiperreflexia + Clonus + Agitação (início RÁPIDO — horas)<br>
++ Mioclonia · Diarreia · Diaforese · Hipertermia<br>
+Tratamento: <strong>Suspender agente causal</strong> · Ciproeptadina 8 mg VO → 4 mg 6h (anti-5HT2) · BZD para agitação · Resfriamento ativo se T &gt;41°C · Intubação se grave<br><br>
+<strong>Síndrome Neuroléptica Maligna (SNM) — excesso de bloqueio dopaminérgico:</strong><br>
+Causas: antipsicótico (haloperidol, clorpromazina, risperidona) · retirada abrupta de agonistas dopaminérgicos (levodopa, amantadina)<br>
+Tríade: Rigidez "cano de chumbo" + Hipertermia (&gt;38°C) + Instabilidade autonômica (início GRADUAL — dias a semanas)<br>
++ CPK muito elevada · Leucocitose · Confusão<br>
+Tratamento: <strong>Suspender antipsicótico</strong> · <strong>Bromocriptina 2,5 mg 3×/dia</strong> (agonista dopaminérgico) · <strong>Dantrolene 1–2,5 mg/kg IV 6/6h</strong> (relaxante muscular) · Resfriamento · BZD · NÃO succinilcolina (risco de hipercalemia por rabdomiólise)<br><br>
+<strong>Diferenciação chave:</strong><br>
+SS: Clonus/Hiperreflexia (SS) vs Rigidez em roda denteada/CANO (SNM) · SS: RÁPIDO; SNM: GRADUAL<br>
+Temperatura &gt;41°C em qualquer um = emergência`,
+     note:'Síndrome serotoninérgica e SNM podem coexistir. Azul de metileno: CUIDADO com ISRS (inibidor de MAO-A — pode desencadear SS). Ciproeptadina: antagonista 5-HT2A — apenas via oral. Dantrolene em SS: NÃO funciona (SS não é por rigidez muscular — é por hiperreflexia central).'},
+    {col:'#065f46',nome:'Princípios Gerais de Toxicologia de Emergência',
+     body:`<strong>Abordagem ABC primeiro (não importa o tóxico):</strong><br>
+Via aérea → posição lateral se coma · Intubação se FR &lt;10 ou SpO₂ &lt;88% com O2 · Acesso venoso · ECG imediato<br><br>
+<strong>Descontaminação (janela de oportunidade):</strong><br>
+• <strong>Carvão ativado (CA) 1 g/kg (adulto: 50–100 g) VO/SNG:</strong> eficaz se &lt;1–2h da ingestão · NÃO para: ácido/base/álcoois/solventes/metais (ferro, lítio)/não-adsorve<br>
+• Múltiplas doses de CA (50 g 4/4h): fenobarbital, carbamazepina, dapsona, quinina, teofilina<br>
+• Lavagem gástrica: controversa; indicada apenas se &lt;1h e dose potencialmente letal de substância sem antídoto eficaz; CI: ácido/base, risco de broncoaspiração<br>
+• Catártico (sorbitol): aumenta eliminação — sem benefício comprovado<br>
+• Irrigação intestinal total (polietilenoglicol): body-packers (mulas de cocaína) · Fe, lítio em comprimidos<br><br>
+<strong>Eliminação aumentada:</strong><br>
+• Alcalinização urinária (NaHCO3): salicilato, fenobarbital, metotrexato, cloropropamida<br>
+• Hemodiálise: lítio, salicilato, metanol, etilenoglicol, valproato, metformina (acidose láctica grave)<br>
+• Hemoperfusão (carvão ativado): fenobarbital, carbamazepina, teofilina<br><br>
+<strong>Central de Informações Toxicológicas (CIT):</strong><br>
+Brasil: CEATOX (SP) · CIAVE (RJ) · CIPTOX (RS) · Fone único: 0800 722 6001 (SINITOX)<br>
+Poison Control USA: 1-800-222-1222`,
+     note:'Glicose (gavagem): em qualquer alteração de consciência desconhecida, glicose 50% 50 mL IV (excluir hipoglicemia como causa). Tiamina 100 mg IV ANTES da glicose em suspeita de encefalopatia de Wernicke (etilismo). Naloxona + flumazenil: diagnóstico/tratamento em coma não-explicado — considerar com cautela as contraindicações.'},
+  ];
+  document.getElementById('toxindList').innerHTML=CARDS.map(c=>`<div class="tox-card" style="border-color:${c.col}"><div class="tox-nome" style="color:${c.col}">${c.nome}</div><div class="tox-body">${c.body}</div>${c.note?`<div style="font-size:.7rem;color:#64748b;margin-top:6px">💡 ${c.note}</div>`:''}</div>`).join('');
+}
+</script>
+</body>
+</html>
