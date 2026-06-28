@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Alergia & Imunologia — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .ali-hdr{background:linear-gradient(135deg,#0f3460,#e94560);color:#fff;border-radius:14px;padding:18px;margin-bottom:14px}
+    .ali-title{font-size:1rem;font-weight:800;margin-bottom:4px}
+    .ali-sub{font-size:.73rem;opacity:.8}
+    label{font-size:.75rem;font-weight:700;color:#1e3a5f;display:block;margin-bottom:4px}
+    select{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:10px;padding:10px 12px;font-size:.85rem;background:#fff;margin-bottom:10px}
+    .btn-calc{width:100%;background:#e94560;color:#fff;border:none;border-radius:12px;padding:13px;font-size:.87rem;font-weight:700;cursor:pointer;margin:8px 0}
+    .tab-bar{display:flex;gap:6px;margin-bottom:14px}
+    .tab-btn{flex:1;padding:9px 4px;border-radius:10px;border:2px solid #e2e8f0;background:#fff;font-size:.72rem;font-weight:700;cursor:pointer;color:#64748b}
+    .tab-btn.active{border-color:#e94560;background:#fff0f3;color:#e94560}
+    .ali-card{border-radius:10px;border-left:5px solid;padding:10px 14px;margin-bottom:8px;background:#fff}
+    .ali-nome{font-size:.83rem;font-weight:800;margin-bottom:4px}
+    .ali-body{font-size:.76rem;line-height:1.7;color:#374151}
+    .rec-card{border-radius:12px;border:2px solid;padding:14px;margin-bottom:10px}
+    .rec-hdr{font-size:.63rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+    .rec-nome{font-size:.88rem;font-weight:800;margin-bottom:6px}
+    .rec-body{font-size:.78rem;margin-top:6px;line-height:1.7}
+    .rec-note{font-size:.71rem;color:#64748b;margin-top:6px;padding-top:6px;border-top:1px solid #f1f5f9}
+    .alerta{background:#fef2f2;border:2px solid #dc2626;border-radius:10px;padding:8px;margin:6px 0;font-size:.75rem;color:#7f1d1d;font-weight:700}
+    .atencao{background:#fffbeb;border:2px solid #d97706;border-radius:10px;padding:8px;margin:6px 0;font-size:.75rem;color:#78350f;font-weight:700}
+    .ok-box{background:#f0fdf4;border:2px solid #15803d;border-radius:10px;padding:8px;margin:6px 0;font-size:.75rem;color:#14532d;font-weight:700}
+    table{width:100%;border-collapse:collapse;font-size:.73rem;margin-top:6px}
+    th{background:#0f3460;color:#fff;padding:5px 8px;text-align:left}
+    td{padding:5px 8px;border-bottom:1px solid #f1f5f9}
+    tr:nth-child(even) td{background:#fff0f3}
+    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .chip{display:inline-block;padding:2px 8px;border-radius:999px;font-size:.65rem;font-weight:800;color:#fff;margin:2px}
+  </style>
+</head>
+<body>
+<header class="top-bar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <span class="top-title">Alergia & Imunologia</span>
+  <div class="top-right"></div>
+</header>
+<main class="container" style="padding-bottom:90px">
+  <div class="ali-hdr">
+    <div class="ali-title">🛡️ Alergia & Imunologia Clínica</div>
+    <div class="ali-sub">Anafilaxia · Urticária · Angioedema · Imunodeficiências</div>
+  </div>
+  <div class="tab-bar">
+    <button class="tab-btn active" id="tb0" onclick="showTab(0)">Anafilaxia & Urticária</button>
+    <button class="tab-btn" id="tb1" onclick="showTab(1)">Angioedema Hereditário</button>
+    <button class="tab-btn" id="tb2" onclick="showTab(2)">Imunodeficiências</button>
+  </div>
+
+  <!-- TAB 0 -->
+  <div id="tab0">
+    <div class="alerta" style="margin-bottom:10px">
+      ⚡ ANAFILAXIA — ADRENALINA 0,01 mg/kg IM (máx 0,5 mg) NA COXA ANTEROLATERAL IMEDIATAMENTE · Posição supina + pernas elevadas · Chamar SAMU 192
+    </div>
+    <div class="card" style="padding:12px 14px;margin-bottom:10px">
+      <label>Condição</label>
+      <select id="ali_cond">
+        <option value="anaf">Anafilaxia — Protocolo completo</option>
+        <option value="urc">Urticária Crônica Espontânea (UCE)</option>
+        <option value="urf">Urticária Física e Induzida</option>
+      </select>
+      <button class="btn-calc" onclick="calcAli()">🛡️ Ver protocolo</button>
+    </div>
+    <div id="aliResult" style="display:none"></div>
+  </div>
+
+  <!-- TAB 1 — Angioedema Hereditário -->
+  <div id="tab1" style="display:none">
+    <div id="aehList"></div>
+  </div>
+
+  <!-- TAB 2 — Imunodeficiências -->
+  <div id="tab2" style="display:none">
+    <div id="imunoList"></div>
+  </div>
+</main>
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+<script src="js/db.js"></script>
+<script>
+function showTab(n){[0,1,2].forEach(i=>{document.getElementById('tab'+i).style.display=i===n?'block':'none';document.getElementById('tb'+i).classList.toggle('active',i===n);});if(n===1)renderAEH();if(n===2)renderImuno();}
+
+const PROTO_ALI={
+  anaf:{col:'#dc2626',hdr:'ANAFILAXIA — Protocolo de Emergência',nome:'Adrenalina IM é o único tratamento de 1ª linha; anti-histamínico e corticoide são ADJUVANTES',
+   body:`<div class="alerta">⚡ EMERGÊNCIA — Iniciar em SEGUNDOS:<br>
+1. ADRENALINA 0,01 mg/kg IM na coxa anterolateral (máx 0,5 mg adultos; máx 0,3 mg crianças &lt;30 kg)<br>
+2. Chamar emergência (SAMU 192) · Decúbito supino + pernas elevadas (NÃO sentar ou levantar → risco PCR)<br>
+3. Acesso venoso + SF 0,9% 500–1000 mL bolus (adulto) OU 20 mL/kg (criança) se hipotensão</div>
+<br>
+<strong>Critérios diagnósticos de Anafilaxia (World Allergy Organization 2011):</strong><br>
+Muito provável se ≥1 dos:<br>
+• Reação aguda com envolvimento de pele/mucosa + respiratory (dispneia, broncoespasmo) OU hipotensão<br>
+• Dois ou mais dos seguintes após exposição a alérgeno: (pele), (respiratório), (cardiovascular), (GI)<br>
+• Hipotensão após exposição a alérgeno conhecido<br><br>
+<strong>Adrenalina — doses e vias:</strong><br>
+<table>
+  <tr><th>Situação</th><th>Via</th><th>Dose Adulto</th><th>Dose Pediátrica</th></tr>
+  <tr><td>1ª dose (SEMPRE)</td><td>IM coxa (lateral)</td><td>0,3–0,5 mg (0,3–0,5 mL de 1:1000)</td><td>0,01 mg/kg (máx 0,3 mg)</td></tr>
+  <tr><td>Repetição em 5–15 min se sem melhora</td><td>IM coxa</td><td>0,3–0,5 mg</td><td>0,01 mg/kg</td></tr>
+  <tr><td>Refratária / PCR</td><td>IV</td><td>0,1 mg (1 mL de 1:10.000) lento + infusão 2–10 mcg/min</td><td>0,01 mg/kg IV lento</td></tr>
+</table>
+<br>
+<div class="atencao">⚠️ Adrenalina IM na COXA (vasto lateral) tem absorção 2–3× mais rápida que na coxa OU glúteo. NUNCA administrar adrenalina SC como 1ª dose em anafilaxia.</div>
+<br>
+<strong>Tratamentos adjuvantes (APÓS adrenalina — NÃO substituem):</strong><br>
+• Anti-histamínico H1: difenidramina 25–50 mg IV OU cetirizina 10 mg VO · Trata urticária, não hipotensão ou broncoespasmo<br>
+• Anti-histamínico H2: ranitidina 50 mg IV · Potencializa H1 para urticária (adjuvante fraco)<br>
+• Corticoide: metilprednisolona 1–2 mg/kg IV OU prednisona 1 mg/kg VO · Previne reação bifásica tardia (evidência fraca mas prática consagrada) · Não tem efeito nas primeiras 4–6h<br>
+• Broncodilatador (broncoespasmo persistente): salbutamol 2,5–5 mg nebulizado + ipratrópio<br>
+• Glucagon: 1–2 mg IM/IV (em pacientes em beta-bloqueador refratários à adrenalina — glucagon contorna bloqueio β)<br><br>
+<strong>Reação bifásica:</strong> 5–20% dos casos · Retorno de sintomas 1–72h após resolução inicial · Observação mínima 4–6h (risco baixo) OU 8–24h (risco alto: PCR, adrenalina &gt;2 doses, hipotensão grave)<br><br>
+<strong>Alta e prescrição de adrenalina auto-injetável:</strong><br>
+<div class="ok-box">✅ Todo paciente com anafilaxia DEVE receber prescrição de adrenalina auto-injetável (EpiPen 0,3 mg adulto / 0,15 mg criança OU Jext® / Anapen®) + treinamento de uso + plano de ação escrito</div>
+Encaminhamento: alergologia para identificação do gatilho, testes cutâneos, imunoterapia (se indicada — veneno de himenóptero: 97% de proteção com imunoterapia)<br><br>
+<strong>Causas mais comuns de anafilaxia:</strong><br>
+Alimentos (amendoim, leite, ovo, frutos do mar, trigo) · Medicamentos (β-lactâmicos, AINEs, iodo IV) · Veneno de inseto (abelha, vespa) · Látex · Idiopática (15–20%)`,
+   note:'Mascaramento por β-bloqueadores: propranolol, atenolol etc. bloqueiam resposta adrenérgica → sintomas mais graves e refratários à adrenalina. Glucagon é a chave (1–2 mg IV). Anafilaxia induzida por exercício: alimento + exercício (não separadamente) → AINE pré-exercício pode precipitar. Tiamina e KCl IV: não usar rotineiramente na ressuscitação (não é sepse). Triptase sérica: coletar 30–120 min após (pico), e basal 24h depois → confirma anafilaxia mediada por mastócitos (elevada em anafilaxia por veneno, menor em alimentos).'},
+  urc:{col:'#7c3aed',hdr:'Urticária Crônica Espontânea (UCE) — Duração > 6 semanas',nome:'Anti-H1 de 2ª geração em dose padrão → dose dobrada → omalizumabe',
+   body:`<strong>Definição:</strong> Urticária (pápulas pruriginosas de &lt;24h) ± angioedema por ≥6 semanas sem causa identificável (espontânea) · Prevalência: 1% da população · Curso médio: 2–5 anos<br><br>
+<strong>Investigação mínima (EAACI/WAO 2022 — evitar bateria de exames desnecessários):</strong><br>
+• Hemograma + VHS/PCR · TSH (tireoidite de Hashimoto: 25% de UCE) · Anti-TPO (anticorpos anti-tireóide) · Teste de soro autólogo (dermografia autóloga — pesquisa autoimunidade)<br>
+• NÃO investigar rotineiramente: alimentos (raro em UCE), parasitos (baixa associação em populações desenvolvidas), ANCA, complemento (exceto angioedema hereditário)<br><br>
+<strong>Escalonamento terapêutico (Guideline EAACI 2022):</strong><br>
+<table>
+  <tr><th>Passo</th><th>Tratamento</th><th>Duração antes de escalonar</th></tr>
+  <tr><td><strong>1ª linha</strong></td><td>Anti-H1 de 2ª geração dose padrão: Cetirizina 10 mg/dia OU Loratadina 10 mg/dia OU Fexofenadina 180 mg/dia OU Bilastina 20 mg/dia OU Rupatadina 10 mg/dia</td><td>2–4 semanas sem controle</td></tr>
+  <tr><td><strong>2ª linha</strong></td><td>Dose aumentada (até 4×): Cetirizina 20–40 mg/dia OU Fexofenadina 360 mg/dia · (NÃO usar anti-H1 1ª geração — sedação, RAM anticolinérgicas)</td><td>4 semanas sem controle completo</td></tr>
+  <tr><td><strong>3ª linha</strong></td><td><strong>Omalizumabe (Xolair®) 300 mg SC q4sem</strong> · Aprovado ANVISA para UCE ≥12 anos refratária a anti-H1</td><td>Reavaliação em 3 meses</td></tr>
+  <tr><td><strong>4ª linha</strong></td><td>Ciclosporina 2,5–5 mg/kg/dia (imunossupressor para UCE autoimune refratária a omalizumabe) · Limitar duração (nefrotoxicidade)</td><td>—</td></tr>
+</table>
+<br>
+<strong>Omalizumabe em UCE — ASTERIA I/II e GLACIAL trials:</strong><br>
+• ASTERIA-II: 66% livre de sintomas em 12 semanas com 300 mg · GLACIAL: mantém resposta em até 52 semanas<br>
+• Mecanismo em UCE: reduz IgE livre → ↓ ativação de mastócitos/basófilos · Resposta em 1–4 semanas<br>
+• Suspensão: tentar após 6–12 meses de controle completo (30–50% mantêm remissão após suspensão)<br><br>
+<strong>Corticoide em UCE:</strong><br>
+• Apenas para flares agudos: prednisona 0,3–0,5 mg/kg/dia × 3–5 dias · <strong>NÃO usar como manutenção</strong> (RAM e dependência)`,
+   note:'UAS7 (Urticaria Activity Score sete dias): ferramenta de acompanhamento — pápulas (0–3) + prurido (0–3) × 7 dias = 0–42 pontos. Alvo: UAS7 ≤6 (bem controlada). DLQI (Dermatology Life Quality Index): qualidade de vida. Ambos usados para monitorar resposta e indicação de escalonamento. Dipirona/AINEs na UCE: AINEs agravam UCE em 10–30% (pseudo-alergia por inibição de COX-1) → paracetamol é alternativa mais segura. Alimentos e UCE: raramente causam UCE pura (exceto aditivos como tartrazina em alguns pacientes). Não fazer dieta de eliminação empírica sem alergo-teste.'},
+  urf:{col:'#0369a1',hdr:'Urticárias Físicas e Induzidas',nome:'Urticária dermográfica, colinérgica, pelo frio, solar, pressão — cada tipo tem tratamento específico',
+   body:`<table>
+  <tr><th>Tipo</th><th>Gatilho</th><th>Teste diagnóstico</th><th>Tratamento</th></tr>
+  <tr><td><strong>Dermográfica (mais comum)</strong></td><td>Atrito/pressão leve na pele</td><td>FricTest®: aplicar pressão graduada → pápula linear &gt;3 mm após 10 min</td><td>Anti-H1 2ª geração dose padrão → dobrada se necessário</td></tr>
+  <tr><td><strong>Colinérgica</strong></td><td>Calor, suor, exercício, estresse emocional</td><td>Teste de imersão mão em água 42°C × 15 min</td><td>Cetirizina 10–20 mg/dia · Danazol (casos refratários) · Escopolamina (antiperspirante)</td></tr>
+  <tr><td><strong>pelo Frio</strong></td><td>Exposição ao frio (ar, água, alimentos)</td><td>Cubo de gelo na antebraço × 5 min → pápula em 5–15 min após reaquecimento</td><td>Anti-H1 2ª geração · Omalizumabe (casos graves, risco de anafilaxia em natação)</td></tr>
+  <tr><td><strong>Solar</strong></td><td>Radiação UV (A ou B) e visível</td><td>Fototeste com luz solar simulada</td><td>Anti-H1 · Fotoproteção · Fototerapia dessensibilizadora (PUVA)</td></tr>
+  <tr><td><strong>por Pressão Retardada</strong></td><td>Pressão sustentada (cintos, bandas, corridas)</td><td>Peso 2,5 kg sobre coxa × 15 min → pápula após 3–8h</td><td>Anti-H1 · Corticoide em flares · Omalizumabe em casos refratários</td></tr>
+  <tr><td><strong>Aquagênica</strong></td><td>Contato com água (qualquer temperatura)</td><td>Compressa água corporal × 30 min</td><td>Muito difícil — anti-H1 + capsaicina tópica + omalizumabe</td></tr>
+</table>
+<br>
+<div class="atencao">⚠️ Urticária pelo frio: risco de ANAFILAXIA em imersão total em água fria (piscina, mar) — instruir paciente a não nadar sozinho e carregar adrenalina auto-injetável.</div>`,
+   note:'Urticária de contato alérgica (látex, alimentos, animais): IgE mediada, reação imediata ao toque. Diagnóstico: prick test ou patch test. Urticária de contato irritativa (plantas como urtiga, caterpillar): não-IgE, mecanismo físico-químico. Urticária vasculite: urticária durando &gt;24h, dor em vez de prurido + artralgia + VHS elevado → biópsia de pele (leucocitoclasia) + complemento → investigar LES, hepatite B/C, crioglobulinemia.'},
+};
+
+function calcAli(){
+  const c=document.getElementById('ali_cond').value;
+  const p=PROTO_ALI[c];
+  document.getElementById('aliResult').style.display='block';
+  document.getElementById('aliResult').innerHTML=`<div class="rec-card" style="border-color:${p.col}"><div class="rec-hdr" style="color:${p.col}">ALERGIA — ${p.hdr}</div><div class="rec-nome">${p.nome}</div><div class="rec-body">${p.body}</div>${p.note?`<div class="rec-note">${p.note}</div>`:''}</div>`;
+  document.getElementById('aliResult').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+function renderAEH(){
+  if(document.getElementById('aehList').innerHTML) return;
+  document.getElementById('aehList').innerHTML=`
+  <div class="ali-card" style="border-color:#dc2626">
+    <div class="ali-nome" style="color:#dc2626">Angioedema Hereditário (AEH) — Deficiência de C1-Inibidor</div>
+    <div class="ali-body">
+      <div class="alerta">⚠️ CRISE DE AEH COM ENVOLVIMENTO DE VIA AÉREA = EMERGÊNCIA FATAL. Adrenalina NÃO é 1ª linha (bradicinina, não histamina). Tratar com agentes específicos abaixo.</div>
+      <br>
+      <strong>Tipos de AEH:</strong><br>
+      <table>
+        <tr><th>Tipo</th><th>Mecanismo</th><th>C4</th><th>C1-INH funcional</th><th>Kalicreína</th></tr>
+        <tr><td>AEH Tipo I (85%)</td><td>Deficiência quantitativa C1-INH (gene SERPING1)</td><td>↓ ↓</td><td>↓ ↓</td><td>↑ (desinibida)</td></tr>
+        <tr><td>AEH Tipo II (15%)</td><td>Deficiência funcional C1-INH (quantidade normal, função reduzida)</td><td>↓</td><td>↓</td><td>↑</td></tr>
+        <tr><td>AEH Tipo III (raro)</td><td>Mutação fator XII · Estrógeno-dependente · Mulheres</td><td>Normal</td><td>Normal</td><td>↑</td></tr>
+        <tr><td>Angioedema adquirido (AAE)</td><td>Consumo de C1-INH por linfoma/autoanticorpos</td><td>↓ ↓ + C1q ↓</td><td>↓ ↓</td><td>↑</td></tr>
+      </table>
+      <br>
+      <strong>Gatilhos de crises:</strong> Trauma/cirurgia · Estresse emocional · Infecções · Estrogênio (ACO, gravidez) · IECA (contraindicado em AEH — bradicinina potencializada!) · AAS/AINEs<br><br>
+      <strong>Tratamento da CRISE AGUDA (hierarquia):</strong><br>
+      <table>
+        <tr><th>Fármaco</th><th>Dose</th><th>Via</th><th>Disponibilidade BR</th></tr>
+        <tr><td><strong>Icatibanto (Firazyr®) — 1ª linha preferida</strong></td><td>30 mg SC · Pode repetir 2× com intervalo de 6h</td><td>SC (abdominal)</td><td>Disponível + Programa de suporte Takeda</td></tr>
+        <tr><td><strong>C1-INH derivado de plasma (Berinert®)</strong></td><td>20 UI/kg IV · Pode repetir em 1–2h se necessário</td><td>IV</td><td>Disponível (CONITEC/hospitalar)</td></tr>
+        <tr><td><strong>C1-INH recombinante (Ruconest®)</strong></td><td>50 UI/kg IV (máx 4200 UI)</td><td>IV</td><td>Acesso especial</td></tr>
+        <tr><td><strong>Ácido tranexâmico (alternativa emergência)</strong></td><td>1 g IV OU 1,5 g VO</td><td>IV/VO</td><td>Amplamente disponível · Eficácia menor em crise</td></tr>
+        <tr><td>PFC (Plasma Fresco Congelado)</td><td>2–4 unidades IV</td><td>IV</td><td>Disponível (mas lento e risco infeccioso)</td></tr>
+      </table>
+      <br>
+      <strong>Profilaxia de curto prazo (pré-procedimento cirúrgico/odontológico):</strong><br>
+      • C1-INH 1000 UI IV 1–2h antes do procedimento (1ª linha) · OU danazol 2,5–10 mg/kg/dia (máx 600 mg) × 5–7 dias antes<br>
+      • Ácido tranexâmico 1 g 2–3×/dia × início 5 dias antes (alternativa de baixo custo)<br><br>
+      <strong>Profilaxia de longo prazo (≥3 crises/mês ou graves/frequentes):</strong><br>
+      <table>
+        <tr><th>Fármaco</th><th>Dose</th><th>Mecanismo</th><th>Contraindicação</th></tr>
+        <tr><td><strong>Lanadelumabe (Takhzyro®) — 1ª linha</strong></td><td>300 mg SC q2sem (intervalo para 300 mg q4sem se &lt;1 crise/6 meses)</td><td>Anticorpo monoclonal anti-calicreína</td><td>Gravidez (dados limitados)</td></tr>
+        <tr><td>C1-INH SC (Haegarda®)</td><td>60 UI/kg SC 2×/semana</td><td>Reposição de C1-INH</td><td>—</td></tr>
+        <tr><td>Danazol</td><td>50–200 mg/dia (dose mínima eficaz)</td><td>Aumenta síntese hepática de C1-INH</td><td>Gravidez, carcinoma hepático, puberdade incompleta</td></tr>
+        <tr><td>Ácido tranexâmico</td><td>1–2 g 2–3×/dia</td><td>Antifibrinolítico · Reduz consumo de C1-INH</td><td>TEP/TVP ativa</td></tr>
+      </table>
+    </div>
+  </div>
+  <div class="ali-card" style="border-color:#7c3aed;margin-top:8px">
+    <div class="ali-nome" style="color:#7c3aed">Angioedema por IECA e Angioedema Histaminérgico</div>
+    <div class="ali-body">
+      <strong>Angioedema por IECA:</strong><br>
+      • Prevalência: 0,1–0,7% dos usuários de IECA · Maior risco em afrodescendentes (3–4×) · Pode ocorrer em qualquer momento (meses a anos após início)<br>
+      • Mecanismo: IECA inibe degradação de bradicinina → acúmulo → vasodilatação e edema<br>
+      • Apresentação: angioedema de face, lábios, língua, laringe (sem urticária) · Geralmente moderado mas pode ser fatal<br>
+      • Tratamento: suspender IECA imediatamente · Icatibanto (antagonista BKR2) 30 mg SC é eficaz · Antihistamínico e corticoide têm eficácia menor (não é histaminérgico) · PFC = alternativa<br>
+      <div class="alerta">⚠️ NÃO substituir IECA por outro IECA. Usar BRA como alternativa (sartans têm mecanismo diferente, sem aumento de bradicinina — risco de angioedema muito menor, 0,01%).</div>
+      <br>
+      <strong>Angioedema Histaminérgico (Alérgico):</strong><br>
+      • Com urticária + prurido + gatilho identificado (alimento, medicamento, inseto) → responde a adrenalina + anti-H1 + corticoide<br>
+      • Diagnóstico diferencial com AEH: C4 baixo + ausência de urticária + sem resposta a anti-H1 = AEH<br><br>
+      <strong>AEH e IECA: absolutamente contraindicados em AEH tipos I, II e III!</strong>
+    </div>
+  </div>`;
+}
+
+function renderImuno(){
+  if(document.getElementById('imunoList').innerHTML) return;
+  document.getElementById('imunoList').innerHTML=`
+  <div class="ali-card" style="border-color:#0f3460">
+    <div class="ali-nome" style="color:#0f3460">Imunodeficiências Primárias (IDP) — Sinais de Alerta e Diagnóstico</div>
+    <div class="ali-body">
+      <strong>10 Sinais de Alerta de Imunodeficiência Primária (ASBAI/Jeffrey Modell Foundation):</strong><br>
+      1. ≥4 otites/ano · 2. ≥2 sinusites graves/ano · 3. ≥2 pneumonias/ano · 4. Infecções recorrentes precisando de ATB IV · 5. Falha de crescimento em crianças · 6. Abscessos profundos recorrentes (órgão ou pele) · 7. Candidíase oral/cutânea persistente (&gt;1 ano) · 8. Infecções por oportunistas (Pneumocystis, Aspergillus) · 9. História familiar de IDP · 10. Reação grave a vacinas atenuadas<br><br>
+      <strong>Classificação das principais IDPs:</strong><br>
+      <table>
+        <tr><th>IDP</th><th>Defeito</th><th>Susceptibilidade</th><th>Tratamento</th></tr>
+        <tr><td><strong>AGAMAGLOBULINEMIA DE BRUTON (XLA)</strong></td><td>BTK → sem células B maduras → IgG/A/M muito baixas</td><td>Bactérias encapsuladas (pneumococo, H. influenzae, meningococo) · Enterovírus</td><td>IVIG 400–600 mg/kg IV q3–4sem ou SCIG semanal vitalício</td></tr>
+        <tr><td><strong>IMUNODEFICIÊNCIA COMUM VARIÁVEL (ICV — CVID)</strong></td><td>Hipogamaglobulinemia + IgG &lt;500 mg/dL + falha de resposta vacinal</td><td>Bactérias encapsuladas · Giardia (diarreia crônica) · Criptosporidio · Maior risco de linfoma</td><td>IVIG 400–600 mg/kg q3–4sem ou SCIG · Tratar infecções intercorrentes</td></tr>
+        <tr><td><strong>SCID (Imunodeficiência Combinada Grave)</strong></td><td>Ausência de linfócitos T (+ B e/ou NK) — múltiplos genótipos</td><td>Todos os patógenos · Infecções virais e fúngicas graves · Reação GvH a transfusões</td><td>Transplante de células-tronco hematopoiéticas (TCTH) O mais cedo possível · Terapia gênica (ADA-SCID: crizanlizumabe · Retrovírus) · Triagem neonatal (TREC — incluída alguns estados BR)</td></tr>
+        <tr><td><strong>SÍNDROME DE DiGEORGE (22q11)</strong></td><td>Aplasia/hipoplasia tímica → hipocalcemia + cardiopatia congênita + fácies</td><td>Infecções por fungos e vírus · Otites</td><td>TCTH em DiGeorge completa · Suplementar Ca · Correção cardiopatia · Timoplastia (casos selecionados)</td></tr>
+        <tr><td><strong>DEFICIÊNCIA DE IgA (mais comum — 1:500)</strong></td><td>IgA sérica &lt;7 mg/dL · IgG e IgM normais</td><td>Infecções respiratórias e GI · Alergia e doenças autoimunes associadas · Celíaca (30%)</td><td>ATB para infecções · NÃO usar IVIG (risco de reação anafilática por IgE anti-IgA) · Hemoderivados: usar lavados/IgA-deficient</td></tr>
+        <tr><td><strong>DOENÇA GRANULOMATOSA CRÔNICA (DGC)</strong></td><td>NADPH oxidase defeituosa → falha de killing oxidativo</td><td>Staphylococcus, Serratia, Aspergillus, Nocardia, Klebsiella</td><td>IFN-γ 50 mcg/m² SC 3×/sem (profilaxia) · Trimetoprim-SMX profilático · Itraconazol profilático</td></tr>
+      </table>
+    </div>
+  </div>
+  <div class="ali-card" style="border-color:#15803d;margin-top:8px">
+    <div class="ali-nome" style="color:#15803d">Imunoglobulina Intravenosa (IVIG) — Indicações e Uso Clínico</div>
+    <div class="ali-body">
+      <strong>Indicações de IVIG (CONITEC/SAS):</strong><br>
+      <table>
+        <tr><th>Indicação</th><th>Dose</th><th>Frequência</th></tr>
+        <tr><td>Imunodeficiências humorais (ICV, XLA, Bruton)</td><td>400–600 mg/kg</td><td>q3–4 semanas (manter IgG &gt;500 mg/dL)</td></tr>
+        <tr><td>PTI (Púrpura Trombocitopênica Imune) — aguda</td><td>1 g/kg × 1–2 dias</td><td>Dose única ou repetida; resposta em 24–48h</td></tr>
+        <tr><td>Síndrome de Guillain-Barré</td><td>2 g/kg em 5 dias (0,4 g/kg/dia)</td><td>Uma série</td></tr>
+        <tr><td>Doença de Kawasaki</td><td>2 g/kg em dose única</td><td>+ AAS 80–100 mg/kg/dia</td></tr>
+        <tr><td>Miastenia gravis (crise)</td><td>2 g/kg em 2–5 dias</td><td>Uma série (igual eficácia à plasmaférese)</td></tr>
+        <tr><td>Transplante (profilaxia CMV/infecção em alto risco)</td><td>500 mg/kg</td><td>q2–4 semanas pós-transplante</td></tr>
+        <tr><td>Neonato isoimunizado (HDN)</td><td>0,5–1 g/kg × 1–2 doses</td><td>Complementa fototerapia e evita EST</td></tr>
+      </table>
+      <br>
+      <strong>Tipos de IVIG disponíveis no Brasil:</strong><br>
+      • Venoglobulina SD® (hemocentros) · Kiovig® · Privigen® · Flebogamma DIF® · Octagam®<br>
+      • Imunoglobulina Subcutânea (SCIG): Hizentra® 200 mg/mL · Cutaquig® · Vantagem: domiciliar, nível sérico mais estável, menos reações sistêmicas<br><br>
+      <strong>RAM de IVIG:</strong> Reações infusionais (cefaleia, febre, calafrio) → pré-medicar com paracetamol + difenidramina · Trombose (alto risco em idosos, aterosclerose) → diluição e infusão lenta · Meningite asséptica (rara) · IRA (sorbitol/sucrose-contendo — usar formulações sem sacarose em DRC)<br><br>
+      <strong>Plasmaférese terapêutica (indicações neurológicas/imunológicas):</strong><br>
+      Síndrome de Guillain-Barré · Miastenia (crise) · Polineuropatia desmielinizante inflamatória crônica (PDIC) · Doença de Goodpasture · AEH (se C1-INH indisponível) · TTP (plasmaférese + PFC = urgência hematológica)
+    </div>
+  </div>
+  <div class="ali-card" style="border-color:#b45309;margin-top:8px">
+    <div class="ali-nome" style="color:#b45309">Alergia a Medicamentos — Testes e Protocolos de Hipersensibilidade</div>
+    <div class="ali-body">
+      <strong>β-Lactâmicos e Penicilina — o mito dos 10% com "alergia":</strong><br>
+      • 10% dos pacientes relatam "alergia a penicilina" · Apenas 10–20% têm verdadeira sensibilização ao testar · 90–95% podem receber penicilina com segurança<br>
+      • Reação cruzada com cefalosporinas: 1–2% (principalmente com mesma cadeia lateral — amoxicilina × cefadroxil, ampicilina × cefalexina)<br><br>
+      <strong>Estratégia de avaliação de "alergia a penicilina":</strong><br>
+      1. História detalhada: tipo de reação (urticária, anafilaxia, exantema maculopapular, DRESS, SJS) + tempo após dose + tolerância posterior<br>
+      2. Reações de baixo risco (exantema maculopapular tardio, apenas eritema malar leve, gastrointestinal): dessensibilização ou challenge direto<br>
+      3. Reações de alto risco (urticária aguda, anafilaxia): prick test + intradérmico com penicilina G + amoxicilina → se negativos: challenge oral graduado<br>
+      4. SJS/TEN/DRESS/NET: contraindicação absoluta vitalícia (não testar)<br><br>
+      <strong>Dessensibilização rápida (quando β-lactâmico é absolutamente necessário):</strong><br>
+      Protocol oral ou IV de 4h (hospitalar, sob monitoramento) · Doses crescentes a partir de 1/10.000 da dose total · Cria tolerância transitória (não duradoura)<br><br>
+      <strong>Alergia a AINEs:</strong><br>
+      • Hipersensibilidade a AINEs COX-1 (aspirina-exacerbada): urticária/asma com AINEs e AAS · Tolera inibidores seletivos COX-2 (celecoxibe, etoricoxibe) · Investigar AERD (doença respiratória exacerbada por aspirina: tríade SAMTER: pólipo nasal + asma + sensibilidade a AAS)<br>
+      • Seletiva (IgE-mediada): apenas um AINE (droga-específica) → tolera outros da mesma classe OU classes diferentes
+    </div>
+  </div>`;
+}
+</script>
+</body>
+</html>

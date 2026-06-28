@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Gastroenterologia Avançada — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .gas-hdr{background:linear-gradient(135deg,#431407,#c2410c);color:#fff;border-radius:14px;padding:18px;margin-bottom:14px}
+    .gas-title{font-size:1rem;font-weight:800;margin-bottom:4px}
+    .gas-sub{font-size:.73rem;opacity:.8}
+    label{font-size:.75rem;font-weight:700;color:#1e3a5f;display:block;margin-bottom:4px}
+    select{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:10px;padding:10px 12px;font-size:.85rem;background:#fff;margin-bottom:10px}
+    .btn-calc{width:100%;background:#c2410c;color:#fff;border:none;border-radius:12px;padding:13px;font-size:.87rem;font-weight:700;cursor:pointer;margin:8px 0}
+    .tab-bar{display:flex;gap:6px;margin-bottom:14px}
+    .tab-btn{flex:1;padding:9px 4px;border-radius:10px;border:2px solid #e2e8f0;background:#fff;font-size:.72rem;font-weight:700;cursor:pointer;color:#64748b}
+    .tab-btn.active{border-color:#c2410c;background:#fff7ed;color:#c2410c}
+    .gas-card{border-radius:10px;border-left:5px solid;padding:10px 14px;margin-bottom:8px;background:#fff}
+    .gas-nome{font-size:.83rem;font-weight:800;margin-bottom:4px}
+    .gas-body{font-size:.76rem;line-height:1.7;color:#374151}
+    .rec-card{border-radius:12px;border:2px solid;padding:14px;margin-bottom:10px}
+    .rec-hdr{font-size:.63rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+    .rec-nome{font-size:.88rem;font-weight:800;margin-bottom:6px}
+    .rec-body{font-size:.78rem;margin-top:6px;line-height:1.7}
+    .rec-note{font-size:.71rem;color:#64748b;margin-top:6px;padding-top:6px;border-top:1px solid #f1f5f9}
+    .alerta{background:#fef2f2;border:2px solid #dc2626;border-radius:10px;padding:8px;margin:6px 0;font-size:.75rem;color:#7f1d1d;font-weight:700}
+    .atencao{background:#fffbeb;border:2px solid #d97706;border-radius:10px;padding:8px;margin:6px 0;font-size:.75rem;color:#78350f;font-weight:700}
+    .ok-box{background:#fff7ed;border:2px solid #c2410c;border-radius:10px;padding:8px;margin:6px 0;font-size:.75rem;color:#431407;font-weight:700}
+    table{width:100%;border-collapse:collapse;font-size:.73rem;margin-top:6px}
+    th{background:#c2410c;color:#fff;padding:5px 8px;text-align:left}
+    td{padding:5px 8px;border-bottom:1px solid #f1f5f9}
+    tr:nth-child(even) td{background:#fff7ed}
+  </style>
+</head>
+<body>
+<header class="top-bar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <span class="top-title">Gastroenterologia Avançada</span>
+  <div class="top-right"></div>
+</header>
+<main class="container" style="padding-bottom:90px">
+  <div class="gas-hdr">
+    <div class="gas-title">🫄 Gastroenterologia Avançada</div>
+    <div class="gas-sub">H. pylori · DRGE/EE · SII · Pâncreas · Celíaca · SIBO</div>
+  </div>
+  <div class="tab-bar">
+    <button class="tab-btn active" id="tb0" onclick="showTab(0)">H. pylori & DRGE</button>
+    <button class="tab-btn" id="tb1" onclick="showTab(1)">SII & Funcionais</button>
+    <button class="tab-btn" id="tb2" onclick="showTab(2)">Pâncreas · Celíaca · SIBO</button>
+  </div>
+
+  <!-- TAB 0 -->
+  <div id="tab0">
+    <div class="card" style="padding:12px 14px;margin-bottom:10px">
+      <label>Condição / Protocolo</label>
+      <select id="gas_cond">
+        <option value="hp_1">H. pylori — Terapia 1ª linha (tríplice)</option>
+        <option value="hp_2">H. pylori — Terapia após falha (bismuto quádruplo)</option>
+        <option value="hp_3">H. pylori — Resistência a claritromicina / salvagem</option>
+        <option value="drge_e">DRGE Erosiva (Esofagite LA graus A–D)</option>
+        <option value="drge_ne">DRGE Não-erosiva / Pirose Funcional</option>
+        <option value="ee">Esofagite Eosinofílica (EE)</option>
+      </select>
+      <button class="btn-calc" onclick="calcGas()">🫄 Ver protocolo</button>
+    </div>
+    <div id="gasResult" style="display:none"></div>
+  </div>
+
+  <!-- TAB 1 — SII -->
+  <div id="tab1" style="display:none">
+    <div id="siiList"></div>
+  </div>
+
+  <!-- TAB 2 — Pâncreas / Celíaca / SIBO -->
+  <div id="tab2" style="display:none">
+    <div id="panList"></div>
+  </div>
+</main>
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+<script src="js/db.js"></script>
+<script>
+function showTab(n){[0,1,2].forEach(i=>{document.getElementById('tab'+i).style.display=i===n?'block':'none';document.getElementById('tb'+i).classList.toggle('active',i===n);});if(n===1)renderSII();if(n===2)renderPan();}
+
+const PROTO_GAS={
+  hp_1:{col:'#c2410c',hdr:'H. pylori — Terapia Tríplice 1ª linha',nome:'Duração 14 dias · Taxa de erradicação ~80% (claritromicina sensível)',
+   body:`<strong>Indicações de erradicação (CONSENSO IV BRASILEIRO):</strong><br>
+Úlcera péptica (ativa ou cicatricial) · Linfoma MALT · Pós-ressecção de câncer gástrico · Dispepsia funcional · Gastrite atrófica · Parentes 1° grau de câncer gástrico · Uso crónico de AINEs/AAS · Indicação individual (anemia ferropriva refratária, PTI, DRGE em paciente jovem)<br><br>
+<strong>Protocolo Tríplice Padrão (14 dias — SE resistência local à claritromicina &lt;15%):</strong><br>
+<table>
+  <tr><th>Fármaco</th><th>Dose</th><th>Frequência</th></tr>
+  <tr><td>IBP (omeprazol <em>ou</em> esomeprazol)</td><td>20 mg (omeprazol) OU 40 mg (esomeprazol)</td><td>2×/dia (30 min antes das refeições)</td></tr>
+  <tr><td>Amoxicilina</td><td>1 g</td><td>2×/dia</td></tr>
+  <tr><td>Claritromicina</td><td>500 mg</td><td>2×/dia</td></tr>
+</table>
+<br>
+<div class="atencao">⚠️ CYP2C19 e IBP: metabolizadores ultrarrápidos (UUR — ~20% dos pacientes) metabolizam IBPs rapidamente → menos supressão ácida → menor erradicação. Preferir rabeprazol 20 mg 2×/dia OU vonoprazan 20 mg 2×/dia (não depende de CYP2C19) quando suspeitar de falha por genótipo.</div>
+<br>
+<strong>Vonoprazan-based therapy (superior ao IBP em regiões de alta resistência):</strong><br>
+• Vonoprazan 20 mg + Amoxicilina 1 g 2×/dia × 14 dias (dual therapy) → erradicação 84–87% (PHALCON-HP trial 2022)<br>
+• Vonoprazan + Amoxicilina + Claritromicina × 14 dias → 90%+ (não dependente de genótipo CYP)<br>
+• Disponível no Brasil (Takeda/Genérico) desde 2024 sob o nome Vonoprazan<br><br>
+<strong>Confirmação de erradicação:</strong> Obrigatória · Teste respiratório com C13-ureia (padrão-ouro) OU antígeno fecal (se indisponível) · 4 semanas após término de ATB e 2 semanas após suspensão de IBP`,
+   note:'Alergias a penicilina: substituir amoxicilina por metronidazol 500 mg 3×/dia (mas resistência maior) OU levofloxacino 500 mg/dia. Confirmação por teste respiratório SEMPRE antes de afirmar falha (18% falso-positivo do antígeno fecal em uso de IBP). Teste rápido de urease (CLO test endoscópico): sensibilidade reduz se uso recente de IBP, ATB ou bismuto (suspender 14 dias antes). Cultura + antibiograma: indicada após 2ª falha de erradicação ou em regiões de alta resistência conhecida.'},
+  hp_2:{col:'#7c3aed',hdr:'H. pylori — Bismuto Quádruplo (2ª linha OU 1ª linha em alta resistência)',nome:'Taxa de erradicação 85–90% independente de resistência à claritromicina',
+   body:`<strong>Indicações de bismuto quádruplo:</strong><br>
+• Falha da terapia tríplice prévia · Resistência à claritromicina &gt;15% na região · Intolerância a claritromicina · Como 1ª linha universal (menos dependente de padrão de resistência local)<br><br>
+<strong>Protocolo PBMT (Proton pump inhibitor + Bismuth + Metronidazole + Tetracycline) — 10–14 dias:</strong><br>
+<table>
+  <tr><th>Fármaco</th><th>Dose</th><th>Frequência</th></tr>
+  <tr><td>IBP (omeprazol)</td><td>20 mg</td><td>2×/dia</td></tr>
+  <tr><td>Subcitrato de bismuto coloidal</td><td>120 mg</td><td>4×/dia (antes das 3 refeições + deitar)</td></tr>
+  <tr><td>Metronidazol</td><td>500 mg</td><td>3×/dia com refeições</td></tr>
+  <tr><td>Tetraciclina</td><td>500 mg</td><td>4×/dia com refeições</td></tr>
+</table>
+<br>
+<strong>Formulação combinada (Pylera® — disponível em alguns países):</strong> bismuto + metronidazol + tetraciclina em uma cápsula única + IBP separado × 10 dias · Melhora adesão mas custo elevado<br><br>
+<strong>RAM e cuidados:</strong><br>
+• Bismuto: fezes escuras (melear), náusea leve (benigno, tranquilizar) · Contraindicado: gestação, clearance creatinina &lt;30 · Não usar por &gt;12 semanas (encefalopatia por bismuto)<br>
+• Metronidazol: efeito antabuse (proibir álcool) · Sabor metálico<br>
+• Tetraciclina: não usar em gravidez e crianças &lt;8 anos · Fotossensibilidade · Intervalo de 2h com antiácidos/leite<br><br>
+<strong>Alternativa quando bismuto indisponível — Terapia Concomitante:</strong><br>
+IBP + Amoxicilina 1g + Claritromicina 500 mg + Metronidazol 500 mg · todos 2×/dia × 14 dias → erradicação 87–90% (sem bismuto, mas inclui 4 agentes)`,
+   note:'Bismuto no Brasil: subcitrato de bismuto coloidal (De-Nol®) ou subsalicilato de bismuto. De-Nol está disponível via importação em alguns centros. Subsalicilato (Pepto-Bismol®) tem menor concentração e é usado em 2 comprimidos 4×/dia. Resistência ao metronidazol: alta no Brasil (>60%) mas bismuto atenua parcialmente esta resistência — a combinação mantém eficácia. Resistência à tetraciclina: muito rara no Brasil (<2%) — torna o bismuto quádruplo ainda mais atraente.'},
+  hp_3:{col:'#dc2626',hdr:'H. pylori — Terapias de Salvagem (≥2 falhas prévias)',nome:'Levofloxacino OU rifabutina após 2 falhas · Cultura obrigatória se disponível',
+   body:`<div class="atencao">⚠️ Após 2 falhas de erradicação: cultura + antibiograma ANTES de nova tentativa (se disponível endoscopicamente). Se não disponível: escolher antibiótico nunca utilizado.</div>
+<br>
+<strong>Terapia com Levofloxacino (3ª linha quando sem fluoroquinolona prévia):</strong><br>
+• IBP 2×/dia + Levofloxacino 500 mg 1×/dia + Amoxicilina 1 g 2×/dia × 14 dias<br>
+• Erradicação: 70–80% (se resistência à levo &lt;10% — verificar uso prévio de fluoroquinolonas)<br>
+• Resistência à levofloxacino crescente globalmente (Brasil ~10–15% — monitorar)<br><br>
+<strong>Terapia com Rifabutina (salvagem em resistência múltipla):</strong><br>
+• IBP 2×/dia + Rifabutina 150 mg 2×/dia + Amoxicilina 1 g 3×/dia × 10 dias<br>
+• Erradicação: 75–90% mesmo com resistência a claritromicina e metronidazol<br>
+• RAM: mielossupressão (monitorar hemograma) · Coloração alaranjada de urina/secreções (tranquilizar) · Uveíte (rara)<br>
+• CI: tuberculose ativa não tratada (induz resistência de Mycobacterium bovis a rifampicina) · HIV + rifabutina: interações com ARV<br><br>
+<strong>High-dose dual therapy (HDDT):</strong><br>
+IBP alta dose (esomeprazol 40 mg 3×/dia) + Amoxicilina 1 g 3×/dia × 14 dias → erradicação 90%+ em sensíveis · Opção para pacientes com múltiplas resistências e sem rifabutina<br><br>
+<strong>Resistência primária no Brasil (dados SBH 2022):</strong><br>
+• Claritromicina: 15–30% (centro-sul mais alta) · Metronidazol: 60%+ · Levofloxacino: 10–15% · Amoxicilina: &lt;1% · Tetraciclina: &lt;2%<br>
+→ Amoxicilina e tetraciclina são os antibióticos mais confiáveis no Brasil`,
+   note:'PCR para genotipagem de resistência do H. pylori: disponível em alguns centros brasileiros (amplifica genes de resistência do material de biópsia gástrica sem necessidade de cultura). Mais rápido que cultura. Detecta: mutações em 23S rRNA (claritromicina), gyrA (levofloxacino). Sensibilidade 95%+ para estas mutações. Futuramente pode guiar terapia de 1ª linha. H. pylori e AINE: AINE + H. pylori = risco de úlcera 60× maior vs cada um isolado. Erradicar SEMPRE antes de iniciar AINE crônico (se tempo permitir) ou junto com IBP profilático.'},
+  drge_e:{col:'#0369a1',hdr:'DRGE Erosiva — Esofagite Los Angeles graus A–D',nome:'IBP 4–8 semanas; esofagite grave: 12 semanas + manutenção',
+   body:`<strong>Classificação Los Angeles (endoscópica):</strong><br>
+• LA-A: erosão ≤5 mm isolada · LA-B: erosão &gt;5 mm, sem confluência entre pregas · LA-C: confluência &lt;75% da circunferência · LA-D: confluência ≥75% da circunferência (esofagite grave)<br><br>
+<strong>Tratamento por grau:</strong><br>
+<table>
+  <tr><th>Grau</th><th>Tratamento</th><th>Duração</th><th>Manutenção</th></tr>
+  <tr><td>LA-A/B</td><td>IBP dose padrão (omeprazol 20 mg ou pantoprazol 40 mg) 30 min antes do café</td><td>4–8 semanas</td><td>Sob demanda (se sintomas recorrem)</td></tr>
+  <tr><td>LA-C/D</td><td>IBP dose dobrada (omeprazol 40 mg 2×/dia OU esomeprazol 40 mg/dia)</td><td>8–12 semanas → EDA controle</td><td>IBP dose padrão contínua (recaída em 80% sem manutenção)</td></tr>
+</table>
+<br>
+<strong>Vonoprazan na DRGE erosiva grave:</strong><br>
+• Vonoprazan 20 mg/dia: cicatrização de LA-C/D em 94% × 8 semanas (vs omeprazol 80–84%) — PHALCON-EE trial<br>
+• Ação imediata (não precisa de ativação ácida), não dependente de CYP2C19 · Custo maior<br><br>
+<strong>Complicações de DRGE: Esôfago de Barrett:</strong><br>
+• Metaplasia colunar especializada substituindo epitélio escamoso (intestinal metaplasia)<br>
+• Vigilância endoscópica: sem displasia: 3–5 anos · Displasia baixo grau: 6–12 meses + ablação (RFA)<br>
+• Displasia alto grau/adenocarcinoma superficial: ressecção endoscópica mucosa (REM) + RFA (ablação por radiofrequência)<br>
+• IBP NÃO reverte Barrett (metaplasia persiste) mas reduz risco de progressão`,
+   note:'RAM crônica de IBP: hipomagnesemia (&gt;1 ano, dosar Mg a cada 6 meses), infecção por C. difficile (OR 1,7), pneumonia comunitária (OR 1,3), fratura ósteoporótica (longa duração), deficiência de B12 (reduz absorção, dosar B12 a cada 2 anos em uso prolongado), hipoNa (SIADH — raro). IBP e clopidogrel: omeprazol e esomeprazol inibem CYP2C19 → reduzem ativação de clopidogrel → usar pantoprazol ou rabeprazol (menor interação). Desmame de IBP: rebound acid hypersecretion ao suspender abruptamente → reduzir gradualmente em 4 semanas.'},
+  drge_ne:{col:'#059669',hdr:'DRGE Não-Erosiva (DRGE-NE) e Pirose Funcional',nome:'IBP eficaz em 60%; pirose funcional: antidepressivos em baixa dose',
+   body:`<strong>Fenótipos da DRGE sem esofagite:</strong><br>
+• <strong>DRGE-NE verdadeira:</strong> pH-metria positiva (DeMeester &gt;14,7 ou % tempo pH&lt;4 &gt;4,2%) + sintomas correlacionados (SI &gt;50% OU SAP &gt;95%) → IBP funciona em 60%<br>
+• <strong>Hipersensibilidade esofágica:</strong> pH normal, mas impedânciometria/pH-metria mostra correlação sintoma-refluxo → IBP + neuromodulador<br>
+• <strong>Pirose funcional:</strong> pH-metria normal, sem correlação sintoma-refluxo → IBP não tem eficácia além do placebo<br><br>
+<strong>Tratamento por fenótipo:</strong><br>
+<table>
+  <tr><th>Fenótipo</th><th>Tratamento</th></tr>
+  <tr><td>DRGE-NE verdadeira</td><td>IBP dose padrão × 4–8 semanas · Se parcial: dobrar dose ou trocar para esomeprazol/rabeprazol · Cirurgia (fundoplicatura Nissen) se refratário ou aversão a IBP vitalício</td></tr>
+  <tr><td>Hipersensibilidade esofágica</td><td>IBP + <strong>Amitriptilina 10–25 mg/noite</strong> ou <strong>Citalopram 20 mg/dia</strong> (neuromoduladores viscerais) · TCC para hipersensibilidade visceral</td></tr>
+  <tr><td>Pirose funcional (Roma IV)</td><td>IBP NÃO indicado como terapia de manutenção · <strong>Amitriptilina 10 mg/noite</strong> OU <strong>Imipramina</strong> OU <strong>Buspirona 10 mg 3×/dia</strong> (relaxamento do fundo gástrico)</td></tr>
+</table>
+<br>
+<strong>Medidas comportamentais (complementam qualquer fenótipo):</strong><br>
+Cabeceira elevada 15 cm (se refluxo noturno) · Refeições pequenas e frequentes · Evitar deitar 3h após refeição · Perda de peso (reduz refluxo em 10–15%) · Evitar trigggers: chocolate, álcool, café, hortelã, gordura, alho`,
+   note:'Fundoplicatura de Nissen: padrão-ouro cirúrgico (laparoscópico). Eficaz em DRGE com hipotonia de EEI (esfíncter esofágico inferior &lt;10 mmHg) confirmada por manometria. Recaída de sintomas em 10–15% em 10 anos (deslizamento da fundoplicatura). Dispositivo LINX (anel magnético): alternativa cirúrgica minimamente invasiva para DRGE-NE refratária. Pirose sem EDA: trial empírico de IBP × 4 semanas em &lt;45 anos sem sinais de alarme (disfagia, perda de peso, hematemese) — EDA somente se não resposta ou sinais de alarme.'},
+  ee:{col:'#be185d',hdr:'Esofagite Eosinofílica (EE)',nome:'≥15 eosinófilos/HPF · IBP + budesonida deglutida + eliminação alimentar',
+   body:`<strong>Diagnóstico (Consenso AGREE 2022):</strong><br>
+• Sintomas esofágicos (disfagia, impactação alimentar, dor torácica) + biópsia: ≥15 eosinófilos/campo de grande aumento (HPF) após IBP 8 semanas (IBP responsivos são subtipos de EE, não excluem mais o diagnóstico)<br>
+• Endoscopia: anéis (traquealização), sulcos, exsudatos brancos, edema, estenose<br><br>
+<strong>Tratamento:</strong><br>
+<table>
+  <tr><th>Opção</th><th>Protocolo</th><th>Remissão histológica</th></tr>
+  <tr><td>IBP (1ª linha em todos)</td><td>Omeprazol 40 mg 2×/dia × 8–12 semanas</td><td>40–60% (IBP-responsivos)</td></tr>
+  <tr><td>Budesonida deglutida (viscosa)</td><td>Budesonida suspensão 0,5 mg/mL em veículo viscoso (mel de agave OU sucralose) · 2 mg 2×/dia × 8–12 semanas</td><td>65–80%</td></tr>
+  <tr><td>Dupixent (Dupilumabe)</td><td>600 mg SC D1 → 300 mg SC q2sem · Aprovado FDA 2022 para EE ≥12 anos</td><td>60% histológica + melhora disfagia · Opção em refratários · Custo alto</td></tr>
+  <tr><td>Dieta de eliminação</td><td>6-food elimination (leite, glúten, ovo, soja, nozes, frutos do mar) → reintrodução sequencial com biópsia</td><td>70% (leite isolado responde em 50%)</td></tr>
+  <tr><td>Dilatação endoscópica</td><td>Stricturoplastia com balão ou bougie em estenoses (calibre &lt;12 mm) · NÃO trata inflamação</td><td>Sintomática (não histológica)</td></tr>
+</table>
+<br>
+<strong>Leite é o principal gatilho (50–60%):</strong> eliminar leite isoladamente como 1ª tentativa alimentar antes de dieta de 6 alimentos`,
+   note:'Budesonida viscosa no Brasil: não há formulação comercial disponível. Preparo magistral: budesonida 0,5 mg/mL ampola nebulização + misturar com 2–4 g de sucralose ou maltodextrina para criar veículo viscoso → deglutir sem água após → não comer/beber 30 min. Alternativa: fluticasona inalatória deglutida 440–880 mcg/dia (4–8 jatos de 110 mcg deglutidos). Dupilumabe EE: aprovado FDA 2022 e ANVISA (acesso especial) para EE ativa ≥12 anos refratária a IBP e corticoide tópico. Monitorar candidíase esofágica (complic. de budesonida — antifúngico se sintomas).'},
+};
+
+function calcGas(){
+  const c=document.getElementById('gas_cond').value;
+  const p=PROTO_GAS[c];
+  document.getElementById('gasResult').style.display='block';
+  document.getElementById('gasResult').innerHTML=`<div class="rec-card" style="border-color:${p.col}"><div class="rec-hdr" style="color:${p.col}">GASTROENTEROLOGIA — ${p.hdr}</div><div class="rec-nome">${p.nome}</div><div class="rec-body">${p.body}</div>${p.note?`<div class="rec-note">${p.note}</div>`:''}</div>`;
+  document.getElementById('gasResult').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+function renderSII(){
+  if(document.getElementById('siiList').innerHTML) return;
+  document.getElementById('siiList').innerHTML=`
+  <div class="gas-card" style="border-color:#c2410c">
+    <div class="gas-nome" style="color:#c2410c">SII — Síndrome do Intestino Irritável (Roma IV 2016)</div>
+    <div class="gas-body">
+      <strong>Critérios Roma IV:</strong><br>
+      Dor abdominal recorrente ≥1 dia/semana nos últimos 3 meses (início há ≥6 meses) + ≥2 dos:<br>
+      1. Relação com evacuação · 2. Mudança na frequência das fezes · 3. Mudança na consistência das fezes (Bristol)<br><br>
+      <strong>Subtipos:</strong><br>
+      • SII-C: constipação predominante (Bristol 1–2 em &gt;25% das evacuações) · SII-D: diarreia (Bristol 6–7 em &gt;25%) · SII-M: misto · SII-U: inclassificável<br><br>
+      <strong>Exames:</strong> Calprotectina fecal normal (&lt;50 µg/g) exclui DII (sensibilidade 95%). Tireóide (hipotireoidismo em SII-C). Anticorpos anti-endomísio (celíaca). Sem colonoscopia rotineira &lt;45 anos sem sinais de alarme.<br><br>
+      <strong>Tratamento farmacológico por subtipo:</strong><br>
+      <table>
+        <tr><th>SII-D (diarreia)</th><th>SII-C (constipação)</th><th>Dor/Cólicas (ambos)</th></tr>
+        <tr><td><strong>Rifaximina</strong> 550 mg 3×/dia × 14 dias (TARGETING trial: melhora flatulência/fezes soltas/dor) · Repetição até 2× ao ano</td><td><strong>Linaclotida</strong> 290 mcg/dia (agonista GC-C; IBSYMPHONY trial) · <strong>Plecanatida</strong> 3 mg/dia · <strong>Tegaserode</strong> (5-HT4 agonista)</td><td><strong>Antiespasmódicos:</strong> mebeverina 135 mg 3×/dia, diciclomina 10–20 mg 3×/dia, escopolamina 10 mg 3×/dia</td></tr>
+        <tr><td><strong>Eluxadolina</strong> 100 mg 2×/dia (agonista µ-opioide + antagonista δ): EUA · Alta eficácia · CI: sem vesícula biliar, alcoolismo</td><td><strong>Lubiprostone</strong> 8 mcg 2×/dia (ativador ClC-2) · <strong>Macrogol 3350</strong> 17 g/dia (osmótico)</td><td><strong>Antidepressivos em baixa dose:</strong> amitriptilina 10–25 mg/noite (SII-D; ACT-SSRI trial) · citalopram 20 mg/dia (SII-C; acelera trânsito)</td></tr>
+        <tr><td><strong>Loperamida</strong> 2 mg PRN (diarreia urgente — controle sintomático)</td><td><strong>Fibras solúveis</strong> (psyllium/ispaghula 10–20 g/dia) — melhor que fibras insolúveis no SII</td><td><strong>TCC e hipnose intestinal:</strong> eficácia 50–70% em trials controlados — igual ou superior a fármacos em longo prazo</td></tr>
+      </table>
+      <br>
+      <strong>Dieta FODMAP (Fermentable Oligosaccharides, Disaccharides, Monosaccharides And Polyols):</strong><br>
+      Redução de FODMAPs × 4–8 semanas → melhora de 50–75% dos pacientes (mais eficaz que dieta sem glúten isolada)<br>
+      Alimentos a evitar: trigo, cevada, lactose, frutose (maçã, manga), frutooligossacarídeos (alho, cebola), polióis (sorbitol, manitol em adoçantes)<br>
+      Reintrodução sistemática para identificar gatilhos individuais após fase de eliminação
+    </div>
+  </div>
+  <div class="gas-card" style="border-color:#7c3aed;margin-top:8px">
+    <div class="gas-nome" style="color:#7c3aed">Dispepsia Funcional (DF) — Roma IV</div>
+    <div class="gas-body">
+      <strong>Critérios Roma IV:</strong><br>
+      Síndrome do desconforto pós-prandial (SDC): empachamento pós-prandial + saciedade precoce OU<br>
+      Síndrome de dor epigástrica (SDE): dor/queimação epigástrica · ≥3 dias/semana · Início &gt;6 meses · Sem explicação estrutural<br><br>
+      <strong>H. pylori na DF:</strong> erradicar se positivo (NNT ≈ 14 para benefício sintomático)<br><br>
+      <strong>Tratamento farmacológico por síndrome:</strong><br>
+      <table>
+        <tr><th>SDE (dor epigástrica)</th><th>SDC (desconforto pós-prandial)</th></tr>
+        <tr><td>IBP 4–8 semanas (NNT ≈ 7)</td><td>Procinéticos: domperidona 10 mg 3×/dia (CI: QTc prolongado) · Metoclopramida 10 mg 3×/dia (risco tardidiscinesia crônica — evitar &gt;12 semanas) · Acotiamida 100 mg 3×/dia (aprovado Japão, em estudo no Brasil)</td></tr>
+        <tr><td>Antidepressivos em baixa dose (SDE refratária): amitriptilina 10–25 mg/noite (FUNADICS trial: melhora vs placebo) · mirtazapina 15 mg/noite (gastroparesia associada)</td><td>Buspirona 10 mg 3×/dia (relaxamento do fundo gástrico) · Itopride 50 mg 3×/dia · Tandospirona (5-HT1A agonista) em estudos</td></tr>
+      </table>
+    </div>
+  </div>`;
+}
+
+function renderPan(){
+  if(document.getElementById('panList').innerHTML) return;
+  document.getElementById('panList').innerHTML=`
+  <div class="gas-card" style="border-color:#c2410c">
+    <div class="gas-nome" style="color:#c2410c">Pancreatite Crônica — Manejo Clínico</div>
+    <div class="gas-body">
+      <strong>Causas:</strong> Álcool (70%) · Tabagismo (fator independente, multiplica risco por 2–3×) · Hereditária (PRSS1, SPINK1, CFTR) · Autoimune (IgG4; AIP Tipo 1 e 2) · Obstrutiva (cálculo, tumor, pâncreas divisum) · Idiopática<br><br>
+      <strong>Tríade clínica:</strong> Dor abdominal crônica + Esteatorréia + Diabetes mellitus tipo 3c (insuficiência pancreática endócrina)<br><br>
+      <strong>Diagnóstico:</strong><br>
+      • TC abdômen: calcificações pancreáticas, dilatação ductal (Wirsung &gt;3 mm)<br>
+      • Elastase fecal: &lt;200 µg/g fezes = insuficiência exócrina moderada/grave (sensibilidade 77% para grau grave)<br>
+      • Endoscopia pancreática (CPRE/Wirsung): critérios de Cambridge para estadiamento ductal<br><br>
+      <strong>Insuficiência Exócrina — Terapia de Reposição Enzimática (PERT):</strong><br>
+      <table>
+        <tr><th>Preparado</th><th>Dose por refeição principal</th><th>Dose por lanche</th></tr>
+        <tr><td>Pancreatina/Creon® (25.000–40.000 UI lipase/cap)</td><td>40.000–80.000 UI lipase (1–2 cápsulas)</td><td>20.000–40.000 UI (1 cápsula)</td></tr>
+        <tr><td>Pancrease®/Pancreatin® (genérico)</td><td>Doses equivalentes — verificar conteúdo de lipase</td><td>—</td></tr>
+      </table>
+      <br>
+      <strong>Técnica de uso de enzimas:</strong><br>
+      • Tomar DURANTE as refeições (não antes/depois) · Espalhar as doses ao longo da refeição · Cápsulas: abrir e misturar em alimento ácido (purê de maçã) em crianças · Não esmagar ou mastigar (entérica)<br>
+      • pH gástrico &gt;4: reduz ativação de lipase entérica → adicionar IBP se resposta inadequada<br><br>
+      <strong>Dor em Pancreatite Crônica — Escalonamento:</strong><br>
+      1. AINEs/Paracetamol (1ª linha) · Enzimas em alta dose (mecanismo feedback duodenal — eficácia controversa)<br>
+      2. Amitriptilina 10–50 mg/noite OU Pregabalina 75–300 mg/dia (dor neuropática) · Tramadol (2ª linha)<br>
+      3. Bloqueio de plexo celíaco (EUS-guiado): 55% melhora da dor por 3–6 meses<br>
+      4. Morfina OU oxicodona (3ª linha — risco de dependência + opioide retarda esvaziamento gástrico)<br>
+      5. Procedimento ductal: litotripsia + CPRE para cálculo ductal obstrutivo · Cirurgia (Puestow/Frey): dor intratável + dilatação Wirsung &gt;7 mm<br><br>
+      <strong>DM Tipo 3c (pancreatic DM):</strong><br>
+      • Insulinopenia + glucagonopenia → hipoglicemias graves frequentes · Metformina contraindicada em insuficiência exócrina grave (pH ácido + má absorção)<br>
+      • Insulina basal-bolus com doses conservadoras (risco hipoglicemia) · GLP-1 agonistas: contraindicados em pancreatite crônica ativa (risco de agudização — BLACK BOX)
+    </div>
+  </div>
+  <div class="gas-card" style="border-color:#15803d;margin-top:8px">
+    <div class="gas-nome" style="color:#15803d">Doença Celíaca — Diagnóstico e Manejo</div>
+    <div class="gas-body">
+      <strong>Epidemiologia:</strong> 1–2% da população · Autoimune induzida por glúten em HLA-DQ2/DQ8 (95% dos celíacos) · HLA-DQ2/DQ8 negativo = exclui celíaca praticamente<br><br>
+      <strong>Apresentação clínica (espectro amplo):</strong><br>
+      • Clássica: diarreia gordurosa, esteatorréia, distensão, perda de peso, anemia ferropriva, déficit de crescimento<br>
+      • Silenciosa: anemia refratária, osteoporose precoce, infertilidade, hepatite idiopática, neuropatia periférica, dermatite herpetiforme (DH)<br><br>
+      <strong>Diagnóstico (ESPGHAN 2020 / ACG 2023):</strong><br>
+      1. Anti-tTG IgA (antitransglutaminase) + IgA total sérica · Se IgA deficiente: anti-tTG IgG ou anti-DGP IgG<br>
+      2. Anti-tTG &gt;10× ULN em criança sintomática + EMA IgA positivo: diagnóstico sem biópsia (ESPGHAN)<br>
+      3. Biópsia duodenal (padrão-ouro adultos): atrofia vilositária + hipercripta + linfocitose intraepitelial · Marsh 3a/b/c<br>
+      4. HLA-DQ2/DQ8 negativos: exclui celíaca (VPN 99%+)<br><br>
+      <strong>Tratamento:</strong><br>
+      <div class="ok-box">✅ DIETA SEM GLÚTEN (DSG) VITALÍCIA — único tratamento aprovado. Excluir: trigo, centeio, cevada (TRITICALE, spelt, kamut incluídos). Aveia: tolerada em 80% (usar apenas aveia certificada sem contaminação cruzada).</div>
+      <br>
+      Monitoramento: anti-tTG IgA + hemograma + ferritina + folato + B12 + vitamina D + densitometria óssea · EDA controle 1–2 anos após DSG (normalização de vilosidades confirma diagnóstico e adesão)<br>
+      • Suplementar: ferro + ácido fólico + B12 + vitamina D/Ca + zinco nas deficiências identificadas<br>
+      • Celíaca refratária tipo I/II (sem resposta à DSG): prednisona 1 mg/kg/dia OU budesonida entérica 9 mg/dia · Tipo II: risco de linfoma de células T (EATL)
+    </div>
+  </div>
+  <div class="gas-card" style="border-color:#1d4ed8;margin-top:8px">
+    <div class="gas-nome" style="color:#1d4ed8">SIBO — Supercrescimento Bacteriano do Intestino Delgado</div>
+    <div class="gas-body">
+      <strong>Definição:</strong> &gt;10³ UFC/mL de bactérias no intestino delgado proximal (&gt;10⁵ UFC/mL clássico, mas critérios variam)<br>
+      <strong>Causas:</strong> Acloridria (IBP crônico, atrofia gástrica) · Hipomobilidade (DM, esclerodermia, hipotireoidismo) · Anatomia (síndrome do intestino curto, ansa cega, estenose) · DII · Cirrose<br><br>
+      <strong>Sintomas:</strong> Distensão/flatulência predominante · Diarreia OU constipação · Dor abdominal · Deficiências de B12 (consumida pelas bactérias), ferro, vitaminas lipossolúveis (A, D, E, K)<br><br>
+      <strong>Diagnóstico:</strong><br>
+      • Teste respiratório com lactulose ou glicose: aumento precoce de H₂ (&gt;20 ppm) ou CH₄ (&gt;10 ppm) nos primeiros 90 min → SIBO H₂ OU SIBO-CH₄ (metano = constipante)<br>
+      • Cultura aspirado jejunal: padrão-ouro (invasivo, não disponível rotineiramente)<br><br>
+      <strong>Tratamento:</strong><br>
+      <table>
+        <tr><th>Antibiótico</th><th>Dose</th><th>Duração</th><th>Observação</th></tr>
+        <tr><td><strong>Rifaximina</strong> (1ª linha)</td><td>550 mg 3×/dia</td><td>14 dias</td><td>Não absorvida (ação luminal) · Mínima seleção de resistência sistêmica · Custo maior</td></tr>
+        <tr><td>Metronidazol</td><td>400–500 mg 3×/dia</td><td>10–14 dias</td><td>Alternativa mais barata · RAM sistêmicas (náusea, antabuse)</td></tr>
+        <tr><td>Norfloxacino</td><td>400 mg 2×/dia</td><td>10 dias</td><td>Boa cobertura aeróbica entérica</td></tr>
+        <tr><td>Neomicina (SIBO-CH₄)</td><td>500 mg 2×/dia + rifaximina</td><td>14 dias</td><td>Metano (constipação): neomicina + rifaximina combinado → redução CH₄ e constipação</td></tr>
+      </table>
+      <br>
+      <strong>Recidiva (frequente — 40–80% em 9 meses):</strong><br>
+      • Tratar causa-base: reduzir/suspender IBP (se possível), otimizar controle glicêmico, tratar hipotireoidismo<br>
+      • Ciclos de antibióticos mensais (7–10 dias/mês) em casos recorrentes · Procinético (prucaloprida 2 mg/dia) entre os ciclos<br>
+      • Dieta FODMAP: reduz sintomas (substrato para bactérias = FODMAPs) mas não erradica SIBO
+    </div>
+  </div>`;
+}
+</script>
+</body>
+</html>

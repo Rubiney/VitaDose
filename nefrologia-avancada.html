@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Nefrologia Avançada — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .nef-hdr{background:linear-gradient(135deg,#0c2340,#1e40af);color:#fff;border-radius:14px;padding:18px;margin-bottom:14px}
+    .nef-title{font-size:1rem;font-weight:800;margin-bottom:4px}
+    .nef-sub{font-size:.73rem;opacity:.8}
+    label{font-size:.75rem;font-weight:700;color:#1e3a5f;display:block;margin-bottom:4px}
+    select{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:10px;padding:10px 12px;font-size:.85rem;background:#fff;margin-bottom:10px}
+    .btn-calc{width:100%;background:#1e40af;color:#fff;border:none;border-radius:12px;padding:13px;font-size:.87rem;font-weight:700;cursor:pointer;margin:8px 0}
+    .tab-bar{display:flex;gap:6px;margin-bottom:14px}
+    .tab-btn{flex:1;padding:9px 4px;border-radius:10px;border:2px solid #e2e8f0;background:#fff;font-size:.72rem;font-weight:700;cursor:pointer;color:#64748b}
+    .tab-btn.active{border-color:#1e40af;background:#eff6ff;color:#1e40af}
+    .nef-card{border-radius:10px;border-left:5px solid;padding:10px 14px;margin-bottom:8px;background:#fff}
+    .nef-nome{font-size:.83rem;font-weight:800;margin-bottom:4px}
+    .nef-body{font-size:.76rem;line-height:1.7;color:#374151}
+    .rec-card{border-radius:12px;border:2px solid;padding:14px;margin-bottom:10px}
+    .rec-hdr{font-size:.63rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+    .rec-nome{font-size:.88rem;font-weight:800;margin-bottom:6px}
+    .rec-body{font-size:.78rem;margin-top:6px;line-height:1.7}
+    .rec-note{font-size:.71rem;color:#64748b;margin-top:6px;padding-top:6px;border-top:1px solid #f1f5f9}
+    .alerta{background:#fef2f2;border:2px solid #dc2626;border-radius:10px;padding:8px;margin:6px 0;font-size:.75rem;color:#7f1d1d;font-weight:700}
+    .atencao{background:#fffbeb;border:2px solid #d97706;border-radius:10px;padding:8px;margin:6px 0;font-size:.75rem;color:#78350f;font-weight:700}
+    .ok-box{background:#f0fdf4;border:2px solid #16a34a;border-radius:10px;padding:8px;margin:6px 0;font-size:.75rem;color:#14532d;font-weight:700}
+    table{width:100%;border-collapse:collapse;font-size:.73rem;margin-top:6px}
+    th{background:#1e40af;color:#fff;padding:5px 8px;text-align:left}
+    td{padding:5px 8px;border-bottom:1px solid #f1f5f9}
+    tr:nth-child(even) td{background:#eff6ff}
+  </style>
+</head>
+<body>
+<header class="top-bar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <span class="top-title">Nefrologia Avançada</span>
+  <div class="top-right"></div>
+</header>
+<main class="container" style="padding-bottom:90px">
+  <div class="nef-hdr">
+    <div class="nef-title">🫘 Nefrologia Avançada</div>
+    <div class="nef-sub">Síndrome Nefrótica · Glomerulonefrites · TRS · Transplante Renal</div>
+  </div>
+  <div class="tab-bar">
+    <button class="tab-btn active" id="tb0" onclick="showTab(0)">Sínd. Nefrótica & GN</button>
+    <button class="tab-btn" id="tb1" onclick="showTab(1)">GNRP & Vasculites Renais</button>
+    <button class="tab-btn" id="tb2" onclick="showTab(2)">TRS & Transplante</button>
+  </div>
+
+  <!-- TAB 0 -->
+  <div id="tab0">
+    <div class="card" style="padding:12px 14px;margin-bottom:10px">
+      <label>Síndrome nefrótica / Glomerulopatia</label>
+      <select id="nef_cond">
+        <option value="sn_lm">Síndrome Nefrótica — Lesão Mínima (LM)</option>
+        <option value="sn_gesf">Glomeruloesclerose Segmentar e Focal (GESF)</option>
+        <option value="sn_mnm">Nefropatia Membranosa (NMN)</option>
+        <option value="iga">Nefropatia por IgA (Doença de Berger)</option>
+        <option value="lupus">Nefrite Lúpica (LES)</option>
+      </select>
+      <button class="btn-calc" onclick="calcNef()">🫘 Ver protocolo</button>
+    </div>
+    <div id="nefResult" style="display:none"></div>
+  </div>
+
+  <!-- TAB 1 -->
+  <div id="tab1" style="display:none">
+    <div id="gnrpList"></div>
+  </div>
+
+  <!-- TAB 2 -->
+  <div id="tab2" style="display:none">
+    <div id="trsList"></div>
+  </div>
+</main>
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+<script src="js/db.js"></script>
+<script>
+function showTab(n){[0,1,2].forEach(i=>{document.getElementById('tab'+i).style.display=i===n?'block':'none';document.getElementById('tb'+i).classList.toggle('active',i===n);});if(n===1)renderGNRP();if(n===2)renderTRS();}
+
+const PROTO_NEF={
+  sn_lm:{col:'#1e40af',hdr:'Lesão Mínima (LM) — Causa mais comum de SN em crianças',nome:'Resposta excelente a corticoide; recaídas frequentes',
+   body:`<strong>Critérios de Síndrome Nefrótica:</strong> Proteinúria ≥3,5 g/dia (adultos) OU ≥40 mg/m²/h (crianças) + Hipoalbuminemia &lt;3 g/dL + Edema + Hiperlipidemia<br><br>
+<strong>Apresentação LM:</strong><br>
+• Crianças 2–8 anos (mais comum) · Adultos: associada a linfoma Hodgkin (IL-13), AINEs (indometacina), lítio, IFN<br>
+• Microscopia eletrônica: apagamento de podócitos (patognomônico) · IF negativa · MO normal<br><br>
+<strong>Tratamento 1ª linha:</strong><br>
+<table>
+  <tr><th>Fase</th><th>Crianças</th><th>Adultos</th></tr>
+  <tr><td>Indução</td><td>Prednisona 60 mg/m²/dia (máx 60 mg) × 4–6 semanas</td><td>Prednisona 1 mg/kg/dia (máx 80 mg) × 8–16 semanas</td></tr>
+  <tr><td>Manutenção</td><td>Prednisona 40 mg/m² em dias alternados × 4–6 semanas → desmame</td><td>Desmame lento 6–9 meses</td></tr>
+</table>
+<br>
+<strong>Resposta:</strong> Remissão completa em 80–90% crianças e 75–80% adultos em 8 semanas<br><br>
+<strong>Doença corticossensível com recaídas frequentes (DCRF) ou corticodependente (CD):</strong><br>
+• Definição: ≥2 recaídas em 6 meses OU ≥4 recaídas em 12 meses<br>
+• <strong>Ciclofosfamida</strong> (CTX) 2 mg/kg/dia × 8–12 semanas (1ª escolha por custo) · Cistite hemorrágica (mesna + hidratação)<br>
+• <strong>Tacrolimus</strong> 0,1 mg/kg/dia ÷ 2 doses (níveis 5–10 ng/mL) × 1–2 anos · Nefrotoxicidade<br>
+• <strong>Micofenolato de mofetila (MMF)</strong> 600–1200 mg/m²/dia · Menor nefrotoxicidade<br>
+• <strong>Rituximabe</strong> 375 mg/m² IV × 1–4 doses · LUNAR trial: eficaz em corticodependência refratária · CD20+B-depletion<br>
+• <strong>Levamisol</strong> 2,5 mg/kg em dias alternados (crianças com recaídas frequentes — baixo custo, dado brasileiro)<br><br>
+<strong>Corticorresistente (CR-LM):</strong> biópsia renal para reclassificar (frequentemente GESF focal)`,
+   note:'Complicações da SN: Trombose venosa (risco 3×: perda urinária de antitrombina III e proteínas C/S → anticoagulação profilática se albumina &lt;2 g/dL + fator de risco adicional). Infecções bacterianas (perda de IgG urinária + imunossupressão): pneumococo (vacinar ANTES de iniciar imunossupressor). Dislipidemia (↑ LDL + TG, estatina controversa em crianças). Hipotireoidismo (perda de TBG urinária — dosar TSH).'},
+  sn_gesf:{col:'#7c3aed',hdr:'Glomeruloesclerose Segmentar e Focal (GESF)',nome:'Alta taxa de corticorresistência; frequentemente evolui para DRC',
+   body:`<strong>GESF primária vs secundária:</strong><br>
+<table>
+  <tr><th>Tipo</th><th>Causa</th><th>Característica</th><th>Tratamento</th></tr>
+  <tr><td>Primária</td><td>Fator circulante de permeabilidade (FSGS permeability factor)</td><td>Início abrupto, proteinúria maciça, corticorresistência 50%</td><td>Corticoide + inibidor calcineurina</td></tr>
+  <tr><td>Secundária — Adaptativa</td><td>Obesidade, nefrectomia, refluxo, vasculopatia hipertensiva</td><td>Proteinúria subnefrática, hipertensão, evolução lenta</td><td>IECA/BRA + controle da causa-base</td></tr>
+  <tr><td>Secundária — Viral</td><td>HIV (HIVAN), parvovírus B19, CMV</td><td>HIV: colapso, progressão rápida</td><td>TARV (HIVAN) · biópsia obrigatória</td></tr>
+  <tr><td>Genética</td><td>Mutações NPHS2 (podocina), WT1, TRPC6, ACTN4</td><td>Corticorresistente, familiar, início precoce</td><td>Inibidor calcineurina + suporte</td></tr>
+</table>
+<br>
+<strong>Tratamento GESF primária corticossensível:</strong> igual LM<br>
+<strong>GESF primária corticorresistente (CRGN):</strong><br>
+• <strong>Ciclosporina</strong> 3–5 mg/kg/dia ÷ 2 doses (níveis 100–200 ng/mL C0) × 6–12 meses · Remissão parcial 40–60%<br>
+• <strong>Tacrolimus</strong> 0,1–0,15 mg/kg/dia · Preferível em dislipidemia (menos hipercolesterolemia que CsA)<br>
+• <strong>MMF + dexametasona</strong> (alternativa em intolerância a calcineurina)<br>
+• <strong>Sparsentan</strong> (dual RAAS + endotelina bloqueio) — DUPLEX trial 2024: redução proteinúria 40% vs irbesartana · Aprovado FDA 2023 para GESF primária<br>
+• <strong>IECA/BRA:</strong> obrigatório (nefroproteção + antiproteinúrico)<br><br>
+<strong>Progressão para DRC terminal:</strong> 50% em 10 anos nas formas primárias corticorresistentes`,
+   note:'GESF colapsante pós-COVID-19 (COVAN): variante APOL1 (genótipo G1/G2 em afrodescendentes) + COVID-19 → GESF colapsante com IRA grave. Tratamento: TARV anti-COVID se indicado, suporte. APOL1: polimorfismos G1 e G2 estão presentes em 13% de afrodescendentes e conferem risco 7× de GESF primária e 17× de HIVAN. Biópsia necessária para diagnóstico diferencial (GESF vs nefropatia diabética vs amiloidose — podem ter proteinúria similar).'},
+  sn_mnm:{col:'#0369a1',hdr:'Nefropatia Membranosa (NMN)',nome:'Anticorpo anti-PLA2R (70–80%); regra de terços; rituximabe é 1ª linha',
+   body:`<strong>Diagnóstico:</strong> Biopsia — depósitos subepiteliais de IgG4 em "espinhas" (MO+IF+ME) · Anti-PLA2R sérico positivo em 70–80% (específico; prediz atividade e resposta)<br><br>
+<strong>Causas secundárias (20–30%):</strong> Hepatite B · Lúpus (classe V) · Neoplasias (pulmão, mama, cólon — buscar em &gt;60 anos) · AINEs, penicilamina, sais de ouro, captopril · Anti-THSD7A (associado a câncer)<br><br>
+<strong>Regra dos Terços (remissão espontânea):</strong><br>
+• 1/3: remissão espontânea em 24 meses → esperar 6 meses antes de imunossupressor em baixo risco<br>
+• 1/3: proteinúria persistente sem progressão<br>
+• 1/3: progressão para DRC terminal<br><br>
+<strong>Estratificação de risco (KDIGO 2021):</strong><br>
+• Baixo: proteinúria &lt;3,5 g/dia, TFG normal, anti-PLA2R baixo → IECA/BRA + observar<br>
+• Moderado: proteinúria 3,5–8 g/dia sem melhora em 6 meses → imunossupressão<br>
+• Alto/muito alto: proteinúria &gt;8 g/dia OU TFG↓ OU complicações → imunossupressão imediata<br><br>
+<strong>Tratamento imunossupressor (KDIGO 2021 — Rituximabe 1ª linha):</strong><br>
+• <strong>Rituximabe</strong> 375 mg/m² IV × 4 doses (D0, D7, D180, D187) OU 1 g IV × 2 (D0, D14) — MENTOR trial: rituximabe = ciclosporina em eficácia + menos RAM + sem nefrotoxicidade; remissão 60–65% em 24 meses<br>
+• Monitorar anti-PLA2R: queda de 90% precede remissão clínica em meses<br>
+• <strong>Esquema Ponticelli modificado</strong> (alternativa): ciclofosfamida + prednisona alternados em 6 meses · Clássico mas maior toxicidade<br>
+• <strong>Tacrolimus/Ciclosporina:</strong> remissão 70–80% mas recaída alta (50–75%) ao suspender<br>
+• <strong>Obinutuzumabe:</strong> anti-CD20 próxima geração em estudo para recidivantes pós-rituximabe`,
+   note:'Trombose venosa em NMN: alto risco (trombose renal 5–10%, TEP 7%). Anticoagulação profilática recomendada se albumina &lt;2,5 g/dL (KDIGO). NMN e anticoagulação: dilema — HAS-BLED vs risco trombótico. DOACs (rivaroxabana, apixabana) são opções mas sem dados específicos em NMN; warfarina (INR 2-3) ainda mais usada na prática. Rituximabe e infusão: pré-medicação com paracetamol + anti-histamínico + corticoide antes de cada infusão. Monitorar CD19/CD20 para confirmar depleção.'},
+  iga:{col:'#dc2626',hdr:'Nefropatia por IgA (Doença de Berger) — GN primária mais comum no mundo',nome:'Hematúria + proteinúria; novos tratamentos: sparsentan e avacopan',
+   body:`<strong>Diagnóstico:</strong> Biópsia renal — depósitos mesangiais de IgA (IgA + C3 na IF) + proliferação mesangial<br>
+<strong>Apresentação clínica:</strong><br>
+• Hematúria macroscópica sinfaringítica (48–72h após IVAS) — característica<br>
+• Proteinúria variável (&lt;0,5 a &gt;3,5 g/dia) · Hipertensão frequente<br><br>
+<strong>Escore MEST-C (Oxford) — histopredicção:</strong><br>
+• M1 (hipercrofia mesangial) · E1 (proliferação endocapilar) · S1 (esclerose segmentar) · T1/T2 (atrofia/fibrose) · C1/C2 (meia-lua) → maior escore = pior prognóstico<br><br>
+<strong>Tratamento baseado em proteinúria e TFG (KDIGO 2021 + novas terapias):</strong><br>
+<table>
+  <tr><th>Situação</th><th>Tratamento</th></tr>
+  <tr><td>Proteinúria &lt;0,5 g/dia, TFG normal</td><td>IECA/BRA · Controle PA &lt;130/80 mmHg · Dieta low-sal · Reavaliação 6/6m</td></tr>
+  <tr><td>Proteinúria 0,5–1 g/dia persistente em 3 meses</td><td>IECA/BRA dose máxima tolerada · Considerar <strong>SGLT2i</strong> (dapagliflozina DAPA-CKD: redução proteinúria 30% em IgAN)</td></tr>
+  <tr><td>Proteinúria &gt;1 g/dia após otimização RAAS/SGLT2i</td><td><strong>Sparsentan</strong> 400 mg/dia (PROTECT trial 2023: −49% proteinúria vs irbesartana em 36 semanas — aprovado FDA 2024) OU Prednisona 0,5–1 mg/kg × 6 meses (STOP-IgAN: benefício em proteinúria, sem impacto em TFG)</td></tr>
+  <tr><td>Proteinúria &gt;3,5 g/dia OU C1/C2 (meia-lua) na biópsia</td><td>Budesonida liberação ileal (Tarpeyo/Nefecon) 16 mg/dia × 9 meses — NEFIGAN trial: −34% proteinúria, mínima absorção sistêmica · + IECA/BRA + SGLT2i</td></tr>
+  <tr><td>IgAN com síndrome nefrótica OU IgAN crescêntica (GNRP)</td><td>Corticoide sistêmico + CTX · Ver GNRP (tab1)</td></tr>
+</table>
+<br>
+<strong>Avacopan (inibidor C5aR — complemento):</strong><br>
+• ADVOCATE trial (vasculite ANCA): aprovado FDA 2021 para vasculite. Em estudos para IgAN (ACCOLADE trial em andamento) — perspectiva promissora dado papel do complemento na patogênese`,
+   note:'IgAN progressão: 20–30% evoluem para DRC terminal em 20–25 anos. Preditores de pior prognóstico: proteinúria persistente &gt;1 g/dia, hipertensão, TFG &lt;60, T1/T2 na biópsia, crescentes. IgAN e amigdalectomia: evidência fraca (estudos japoneses mostram benefício, mas sem ensaios clínicos robustos no Ocidente — KDIGO não recomenda de rotina). SGLT2i em DRC: dapagliflozina e empagliflozina aprovadas para DRC com albuminúria (mesmo sem diabetes) — mudança de paradigma.'},
+  lupus:{col:'#be185d',hdr:'Nefrite Lúpica (LES) — Classificação ISN/RPS 2003 (revisada 2018)',nome:'Classes III/IV: indução com MMF ou CTX + hidroxicloroquina obrigatória',
+   body:`<strong>Classificação histológica ISN/RPS:</strong><br>
+<table>
+  <tr><th>Classe</th><th>Histologia</th><th>Tratamento</th></tr>
+  <tr><td>I — Mesangial mínima</td><td>Depósitos mesangiais só à IF</td><td>Não necessita IS específica para NL · Tratar LES sistêmico</td></tr>
+  <tr><td>II — Mesangial proliferativa</td><td>Proliferação mesangial + depósitos</td><td>Baixa dose de corticoide ± AZA/HCQ se proteinúria &gt;1 g/dia</td></tr>
+  <tr><td>III — Focal (&lt;50% glomérulos)</td><td>Lesões endocapilares/necrose &lt;50%</td><td>Como classe IV</td></tr>
+  <tr><td><strong>IV — Difusa (&gt;50%)</strong></td><td>Proliferação endocapilar difusa · Mais comum e grave</td><td><strong>Indução: MMF 3 g/dia × 6 meses OU CTX-NIH; Manutenção: MMF 2 g/dia + HCQ</strong></td></tr>
+  <tr><td>V — Membranosa</td><td>Depósitos subepiteliais (como NMN)</td><td>Proteinúria nefrótoca: MMF ± IECA; SN grave: adicionar CTX ou rituximabe</td></tr>
+  <tr><td>VI — Esclerótica avançada</td><td>≥90% esclerose global</td><td>Sem benefício de IS · Preparação para TRS</td></tr>
+</table>
+<br>
+<strong>Protocolo de Indução (Classe III/IV ± V):</strong><br>
+• <strong>MMF (Micofenolato)</strong> 3 g/dia ÷ 2 doses + <strong>Prednisona</strong> 1 mg/kg/dia (máx 60 mg) × 4 semanas → desmame progressivo<br>
+  — ALMS trial: MMF = CTX na indução, superior na manutenção<br>
+• <strong>CTX-NIH (ciclofosfamida)</strong> 0,5–1 g/m² IV mensal × 6 meses + prednisona<br>
+  — CTX Euro-Lupus: 500 mg IV 2/2 semanas × 6 doses (dose reduzida = mesma eficácia + menos toxicidade)<br>
+• <strong>Voclosporina</strong> 23,7 mg 2×/dia + MMF (AURORA-1 trial): remissão renal 40,8% vs 22,5% com MMF isolado · Aprovada FDA 2021 para NL ativa<br>
+• <strong>Belimumabe</strong> 10 mg/kg IV mensal (BLISS-LN trial 2020): redução de flare renal + preservação TFG · Aprovado para NL ativa (biológico anti-BLyS)<br><br>
+<strong>Manutenção (após 6 meses de indução):</strong><br>
+MMF 2 g/dia + HCQ 200–400 mg/dia + prednisona desmame até 5–7,5 mg/dia · Duração mínima: 3 anos<br>
+<strong>Hidroxicloroquina (HCQ):</strong> obrigatória em TODO paciente com LES e NL (reduz flares 50%, reduz mortalidade, efeito antiproteinúrico)`,
+   note:'Monitoramento NL: anti-dsDNA + C3/C4 + proteinúria (índice prot/creat) + TFG a cada 3 meses na indução, depois 6/6m. Flare renal: ↑ proteinúria + ↑ anti-dsDNA + ↓ C3/C4 = indução novamente. Rituximabe em NL: usado off-label em refratariedade a MMF + corticoide (LUNAR trial: não superior mas biologicamente ativo → prática mantida). Nefrotoxicidade por HCQ: dose &gt;5 mg/kg/dia por &gt;5 anos → rastreio anual com OCT macular. Gravidez em NL: contraindicada durante atividade; MMF teratogênico (trocar por AZA 6–8 semanas antes de engravidar).'},
+};
+
+function calcNef(){
+  const c=document.getElementById('nef_cond').value;
+  const p=PROTO_NEF[c];
+  document.getElementById('nefResult').style.display='block';
+  document.getElementById('nefResult').innerHTML=`<div class="rec-card" style="border-color:${p.col}"><div class="rec-hdr" style="color:${p.col}">NEFROLOGIA — ${p.hdr}</div><div class="rec-nome">${p.nome}</div><div class="rec-body">${p.body}</div>${p.note?`<div class="rec-note">${p.note}</div>`:''}</div>`;
+  document.getElementById('nefResult').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+function renderGNRP(){
+  if(document.getElementById('gnrpList').innerHTML) return;
+  document.getElementById('gnrpList').innerHTML=`
+  <div class="nef-card" style="border-color:#dc2626">
+    <div class="nef-nome" style="color:#dc2626">GNRP — Glomerulonefrite Rapidamente Progressiva (Crescêntica)</div>
+    <div class="nef-body">
+      <div class="alerta">⚠️ EMERGÊNCIA NEFROLOGICA: IRA progressiva + hematúria + cilindros hemáticos + proteinúria → biópsia URGENTE. Perda de função renal em dias a semanas sem tratamento.</div>
+      <strong>Classificação por tipo de IF:</strong><br>
+      <table>
+        <tr><th>Tipo</th><th>IF Renal</th><th>Marcador Sérico</th><th>Causa Principal</th></tr>
+        <tr><td><strong>I — Anti-MBG</strong></td><td>Linear IgG</td><td>Anti-GBM (ELISA)</td><td>Doença de Goodpasture · Anti-GBM isolado</td></tr>
+        <tr><td><strong>II — Imunocomplexos</strong></td><td>Granular IgG/C3</td><td>ANCA negativo · Complement ↓</td><td>LES IV · Post-estreptocócica · IgAN crescêntica · Crioglobulinemia</td></tr>
+        <tr><td><strong>III — Pauci-imune</strong></td><td>Escassa ou ausente</td><td>ANCA+ (MPO ou PR3)</td><td>Vasculite ANCA: GPA (Wegener) · MPA · EGPA (Churg-Strauss)</td></tr>
+      </table>
+      <br>
+      <strong>Tratamento GNRP Tipo III — Vasculite ANCA (KDIGO 2021):</strong><br>
+      <strong>Indução:</strong><br>
+      • Rituximabe 375 mg/m² × 4 (ou 1 g × 2) + Prednisona 1 mg/kg → preferido em recidivas, ANCA-PR3, jovem, planejamento reprodutivo (RAVE trial: rito = CTX na indução)<br>
+      • Ciclofosfamida IV 15 mg/kg a cada 2–3 semanas (máx 1,2 g) × 6 doses + Prednisona · Preferido em doença grave (creatinina &gt;5 mg/dL, hemorragia pulmonar)<br>
+      • <strong>Avacopan 30 mg 2×/dia</strong> (ADVOCATE 2021): substitui esteroides na manutenção — não-inferior a prednisona + menos RAM; aprovado FDA/EMA para GPA e MPA<br>
+      • Plasmaférese: doença de Goodpasture (anti-MBG) — KIDIGO recomenda; vasculite ANCA: PEXIVAS trial (2020) NÃO mostrou benefício rotineiro, apenas em hemorragia pulmonar grave<br><br>
+      <strong>Manutenção (após 3–6 meses de indução):</strong><br>
+      • Rituximabe 500 mg IV a cada 6 meses × 18–24 meses (MAINRITSAN trial: superior a AZA)<br>
+      • Azatioprina 2 mg/kg/dia (alternativa ao rituximabe em manutenção) + prednisona baixa dose<br>
+      • Metotrexato (doença limitada sem comprometimento renal grave) · MMF (alternativa mais fraca)<br><br>
+      <strong>Monitoramento de recidiva:</strong><br>
+      ANCA por ELISA 3/3 meses (durante tratamento) → elevação títulos precede recidiva em ~70% dos casos
+    </div>
+  </div>
+  <div class="nef-card" style="border-color:#7c3aed;margin-top:8px">
+    <div class="nef-nome" style="color:#7c3aed">Doença de Goodpasture (Anti-MBG) e Síndrome Pulmão-Rim</div>
+    <div class="nef-body">
+      <strong>Tríade:</strong> IRA (GN crescêntica) + Hemorragia alveolar difusa + Anti-GBM positivo<br>
+      <div class="alerta">⚠️ Emergência dupla: insuficiência renal + respiratória. UCI imediata. Plasmaférese diária 4L por 14 dias OU até anti-GBM negativo + Pulso IV metilprednisolona 500 mg × 3 + CTX oral 2 mg/kg.</div>
+      <br>
+      <strong>Diagnóstico diferencial da Síndrome Pulmão-Rim:</strong><br>
+      • Anti-GBM (Goodpasture) · Vasculite ANCA (GPA/MPA) · LES IV · Crioglobulinemia (Hep C) · Síndrome antifosfolípide catastrófica (CAPS)<br><br>
+      <strong>Prognóstico de Goodpasture:</strong><br>
+      • Creatinina &gt;6 mg/dL + oligúria + crescentes em &gt;50% glomérulos → TRS irreversível em &gt;90% mesmo com tratamento<br>
+      • Transplante: aguardar anti-GBM negativo por 6–12 meses (recidiva no enxerto se positivo)
+    </div>
+  </div>
+  <div class="nef-card" style="border-color:#0369a1;margin-top:8px">
+    <div class="nef-nome" style="color:#0369a1">Crioglobulinemia e Nefropatia por Hep C</div>
+    <div class="nef-body">
+      <strong>Crioglobulinemia Mista (Tipo II/III — Hep C):</strong> crioglobulinas + baixo C4 + fator reumatoide + VHC+<br>
+      <strong>Manifestações renais:</strong> GNMP (GN membranoproliferativa) + hematúria + proteinúria + hipertensão + IRA (em crise)<br>
+      <br>
+      <strong>Tratamento:</strong><br>
+      1. <strong>DAA (Antivirais de ação direta)</strong> para VHC: sofosbuvir + velpatasvir × 12 semanas → remissão da crioglobulinemia em 70–80%<br>
+      2. Doença ativa/grave: rituximabe 375 mg/m² × 4 → plasmaférese em crise (creatinina ascendente + vasculite cutânea grave)<br>
+      3. Imunossupressão pura (sem tratar VHC): piora viral — NUNCA usar CTX sem cobrir VHC<br><br>
+      <strong>GNMP Idiopática (sem Hep C/B/LES):</strong><br>
+      Crescente interesse em mediação por complemento (GNMP mediada por complemento): C3G, DDD<br>
+      • Inibidores de complemento em estudo (avacopan, pegcetacoplan para C3G)
+    </div>
+  </div>`;
+}
+
+function renderTRS(){
+  if(document.getElementById('trsList').innerHTML) return;
+  document.getElementById('trsList').innerHTML=`
+  <div class="nef-card" style="border-color:#0369a1">
+    <div class="nef-nome" style="color:#0369a1">Terapia Renal Substitutiva — HD vs CAPD (Diálise Peritoneal)</div>
+    <div class="nef-body">
+      <strong>Quando iniciar TRS:</strong> TFG &lt;10 mL/min/1,73m² com sintomas OU TFG &lt;6 sem sintomas · Urgência: sobrecarga volêmica refratária, hipercalemia refratária, pericardite urêmica, encefalopatia urêmica<br><br>
+      <table>
+        <tr><th>Parâmetro</th><th>Hemodiálise (HD)</th><th>Diálise Peritoneal (DP/CAPD)</th></tr>
+        <tr><td>Mecanismo</td><td>Difusão + convecção através de membrana sintética</td><td>Difusão + ultrafiltração através do peritônio</td></tr>
+        <tr><td>Frequência/Sessão</td><td>3×/semana × 3,5–4h OU diária noturna domiciliar</td><td>CAPD: 4 trocas/dia 2L · APD: noturna automática</td></tr>
+        <tr><td>Clearance ureia Kt/V</td><td>Alvo Kt/V ≥ 1,4 por sessão (3×/sem)</td><td>Alvo Kt/V semanal ≥ 1,7</td></tr>
+        <tr><td>Controle volêmico</td><td>Bom (3 sessões/sem = 3 pesos secos)</td><td>Contínuo (dialisa 24h/dia) → melhor controle PA</td></tr>
+        <tr><td>Preservação função renal residual</td><td>Pior (baixa perfusão + exposição bio-incompatível)</td><td>Melhor — DP preserva função residual mais tempo</td></tr>
+        <tr><td>Acesso vascular</td><td>FAV (fístula AV) — maturação 6–8 semanas antes do início · Catéter temporário (JI)</td><td>Catéter peritoneal de Tenckhoff (tunelizado)</td></tr>
+        <tr><td>Vantagens específicas</td><td>Clearance intermitente alto · Monitoramento frequente em clínica · Paciente incapaz de diálise domiciliar</td><td>Domiciliar · Sem acesso vascular · Melhor hemodinâmica (IC grave) · Rural/distante · Crianças</td></tr>
+        <tr><td>Desvantagens</td><td>3 viagens/semana à clínica · Hipotensão intradialítica · Cardioestresse recorrente</td><td>Peritonite (0,3–0,5 episódios/ano) · Absorção de glicose (hiperglicemia, obesidade) · Falha de membrana peritoneal &gt;5 anos</td></tr>
+        <tr><td>Contraindicações relativas</td><td>Acesso vascular difícil (tente catéter tunnelizado)</td><td>Aderências peritoneais · Obesidade mórbida · Ostomias · Doença inflamatória intestinal ativa</td></tr>
+      </table>
+      <br>
+      <strong>Peritonite em CAPD:</strong> febre + dor abdominal + efluente turvo (contagem WBC &gt;100/mm³ com &gt;50% neutrófilos)<br>
+      Tratamento: vancomicina IP 15–30 mg/kg (1× por semana, MRSA/MRSE) + cefazolina IP 15 mg/kg/dia OU ceftazidima se Gram-negativo · Duração 14–21 dias (14d estrepto; 21d estafilococos; 28d pseudômonas)
+    </div>
+  </div>
+  <div class="nef-card" style="border-color:#15803d;margin-top:8px">
+    <div class="nef-nome" style="color:#15803d">Transplante Renal — Imunossupressão e Rejeição</div>
+    <div class="nef-body">
+      <strong>Protocolo de imunossupressão padrão (triple therapy):</strong><br>
+      <table>
+        <tr><th>Fase</th><th>Agentes</th><th>Alvos / Doses</th></tr>
+        <tr><td>Indução</td><td>Basiliximabe (anti-IL-2R) 20 mg IV D0 + D4 · OU Timoglobulina 1,5 mg/kg/dia × 3–5d (alto risco)</td><td>Depleção/bloqueio de linfócitos T</td></tr>
+        <tr><td>Manutenção — Inibidor calcineurina</td><td>Tacrolimus (1ª escolha) · Ciclosporina (alternativa)</td><td>Tacrolimus: C0 8–12 ng/mL (0–3m) → 6–8 ng/mL (3–12m) → 4–6 ng/mL (manutenção)</td></tr>
+        <tr><td>Manutenção — Antiproliferativo</td><td>Micofenolato de mofetila (MMF) 1–1,5 g 2×/dia · OU Micofenolato de sódio (MFS) 720–1080 mg 2×/dia</td><td>Inibe IMPDH → bloqueia proliferação linfócitos B e T</td></tr>
+        <tr><td>Manutenção — Corticoide</td><td>Prednisona 0,5 mg/kg → desmame para 5–10 mg/dia até D30 → 5 mg/dia manutenção</td><td>Alguns protocolos retiram corticoide após 3–6m se baixo risco</td></tr>
+      </table>
+      <br>
+      <strong>Rejeição Aguda:</strong><br>
+      • Clínica: ↑ creatinina &gt;20% basal + ± oligúria, febre, dor no enxerto<br>
+      • <strong>Biópsia do enxerto:</strong> classificação Banff (IA/IB: rejeição celular leve/moderada; IIA/IIB: grave; III: com endarterite; IV: rejeição mediada por anticorpos — AMR)<br>
+      • Rejeição celular aguda: pulso metilprednisolona 500 mg IV × 3 dias → resolução em 70–80%<br>
+      • Rejeição mediada por anticorpos (AMR — DSA positivo + C4d+): IVIG 2 g/kg IV + rituximabe 375 mg/m² + plasmaférese × 5–10 sessões ± bortezomibe (pós-transplante recente)<br><br>
+      <strong>Rejeição Crônica (Nefropatia Crónica do Enxerto — NCE):</strong><br>
+      • ↑ creatinina progressiva + proteinúria + hipertensão · Biópsia: fibrose intersticial, atrofia tubular (FIAT), arteriolopatia<br>
+      • Sem tratamento específico eficaz · Otimizar imunossupressor (nível tacrolimus, trocar MMF por mTOR se proteinúria) · IECA/BRA para nefroproteção · Controle rigoroso DSA<br><br>
+      <strong>Infecções no Transplantado (cronologia):</strong><br>
+      • 0–1 mês: infecções cirúrgicas, IVU, pneumonia hospitalar<br>
+      • 1–6 meses: CMV (profilaxia valganciclovir 900 mg/dia × 3–6m se D+R−), BK vírus (decorrente de excesso de IS), PJP (profilaxia TMP-SMX × 6–12m), toxoplasmose<br>
+      • &gt;6 meses: infecções comunitárias + vírus latentes (EBV → PTLD, VHC, VHB)
+    </div>
+  </div>`;
+}
+</script>
+</body>
+</html>
