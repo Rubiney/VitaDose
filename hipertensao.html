@@ -163,11 +163,9 @@
       <div style="background:#d1fae5;border-radius:8px;padding:8px 12px;margin-bottom:8px;font-size:.72rem;color:#065f46">
         <strong>⭐ Combinações de 1ª escolha (evidência A)</strong>
       </div>
-      ${[
-        ['IECA ou BRA + BCC DHP','Combinação mais utilizada; ASCOT: superior a IECA+tiazídico em eventos CV. Preferível em DM, DRC com proteinúria.'],
-        ['IECA ou BRA + Diurético tiazídico','Histórica e eficaz; potencialização da queda pressórica. Cuidado com hipocalemia.'],
-        ['BCC DHP + Diurético tiazídico','Boa para idosos (HYVET); reduz edema do BCC.'],
-      ].map(c=>`<div class="combo-row"><div class="combo-lbl">Combinação dupla</div><div style="font-weight:700;color:#1e3a5f">${c[0]}</div><div style="font-size:.71rem;color:#64748b;margin-top:2px">${c[1]}</div></div>`).join('')}
+      <div class="combo-row"><div class="combo-lbl">Combinação dupla</div><div style="font-weight:700;color:#1e3a5f">IECA ou BRA + BCC DHP</div><div style="font-size:.71rem;color:#64748b;margin-top:2px">Combinação mais utilizada; ASCOT: superior a IECA+tiazídico em eventos CV. Preferível em DM, DRC com proteinúria.</div></div>
+      <div class="combo-row"><div class="combo-lbl">Combinação dupla</div><div style="font-weight:700;color:#1e3a5f">IECA ou BRA + Diurético tiazídico</div><div style="font-size:.71rem;color:#64748b;margin-top:2px">Histórica e eficaz; potencialização da queda pressórica. Cuidado com hipocalemia.</div></div>
+      <div class="combo-row"><div class="combo-lbl">Combinação dupla</div><div style="font-weight:700;color:#1e3a5f">BCC DHP + Diurético tiazídico</div><div style="font-size:.71rem;color:#64748b;margin-top:2px">Boa para idosos (HYVET); reduz edema do BCC.</div></div>
 
       <div style="background:#fff7ed;border-radius:8px;padding:8px 12px;margin:10px 0 8px;font-size:.72rem;color:#92400e">
         <strong>💊 Terapia tripla (evidência para não controlados em dupla)</strong>
@@ -181,32 +179,30 @@
       <div style="background:#fee2e2;border-radius:8px;padding:8px 12px;margin:10px 0 8px;font-size:.72rem;color:#991b1b">
         <strong>🚫 Combinações a EVITAR</strong>
       </div>
-      ${[
-        ['IECA + BRA','Aumento de RAM sem benefício adicional (ONTARGET). CONTRAINDICADO.'],
-        ['Beta-bloqueador + BCC não-DHP (verapamil/diltiazem)','Risco de bradicardia grave e bloqueio AV.'],
-        ['BRA + IECA + Antagonista aldosterona','Hipercalemia grave — evitar tripla bloqueio RAAS.'],
-        ['Dois diuréticos da mesma classe','Sem benefício adicional; aumenta risco hidroeletrolítico.'],
-      ].map(c=>`<div class="combo-row"><div class="combo-lbl">Evitar</div><div style="font-weight:700;color:#dc2626">${c[0]}</div><div style="font-size:.71rem;color:#64748b;margin-top:2px">${c[1]}</div></div>`).join('')}
+      <div class="combo-row"><div class="combo-lbl">Evitar</div><div style="font-weight:700;color:#dc2626">IECA + BRA</div><div style="font-size:.71rem;color:#64748b;margin-top:2px">Aumento de RAM sem benefício adicional (ONTARGET). CONTRAINDICADO.</div></div>
+      <div class="combo-row"><div class="combo-lbl">Evitar</div><div style="font-weight:700;color:#dc2626">Beta-bloqueador + BCC não-DHP (verapamil/diltiazem)</div><div style="font-size:.71rem;color:#64748b;margin-top:2px">Risco de bradicardia grave e bloqueio AV.</div></div>
+      <div class="combo-row"><div class="combo-lbl">Evitar</div><div style="font-weight:700;color:#dc2626">BRA + IECA + Antagonista aldosterona</div><div style="font-size:.71rem;color:#64748b;margin-top:2px">Hipercalemia grave — evitar tripla bloqueio RAAS.</div></div>
+      <div class="combo-row"><div class="combo-lbl">Evitar</div><div style="font-weight:700;color:#dc2626">Dois diuréticos da mesma classe</div><div style="font-size:.71rem;color:#64748b;margin-top:2px">Sem benefício adicional; aumenta risco hidroeletrolítico.</div></div>
     </div>
 
     <div class="card" style="padding:10px 14px">
       <div style="font-size:.72rem;font-weight:800;color:#1e3a5f;margin-bottom:8px">Metas Pressóricas por Perfil (SBH 2020)</div>
-      ${[
-        ['Adulto geral (<65 anos)','<140/90 mmHg','Alvo: <130/80 se tolerado e risco CV alto'],
-        ['DM ou DRC com proteinúria','<130/80 mmHg','Evidência: ADVANCE, ACCORD, SPRINT subgrupo'],
-        ['DRC sem proteinúria','<140/90 mmHg','Individualizar se TFG <30'],
-        ['Pós-AVC/AIT','<130/80 mmHg','ISH2020: redução de eventos recorrentes'],
-        ['DAC / Pós-IAM','<130/80 mmHg','Mas evitar PAD <70 mmHg (fenômeno J)'],
-        ['Idoso 65–79 anos','<140/90 mmHg','Alvo <130/80 se tolerado (SPRINT)'],
-        ['Idoso ≥80 anos','<150/90 mmHg','HYVET; individualizar se fragilidade'],
-        ['Gestação (pré-eclâmpsia)','<160/110 mmHg (tratamento)','Meta durante tratamento; consultar obstetra'],
-      ].map(r=>`<div class="combo-row">
-        <div style="display:flex;justify-content:space-between">
-          <span style="font-weight:700;font-size:.78rem">${r[0]}</span>
-          <span style="font-weight:900;color:#dc2626;font-size:.82rem">${r[1]}</span>
-        </div>
-        <div style="font-size:.68rem;color:#64748b;margin-top:2px">${r[2]}</div>
-      </div>`).join('')}
+      <div id="metasHAS"></div>
+      <script>
+      (function(){
+        var rows=[
+          ['Adulto geral (&lt;65 anos)','&lt;140/90 mmHg','Alvo: &lt;130/80 se tolerado e risco CV alto'],
+          ['DM ou DRC com proteinúria','&lt;130/80 mmHg','Evidência: ADVANCE, ACCORD, SPRINT subgrupo'],
+          ['DRC sem proteinúria','&lt;140/90 mmHg','Individualizar se TFG &lt;30'],
+          ['Pós-AVC/AIT','&lt;130/80 mmHg','ISH2020: redução de eventos recorrentes'],
+          ['DAC / Pós-IAM','&lt;130/80 mmHg','Mas evitar PAD &lt;70 mmHg (fenômeno J)'],
+          ['Idoso 65–79 anos','&lt;140/90 mmHg','Alvo &lt;130/80 se tolerado (SPRINT)'],
+          ['Idoso ≥80 anos','&lt;150/90 mmHg','HYVET; individualizar se fragilidade'],
+          ['Gestação (pré-eclâmpsia)','&lt;160/110 mmHg (tratamento)','Meta durante tratamento; consultar obstetra'],
+        ];
+        document.getElementById('metasHAS').innerHTML=rows.map(function(r){return '<div class="combo-row"><div style="display:flex;justify-content:space-between"><span style="font-weight:700;font-size:.78rem">'+r[0]+'</span><span style="font-weight:900;color:#dc2626;font-size:.82rem">'+r[1]+'</span></div><div style="font-size:.68rem;color:#64748b;margin-top:2px">'+r[2]+'</div></div>';}).join('');
+      })();
+      </script>
     </div>
   </div>
 

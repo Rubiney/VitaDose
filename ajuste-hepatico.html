@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Ajuste Hepático — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .ah-hdr{background:linear-gradient(135deg,#78350f,#92400e);color:#fff;border-radius:14px;padding:18px;margin-bottom:14px}
+    .ah-title{font-size:1rem;font-weight:800;margin-bottom:4px}
+    .ah-sub{font-size:.73rem;opacity:.8}
+    label{font-size:.75rem;font-weight:700;color:#1e3a5f;display:block;margin-bottom:4px}
+    input[type=number]{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:10px;padding:10px 12px;font-size:.85rem;background:#fff;outline:none;margin-bottom:10px}
+    input:focus{border-color:#92400e}
+    input[type=text]{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:10px;padding:10px 12px;font-size:.85rem;background:#fff;outline:none}
+    input[type=text]:focus{border-color:#92400e}
+    .input-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    select{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:10px;padding:10px 12px;font-size:.85rem;background:#fff;margin-bottom:10px}
+    .btn-calc{width:100%;background:#92400e;color:#fff;border:none;border-radius:12px;padding:12px;font-size:.87rem;font-weight:700;cursor:pointer;margin:6px 0}
+    .cp-result{border-radius:14px;border:4px solid;padding:14px;margin-bottom:14px;text-align:center}
+    .cp-score{font-size:2.8rem;font-weight:900;line-height:1}
+    .cp-classe{font-size:1.1rem;font-weight:800;margin-top:4px}
+    .cp-desc{font-size:.75rem;margin-top:8px;opacity:.85}
+    .cp-detail{font-size:.7rem;margin-top:6px;opacity:.7}
+    .search-wrap{position:relative;margin-bottom:8px}
+    .search-wrap input{padding-left:36px}
+    .search-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#94a3b8}
+    .cat-chip{display:inline-flex;padding:4px 10px;border-radius:999px;font-size:.7rem;font-weight:800;border:1.5px solid;cursor:pointer;margin:3px}
+    .cat-chip.active{color:#fff}
+    .ah-card{border-radius:12px;border:2px solid #e2e8f0;padding:12px;margin-bottom:8px;background:#fff}
+    .ah-card-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px}
+    .ah-nome{font-size:.85rem;font-weight:800;color:#1e3a5f}
+    .ah-grupo{font-size:.63rem;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.06em}
+    .cls-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:8px}
+    .cls-box{border-radius:8px;padding:6px 4px;text-align:center}
+    .cls-lbl{font-size:.6rem;font-weight:800;text-transform:uppercase;letter-spacing:.04em;margin-bottom:2px}
+    .cls-val{font-size:.72rem;font-weight:800;line-height:1.3}
+    .ah-note{font-size:.72rem;color:#64748b;border-top:1px dashed #e2e8f0;padding-top:6px;margin-top:4px;line-height:1.5}
+    .badge-ok   {background:#dcfce7;color:#166534}
+    .badge-cuid {background:#fef3c7;color:#92400e}
+    .badge-evit {background:#ffedd5;color:#c2410c}
+    .badge-ci   {background:#fee2e2;color:#991b1b}
+    .empty-state{text-align:center;padding:40px 20px;color:#94a3b8}
+    .active-cp{background:#fef9c3;border:2px solid #fde047;border-radius:10px;padding:8px 12px;font-size:.75rem;font-weight:700;color:#854d0e;margin-bottom:10px;text-align:center}
+  </style>
+</head>
+<body>
+<header class="top-bar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <span class="top-title">Ajuste de Dose — Hepatopatia</span>
+  <div class="top-right"></div>
+</header>
+<main class="container" style="padding-bottom:90px">
+
+  <div class="ah-hdr">
+    <div class="ah-title">🫀 Ajuste de Dose em Hepatopatia</div>
+    <div class="ah-sub">Classificação Child-Pugh · ~50 medicamentos · Ajuste por classe A / B / C</div>
+  </div>
+
+  <!-- Child-Pugh Calculator -->
+  <div class="card" style="padding:12px 14px;margin-bottom:10px">
+    <div style="font-size:.78rem;font-weight:800;color:#92400e;margin-bottom:10px">📐 Calculadora Child-Pugh</div>
+    <div class="input-row">
+      <div>
+        <label>Bilirrubina Total (mg/dL)</label>
+        <input type="number" id="cp_bili" placeholder="ex.: 2.4" step="0.1" min="0">
+      </div>
+      <div>
+        <label>Albumina (g/dL)</label>
+        <input type="number" id="cp_alb" placeholder="ex.: 3.2" step="0.1" min="0">
+      </div>
+    </div>
+    <div class="input-row">
+      <div>
+        <label>INR</label>
+        <input type="number" id="cp_inr" placeholder="ex.: 1.8" step="0.1" min="0">
+      </div>
+      <div>
+        <label>Ascite</label>
+        <select id="cp_asc">
+          <option value="1">Ausente (1 pt)</option>
+          <option value="2">Leve / controlada (2 pt)</option>
+          <option value="3">Moderada / tensa (3 pt)</option>
+        </select>
+      </div>
+    </div>
+    <div style="margin-bottom:10px">
+      <label>Encefalopatia Hepática</label>
+      <select id="cp_enc">
+        <option value="1">Ausente (1 pt)</option>
+        <option value="2">Grau I–II (2 pt)</option>
+        <option value="3">Grau III–IV (3 pt)</option>
+      </select>
+    </div>
+    <button class="btn-calc" onclick="calcCP()">📊 Calcular Child-Pugh</button>
+    <div id="cpResult" style="display:none"></div>
+  </div>
+
+  <!-- Drug Search -->
+  <div id="cpActiveBadge" style="display:none"></div>
+  <div class="card" style="padding:10px 14px;margin-bottom:6px">
+    <div class="search-wrap">
+      <span class="search-icon">🔍</span>
+      <input type="text" id="ahSearch" placeholder="Buscar medicamento (ex.: paracetamol, metformina…)" oninput="renderAH()">
+    </div>
+    <div id="ahChips"></div>
+  </div>
+
+  <div id="ahList"></div>
+
+</main>
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+<script>
+/* ── CHILD-PUGH ─────────────────────────────────────────────────────── */
+let cpClasse = null;
+
+function scoreCP(val, thresholds) {
+  if(val<=thresholds[0]) return 1;
+  if(val<=thresholds[1]) return 2;
+  return 3;
+}
+
+function calcCP() {
+  const bili = parseFloat(document.getElementById('cp_bili').value)||0;
+  const alb  = parseFloat(document.getElementById('cp_alb').value)||0;
+  const inr  = parseFloat(document.getElementById('cp_inr').value)||0;
+  const asc  = parseInt(document.getElementById('cp_asc').value)||1;
+  const enc  = parseInt(document.getElementById('cp_enc').value)||1;
+
+  if(!bili && !alb && !inr) { alert('Informe ao menos bilirrubina, albumina e INR.'); return; }
+
+  const pBili = bili ? scoreCP(bili,[2,3]) : 1;
+  const pAlb  = alb  ? (alb>3.5?1:alb>=2.8?2:3) : 1;
+  const pInr  = inr  ? scoreCP(inr,[1.7,2.3]) : 1;
+  const total = pBili + pAlb + pInr + asc + enc;
+
+  let classe, cor, prog, sobrevida;
+  if(total<=6){ classe='A'; cor='#16a34a'; prog='Hepatopatia compensada'; sobrevida='Sobrevida 1 ano: ~100% · 2 anos: ~85%'; }
+  else if(total<=9){ classe='B'; cor='#d97706'; prog='Hepatopatia moderada'; sobrevida='Sobrevida 1 ano: ~81% · 2 anos: ~57%'; }
+  else{ classe='C'; cor='#dc2626'; prog='Hepatopatia descompensada grave'; sobrevida='Sobrevida 1 ano: ~45% · 2 anos: ~35%'; }
+
+  cpClasse = classe;
+  document.getElementById('cpResult').style.display='block';
+  document.getElementById('cpResult').innerHTML=`
+    <div class="cp-result" style="border-color:${cor};background:${cor}15">
+      <div class="cp-score" style="color:${cor}">${total} pts</div>
+      <div class="cp-classe" style="color:${cor}">Child-Pugh ${classe}</div>
+      <div class="cp-desc">${prog}</div>
+      <div class="cp-detail">${sobrevida}</div>
+      <div class="cp-detail" style="margin-top:6px">Bilirrubina:${pBili}pt · Albumina:${pAlb}pt · INR:${pInr}pt · Ascite:${asc}pt · Encefalopatia:${enc}pt</div>
+    </div>`;
+
+  document.getElementById('cpActiveBadge').style.display='block';
+  document.getElementById('cpActiveBadge').innerHTML=`<div class="active-cp">🩺 Child-Pugh ${classe} (${total} pts) — recomendações destacadas abaixo</div>`;
+  renderAH();
+}
+
+/* ── DADOS ──────────────────────────────────────────────────────────── */
+// status por classe: ok | cuidado | evitar | ci
+const DRUGS=[
+  {g:'IBP / Gastroenterologia',n:'Omeprazol / Pantoprazol / IBPs',
+   a:{s:'ok',t:'Sem ajuste'},b:{s:'cuidado',t:'Reduzir 50%; máx omeprazol 20 mg/dia'},c:{s:'cuidado',t:'Reduzir 50%; meia-vida prolongada'},
+   note:'Metabolismo hepático (CYP2C19). Pantoprazol: menor impacto de variações CYP2C19.'},
+  {g:'IBP / Gastroenterologia',n:'Domperidona',
+   a:{s:'ok',t:'Sem ajuste'},b:{s:'ok',t:'Sem ajuste; vigilar QTc'},c:{s:'evitar',t:'Evitar (QTc prolongado)'},
+   note:'Metabolismo hepático; uso prolongado associado a prolongamento de QTc.'},
+  {g:'IBP / Gastroenterologia',n:'Lactulose',
+   a:{s:'ok',t:'Dose por resposta clínica'},b:{s:'ok',t:'30–60 mL 2–3×/dia (3–4 evacuações/dia)'},c:{s:'ok',t:'Pilar da encefalopatia hepática'},
+   note:'Acidifica cólon → NH₄⁺ não absorvível. Titular por frequência de evacuações.'},
+  {g:'IBP / Gastroenterologia',n:'Rifaximina',
+   a:{s:'ok',t:'Sem ajuste'},b:{s:'ok',t:'Sem ajuste; mínima absorção'},c:{s:'ok',t:'2ª linha para encefalopatia'},
+   note:'Antibiótico de ação local intestinal; mínima absorção sistêmica. Profilaxia secundária de encefalopatia.'},
+  {g:'Analgésicos',n:'Paracetamol (Acetaminofeno)',
+   a:{s:'cuidado',t:'Máx 3 g/dia; intervalos regulares'},b:{s:'cuidado',t:'Máx 2 g/dia; intervalos de 8h'},c:{s:'evitar',t:'Máx 1–2 g/dia; preferir evitar'},
+   note:'⚠️ Hepatotóxico em overdose ou uso crônico com álcool. Melhor opção analgésica em hepatopatia (vs AINE). Evitar em abuso de álcool.'},
+  {g:'Analgésicos',n:'AINE (ibuprofeno, diclofenaco, naproxeno)',
+   a:{s:'evitar',t:'Evitar — risco renal e GI'},b:{s:'ci',t:'Contraindicado'},c:{s:'ci',t:'Contraindicado'},
+   note:'CI em hepatopatia: retêm sódio/água → piora ascite e precipitam síndrome hepatorrenal.'},
+  {g:'Analgésicos',n:'Dipirona (Metamizol)',
+   a:{s:'ok',t:'Sem ajuste'},b:{s:'cuidado',t:'Reduzir dose 50%; monitorar'},c:{s:'evitar',t:'Evitar (metabolismo reduzido)'},
+   note:'Metabolismo hepático; acúmulo de metabólitos em insuficiência grave.'},
+  {g:'Analgésicos',n:'Tramadol',
+   a:{s:'ok',t:'Sem ajuste'},b:{s:'cuidado',t:'Reduzir dose; ampliar intervalo para 12h'},c:{s:'evitar',t:'Evitar — risco de encefalopatia'},
+   note:'Metabólitos ativos acumulam em hepatopatia grave. Opiáceo fraco; sedação aumentada.'},
+  {g:'Analgésicos',n:'Morfina / Codeína / Oxicodona',
+   a:{s:'cuidado',t:'Reduzir 25–50%; monitorar'},b:{s:'cuidado',t:'Reduzir 50%; intervalo 8–12h'},c:{s:'evitar',t:'Evitar — precipita encefalopatia'},
+   note:'⚠️ Opioides: metabolismo hepático extenso; encefalopatia e sedação prolongada em Child B/C.'},
+  {g:'Anti-hipertensivos',n:'IECA (Enalapril, Ramipril, Lisinopril)',
+   a:{s:'ok',t:'Sem ajuste'},b:{s:'cuidado',t:'Hipotensão em ascite; monitorar PA e creatinina'},c:{s:'evitar',t:'Evitar em ascite refratária / SHR'},
+   note:'Reduzem PA de perfusão renal em cirrose. Monitorar creatinina e K⁺.'},
+  {g:'Anti-hipertensivos',n:'BRA (Losartana, Valsartana)',
+   a:{s:'ok',t:'Sem ajuste'},b:{s:'cuidado',t:'Losartana: menor eficácia (pró-fármaco); monitorar'},c:{s:'evitar',t:'Evitar em cirrose descompensada'},
+   note:'Losartana requer ativação hepática (→ EXP-3174). Menor efeito esperado em hepatopatia grave.'},
+  {g:'Anti-hipertensivos',n:'Amlodipino / BCC DHP',
+   a:{s:'ok',t:'Sem ajuste'},b:{s:'ok',t:'Sem ajuste; vigilar edema'},c:{s:'cuidado',t:'Reduzir dose 50%; meia-vida dobra'},
+   note:'Metabolismo hepático extenso; meia-vida de amlodipino pode duplicar em Child C.'},
+  {g:'Anti-hipertensivos',n:'Metoprolol / Carvedilol',
+   a:{s:'ok',t:'Metoprolol: sem ajuste · Carvedilol: avaliar'},b:{s:'cuidado',t:'Metoprolol ↓25–50% · Carvedilol ↓50%'},c:{s:'cuidado',t:'Reduzir 50–75%; monitorar bradicardia'},
+   note:'Propranolol/Carvedilol para profilaxia de varizes. Metabolismo hepático reduzido em cirrose.'},
+  {g:'Anti-hipertensivos',n:'Propranolol (profilaxia de varizes)',
+   a:{s:'cuidado',t:'10–20 mg 2×; titular por FC'},b:{s:'cuidado',t:'Início conservador; reduzir se hipotensão'},c:{s:'cuidado',t:'Usar com cautela'},
+   note:'1ª escolha para profilaxia primária de sangramento por varizes. Alvo: FC 55–60 bpm.'},
+  {g:'Anti-hipertensivos',n:'Furosemida',
+   a:{s:'ok',t:'Sem ajuste de dose'},b:{s:'ok',t:'Monitorar eletrólitos e função renal'},c:{s:'cuidado',t:'Cuidado com hiponatremia dilucional'},
+   note:'Usar em combinação com espironolactona (100:40) para ascite. Sem ajuste renal de furosemida em hepatopatia per se.'},
+  {g:'Anti-hipertensivos',n:'Espironolactona',
+   a:{s:'ok',t:'Pilar do tratamento de ascite'},b:{s:'cuidado',t:'100–200 mg/dia; monitorar K⁺'},c:{s:'cuidado',t:'Monitorar K⁺ rigorosamente'},
+   note:'Anti-aldosterônico de escolha para ascite. Hipercalemia: risco especialmente com IECA/BRA.'},
+  {g:'Antidiabéticos',n:'Metformina',
+   a:{s:'cuidado',t:'Sem ajuste (monitorar TGP)'},b:{s:'ci',t:'Contraindicado — risco de acidose lática'},c:{s:'ci',t:'Contraindicado'},
+   note:'CI clássica em hepatopatia significativa: clearance reduzido → acúmulo → acidose lática.'},
+  {g:'Antidiabéticos',n:'Insulina',
+   a:{s:'ok',t:'Sem ajuste; monitorar hipoglicemia'},b:{s:'cuidado',t:'Monitorar intensamente hipoglicemia'},c:{s:'cuidado',t:'Alta sensibilidade; iniciar dose baixa'},
+   note:'Fígado cirrótico tem menor capacidade de gliconeogênese → hipoglicemia mais frequente.'},
+  {g:'Antidiabéticos',n:'Sitagliptina / iDPP-4',
+   a:{s:'ok',t:'Sem ajuste'},b:{s:'ok',t:'Sem ajuste (excreção renal predominante)'},c:{s:'cuidado',t:'Preferir sitagliptina; evitar saxagliptina'},
+   note:'Sitagliptina e linagliptina têm menor metabolismo hepático; preferíveis em hepatopatia.'},
+  {g:'Antidiabéticos',n:'iSGLT2 (Dapagliflozina, Empagliflozina)',
+   a:{s:'ok',t:'Sem ajuste'},b:{s:'ok',t:'Sem ajuste; monitorar TFG'},c:{s:'evitar',t:'Evitar (eficácia reduzida; cetoacidose)'},
+   note:'Child C = excluído dos estudos. Risco de cetoacidose euglicêmica em hepatopatia grave.'},
+  {g:'Antidiabéticos',n:'Sulfonilureias (Glicazida, Glibenclamida)',
+   a:{s:'cuidado',t:'Preferir glicazida; monitorar hipoglicemia'},b:{s:'evitar',t:'Evitar glibenclamida; glicazida com cautela'},c:{s:'ci',t:'Contraindicado — hipoglicemia grave'},
+   note:'Metabolismo hepático; acúmulo → hipoglicemia grave e prolongada em Child B/C.'},
+  {g:'Psicofármacos / BZD',n:'Diazepam / Clonazepam / Alprazolam (BZD longos)',
+   a:{s:'cuidado',t:'Cuidado; meia-vida prolongada'},b:{s:'evitar',t:'Evitar — precipita encefalopatia'},c:{s:'ci',t:'Contraindicado'},
+   note:'⚠️ BZD de longa ação acumulam gravemente em cirrose. Precipitam encefalopatia. Se imprescindível: lorazepam ou oxazepam.'},
+  {g:'Psicofármacos / BZD',n:'Lorazepam / Oxazepam (BZD de escolha)',
+   a:{s:'ok',t:'Sem ajuste significativo'},b:{s:'cuidado',t:'Dose reduzida; cautela'},c:{s:'cuidado',t:'Dose mínima; monitorar encefalopatia'},
+   note:'Metabolismo por glucuronidação (não CYP450) → menos acúmulo. Preferíveis quando BZD necessário.'},
+  {g:'Psicofármacos / BZD',n:'Haloperidol',
+   a:{s:'ok',t:'Sem ajuste'},b:{s:'cuidado',t:'Reduzir dose 50%; monitorar'},c:{s:'cuidado',t:'Reduzir 50–75%'},
+   note:'Metabolismo hepático extenso. Usar com cautela em psicose em cirrótico.'},
+  {g:'Psicofármacos / BZD',n:'Quetiapina / Risperidona',
+   a:{s:'ok',t:'Sem ajuste significativo'},b:{s:'cuidado',t:'Reduzir 50%; monitorar sedação'},c:{s:'cuidado',t:'Reduzir 50–75%'},
+   note:'Quetiapina e risperidona preferíveis. Olanzapina: hepatotóxica potencial — evitar.'},
+  {g:'Psicofármacos / BZD',n:'Sertralina / Escitalopram',
+   a:{s:'ok',t:'Sem ajuste'},b:{s:'cuidado',t:'Reduzir 50%; iniciar dose baixa'},c:{s:'cuidado',t:'Iniciar com 25% da dose; titular lento'},
+   note:'Metabolismo hepático; meia-vida aumenta em cirrose. Sertralina e escitalopram: melhor perfil.'},
+  {g:'Psicofármacos / BZD',n:'Fluoxetina',
+   a:{s:'ok',t:'Sem ajuste'},b:{s:'cuidado',t:'Reduzir dose; dobrar intervalo'},c:{s:'evitar',t:'Evitar — meia-vida extremamente prolongada'},
+   note:'Fluoxetina + norfluoxetina: meia-vida pode chegar a 15 dias em cirrose grave.'},
+  {g:'Anticonvulsivantes',n:'Valproato / Ácido Valpróico',
+   a:{s:'ci',t:'Contraindicado (hepatotóxico)'},b:{s:'ci',t:'Contraindicado'},c:{s:'ci',t:'Contraindicado'},
+   note:'⚠️ Valproato: hepatotoxicidade idiossincrática grave. CI em todas as formas de hepatopatia significativa.'},
+  {g:'Anticonvulsivantes',n:'Fenitoína',
+   a:{s:'cuidado',t:'Monitorar nível sérico livre'},b:{s:'cuidado',t:'Reduzir dose; nível livre elevado'},c:{s:'cuidado',t:'Cuidado extremo; monitorar nível livre'},
+   note:'Alta ligação proteica; hipoalbuminemia → maior fração livre. Dosar fenitoína livre em cirrose.'},
+  {g:'Anticonvulsivantes',n:'Levetiracetam',
+   a:{s:'ok',t:'Sem ajuste'},b:{s:'ok',t:'Sem ajuste (excreção renal)'},c:{s:'cuidado',t:'Ajuste se TFG reduzida'},
+   note:'Melhor anticonvulsivante em hepatopatia: mínimo metabolismo hepático.'},
+  {g:'Anticonvulsivantes',n:'Carbamazepina / Oxcarbazepina',
+   a:{s:'ok',t:'Sem ajuste; monitorar TGP'},b:{s:'cuidado',t:'Reduzir 25–50%'},c:{s:'evitar',t:'Evitar (hepatotóxico + metabolismo comprometido)'},
+   note:'Carbamazepina: indutor CYP e hepatotóxico potencial. Oxcarbazepina: alternativa mais segura.'},
+  {g:'Anticonvulsivantes',n:'Lamotrigina',
+   a:{s:'ok',t:'Sem ajuste'},b:{s:'cuidado',t:'Reduzir 25%'},c:{s:'cuidado',t:'Reduzir 50%'},
+   note:'Metabolizada por glucuronidação; moderadamente afetada em hepatopatia grave.'},
+  {g:'Anticoagulantes',n:'Warfarina',
+   a:{s:'cuidado',t:'Reduzir dose; INR basal elevado'},b:{s:'cuidado',t:'Instabilidade do INR; doses menores; monitorar 2–3×/semana'},c:{s:'evitar',t:'Evitar; controle muito difícil'},
+   note:'⚠️ Fígado sintetiza fatores de coagulação; INR basal elevado não reflete anticoagulação real.'},
+  {g:'Anticoagulantes',n:'Apixabana (Eliquis)',
+   a:{s:'ok',t:'Sem ajuste em Child A'},b:{s:'cuidado',t:'Dados limitados; evitar se INR ou bili elevados'},c:{s:'ci',t:'Contraindicado (excluído dos estudos)'},
+   note:'Menor metabolismo hepático (~27%) vs outros NOACs. Pode ser considerado em Child A com cautela.'},
+  {g:'Anticoagulantes',n:'Rivaroxabana / Dabigatrana / Edoxabana',
+   a:{s:'cuidado',t:'Cuidado em Child A com hepatopatia ativa'},b:{s:'ci',t:'Contraindicado'},c:{s:'ci',t:'Contraindicado'},
+   note:'Excluídos dos estudos em Child B/C. Risco de acúmulo e sangramento.'},
+  {g:'Anticoagulantes',n:'Enoxaparina / HBPM',
+   a:{s:'ok',t:'Sem ajuste; monitorar anti-Xa'},b:{s:'cuidado',t:'Anti-Xa para guiar dose; trombocitopenia'},c:{s:'cuidado',t:'HBPM preferível a NOACs; ajuste por anti-Xa'},
+   note:'HBPM é a anticoagulação de escolha em hepatopatia quando necessário. INR elevado não contraindica.'},
+  {g:'Antibióticos',n:'Amoxicilina',
+   a:{s:'ok',t:'Sem ajuste'},b:{s:'ok',t:'Sem ajuste'},c:{s:'cuidado',t:'Reduzir dose 50%; monitorar'},
+   note:'Metabolismo predominantemente renal.'},
+  {g:'Antibióticos',n:'Amoxicilina-Clavulanato',
+   a:{s:'ok',t:'Sem ajuste'},b:{s:'cuidado',t:'Hepatotóxico potencial; monitorar TGP'},c:{s:'evitar',t:'Evitar'},
+   note:'Risco de hepatotoxicidade coleostática, especialmente homens >60 anos e uso prolongado.'},
+  {g:'Antibióticos',n:'Ciprofloxacino / Levofloxacino',
+   a:{s:'ok',t:'Sem ajuste'},b:{s:'ok',t:'Sem ajuste'},c:{s:'cuidado',t:'Reduzir dose 50%'},
+   note:'Metabolismo parcialmente hepático; acúmulo em insuficiência grave.'},
+  {g:'Antibióticos',n:'Metronidazol',
+   a:{s:'ok',t:'Sem ajuste'},b:{s:'cuidado',t:'Reduzir 50%'},c:{s:'cuidado',t:'Reduzir 50%; monitorar toxicidade SNC'},
+   note:'Metabolismo hepático extenso; risco de encefalopatia em doses altas.'},
+  {g:'Antibióticos',n:'Rifampicina',
+   a:{s:'cuidado',t:'Monitorar TGO/TGP'},b:{s:'evitar',t:'Evitar'},c:{s:'ci',t:'Contraindicado (hepatotóxico)'},
+   note:'Hepatotóxico; CI em hepatopatia ativa ou avançada.'},
+  {g:'Antibióticos',n:'Fluconazol / Azóis',
+   a:{s:'ok',t:'Sem ajuste'},b:{s:'ok',t:'Sem ajuste'},c:{s:'cuidado',t:'Reduzir dose 50%'},
+   note:'Fluconazol: excreção renal predominante. Azóis em geral: monitorar TGP em uso prolongado.'},
+  {g:'Hormônios / Outros',n:'Levotiroxina',
+   a:{s:'ok',t:'Sem ajuste'},b:{s:'ok',t:'Sem ajuste; monitorar TSH'},c:{s:'cuidado',t:'Monitorar TSH; conversão T4→T3 reduzida'},
+   note:'Conversão periférica T4→T3 reduzida em hepatopatia grave. TSH pode não refletir status tireoidiano.'},
+  {g:'Hormônios / Outros',n:'Anticoncepcionais Orais (ACO)',
+   a:{s:'cuidado',t:'Cuidado; metabolismo hepático'},b:{s:'ci',t:'Contraindicado'},c:{s:'ci',t:'Contraindicado'},
+   note:'CI em hepatopatia: metabolismo reduzido + risco trombótico portal + efeito pró-trombótico sistêmico.'},
+  {g:'Hormônios / Outros',n:'Corticosteroides (Prednisona, Dexametasona)',
+   a:{s:'ok',t:'Sem ajuste; monitorar retenção de Na'},b:{s:'cuidado',t:'Retenção hídrica piora ascite'},c:{s:'cuidado',t:'Usar só com indicação específica (hepatite alcoólica grave)'},
+   note:'Prednisolona 40 mg/dia: indicada em hepatite alcoólica grave (Maddrey ≥32). Piora ascite e edema.'},
+  {g:'Hormônios / Outros',n:'Estatinas (Atorvastatina, Rosuvastatina)',
+   a:{s:'ok',t:'Sem ajuste em hepatopatia compensada; monitorar TGP'},b:{s:'cuidado',t:'Cuidado; interromper se TGP >3×LSN'},c:{s:'ci',t:'Contraindicado em hepatopatia ativa/descompensada'},
+   note:'CI em hepatopatia ativa. Em DHGNA compensada: estatinas podem ser usadas (efeito hepatoprotetor observacional).'},
+  {g:'Hormônios / Outros',n:'Alopurinol',
+   a:{s:'ok',t:'Sem ajuste'},b:{s:'cuidado',t:'Reduzir 50%; monitorar TGP'},c:{s:'evitar',t:'Evitar'},
+   note:'Metabolismo hepático; risco de hepatotoxicidade e síndrome de hipersensibilidade em Child C.'},
+];
+
+const GRUPOS=[...new Set(DRUGS.map(d=>d.g))];
+let activeCat=null;
+
+const CAT_COLS={
+  'IBP / Gastroenterologia':'#0f766e','Analgésicos':'#b45309',
+  'Anti-hipertensivos':'#0369a1','Antidiabéticos':'#d97706',
+  'Psicofármacos / BZD':'#6d28d9','Anticonvulsivantes':'#9d174d',
+  'Anticoagulantes':'#dc2626','Antibióticos':'#059669','Hormônios / Outros':'#64748b',
+};
+
+function buildChips(){
+  document.getElementById('ahChips').innerHTML=GRUPOS.map(g=>{
+    const col=CAT_COLS[g]||'#64748b',act=activeCat===g;
+    return `<span class="cat-chip${act?' active':''}" style="border-color:${col};${act?'background:'+col+';color:#fff':''}" onclick="toggleCat('${g}')">${g}</span>`;
+  }).join('');
+}
+
+function toggleCat(g){activeCat=activeCat===g?null:g;buildChips();renderAH();}
+
+function statusStyle(s){
+  return {ok:{bg:'#dcfce7',col:'#166534',lbl:'Sem ajuste'},
+          cuidado:{bg:'#fef3c7',col:'#92400e',lbl:'Cuidado'},
+          evitar:{bg:'#ffedd5',col:'#c2410c',lbl:'Evitar'},
+          ci:{bg:'#fee2e2',col:'#991b1b',lbl:'Contraindicado'}}[s]||{bg:'#f1f5f9',col:'#64748b',lbl:s};
+}
+
+function renderAH(){
+  const q=document.getElementById('ahSearch').value.toLowerCase();
+  let items=DRUGS;
+  if(activeCat) items=items.filter(d=>d.g===activeCat);
+  if(q) items=items.filter(d=>`${d.n} ${d.g} ${d.a.t} ${d.b.t} ${d.c.t} ${d.note}`.toLowerCase().includes(q));
+  const list=document.getElementById('ahList');
+  if(!items.length){list.innerHTML='<div class="empty-state"><span style="font-size:2rem;display:block;margin-bottom:8px">🔎</span>Nenhum resultado encontrado.</div>';return;}
+
+  list.innerHTML=items.map(d=>{
+    const classes=['a','b','c'];
+    const dados=[d.a,d.b,d.c];
+    const labels=['Child A','Child B','Child C'];
+    const cpColors={A:'#16a34a',B:'#d97706',C:'#dc2626'};
+    return `<div class="ah-card">
+      <div class="ah-card-top">
+        <div><div class="ah-grupo">${d.g}</div><div class="ah-nome">${d.n}</div></div>
+      </div>
+      <div class="cls-grid">${classes.map((c,i)=>{
+        const st=statusStyle(dados[i].s);
+        const isActive=cpClasse===labels[i].replace('Child ','');
+        return `<div class="cls-box" style="background:${st.bg};border:${isActive?'2px solid '+cpColors[labels[i].replace('Child ','')]:'1px solid transparent'}">
+          <div class="cls-lbl" style="color:${st.col}">${labels[i]}${isActive?' ★':''}</div>
+          <div class="cls-val" style="color:${st.col}">${dados[i].t}</div>
+        </div>`;
+      }).join('')}</div>
+      <div class="ah-note">💡 ${d.note}</div>
+    </div>`;
+  }).join('');
+}
+
+buildChips();
+renderAH();
+</script>
+</body>
+</html>

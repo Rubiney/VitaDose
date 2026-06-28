@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Insuficiência Cardíaca — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .ic-hdr{background:linear-gradient(135deg,#1e3a8a,#0f766e);color:#fff;border-radius:14px;padding:18px;margin-bottom:14px}
+    .ic-title{font-size:1rem;font-weight:800;margin-bottom:4px}
+    .ic-sub{font-size:.73rem;opacity:.8}
+    label{font-size:.75rem;font-weight:700;color:#1e3a5f;display:block;margin-bottom:4px}
+    .radio-group{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+    .radio-btn{padding:7px 12px;border-radius:10px;border:2px solid #e2e8f0;background:#fff;font-size:.75rem;font-weight:700;cursor:pointer;color:#64748b}
+    .radio-btn.active{border-color:#1e3a8a;background:#eff6ff;color:#1e3a8a}
+    .checkbox-group{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
+    .checkbox-item{display:flex;align-items:center;gap:8px;font-size:.8rem;cursor:pointer}
+    .checkbox-item input[type=checkbox]{width:18px;height:18px;accent-color:#1e3a8a;cursor:pointer}
+    select{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:10px;padding:10px 12px;font-size:.85rem;background:#fff;margin-bottom:10px}
+    .btn-calc{width:100%;background:#1e3a8a;color:#fff;border:none;border-radius:12px;padding:13px;font-size:.87rem;font-weight:700;cursor:pointer;margin:8px 0}
+    .btn-auto{background:#0f766e;color:#fff;border:none;border-radius:10px;padding:10px 16px;font-size:.8rem;font-weight:700;cursor:pointer;margin-bottom:10px}
+    .tab-bar{display:flex;gap:6px;margin-bottom:14px}
+    .tab-btn{flex:1;padding:8px 4px;border-radius:10px;border:2px solid #e2e8f0;background:#fff;font-size:.72rem;font-weight:700;cursor:pointer;color:#64748b}
+    .tab-btn.active{border-color:#1e3a8a;background:#eff6ff;color:#1e3a8a}
+    .fe-card{border-radius:14px;border:4px solid;padding:16px;margin-bottom:10px;text-align:center}
+    .fe-num{font-size:2rem;font-weight:900;line-height:1}
+    .fe-lbl{font-size:.9rem;font-weight:800;margin-top:4px}
+    .pilar-card{border-radius:12px;border:2px solid;padding:14px;margin-bottom:10px}
+    .pilar-hdr{font-size:.65rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+    .pilar-nome{font-size:.9rem;font-weight:800;margin-bottom:6px}
+    .pilar-badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:.65rem;font-weight:800;color:#fff;margin:2px}
+    .pilar-drugs{font-size:.78rem;margin-top:6px;line-height:1.6}
+    .pilar-note{font-size:.71rem;color:#64748b;margin-top:6px;padding-top:6px;border-top:1px solid #f1f5f9}
+    .drug-card{border-radius:10px;border:1.5px solid #e2e8f0;padding:12px;margin-bottom:8px}
+    .drug-classe{font-size:.78rem;font-weight:800}
+    .drug-row{padding:5px 0;border-bottom:1px dashed #e2e8f0;font-size:.75rem}
+    .drug-row:last-child{border-bottom:none}
+    .drug-lbl{font-size:.62rem;font-weight:800;color:#6b7280;text-transform:uppercase;letter-spacing:.06em;margin-bottom:1px}
+    .drug-val{color:#1e3a5f;line-height:1.5}
+    .monitor-row{padding:8px 0;border-bottom:1px solid #f1f5f9;font-size:.77rem}
+    .monitor-row:last-child{border-bottom:none}
+    .monitor-lbl{font-weight:800;color:#1e3a5f;margin-bottom:2px}
+    .monitor-when{font-size:.7rem;color:#64748b;margin-bottom:2px}
+    .monitor-meta{font-size:.72rem;color:#0f766e;font-weight:700}
+    .ci-box{background:#fef2f2;border:2px solid #fca5a5;border-radius:10px;padding:10px 12px;font-size:.75rem;color:#991b1b;margin-bottom:10px}
+    .meta-row{display:flex;justify-content:space-between;align-items:flex-start;padding:8px 0;border-bottom:1px solid #f1f5f9}
+    .meta-row:last-child{border-bottom:none}
+  </style>
+</head>
+<body>
+<header class="top-bar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <span class="top-title">Algoritmo Farmacoterapêutico IC</span>
+  <div class="top-right"></div>
+</header>
+<main class="container" style="padding-bottom:90px">
+
+  <div class="ic-hdr">
+    <div class="ic-title">💙 Insuficiência Cardíaca — 4 Pilares + Diuréticos</div>
+    <div class="ic-sub">FEr / FEm / FEp · Doses-alvo · Monitoramento · Metas — ESC 2021 / SBC 2021</div>
+  </div>
+
+  <div class="tab-bar">
+    <button class="tab-btn active" id="tb0" onclick="showTab(0)">Algoritmo</button>
+    <button class="tab-btn" id="tb1" onclick="showTab(1)">Fármacos</button>
+    <button class="tab-btn" id="tb2" onclick="showTab(2)">Monitor.</button>
+    <button class="tab-btn" id="tb3" onclick="showTab(3)">Metas</button>
+  </div>
+
+  <!-- TAB 0 -->
+  <div id="tab0">
+    <button class="btn-auto" onclick="autoFill()">⚡ Auto-preencher do paciente ativo</button>
+    <div class="card" style="padding:12px 14px">
+      <label>Fração de ejeção (FE)</label>
+      <div class="radio-group" id="rgFE">
+        <button class="radio-btn active" onclick="setFE(this,'fer')">FEr &lt;40%</button>
+        <button class="radio-btn" onclick="setFE(this,'fem')">FEm 40–49%</button>
+        <button class="radio-btn" onclick="setFE(this,'fep')">FEp ≥50%</button>
+      </div>
+      <label>Classe NYHA</label>
+      <div class="radio-group" id="rgNYHA">
+        <button class="radio-btn" onclick="setNYHA(this,'1')">I</button>
+        <button class="radio-btn active" onclick="setNYHA(this,'2')">II</button>
+        <button class="radio-btn" onclick="setNYHA(this,'3')">III</button>
+        <button class="radio-btn" onclick="setNYHA(this,'4')">IV</button>
+      </div>
+      <label>Comorbidades</label>
+      <div class="checkbox-group">
+        <label class="checkbox-item"><input type="checkbox" id="ic_dm"> Diabetes mellitus</label>
+        <label class="checkbox-item"><input type="checkbox" id="ic_drc"> DRC (TFG <60 mL/min)</label>
+        <label class="checkbox-item"><input type="checkbox" id="ic_fa"> Fibrilação atrial (FA)</label>
+        <label class="checkbox-item"><input type="checkbox" id="ic_hipo"> Hipotensão sintomática (PAS &lt;90)</label>
+        <label class="checkbox-item"><input type="checkbox" id="ic_dpoc"> Asma / DPOC grave</label>
+        <label class="checkbox-item"><input type="checkbox" id="ic_congest"> Sinais de congestão ativa (edema, dispneia)</label>
+        <label class="checkbox-item"><input type="checkbox" id="ic_brs"> BRE + QRS ≥130 ms no ECG</label>
+      </div>
+      <label>Tratamento otimizado atual</label>
+      <select id="ic_trat">
+        <option value="naive">Sem tratamento (diagnóstico novo)</option>
+        <option value="p1">1 pilar (RAAS ou BB ou MRA ou iSGLT2)</option>
+        <option value="p2">2 pilares</option>
+        <option value="p3">3 pilares</option>
+        <option value="p4">4 pilares otimizados</option>
+      </select>
+    </div>
+    <button class="btn-calc" onclick="calcIC()">💙 Gerar recomendação farmacoterapêutica</button>
+    <div id="icResult" style="display:none">
+      <div class="fe-card" id="feCard">
+        <div class="fe-num" id="feNum">—</div>
+        <div class="fe-lbl" id="feLbl">—</div>
+        <div style="font-size:.75rem;margin-top:8px;opacity:.8" id="feSub"></div>
+      </div>
+      <div id="pilaresCards"></div>
+      <div id="ciBox"></div>
+    </div>
+  </div>
+
+  <!-- TAB 1 -->
+  <div id="tab1" style="display:none"><div id="drugList"></div></div>
+
+  <!-- TAB 2 -->
+  <div id="tab2" style="display:none">
+    <div class="card" style="padding:10px 14px"><div id="monitorList"></div></div>
+  </div>
+
+  <!-- TAB 3 -->
+  <div id="tab3" style="display:none">
+    <div class="card" style="padding:10px 14px"><div id="metasList"></div></div>
+  </div>
+
+</main>
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+<script src="js/db.js"></script>
+<script>
+const pid = localStorage.getItem('vd_active');
+let selFE = 'fer', selNYHA = '2';
+
+function setFE(btn, v) { selFE=v; document.querySelectorAll('#rgFE .radio-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); }
+function setNYHA(btn, v) { selNYHA=v; document.querySelectorAll('#rgNYHA .radio-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); }
+
+function showTab(n) {
+  [0,1,2,3].forEach(i=>{ document.getElementById('tab'+i).style.display=i===n?'block':'none'; document.getElementById('tb'+i).classList.toggle('active',i===n); });
+  if(n===1) renderDrugs();
+  if(n===2) renderMonitor();
+  if(n===3) renderMetas();
+}
+
+async function autoFill() {
+  if(!pid){alert('Nenhum paciente ativo.');return;}
+  const pac = await dbGet('pacientes',parseInt(pid));
+  if(!pac) return;
+  const conds = pac.condicoes||[];
+  if(conds.includes('dm')) document.getElementById('ic_dm').checked=true;
+  if(conds.includes('ic')) {}
+}
+
+/* ── ALGORITMO ─────────────────────────────────────────────────────── */
+function calcIC() {
+  const dm    = document.getElementById('ic_dm').checked;
+  const drc   = document.getElementById('ic_drc').checked;
+  const fa    = document.getElementById('ic_fa').checked;
+  const hipo  = document.getElementById('ic_hipo').checked;
+  const dpoc  = document.getElementById('ic_dpoc').checked;
+  const cong  = document.getElementById('ic_congest').checked;
+  const brs   = document.getElementById('ic_brs').checked;
+  const trat  = document.getElementById('ic_trat').value;
+  const nyha  = parseInt(selNYHA);
+
+  document.getElementById('icResult').style.display='block';
+
+  const feData = {
+    fer:{ num:'FEr', lbl:'IC com FE Reduzida (<40%)', sub:'4 pilares com benefício de mortalidade (ESC 2021 Classe I)', col:'#1e3a8a' },
+    fem:{ num:'FEm', lbl:'IC com FE Moderadamente Reduzida (40–49%)', sub:'Extrapolação dos pilares da FEr; iSGLT2 com evidência crescente', col:'#7c3aed' },
+    fep:{ num:'FEp', lbl:'IC com FE Preservada (≥50%)', sub:'iSGLT2: benefício comprovado. Foco: controle de comorbidades e congestão', col:'#0f766e' },
+  };
+  const fe = feData[selFE];
+  const fc = document.getElementById('feCard');
+  fc.style.borderColor=fe.col; fc.style.background=fe.col+'15';
+  document.getElementById('feNum').textContent=fe.num; document.getElementById('feNum').style.color=fe.col;
+  document.getElementById('feLbl').textContent=fe.lbl; document.getElementById('feLbl').style.color=fe.col;
+  document.getElementById('feSub').textContent=fe.sub;
+
+  const pilares = [];
+
+  if(selFE==='fer' || selFE==='fem') {
+    pilares.push({
+      hdr:'Pilar 1 — RAAS (Obrigatório · ESC 2021 IA)', col:'#16a34a',
+      nome: trat==='p4' ? 'Avaliar upgrade para ARNI (Sacubitril/Valsartana)' : 'IECA (1ª escolha) ou BRA (se intolerância ao IECA)',
+      badges:[{t:'CONSENSUS / SOLVD',c:'#16a34a'},{t:'PARADIGM-HF (ARNI)',c:'#0369a1'}],
+      drugs: hipo
+        ? '⚠️ Hipotensão ativa: iniciar com dose muito baixa (enalapril 1,25 mg 2×/dia) ou adiar até estabilização hemodinâmica.'
+        : '<strong>IECA:</strong> Enalapril 2,5→20 mg 2×/dia · Ramipril 1,25→5 mg 2×/dia · Lisinopril 2,5→20 mg/dia<br><strong>BRA (se tosse/angioedema):</strong> Valsartana 40→160 mg 2×/dia · Candesartana 4→32 mg/dia<br><strong>ARNI (se persistir sintomático em IECA):</strong> Sacubitril/valsartana 24/26→97/103 mg 2× (washout de 36h do IECA antes)',
+      note:'Monitorar K⁺ e creatinina em 1–2 semanas. Tosse seca em 5–20%: trocar por BRA. Angioedema: contraindicação definitiva ao IECA e cautela com ARNI.',
+    });
+
+    pilares.push({
+      hdr:'Pilar 2 — Beta-Bloqueador (BB) (ESC 2021 IA)', col:'#7c3aed',
+      nome: cong ? '⚠️ Congestão ativa: NÃO iniciar BB agora — controle congestão primeiro' : 'Beta-bloqueador cardiosseletivo',
+      badges:[{t:'MERIT-HF',c:'#7c3aed'},{t:'CIBIS-II',c:'#7c3aed'},{t:'COPERNICUS',c:'#7c3aed'}],
+      drugs: cong
+        ? 'Aguardar resolução da congestão (NYHA estável, sem uso de inotrópico IV) antes de iniciar BB.'
+        : dpoc
+          ? '<strong>Preferir cardiosseletivo:</strong> Bisoprolol 1,25→10 mg/dia ou Metoprolol succinato 12,5→200 mg/dia.<br>Propranolol e carvedilol: evitar em DPOC grave (broncoespasmo).'
+          : '<strong>Bisoprolol</strong> 1,25→10 mg/dia · <strong>Carvedilol</strong> 3,125→25–50 mg 2×/dia · <strong>Metoprolol succinato</strong> 12,5→200 mg/dia',
+      note:'Iniciar com dose mínima; dobrar a cada 2 semanas conforme tolerância de FC e PA. Não iniciar em descompensação/congestão ativa nem em uso de inotrópico.',
+    });
+
+    pilares.push({
+      hdr:'Pilar 3 — MRA / Antagonista de Aldosterona (ESC 2021 IA para FE≤35%)', col:'#d97706',
+      nome:'Espironolactona ou Eplerenona',
+      badges:[{t:'RALES',c:'#d97706'},{t:'EPHESUS',c:'#d97706'}],
+      drugs:'<strong>Espironolactona</strong> 12,5–25→50 mg/dia · <strong>Eplerenona</strong> 25→50 mg/dia (menos ginecomastia)<br>Indicado se FE ≤35% + NYHA II–IV + K⁺ ≤5,0 + Cr ≤2,5',
+      note:'⚠️ Hipercalemia: monitorar K⁺ em 1 semana e 1 mês. Se K⁺ >5,5: reduzir ou suspender. Ginecomastia com espironolactona: substituir por eplerenona.',
+    });
+  }
+
+  pilares.push({
+    hdr: selFE==='fep'
+      ? 'iSGLT2 (IC FEp: ESC 2023 IA — EMPEROR-Preserved + DELIVER)'
+      : 'Pilar 4 — iSGLT2 (ESC 2021 IA para FEr; evidência crescente para FEm)',
+    col:'#dc2626',
+    nome: dm ? 'iSGLT2 — benefício duplo: IC + DM' : 'iSGLT2 — benefício em IC independente de DM',
+    badges:[{t:'DAPA-HF',c:'#dc2626'},{t:'EMPEROR',c:'#dc2626'},{t:'DELIVER',c:'#0f766e'}],
+    drugs:'<strong>Dapagliflozina</strong> 10 mg/dia · <strong>Empagliflozina</strong> 10 mg/dia<br>Dose fixa — sem titulação. Iniciar se TFG ≥20 (dapa) ou ≥25 (empa).'
+      +(drc ? '<br>⚠️ DRC: verificar TFG antes de iniciar.' : ''),
+    note:'Reduz hospitalização por IC e morte CV. Efeito natriurético sem ativar RAAS. Risco de ITU e candidíase genital: orientar higiene. Cetoacidose euglicêmica rara mas grave (mais em DM1).',
+  });
+
+  if(nyha>=3 || cong) {
+    pilares.push({
+      hdr:'Diuréticos de Alça (alívio de congestão — não modificam mortalidade isoladamente)', col:'#64748b',
+      nome:'Furosemida ou Torasemida',
+      badges:[{t:'Congestão NYHA III–IV',c:'#64748b'}],
+      drugs:'<strong>Furosemida</strong> 20–240 mg/dia (dose única ou dividida) · <strong>Torasemida</strong> 5–20 mg/dia (maior biodisponibilidade oral)<br>Titular pela resposta clínica: peso diário, edema, dispneia.',
+      note:'Meta: menor dose que mantenha euvolemia. Ganho >2 kg em 2 dias → aumentar furosemida 50%. Monitorar K⁺, Na⁺ e creatinina.',
+    });
+  }
+
+  if(selFE==='fer' && !fa && nyha>=2) {
+    pilares.push({
+      hdr:'Ivabradina (se FC ≥70 em RS apesar de BB máximo tolerado)', col:'#9d174d',
+      nome:'Ivabradina (ESC 2021 IIa)',
+      badges:[{t:'SHIFT',c:'#9d174d'}],
+      drugs:'<strong>Ivabradina</strong> 5→7,5 mg 2×/dia · Indicação: RS + FC ≥70 + FE ≤35% + NYHA II–IV + BB dose máx tolerada (ou CI a BB)',
+      note:'Ineficaz em FA (sem nó sinusal para atuar). Efeito adverso: fosfenas (visão turva transitória — benigno). Não combinar com verapamil ou diltiazem.',
+    });
+  }
+
+  if(brs && selFE==='fer') {
+    pilares.push({
+      hdr:'TRC — Terapia de Ressincronização Cardíaca (ESC 2021 IA)', col:'#0369a1',
+      nome:'Avaliar implante de ressincronizador (TRC-P ou TRC-D)',
+      badges:[{t:'BRE + QRS ≥130ms + FE ≤35%',c:'#0369a1'}],
+      drugs:'Indicação: BRE + QRS ≥130 ms + FE ≤35% + NYHA II–IV em terapia médica otimizada.<br>NYHA I com QRS ≥150 ms: IIa. Encaminhar para eletrofisiologia/cardiologia.',
+      note:'TRC-D (com desfibrilador) preferido em pacientes com expectativa de vida >1 ano e baixo risco de morte não-CV. TRC-P se prognóstico mais reservado.',
+    });
+  }
+
+  document.getElementById('pilaresCards').innerHTML = pilares.map(p=>`
+    <div class="pilar-card" style="border-color:${p.col}">
+      <div class="pilar-hdr" style="color:${p.col}">${p.hdr}</div>
+      <div class="pilar-nome">${p.nome}</div>
+      <div>${p.badges.map(b=>`<span class="pilar-badge" style="background:${b.c}">${b.t}</span>`).join('')}</div>
+      <div class="pilar-drugs">${p.drugs}</div>
+      <div class="pilar-note">${p.note}</div>
+    </div>`).join('');
+
+  const ciList = [
+    selFE!=='fep' ? '❌ BCC não-DHP (verapamil, diltiazem): inotrópico negativo → piora IC FEr' : null,
+    '❌ AINE / COX-2 (ibuprofeno, diclofenaco): retenção de sódio → precipita descompensação',
+    '❌ Tiazolidinedionas (pioglitazona): retenção hídrica → piora edema e IC',
+    '❌ Saxagliptina / Alogliptina (iDPP-4): SAVOR-TIMI e EXAMINE: aumento de hospitalização por IC',
+    '❌ Antiarrítmicos classe I (flecainida, propafenona): pró-arrítmicos em IC',
+    '❌ Dronedarona: contraindicada em IC FEr / NYHA III–IV (ANDROMEDA)',
+    '❌ IECA + BRA simultâneos: risco de hipercalemia e IRA sem benefício adicional',
+  ].filter(Boolean);
+
+  document.getElementById('ciBox').innerHTML = `<div class="ci-box"><strong>🚫 Medicamentos a EVITAR em IC:</strong><br>${ciList.join('<br>')}</div>`;
+  document.getElementById('icResult').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+/* ── FÁRMACOS ───────────────────────────────────────────────────────── */
+const IC_DRUGS = [
+  { classe:'IECA — 1ª escolha do pilar RAAS', col:'#16a34a', ev:'SOLVD / CONSENSUS',
+    inicio:'Enalapril 2,5 mg 2×/dia · Lisinopril 2,5 mg/dia · Ramipril 1,25 mg 2×/dia',
+    alvo:'Enalapril 10–20 mg 2×/dia · Lisinopril 20–40 mg/dia · Ramipril 5 mg 2×/dia',
+    monitor:'K⁺ e Cr em 1–2 sem · PA · Tosse seca (5–20%)',
+    ci:'Gestação · Angioedema · K⁺ >5,5 · EAo grave · Estenose bilateral de art. renal' },
+  { classe:'ARNI — Sacubitril/Valsartana (Entresto)', col:'#0369a1', ev:'PARADIGM-HF (↓20% morte CV)',
+    inicio:'24/26 mg 2×/dia — após washout 36h do IECA',
+    alvo:'97/103 mg 2×/dia (dobrar cada 2–4 sem)',
+    monitor:'PA (hipotensão mais comum que IECA) · K⁺ · Cr · Angioedema (raro)',
+    ci:'Uso simultâneo com IECA · Angioedema prévio · Gestação · TFG <30 (relativo)' },
+  { classe:'BRA — alternativa ao IECA', col:'#059669', ev:'Val-HeFT / CHARM',
+    inicio:'Valsartana 40 mg 2×/dia · Candesartana 4 mg/dia · Losartana 12,5 mg/dia',
+    alvo:'Valsartana 160 mg 2×/dia · Candesartana 32 mg/dia · Losartana 50–150 mg/dia',
+    monitor:'K⁺ e Cr em 1–2 sem · PA',
+    ci:'Gestação · K⁺ >5,5 · NÃO combinar com IECA' },
+  { classe:'Beta-Bloqueadores (BB)', col:'#7c3aed', ev:'MERIT-HF / CIBIS-II / COPERNICUS',
+    inicio:'Bisoprolol 1,25 mg/dia · Carvedilol 3,125 mg 2×/dia · Metoprolol suc. 12,5 mg/dia',
+    alvo:'Bisoprolol 10 mg/dia · Carvedilol 25–50 mg 2×/dia · Metoprolol suc. 200 mg/dia',
+    monitor:'FC (alvo 55–65 bpm) · PA · Sintomas de congestão',
+    ci:'Descompensação aguda · BAV 2º/3º · FC <50 · Broncospasmo grave (propranolol)' },
+  { classe:'MRA — Espironolactona / Eplerenona', col:'#d97706', ev:'RALES / EPHESUS / EMPHASIS-HF',
+    inicio:'Espironolactona 12,5–25 mg/dia · Eplerenona 25 mg/dia',
+    alvo:'Espironolactona 50 mg/dia · Eplerenona 50 mg/dia',
+    monitor:'K⁺ em 1 sem e 1 mês · Cr · Ginecomastia (espiro)',
+    ci:'K⁺ >5,5 · Cr >2,5 mg/dL · IECA+BRA simultâneos · TFG <30 (eplerenona)' },
+  { classe:'iSGLT2 — Dapagliflozina / Empagliflozina', col:'#dc2626', ev:'DAPA-HF / EMPEROR-Reduced / DELIVER',
+    inicio:'Dapagliflozina 10 mg/dia ou Empagliflozina 10 mg/dia (dose fixa)',
+    alvo:'Dose fixa — sem titulação necessária',
+    monitor:'TFG antes de iniciar (≥20 dapa / ≥25 empa) · Glicemia (DM) · ITU · PA',
+    ci:'TFG <20 (dapa) / <25 (empa) · DM1 · Cetoacidose · Gestação' },
+  { classe:'Diuréticos de Alça (congestão)', col:'#64748b', ev:'Sintomáticos — sem benefício direto em mortalidade',
+    inicio:'Furosemida 20–40 mg/dia · Torasemida 5 mg/dia',
+    alvo:'Dose mínima que mantém euvolemia (peso estável, sem edema/dispneia)',
+    monitor:'Peso diário · K⁺ e Na⁺ · Cr · Diurese',
+    ci:'Hipovolemia · K⁺ <3,0 não corrigido' },
+  { classe:'Ivabradina (FC elevada em RS)', col:'#9d174d', ev:'SHIFT (FC ≥70 em RS + FE ≤35%)',
+    inicio:'5 mg 2×/dia',
+    alvo:'7,5 mg 2×/dia se FC >60 após 4 semanas',
+    monitor:'FC (alvo 50–60 bpm em RS) · Fosfenas (transitório)',
+    ci:'FA · FC <70 bpm antes do início · BAV sinoatrial · Hipotensão grave' },
+  { classe:'Hidralazina + DNIS (alternativa a IECA/BRA)', col:'#0891b2', ev:'V-HeFT I / A-HeFT',
+    inicio:'Hidralazina 12,5 mg 3× + DNIS 20 mg 3×',
+    alvo:'Hidralazina 75 mg 3× + DNIS 40 mg 3×',
+    monitor:'PA (hipotensão postural) · Cefaleia (DNIS)',
+    ci:'Uso de PDE5i (sildenafil/tadalafil) · Lúpus induzido por hidralazina' },
+];
+
+function renderDrugs() {
+  document.getElementById('drugList').innerHTML = IC_DRUGS.map(d=>`
+    <div class="drug-card" style="border-color:${d.col}">
+      <div class="drug-classe" style="color:${d.col}">${d.classe}</div>
+      <div style="font-size:.63rem;color:#94a3b8;margin:2px 0 6px">${d.ev}</div>
+      <div class="drug-row"><div class="drug-lbl">Dose inicial</div><div class="drug-val">${d.inicio}</div></div>
+      <div class="drug-row"><div class="drug-lbl">Dose-alvo (titulação)</div><div class="drug-val">${d.alvo}</div></div>
+      <div class="drug-row"><div class="drug-lbl">Monitoramento</div><div class="drug-val">${d.monitor}</div></div>
+      <div class="drug-row"><div class="drug-lbl">Contraindicações / Cuidados</div><div class="drug-val" style="color:#dc2626">${d.ci}</div></div>
+    </div>`).join('');
+}
+
+/* ── MONITORAMENTO ──────────────────────────────────────────────────── */
+const IC_MONITOR = [
+  { lbl:'Potássio (K⁺)', when:'Após 1–2 semanas da introdução de IECA/BRA/MRA/iSGLT2; a cada 3–6 meses se estável', meta:'Alvo 3,5–5,0 mEq/L · Se K⁺ >5,5: reduzir MRA; se >6,0: suspender IECA/BRA e MRA' },
+  { lbl:'Creatinina / TFG', when:'1–2 sem após início ou ajuste de IECA/BRA; a cada 3–6 meses', meta:'Aumento de até 30% é aceitável; >30% ou Cr >2,5: reduzir IECA/BRA; >50%: suspender e investigar' },
+  { lbl:'PA sistólica', when:'A cada consulta; verificar antes de ajustar BB e IECA/BRA', meta:'PAS ≥90 mmHg para tolerar 4 pilares (individualizar em idosos)' },
+  { lbl:'Frequência cardíaca (FC)', when:'A cada consulta; alvo com BB em RS', meta:'FC 55–70 bpm em RS. FC ≥70 apesar de BB máx: adicionar ivabradina' },
+  { lbl:'Peso corporal', when:'Diariamente (NYHA III/IV); a cada consulta (I/II)', meta:'Ganho ≥2 kg em 2 dias → aumentar furosemida; ganho >3 kg: contato imediato' },
+  { lbl:'BNP / NT-proBNP', when:'Diagnóstico; pós-descompensação; a cada 6–12 meses', meta:'Redução ≥30% do basal = resposta favorável; BNP <100 pg/mL ou NT-proBNP <300: bom prognóstico' },
+  { lbl:'ECG', when:'Basalmente; se sintomático (palpitações, síncope); após ajuste de BB', meta:'Rastreio de FA, BAV e BRE. QRS ≥130ms + BRE + FE ≤35%: avaliar TRC' },
+  { lbl:'Ecocardiograma', when:'Diagnóstico; 3–6 meses após otimização terapêutica; anualmente em estável', meta:'Melhora de FE ≥10% = responsividade ("IC FEr recuperada"). Reclassificar fenótipo se necessário' },
+  { lbl:'Na⁺ e eletrólitos', when:'Com uso de diuréticos; se sintomas de hiponatremia (confusão, fraqueza)', meta:'Na⁺ >135 mEq/L. Hiponatremia dilucional em IC grave: restringir água e otimizar BB/RAAS' },
+];
+
+function renderMonitor() {
+  document.getElementById('monitorList').innerHTML = IC_MONITOR.map(m=>`
+    <div class="monitor-row">
+      <div class="monitor-lbl">${m.lbl}</div>
+      <div class="monitor-when">⏱ ${m.when}</div>
+      <div class="monitor-meta">🎯 ${m.meta}</div>
+    </div>`).join('');
+}
+
+/* ── METAS ──────────────────────────────────────────────────────────── */
+const IC_METAS = [
+  { param:'Classe NYHA', meta:'I ou II (sem limitação significativa)', obs:'NYHA III/IV persistente: revisar adesão, otimizar doses, avaliar TRC/transplante' },
+  { param:'FC em repouso (RS)', meta:'55–70 bpm', obs:'<50 bpm: reduzir BB e ivabradina; ≥70 em RS + FE ≤35%: adicionar ivabradina' },
+  { param:'PA sistólica', meta:'≥90 mmHg (sem hipotensão sintomática)', obs:'IC não tem meta superior de PA — diferente da HAS. PAS 110–130 é habitual com 4 pilares' },
+  { param:'Fração de ejeção (FE)', meta:'Melhora em relação ao basal', obs:'FE ≥40% após tratamento = "IC FEr recuperada" — manter tratamento; não suspender por melhora da FE' },
+  { param:'K⁺', meta:'3,5–5,0 mEq/L', obs:'Com MRA + IECA: risco de hipercalemia; monitorar; considerar quelante de K⁺ (patirômero) se K⁺ persistente >5,5' },
+  { param:'Na⁺', meta:'>135 mEq/L', obs:'Hiponatremia é marcador de gravidade. Restrição hídrica (<1,5 L/dia) se Na⁺ <130 com congestão' },
+  { param:'Hospitalização por IC', meta:'Redução de reinternações', obs:'NYHA III/IV: programa de IC multidisciplinar + monitoração remota (GUIDE-HF, CardioMEMS)' },
+  { param:'NT-proBNP / BNP', meta:'Redução ≥30% do basal', obs:'Guia-terapia (GUIDE-IT trial): titulação de fármaco por BNP melhora desfechos em alguns pacientes' },
+];
+
+function renderMetas() {
+  document.getElementById('metasList').innerHTML = IC_METAS.map(m=>`
+    <div class="meta-row">
+      <div style="flex:1">
+        <div style="font-size:.8rem;font-weight:800;color:#1e3a5f">${m.param}</div>
+        <div style="font-size:.72rem;color:#64748b;margin-top:2px">${m.obs}</div>
+      </div>
+      <div style="font-size:.82rem;font-weight:900;color:#0f766e;min-width:110px;text-align:right;padding-left:8px">${m.meta}</div>
+    </div>`).join('');
+}
+</script>
+</body>
+</html>
