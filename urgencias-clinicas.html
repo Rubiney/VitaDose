@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Urgências Clínicas — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .urg-hdr{background:linear-gradient(135deg,#7f1d1d,#dc2626);color:#fff;border-radius:14px;padding:18px;margin-bottom:14px}
+    .urg-title{font-size:1rem;font-weight:800;margin-bottom:4px}
+    .urg-sub{font-size:.73rem;opacity:.8}
+    label{font-size:.75rem;font-weight:700;color:#1e3a5f;display:block;margin-bottom:4px}
+    select{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:10px;padding:10px 12px;font-size:.85rem;background:#fff;margin-bottom:10px}
+    select:focus{border-color:#dc2626;outline:none}
+    .btn-calc{width:100%;background:#dc2626;color:#fff;border:none;border-radius:12px;padding:13px;font-size:.87rem;font-weight:700;cursor:pointer;margin:8px 0}
+    .tab-bar{display:flex;gap:6px;margin-bottom:14px}
+    .tab-btn{flex:1;padding:9px 4px;border-radius:10px;border:2px solid #e2e8f0;background:#fff;font-size:.72rem;font-weight:700;cursor:pointer;color:#64748b}
+    .tab-btn.active{border-color:#dc2626;background:#fff5f5;color:#dc2626}
+    .rec-card{border-radius:12px;border:2px solid;padding:14px;margin-bottom:10px}
+    .rec-hdr{font-size:.63rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+    .rec-nome{font-size:.88rem;font-weight:800;margin-bottom:6px}
+    .rec-badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:.65rem;font-weight:800;color:#fff;margin:2px}
+    .rec-body{font-size:.78rem;margin-top:6px;line-height:1.7}
+    .rec-note{font-size:.71rem;color:#64748b;margin-top:6px;padding-top:6px;border-top:1px solid #f1f5f9}
+    .urg-card{border-radius:10px;border-left:5px solid;padding:10px 14px;margin-bottom:8px;background:#fff}
+    .urg-nome{font-size:.83rem;font-weight:800;margin-bottom:4px}
+    .urg-body{font-size:.76rem;line-height:1.7;color:#374151}
+    .alerta{background:#fef2f2;border:2px solid #dc2626;border-radius:10px;padding:8px;margin:6px 0;font-size:.75rem;color:#7f1d1d;font-weight:700}
+    .verde{background:#f0fdf4;border:2px solid #15803d;border-radius:10px;padding:8px;margin:6px 0;font-size:.75rem;color:#14532d;font-weight:700}
+    table{width:100%;border-collapse:collapse;font-size:.73rem;margin-top:6px}
+    th{background:#7f1d1d;color:#fff;padding:5px 8px;text-align:left}
+    td{padding:5px 8px;border-bottom:1px solid #f1f5f9}
+    tr:nth-child(even) td{background:#fff5f5}
+  </style>
+</head>
+<body>
+<header class="top-bar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <span class="top-title">Urgências Clínicas</span>
+  <div class="top-right"></div>
+</header>
+<main class="container" style="padding-bottom:90px">
+  <div class="urg-hdr">
+    <div class="urg-title">🚨 Urgências Clínicas — Protocolos Rápidos</div>
+    <div class="urg-sub">Anafilaxia · Crise HAS · Status Epilepticus · Hipercalemia · Angioedema · EAP</div>
+  </div>
+  <div class="tab-bar">
+    <button class="tab-btn active" id="tb0" onclick="showTab(0)">Anafilaxia & Angioedema</button>
+    <button class="tab-btn" id="tb1" onclick="showTab(1)">Crise HAS & EAP</button>
+    <button class="tab-btn" id="tb2" onclick="showTab(2)">Status Ep. & Hipercalemia</button>
+  </div>
+
+  <!-- TAB 0 — ANAFILAXIA -->
+  <div id="tab0">
+    <div class="card" style="padding:12px 14px">
+      <label>Cenário</label>
+      <select id="anaf_cond">
+        <option value="anaf">Anafilaxia — Reação alérgica grave</option>
+        <option value="angioedema_his">Angioedema Histaminérgico (com urticária)</option>
+        <option value="angioedema_brad">Angioedema Bradicinérgico (sem urticária — IECA, HAE)</option>
+        <option value="urticaria">Urticária Aguda Grave</option>
+      </select>
+    </div>
+    <button class="btn-calc" onclick="calcAnaf()">🚨 Protocolo</button>
+    <div id="anafResult" style="display:none"></div>
+  </div>
+
+  <!-- TAB 1 — CRISE HAS & EAP -->
+  <div id="tab1" style="display:none">
+    <div class="card" style="padding:12px 14px">
+      <label>Condição</label>
+      <select id="has_cond">
+        <option value="emerg">Emergência Hipertensiva (lesão de órgão-alvo)</option>
+        <option value="urgencia">Urgência Hipertensiva (sem lesão aguda)</option>
+        <option value="eap">Edema Agudo de Pulmão (EAP Cardiogênico)</option>
+        <option value="has_ges">Crise HAS na Gestação (pré-eclâmpsia / eclâmpsia)</option>
+        <option value="has_neuro">Crise HAS + AVC Isquêmico ou Hemorrágico</option>
+      </select>
+    </div>
+    <button class="btn-calc" onclick="calcHAS()">🩺 Protocolo</button>
+    <div id="hasResult" style="display:none"></div>
+  </div>
+
+  <!-- TAB 2 — STATUS EPILEPTICUS & HIPERCALEMIA -->
+  <div id="tab2" style="display:none">
+    <div id="seList"></div>
+  </div>
+</main>
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+<script src="js/db.js"></script>
+<script>
+function showTab(n){[0,1,2].forEach(i=>{document.getElementById('tab'+i).style.display=i===n?'block':'none';document.getElementById('tb'+i).classList.toggle('active',i===n);});if(n===2)renderSE();}
+function recHTML(r){return `<div class="rec-card" style="border-color:${r.col}"><div class="rec-hdr" style="color:${r.col}">${r.hdr}</div><div class="rec-nome">${r.nome}</div><div>${(r.badges||[]).map(b=>`<span class="rec-badge" style="background:${b.c}">${b.t}</span>`).join('')}</div><div class="rec-body">${r.body}</div>${r.note?`<div class="rec-note">${r.note}</div>`:''}</div>`;}
+
+/* ─── ANAFILAXIA ─────────────────────────────────────────────────── */
+const PROTO_ANAF={
+  anaf:{hdr:'ANAFILAXIA — Protocolo de Emergência',col:'#dc2626',nome:'ADRENALINA IM 0,3–0,5 mg — IMEDIATAMENTE',
+    body:`<div class="alerta">🚨 PRIORIDADE MÁXIMA — chamar suporte avançado</div>
+<strong>Critérios diagnósticos (1 das 3 situações):</strong><br>
+1. Pele/mucosa + comprometimento respiratório ou cardiovascular<br>
+2. ≥2 sistemas (pele, respiratório, cardiovascular, GI) após exposição a alérgeno<br>
+3. Hipotensão após exposição a alérgeno conhecido<br><br>
+<strong>STEP 1 — Adrenalina (IMEDIATAMENTE — sem esperar):</strong><br>
+• <strong>Adrenalina 0,3 mg IM (adulto) OU 0,01 mg/kg (criança, máx 0,5 mg)</strong><br>
+  Face lateral da coxa (não subcutâneo — IM mais rápido e confiável)<br>
+  Autoinjector EpiPen 0,3 mg: dose única com dispositivo automático<br>
+  Repetir a cada 5–15 min se sem melhora · 2ª dose em 30% dos casos<br><br>
+<strong>STEP 2 — Posição e via aérea:</strong><br>
+• Decúbito dorsal com MMII elevados (não sentar — síncora após anafilaxia)<br>
+• O2 alto fluxo 8–10 L/min (máscara não-reinalante)<br>
+• SE estridor laríngeo: intubação imediata (laringoscopia direta + equipe disponível)<br>
+• Vasopressão refratária: noradrenalina 0,1–1 mcg/kg/min IV<br><br>
+<strong>STEP 3 — Medicamentos adjuvantes (NÃO substituem adrenalina):</strong><br>
+• <strong>Difenidramina 50 mg IV</strong> (ou prometazina 25 mg IM): anti-H1 · Início 15–20 min<br>
+• <strong>Ranitidina 50 mg IV OU famotidina 20 mg IV:</strong> anti-H2 (adjuvante ao H1)<br>
+• <strong>Metilprednisolona 125 mg IV</strong> (ou hidrocortisona 200–400 mg IV): previne reação bifásica<br>
+• Salbutamol nebulizado 2,5 mg: broncoespasmo refratário<br>
+• SF 0,9% 1–2 L IV rápido: hipotensão/choque distributivo<br><br>
+<strong>Reação bifásica:</strong> retorno de sintomas 1–72h depois<br>
+• Observação mínima 6h para reação grave (24h em casos graves)<br>
+• Alta apenas com adrenalina autoinjetora 2 unidades (uso domiciliar) + orientação<br>
+• Encaminhar para alergologista: teste cutâneo após 4–6 semanas`,
+    note:'NUNCA substituir adrenalina por anti-histamínico como 1ª medida — anti-H1/H2 não revertam edema laríngeo, broncoespasmo nem hipotensão (só pele/prurido). Posição sentada em anafilaxia com broncoespasmo: risco de síncope fatal ao levantar. Adrenalina IV (1:10.000, 0,1 mg/mL): SOMENTE em parada cardíaca ou choque anafilático grave sem resposta ao IM.'},
+  angioedema_his:{hdr:'Angioedema Histaminérgico (com urticária)',col:'#b45309',nome:'Anti-H1 + Anti-H2 + Corticoide — Adrenalina se edema laríngeo',
+    body:`<strong>Característico:</strong> edema de lábio, língua, face, laringe · COM urticária · prurido · eritema · início minutos a horas após exposição (alimento, látex, medicamento, veneno, exercício)<br><br>
+<strong>Sem comprometimento laríngeo/sistêmico:</strong><br>
+• Difenidramina 50 mg VO ou IV + ranitidina/famotidina<br>
+• Prednisolona 40–60 mg VO × 3–5 dias: reduz risco de recorrência e resolução mais rápida<br>
+• Loratadina 10 mg ou cetirizina 10 mg: manutenção após fase aguda (menos sedativo)<br><br>
+<strong>COM edema de laringe/glote (estridor, disfonia, disfagia):</strong><br>
+• Adrenalina 0,3 mg IM IMEDIATAMENTE<br>
+• Preparar para intubação de urgência / cricotireoidotomia<br>
+• Adrenalina nebulizada 1 mg em 4 mL SF (racêmica): edema laríngeo leve (efeito local, transitório)<br><br>
+<strong>Observação:</strong> 6h se edema laríngeo envolvido · 2h se apenas pele/mucosa`,
+    note:'Difenidramina vs loratadina/cetirizina: difenidramina é mais rápida mas sedativa. Em anafilaxia/agudo: usar IV difenidramina. Após estabilização: cetirizina/loratadina por 3–5 dias. NUNCA dar prometazina IV em crianças (risco de depressão cardiorrespiratória em menores de 2 anos; muito cuidadoso em qualquer faixa).' },
+  angioedema_brad:{hdr:'Angioedema Bradicinérgico (sem urticária)',col:'#7c3aed',nome:'NÃO responde a anti-H1/H2 nem adrenalina — tratamento específico',
+    body:`<strong>⚠️ NÃO prurido · NÃO urticária · NÃO responde a adrenalina/anti-H1</strong><br>
+Fisiopatologia: excesso de bradicinina (vasodilatação + extravasamento)<br><br>
+<strong>Causas:</strong><br>
+• <strong>IECA (mais comum):</strong> captopril, enalapril, lisinopril, ramipril — angioedema em 0,1–0,7% dos usuários · Pode ocorrer meses/anos após início · Edema preferencial de língua/glote · Suspender IECA DEFINITIVAMENTE · Substituir por BRA (menor risco mas descrito)<br>
+• <strong>HAE (Angioedema Hereditário) tipo I/II:</strong> deficiência de C1-inibidor · Ataques recorrentes sem causa aparente · Heredofamiliar · Localização: abdome (cólica), face, extremidades, laringe<br><br>
+<strong>Tratamento angioedema por IECA (edema laríngeo):</strong><br>
+• <strong>Concentrado de C1-inibidor IV (Berinert/Ruconest):</strong> 20 UI/kg IV · HAE e IECA · Resolução em 1–4h<br>
+• <strong>Icatibanto (Firazyr) 30 mg SC:</strong> antagonista B2 de bradicinina · 1ª linha IECA (CAMEO trial) · Pode repetir 2× intervalo 6h<br>
+• <strong>Plasma fresco:</strong> alternativa se sem acesso a específicos (C1-INH no PFC)<br>
+• NUNCA: epinefrina, anti-H1, corticoide — sem eficácia comprovada (podem dar tempo para intubação)<br>
+• Intubação precoce: disfonia progressiva / sialorreia / stridor inspiratório<br><br>
+<strong>HAE — Profilaxia:</strong><br>
+• Longo prazo: <strong>Lanadelumabe (Takhzyro) 300 mg SC a cada 2–4 semanas</strong> (anticorpo anti-calicreína; superior ao concentrado de C1-INH profilático)<br>
+• Berotralstat 150 mg/dia VO: inibidor de calicreína oral · HAE tipo I/II<br>
+• Concentrado C1-INH 3×/sem SC (Haegarda): alternativa profilaxia<br>
+• Danazol 200–400 mg/dia: alternativo, androgênico (evitar em mulheres e crianças)`,
+    note:'Angioedema por IECA: risco maior em afro-americanos (3–4× maior). NÃO trocar IECA por outro IECA. BRA (losartana, valsartana) tem risco muito menor mas casos descritos. Sacubitril/valsartana (LCZ696): contém inibidor de neprilisina → aumenta bradicinina → risco de angioedema, especialmente se IECA prévio nas 36h.'},
+  urticaria:{hdr:'Urticária Aguda Grave',col:'#059669',nome:'Anti-H1 não-sedativo → Anti-H2 → Corticoide',
+    body:`<strong>Urticária sem angioedema e sem anafilaxia:</strong><br>
+• Primeiro episódio: buscar gatilho (alérgeno, infecção viral, AINE, fármaco)<br>
+• Investigação em crise aguda: não necessária (tratar primeiro)<br><br>
+<strong>Tratamento agudo (pronto-atendimento):</strong><br>
+• Cetirizina 10 mg VO OU loratadina 10 mg (não sedativo, 1ª linha)<br>
+• SE intolerância VO: difenidramina 50 mg IV<br>
+• Anti-H2 (ranitidina/famotidina): adicionar ao anti-H1 (resposta melhorada)<br>
+• Prednisolona 40 mg/dia × 3 dias: recorrência frequente, urticária extensa<br><br>
+<strong>Urticária crônica espontânea (&gt;6 semanas):</strong><br>
+• Cetirizina/loratadina 1×/dia → aumentar para 4× dose se insuficiente<br>
+• Omalizumabe 300 mg SC/mês: aprovado em UCE refratária a H1 · ASTERIA/GLACIAL trials · Resolução em 60–70%<br>
+• Ciclosporina 3–5 mg/kg/dia: UCE refratária grave (off-label, monitorar PA e Cr)`,
+    note:'Urticária de contato: látex, urtiga, ortiga — identificação e afastamento do agente. Síndrome alfa-gal: urticária/anafilaxia 3–6h após ingestão de carne vermelha (mediada por IgE anti-galactose α1,3 — sensibilizado por carrapato Amblyomma sculptum no Brasil). Teste de diagnóstico: anti-alfa-gal IgE sérica.'},
+};
+
+function calcAnaf(){
+  const cond=document.getElementById('anaf_cond').value;
+  const p=PROTO_ANAF[cond];
+  document.getElementById('anafResult').style.display='block';
+  document.getElementById('anafResult').innerHTML=recHTML({hdr:p.hdr,col:p.col,nome:p.nome,badges:[{t:'EMERGÊNCIA',c:p.col}],body:p.body,note:p.note});
+  document.getElementById('anafResult').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+/* ─── CRISE HAS & EAP ─────────────────────────────────────────────── */
+const PROTO_HAS={
+  emerg:{hdr:'Emergência Hipertensiva — Lesão de Órgão-Alvo Aguda',col:'#dc2626',nome:'Redução 20–25% da PAM em 1h — via IV parenteral',
+    body:`<strong>Lesão de órgão-alvo aguda (qualquer um = emergência):</strong><br>
+AVC isquêmico · AVC hemorrágico · Encefalopatia hipertensiva · Dissecção de aorta (reduzir imediato para SBP &lt;120) · EAP cardiogênico · SCA · Eclâmpsia · Crise adrenal/feocromocitoma<br><br>
+<strong>Meta terapêutica geral:</strong><br>
+• Reduzir PAM em 20–25% na 1ª hora → alvo SBP 160 mmHg<br>
+• Depois: redução lenta nas próximas 2–6h para SBP 160 (não normalizar rapidamente — risco de isquemia)<br>
+• Exceções: dissecção de aorta (SBP &lt;120 em 20 min); eclâmpsia (SBP &lt;160 em 30 min)<br><br>
+<strong>Drogas IV de escolha:</strong><br>
+<table>
+  <tr><th>Indicação</th><th>Droga IV 1ª escolha</th><th>Dose</th></tr>
+  <tr><td>Encefalopatia hipertensiva / geral</td><td>Nicardipina</td><td>5–15 mg/h IV (titular 2,5 mg/h a cada 15 min)</td></tr>
+  <tr><td>EAP cardiogênico</td><td>Nitroprussiato + furosemida</td><td>Nitrop 0,3–10 mcg/kg/min; Furos 40–80 mg IV</td></tr>
+  <tr><td>SCA + HAS</td><td>Nitroglicerina IV</td><td>5–200 mcg/min IV (titular)</td></tr>
+  <tr><td>Dissecção de aorta</td><td>Esmolol + Nitroprussiato</td><td>Esmolol 500 mcg/kg bolus → 50–300 mcg/kg/min</td></tr>
+  <tr><td>AVC isquêmico (pré-trombólise)</td><td>Labetalol ou Nicardipina</td><td>Labetalol 10–20 mg IV em 2 min (repetir a cada 10 min)</td></tr>
+  <tr><td>AVC hemorrágico</td><td>Nicardipina ou Labetalol</td><td>Alvo SBP &lt;140 mmHg (INTERACT-2)</td></tr>
+  <tr><td>Eclâmpsia / Pré-eclâmpsia</td><td>Hidralazina ou Labetalol</td><td>Hidralazina 5–10 mg IV a cada 20 min; Labetalol 20 mg IV</td></tr>
+  <tr><td>Feocromocitoma crise</td><td>Fentolamina</td><td>5 mg IV bolus (alfa-bloqueador) — NUNCA beta sem alfa antes</td></tr>
+</table>
+<br>
+<strong>Nitroprussiato — Toxicidade por cianeto:</strong><br>
+• Máx 10 mcg/kg/min ·  Usar &lt;10 min em doses altas · Cuidado em TFG &lt;30 (acúmulo tiocianato)<br>
+• Manter infusão total &lt;500 mcg/kg para evitar intoxicação por cianeto`,
+    note:'Nicardipina: droga preferida na maioria das emergências hipertensivas (sem efeito inotrópico negativo, ação previsível, titulação fácil). Labetalol: excelente para gestação, SCA, dissecção. CI em IC descompensada ou broncoespasmo. Nitroglicerina: vasodilatação venosa > arterial — melhor para angina e EAP; rápida taquifilaxia em 24h.'},
+  urgencia:{hdr:'Urgência Hipertensiva — Sem Lesão de Órgão-Alvo',col:'#b45309',nome:'Redução oral gradual — 24–48h para alvo',
+    body:`<strong>Definição:</strong> PA muito elevada (SBP &gt;180 OU DBP &gt;120) SEM evidência de lesão aguda de órgão-alvo<br>
+Sintomas comuns (mas não de lesão): cefaleia, ansiedade, epistaxe leve · Não alteram conduta<br><br>
+<strong>Conduta:</strong><br>
+• <strong>NÃO reduzir PA abruptamente</strong> — risco de isquemia cerebral/miocárdica em idosos<br>
+• Reintroduzir medicações esquecidas ou ajustar esquema crônico<br>
+• Reduzir PA em 24–48h com drogas orais<br>
+• Ambiente calmo, ansiolítico se agitação · Tratar dor (analgesia se cefaleia)<br><br>
+<strong>Opções orais para urgência:</strong><br>
+• <strong>Captopril 25 mg SL ou VO</strong> (início 15–30 min) · Repetir em 1h se insuficiente<br>
+• <strong>Clonidina 0,1–0,2 mg VO</strong> · Início 30–60 min · Risco de rebote se suspenso abruptamente<br>
+• <strong>Nifedipino (ação imediata, SL): CONTRAINDICADO</strong> — queda brusca (AVC, IAM descritos)<br>
+• Furosemida: se hipervolemia associada (IC, DRC)<br>
+• Após controle parcial: ajustar anti-hipertensivo oral crônico + seguimento em 1–7 dias`,
+    note:'Nifedipino sublingual: não utilizar (FDA alerta). Amlodipina (ação longa) não é droga de urgência (início 2–6h). A maioria das "urgências" hipertensivas em PS pode ser tratada com observação, analgesia, ansiolíticos e reinstituição do esquema oral crônico.'},
+  eap:{hdr:'Edema Agudo de Pulmão Cardiogênico',col:'#1e3a8a',nome:'Morfina + Nitrato + Furosemida IV + VNI',
+    body:`<strong>Apresentação:</strong> dispneia súbita intensa + ortopneia + estertores crepitantes bilaterais + SpO2 &lt;90% + PA elevada ou normal<br><br>
+<strong>STEP 1 — Oxigenação (urgência):</strong><br>
+• SpO2 &lt;90%: <strong>VNI BiPAP/CPAP imediatamente</strong> (reduz intubação 50% — 3CPO trial)<br>
+  CPAP 5–10 cmH2O OU BiPAP 8/5 cmH2O · FiO2 60–100%<br>
+• SpO2 &lt;85% com VNI: intubação + VM<br><br>
+<strong>STEP 2 — Nitrato IV (vasodilata venosa e arterial — reduz pré e pós-carga):</strong><br>
+• <strong>Nitroglicerina IV 10–20 mcg/min → aumentar 10–20 mcg/min a cada 3–5 min</strong> (alvo SBP 100–120 mmHg)<br>
+• Isossorbida 5 mg SL: enquanto prepara IV · Pode repetir a cada 5 min × 3<br>
+• CI: hipotensão (SBP &lt;90), uso de sildenafila/tadalafila/vardenafila nas 24–48h (colapso)<br><br>
+<strong>STEP 3 — Furosemida IV (se hipervolemia — ausência de choque):</strong><br>
+• <strong>Furosemida 40–80 mg IV</strong> · Se dose oral crônica: dar 1–2,5× a dose oral<br>
+• Adicionar espironolactona/torasemida se resistência<br>
+• EAP com PA normal ou baixa (IC descompensada sem hipertensão): menor dose, nitrato com cuidado<br><br>
+<strong>Morfina — posição controversa:</strong><br>
+• 2–4 mg IV: ansiolítico + vasodilatação venosa leve · Mas: EAP-IT trial mostrou associação com pior desfecho (cautela) · Usar apenas se agitação intensa refratária a VNI<br><br>
+<strong>EAP + Hipotensão (IC com choque):</strong><br>
+• Dobutamina 2–20 mcg/kg/min IV: inotrópico · Noradrenalina se PA crítica<br>
+• Levosimendan 0,1 mcg/kg/min (opcional em IC aguda — 24h de infusão)<br>
+• Balão intra-aórtico / impella: choque cardiogênico refratário`,
+    note:'Flash EAP (PA muito alta + edema repentino): responde muito bem a nitrato IV (reduzir pós-carga) + VNI. IC com volume normal ou hipovolêmica (choque cardiogênico): CUIDADO com furosemida e nitrato — risco de hipotensão. EAP não-cardiogênico (SARA): tratar causa + VM protetora.'},
+  has_ges:{hdr:'Crise HAS na Gestação — Pré-eclâmpsia / Eclâmpsia',col:'#7c3aed',nome:'Hidralazina IV + Sulfato de Magnésio + Parto',
+    body:`<strong>Pré-eclâmpsia grave:</strong> SBP ≥160 ou DBP ≥110 mmHg + proteinúria ≥300 mg/24h OU PAM &gt;105<br>
+<strong>Eclâmpsia:</strong> pré-eclâmpsia + convulsão (sem outra causa)<br><br>
+<strong>Anti-hipertensivo na gestação (alvo SBP &lt;160):</strong><br>
+• <strong>Hidralazina 5 mg IV lento</strong> → repetir 5 mg a cada 20 min (máx 20 mg) OU 10 mg IM<br>
+• <strong>Labetalol 20 mg IV</strong> → 40 mg → 80 mg a cada 10–20 min (máx 300 mg acumulado)<br>
+• Nifedipino 10 mg VO (ação imediata): alternativa oral · Interação com MgSO4 (potencializa — monitorar)<br>
+• <strong>CONTRAINDICADOS na gestação:</strong> IECA, BRA, nitroprussiato (toxicidade fetal pelo cianeto)<br><br>
+<strong>Profilaxia de convulsão — Sulfato de Magnésio (obrigatório na eclâmpsia e PE grave):</strong><br>
+• <strong>MgSO4 4 g IV lento (15 min) → infusão 1–2 g/h IV</strong> contínua<br>
+• Monitorar: reflexos patelares (perda = toxicidade inicial), FR &gt;12/min, diurese &gt;25 mL/h<br>
+• Toxicidade MgSO4: Mg &gt;5 mEq/L = perda de reflexos; &gt;7 = paralisia respiratória<br>
+  <strong>Antídoto: Gluconato de Ca 1 g IV em 3 min</strong><br>
+• Manter MgSO4 por 24–48h pós-parto (risco de eclâmpsia pós-natal)<br><br>
+<strong>Resolução definitiva:</strong><br>
+• Parto: indicação se &gt;34 semanas + PE grave ou eclâmpsia<br>
+  &lt;34 semanas + PE grave: corticoide (betametasona 12 mg IM 2 doses) + parto em 24–48h`,
+    note:'Síndrome HELLP (hemólise + enzimas hepáticas elevadas + plaquetopenia): variante grave de PE · Pode ocorrer sem hipertensão · Tratamento: corticoide (dexametasona 10 mg IV 12/12h) + parto urgente · Transfusão de plaquetas se &lt;50.000 + cirurgia ou &lt;20.000. Ácido acetilsalicílico 100–150 mg/dia a partir de 12–16 sem: profilaxia de PE em alto risco (ASPRE trial).'},
+  has_neuro:{hdr:'Crise HAS + AVC (Isquêmico ou Hemorrágico)',col:'#1e3a5f',nome:'Metas diferentes para isquêmico vs hemorrágico',
+    body:`<strong>AVC ISQUÊMICO — Manejo da PA:</strong><br>
+• <strong>SEM indicação de trombólise:</strong> NÃO tratar PA &lt;220/120 mmHg (resposta autorregulatória protetora na penumbra isquêmica)<br>
+  · Tratar apenas se &gt;220/120 OU sinais de outra lesão (dissecção, EAP, eclâmpsia)<br>
+• <strong>COM indicação de trombólise (tPA) ou trombectomia:</strong> alvo SBP &lt;185 / DBP &lt;110 ANTES de administrar tPA (janela até 4,5h do início)<br>
+  Pós-trombólise: manter SBP &lt;180 / DBP &lt;105 por 24h<br>
+• Drogas: labetalol 10–20 mg IV OU nicardipina 5 mg/h IV (evitar nitroprussiato — vasodilatação cerebral)<br><br>
+<strong>AVC HEMORRÁGICO — Manejo da PA:</strong><br>
+• INTERACT-2 e ATACH-2: meta SBP &lt;140 mmHg em 1h (superior a &lt;180 em tamanho do hematoma)<br>
+• Exceção: hipertensão intracraniana (&gt;20 mmHg) → PAM mínima = 70 mmHg (pressão de perfusão cerebral ≥60 mmHg)<br>
+• Drogas: nicardipina IV 5–15 mg/h OU labetalol IV<br>
+• Reverter anticoagulação: idarucizumabe, andexanet, CCP 4 fatores, vitamina K`,
+    note:'tPA em AVC isquêmico: contraindicado se glicemia &lt;50 ou &gt;400, PA &gt;185/110 antes de controle, AVC hemorrágico ou não-isquêmico, coagulopatia, cirurgia &lt;14 dias. Após trombólise: NÃO dar anti-plaquetário ou anticoagulante por 24h. Manutenção de glicemia 140–180 mg/dL em AVC: hiperglicemia piora prognóstico.'},
+};
+
+function calcHAS(){
+  const cond=document.getElementById('has_cond').value;
+  const p=PROTO_HAS[cond];
+  document.getElementById('hasResult').style.display='block';
+  document.getElementById('hasResult').innerHTML=recHTML({hdr:p.hdr,col:p.col,nome:p.nome,badges:[{t:'URGÊNCIA/EMERGÊNCIA',c:p.col}],body:p.body,note:p.note});
+  document.getElementById('hasResult').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+/* ─── STATUS EPILEPTICUS & HIPERCALEMIA ─────────────────────────────── */
+function renderSE(){
+  if(document.getElementById('seList').innerHTML) return;
+  const CARDS=[
+    {col:'#dc2626',nome:'Status Epilepticus — Protocolo por Fase',
+     body:`<strong>Definição:</strong> convulsão &gt;5 min OU ≥2 convulsões sem recuperação da consciência<br>
+Status refratário: sem resposta após 2 benzodiazepínicos<br>
+Status super-refratário: sem resposta após 24h de anestesia geral<br><br>
+<strong>FASE 1 — IMEDIATAMENTE (0–5 min):</strong><br>
+• Oxigênio · Vias periféricas · Glicemia capilar<br>
+• <strong>Tiamina 200 mg IV</strong> (antes de glicose em alcoolistas/desnutridos)<br>
+• Se hipoglicemia (&lt;60 mg/dL): <strong>Glicose 50% 50 mL IV</strong><br><br>
+<strong>FASE 2 — BZD (5–20 min):</strong><br>
+• <strong>Diazepam 10 mg IV lento</strong> (2 mg/min) — repetir 1× após 5 min se necessário OU<br>
+• <strong>Lorazepam 4 mg IV</strong> (preferido em UTI por menor redistribuição) · Repetir 4 mg após 5 min OU<br>
+• <strong>Midazolam 10 mg IM</strong> (IM = tão eficaz quanto diazepam IV sem acesso — RAMPART trial)<br>
+• Diazepam retal 10–20 mg: sem acesso IV/IM (pré-hospitalar, criança)<br><br>
+<strong>FASE 3 — 2ª linha (20–40 min — falha do BZD):</strong><br>
+• <strong>Fenitoína/Fosfenitoína IV:</strong> 20 mg/kg (fenitoína a 50 mg/min máx · fosfenitoína 150 mg PE/min máx)<br>
+  Monitorar ECG (bradicardia, alargamento QT) · Não em EEG com spike-wave lento<br>
+• <strong>Valproato sódico IV:</strong> 40 mg/kg (máx 3000 mg) a 6 mg/kg/min — alternativa igual à fenitoína (ESETT trial)<br>
+• <strong>Levetiracetam IV:</strong> 60 mg/kg (máx 4500 mg) a 5 mg/min — ESETT: equivalente a fenitoína e valproato<br>
+• <strong>Fenobarbital IV:</strong> 15–20 mg/kg a 50–75 mg/min — sedação significativa<br><br>
+<strong>FASE 4 — Status Refratário (&gt;40 min — falha da 2ª linha):</strong><br>
+• Intubação orotraqueal + VM + EEG contínuo (monitoramento de SE não-convulsivo)<br>
+• <strong>Midazolam 0,2 mg/kg IV bolus → 0,05–2 mg/kg/h infusão</strong> (1ª linha anestesia)<br>
+• <strong>Propofol 1–2 mg/kg IV → 1–10 mg/kg/h:</strong> CI em crianças (síndrome de infusão de propofol); TG &lt;500 mg/dL<br>
+• Tiopental/pentobarbital: para burst-supression em super-refratário<br>
+• Quetamina 1–2 mg/kg IV bolus → 0,5–5 mg/kg/h: inibidor de NMDA; útil em refratário (manutenção de PA)<br>
+• Piridoxina 100 mg IV: convulsão em neonato ou uso recente de isoniazida`,
+     note:'Status epilepticus não-convulsivo (SENC): suspeitar em alteração de consciência persistente sem convulsão — EEG contínuo. Encefalopatia de Hashimoto, encefalite autoimune (anti-NMDAR, anti-LGI1): considerar em status refratário novo em jovens (RM + LCR + anticorpos). Tratar causa subjacente: hiponatremia, hiperglicemia hiperosmolar, anoxia, AVC. SE na gestação: eclâmpsia → MgSO4 4 g IV (ver urgencias-clinicas).'},
+    {col:'#b45309',nome:'Hipercalemia Grave — K⁺ > 6,5 mEq/L ou com Alteração de ECG',
+     body:`<strong>Manifestações de hipercalemia no ECG (progressiva):</strong><br>
+• K 5,5–6,5: ondas T apiculadas (peaked T waves) em precordiais<br>
+• K 6,5–7,5: alargamento QRS, PR longo, onda P plana/ausente<br>
+• K &gt;7,5: QRS sinusoidal, FV, assistolia (risco de parada)<br><br>
+<strong>STEP 1 — Estabilizar a membrana cardíaca (URGÊNCIA):</strong><br>
+• <strong>Gluconato de Cálcio 1 g IV (10 mL de 10%) em 2–3 min</strong> — onset: 1–3 min · Duração: 30–60 min<br>
+  Repetir em 5 min se ECG persiste alterado · 2–3 ampolas se fibrilação ventricular<br>
+  NÃO reduz o K⁺ — protege o coração da hipercalemia<br>
+  CI: intoxicação por digoxina (gluconato Ca precipita "stone heart" em digitalizado)<br><br>
+<strong>STEP 2 — Transferir K⁺ para dentro das células (efeito em 15–60 min):</strong><br>
+• <strong>Insulina Regular 10 UI IV bolus + Glicose 50% 50 mL</strong> (se glicemia &lt;250 mg/dL): ↓0,5–1,5 mEq/L · Monitorar glicemia hourly<br>
+• <strong>Salbutamol 10–20 mg nebulizado</strong> (ou 0,5 mg IV): ↓0,5–1 mEq/L · Taquicardia (CI se SCA/arritmia)<br>
+• <strong>NaHCO3 50–100 mEq IV</strong>: útil SE acidose metabólica (K sai com H⁺ tamponado) · Pouco efeito se pH normal<br><br>
+<strong>STEP 3 — Remover K⁺ do organismo (definitivo):</strong><br>
+• <strong>Furosemida 40–80 mg IV</strong>: aumenta excreção urinária de K · Eficaz se função renal preservada<br>
+• <strong>Patiromer (Veltassa) 8,4 g VO</strong>: resina de nova geração · Quelante de K no GI · Início 7h · Uso crônico<br>
+• <strong>Ciclossilicato de sódio e zircônio (SZC/Lokelma) 10 g VO:</strong> ação em 1–2h; rápido; nova geração<br>
+• <strong>Diálise (HD urgente):</strong> K &gt;7 + sem resposta OU IRA oligúrica · Reduz K 1–1,5 mEq/L/h<br>
+• Resina de polistireno sulfonato (Kayexalate): lento, eficácia limitada, risco de necrose intestinal em pós-op · Evitar<br><br>
+<strong>Causas comuns para tratar simultaneamente:</strong><br>
+Suspender IECA/BRA/ARA2 + AINE + TMP/SMX (bloqueadores de excreção de K) · Corrigir acidose · Hemólise · Síndrome de lise tumoral`,
+     note:'Lembrar pseudo-hipercalemia: hemólise da amostra, trombocitose (&gt;1.000.000/µL), leucocitose extrema — repetir amostra corretamente. Hipercalemia em digitálico: NÃO dar gluconato de Ca IV (intoxicação por digoxina + Ca = parada cardíaca; usar Ca em diálise de 30 min se absolutamente necessário). Síndrome de lise tumoral: K + P + ácido úrico todos altos → rasburicase 0,2 mg/kg IV + HD precoce.'},
+    {col:'#059669',nome:'Hipoglicemia Grave e Outros Distúrbios Glicêmicos de Urgência',
+     body:`<strong>Hipoglicemia grave (&lt;54 mg/dL com alteração de consciência ou convulsão):</strong><br>
+<strong>Sem acesso IV:</strong><br>
+• <strong>Glucagon 1 mg IM ou SC</strong> (kit de emergência) · Onset 10–15 min · Eficaz em hipoglicemia por insulina<br>
+  Não eficaz em álcool (depletado de glicogênio) ou insuficiência hepática grave<br>
+• Glucagon nasal (Baqsimi) 3 mg: aprovado em adultos e crianças ≥4 anos<br><br>
+<strong>Com acesso IV:</strong><br>
+• <strong>Glicose 50% 50 mL IV rápido</strong> · Repetir se necessário · Confirmar glicemia 15 min depois<br>
+• Manutenção: SF+glicose 10% (100 mL/h) até estabilização<br><br>
+<strong>Causas e prevenção:</strong><br>
+• Superdose de insulina/sulfonilureia → observação 12–24h (sulfonilureia: hipoglicemia prolongada)<br>
+• Octreotida 50 mcg SC 3×/dia: reduz secreção de insulina endógena em hipoglicemia por sulfonilureia<br>
+• Mau-uso de álcool + jejum: tiamina ANTES de glicose<br><br>
+<strong>Coma Hiperosmolar Hiperglicêmico (SHH):</strong><br>
+Glicemia &gt;600 + osmolaridade &gt;320 mOsm/L + sem cetoacidose ou leve<br>
+• Hidratação intensa: SF 0,9% 1 L/h × 2h → 0,5 L/h (reduzir glicemia &lt;50 mg/dL/h)<br>
+• Insulina: SOMENTE após hidratação inicial (1–2 L SF) para evitar colapso<br>
+• K: repor se &lt;3,5 mEq/L ANTES de insulina<br><br>
+<strong>Cetoacidose Diabética (CAD):</strong><br>
+Glicemia &gt;250 + acidose metabólica (pH &lt;7,3) + cetonemia/cetonúria<br>
+• SF 0,9% 1 L/h × 1–2h → 500 mL/h (total 4–6 L/24h)<br>
+• Insulina regular 0,1 UI/kg/h IV (sem bolus inicial se K≥3,5) · Trocar para SG5% quando glicemia &lt;250<br>
+• KCl: repor K &lt;5 mEq/L antes e durante insulina<br>
+• NaHCO3: APENAS se pH &lt;6,9 (50 mEq em 1h) — geralmente não necessário`,
+     note:'Hipoglicemia em uso de ISRS/citalopram: pode mascarar taquicardia (beta-bloqueadores mascaram sudorese e tremor — só palidez e alteração de consciência como sinal). Hipoglicemia hipopituitarismo: não responde ao glucagon (déficit de GH e cortisol que elevam glicemia). CAD: checar triglicerídeos (pseudonormoglicemia em hipertrigliceridemia grave causa subnotificação de glicemia real).'},
+  ];
+  document.getElementById('seList').innerHTML=CARDS.map(c=>`<div class="urg-card" style="border-color:${c.col}"><div class="urg-nome" style="color:${c.col}">${c.nome}</div><div class="urg-body">${c.body}</div>${c.note?`<div style="font-size:.7rem;color:#64748b;margin-top:6px">💡 ${c.note}</div>`:''}</div>`).join('');
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Cuidados Paliativos — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .pal-hdr{background:linear-gradient(135deg,#374151,#6b7280);color:#fff;border-radius:14px;padding:18px;margin-bottom:14px}
+    .pal-title{font-size:1rem;font-weight:800;margin-bottom:4px}
+    .pal-sub{font-size:.73rem;opacity:.8}
+    label{font-size:.75rem;font-weight:700;color:#1e3a5f;display:block;margin-bottom:4px}
+    select,input{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:10px;padding:10px 12px;font-size:.85rem;background:#fff;margin-bottom:10px}
+    select:focus,input:focus{border-color:#374151;outline:none}
+    .btn-calc{width:100%;background:#374151;color:#fff;border:none;border-radius:12px;padding:13px;font-size:.87rem;font-weight:700;cursor:pointer;margin:8px 0}
+    .tab-bar{display:flex;gap:6px;margin-bottom:14px}
+    .tab-btn{flex:1;padding:9px 4px;border-radius:10px;border:2px solid #e2e8f0;background:#fff;font-size:.72rem;font-weight:700;cursor:pointer;color:#64748b}
+    .tab-btn.active{border-color:#374151;background:#f9fafb;color:#374151}
+    .rec-card{border-radius:12px;border:2px solid;padding:14px;margin-bottom:10px}
+    .rec-hdr{font-size:.63rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+    .rec-nome{font-size:.88rem;font-weight:800;margin-bottom:6px}
+    .rec-badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:.65rem;font-weight:800;color:#fff;margin:2px}
+    .rec-body{font-size:.78rem;margin-top:6px;line-height:1.7}
+    .rec-note{font-size:.71rem;color:#64748b;margin-top:6px;padding-top:6px;border-top:1px solid #f1f5f9}
+    .pal-card{border-radius:10px;border-left:5px solid;padding:10px 14px;margin-bottom:8px;background:#fff}
+    .pal-nome{font-size:.83rem;font-weight:800;margin-bottom:4px}
+    .pal-body{font-size:.76rem;line-height:1.7;color:#374151}
+    .result-box{background:#f8fafc;border:2px solid #374151;border-radius:12px;padding:14px;margin-top:8px}
+    .result-line{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #e2e8f0;font-size:.8rem}
+    .result-val{font-weight:800;color:#374151}
+    table{width:100%;border-collapse:collapse;font-size:.73rem;margin-top:6px}
+    th{background:#374151;color:#fff;padding:5px 8px;text-align:left}
+    td{padding:5px 8px;border-bottom:1px solid #f1f5f9}
+    tr:nth-child(even) td{background:#f9fafb}
+  </style>
+</head>
+<body>
+<header class="top-bar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <span class="top-title">Cuidados Paliativos</span>
+  <div class="top-right"></div>
+</header>
+<main class="container" style="padding-bottom:90px">
+  <div class="pal-hdr">
+    <div class="pal-title">🕊️ Cuidados Paliativos & Medicina da Dor</div>
+    <div class="pal-sub">Dor Oncológica · Rotação de Opioides · Dispneia · Delirium · Sedação Paliativa</div>
+  </div>
+  <div class="tab-bar">
+    <button class="tab-btn active" id="tb0" onclick="showTab(0)">Dor & Opioides</button>
+    <button class="tab-btn" id="tb1" onclick="showTab(1)">Sintomas & Sedação</button>
+    <button class="tab-btn" id="tb2" onclick="showTab(2)">Comunicação & Ética</button>
+  </div>
+
+  <!-- TAB 0 — DOR & OPIOIDES -->
+  <div id="tab0">
+    <div class="card" style="padding:12px 14px">
+      <label>Opioide atual (dose oral/dia)</label>
+      <select id="op_atual">
+        <option value="mor">Morfina oral</option>
+        <option value="oxy">Oxicodona oral</option>
+        <option value="hid">Hidromorfona oral</option>
+        <option value="fen_td">Fentanil transdérmico (mcg/h)</option>
+        <option value="tra">Tramadol oral</option>
+        <option value="cod">Codeína oral</option>
+      </select>
+      <label>Dose atual (mg/dia OU mcg/h no fentanil)</label>
+      <input type="number" id="op_dose" placeholder="ex: 60 (mg/dia)" min="1">
+      <label>Converter PARA</label>
+      <select id="op_dest">
+        <option value="mor">Morfina oral</option>
+        <option value="mor_iv">Morfina IV/SC</option>
+        <option value="oxy">Oxicodona oral</option>
+        <option value="hid">Hidromorfona oral</option>
+        <option value="fen_td">Fentanil transdérmico (mcg/h)</option>
+        <option value="fen_iv">Fentanil IV/SC (mcg/h)</option>
+        <option value="met">Metadona oral</option>
+      </select>
+    </div>
+    <button class="btn-calc" onclick="calcRotacao()">💊 Calcular Rotação de Opioide</button>
+    <div id="opResult" style="display:none"></div>
+
+    <div style="margin-top:14px">
+      <div style="font-size:.78rem;font-weight:800;color:#374151;margin-bottom:8px">📋 Escada Analgésica OMS & Adjuvantes</div>
+      <div class="pal-card" style="border-color:#374151">
+        <div class="pal-nome" style="color:#374151">Escada Analgésica OMS (3 Degraus)</div>
+        <div class="pal-body">
+          <table>
+            <tr><th>Degrau</th><th>Intensidade (NRS)</th><th>Fármacos</th></tr>
+            <tr><td>1 — Leve</td><td>1–3</td><td>Paracetamol 500–1000 mg 6/6h ± AINE (ibuprofeno 400 mg 8/8h ou naproxeno 550 mg 12/12h)</td></tr>
+            <tr><td>2 — Moderado</td><td>4–6</td><td>Tramadol 50–100 mg 6–8/8h (máx 400 mg/dia) OU codeína 30–60 mg 6/6h (máx 360 mg/dia) ± paracetamol ± AINE</td></tr>
+            <tr><td>3 — Grave</td><td>7–10</td><td>Morfina / oxicodona / fentanil transdérmico ± paracetamol ± adjuvantes</td></tr>
+          </table>
+          <br>
+          <strong>Princípios OMS:</strong><br>
+          • Via oral preferencial · Horário fixo (não PRN exceto resgate) · Escada progressiva · Atenção a efeitos adversos · Resgate: 10–15% da dose total diária<br><br>
+          <strong>Adjuvantes por tipo de dor:</strong><br>
+          <table>
+            <tr><th>Tipo</th><th>Adjuvantes</th></tr>
+            <tr><td>Neuropática</td><td>Gabapentina 300–1200 mg 3×/dia · Pregabalina 75–300 mg 2×/dia · Amitriptilina 10–75 mg/noite · IRSN (duloxetina 60 mg/dia)</td></tr>
+            <tr><td>Óssea (metástase)</td><td>AINE + bisfosfonato (zolendronato 4 mg IV/4 sem) + denosumabe 120 mg SC/4 sem · Radioterapia paliativa · Corticoide</td></tr>
+            <tr><td>Visceral / compressiva</td><td>Corticoide (dexametasona 4–8 mg/dia): compressão tumor · Anticolinérgico (cólica)</td></tr>
+            <tr><td>Espasmo muscular</td><td>Relaxantes musculares: baclofeno 5–20 mg 3×/dia · Ciclobenzaprina · Clonazepam</td></tr>
+            <tr><td>Procedural / breakthrough</td><td>Fentanil transmucoso oral (OTFC) 200–1600 mcg · Fentanil bucal SL</td></tr>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 1 — SINTOMAS & SEDAÇÃO -->
+  <div id="tab1" style="display:none">
+    <div id="sintList"></div>
+  </div>
+
+  <!-- TAB 2 — COMUNICAÇÃO & ÉTICA -->
+  <div id="tab2" style="display:none">
+    <div id="eticaList"></div>
+  </div>
+</main>
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+<script src="js/db.js"></script>
+<script>
+function showTab(n){[0,1,2].forEach(i=>{document.getElementById('tab'+i).style.display=i===n?'block':'none';document.getElementById('tb'+i).classList.toggle('active',i===n);});if(n===1)renderSint();if(n===2)renderEtica();}
+
+/* ─── ROTAÇÃO DE OPIOIDES ─────────────────────────────────────────── */
+// Doses equianalgésicas em relação à morfina oral 30 mg
+const EQUIV={
+  mor:    {fator:1,    nome:'Morfina oral',          unit:'mg'},
+  mor_iv: {fator:0.33, nome:'Morfina IV/SC',         unit:'mg'},
+  oxy:    {fator:0.67, nome:'Oxicodona oral',         unit:'mg'},
+  hid:    {fator:0.15, nome:'Hidromorfona oral',      unit:'mg'},
+  fen_td: {fator:null, nome:'Fentanil transdérmico',  unit:'mcg/h'},
+  fen_iv: {fator:null, nome:'Fentanil IV/SC',         unit:'mcg/h'},
+  tra:    {fator:5,    nome:'Tramadol oral',           unit:'mg'},
+  cod:    {fator:6.67, nome:'Codeína oral',            unit:'mg'},
+  met:    {fator:null, nome:'Metadona oral',           unit:'mg'},
+};
+
+// Fentanil TD: mcg/h → mg morfina oral = fator 2,4 (25 mcg/h = 60 mg MO)
+// Metadona: razão variável com dose (alto morf → baixo metadona)
+function calcRotacao(){
+  const at=document.getElementById('op_atual').value;
+  const dose=parseFloat(document.getElementById('op_dose').value);
+  const dest=document.getElementById('op_dest').value;
+  if(!dose||dose<=0){alert('Informe dose válida.');return;}
+  if(at===dest){document.getElementById('opResult').style.display='block';document.getElementById('opResult').innerHTML='<div style="padding:12px;font-size:.8rem;color:#374151">Mesmo opioide selecionado. Escolha destino diferente.</div>';return;}
+
+  // Converter para MEO (Morfina Equivalente Oral mg/dia)
+  let meo;
+  if(at==='fen_td') meo=dose*2.4; // 25 mcg/h = 60 mg MO
+  else if(at==='fen_iv') meo=dose*24*0.33*3; // mcg/h → mcg/dia → mg → ×3 para oral
+  else if(at==='met') meo=dose*5; // simplificado
+  else meo=dose/EQUIV[at].fator;
+
+  // Redução de segurança 25–30% na troca (tolerância cruzada incompleta)
+  const meoReduzido=meo*0.75;
+
+  let doseDest, txt='';
+  if(dest==='fen_td'){
+    doseDest=meoReduzido/2.4;
+    txt=`Fentanil transdérmico: iniciar com patch de <strong>${arred(doseDest,25)} mcg/h</strong><br>
+    Arredondar para patch disponível (12, 25, 37, 50, 75, 100 mcg/h)<br>
+    Troca a cada 72h (alguns pacientes 48h) · Início de ação: 12–24h`;
+  } else if(dest==='fen_iv'){
+    const mcgH=meoReduzido/3/0.33/24*1000;
+    doseDest=mcgH;
+    txt=`Fentanil IV/SC: <strong>${mcgH.toFixed(0)} mcg/h</strong> em infusão contínua<br>
+    Resgate: 10–15% da dose horária, a cada 15–30 min PRN`;
+  } else if(dest==='met'){
+    // Razão morfina:metadona cresce com dose alta
+    let ratio;
+    if(meoReduzido<90) ratio=4;
+    else if(meoReduzido<300) ratio=6;
+    else if(meoReduzido<1000) ratio=8;
+    else ratio=12;
+    doseDest=meoReduzido/ratio;
+    txt=`Metadona oral: <strong>${doseDest.toFixed(1)} mg/dia</strong> (dividido em 3 tomadas)<br>
+    ⚠️ Razão usada: 1:${ratio} (morfina:metadona) · Monitorar QTc e sedação<br>
+    Converter metadona deve ser feita por profissional experiente — titulação lenta`;
+  } else if(dest==='mor_iv'){
+    doseDest=meoReduzido*EQUIV['mor_iv'].fator;
+    txt=`Morfina IV/SC: <strong>${doseDest.toFixed(1)} mg/dia</strong> em infusão contínua<br>
+    Equivale a ${doseDest.toFixed(0)} mg/dia IV = ${(doseDest/24).toFixed(1)} mg/h`;
+  } else {
+    doseDest=meoReduzido*EQUIV[dest].fator;
+    txt=`${EQUIV[dest].nome}: <strong>${doseDest.toFixed(1)} mg/dia</strong>`;
+  }
+
+  const html=`<div class="result-box">
+    <div class="result-line"><span>Dose atual</span><span class="result-val">${dose} ${EQUIV[at].unit}/dia (${EQUIV[at].nome})</span></div>
+    <div class="result-line"><span>MEO (Morfina Equivalente Oral)</span><span class="result-val">${meo.toFixed(1)} mg/dia</span></div>
+    <div class="result-line"><span>MEO com redução de segurança (−25%)</span><span class="result-val">${meoReduzido.toFixed(1)} mg/dia</span></div>
+    <div style="margin-top:10px;font-size:.8rem">${txt}</div>
+    <div style="margin-top:8px;font-size:.72rem;color:#64748b">
+      ⚠️ Tolerância cruzada incompleta: reduzir 25–30% ao trocar opioide e titular para cima se dor inadequadamente controlada<br>
+      Resgate (breakthrough): 10–15% da dose total diária, a cada 1h VO (agudo) ou 15–30 min IV
+    </div>
+  </div>`;
+  document.getElementById('opResult').style.display='block';
+  document.getElementById('opResult').innerHTML=html;
+}
+
+function arred(v, step){return Math.round(v/step)*step;}
+
+/* ─── SINTOMAS & SEDAÇÃO ─────────────────────────────────────────── */
+function renderSint(){
+  if(document.getElementById('sintList').innerHTML) return;
+  const CARDS=[
+    {col:'#374151',nome:'Dispneia em Cuidados Paliativos',
+     body:`<strong>Avaliação:</strong> escala numérica (0–10) · Escala ESAS (Edmonton Symptom Assessment) · Causas tratáveis vs refratárias<br><br>
+<strong>Causa tratável (reverter se possível):</strong><br>
+Derrame pleural: toracocentese · IC: diurético + nitrato · TEP: anticoagulação · Obstrução: corticoide + broncodilatador<br><br>
+<strong>Manejo farmacológico paliativo da dispneia (refratária ou irreversível):</strong><br>
+• <strong>Morfina oral/SC em dose baixa</strong> (se opioide-naïve): 2,5–5 mg oral a cada 4h ou infusão SC 0,5–2 mg/h<br>
+  Já em opioide: aumentar dose atual em 25% (dispneia = dor — mesma base de tratamento)<br>
+  Mecanismo: reduz sensação de "fome de ar" via receptores mu periféricos e no SNC · <strong>NÃO acelera morte</strong> em doses ajustadas<br>
+• <strong>Lorazepam 1–2 mg SL:</strong> ansiedade respiratória + dispneia intensa · Onset 15–30 min<br>
+  Midazolam 2,5–5 mg SC: ansiólise rápida em crises de dispneia<br>
+• <strong>O2:</strong> útil se SpO2 &lt;90% e paciente sente benefício subjetivo · NÃO obrigatório apenas por hipoxemia (conforto &gt; número)<br>
+  Ventilador de mesa: benefício por corrente de ar no rosto (ativação de receptores V2)<br>
+• Corticoide (dexametasona 4–8 mg/dia): linfangite carcinomatosa, massa mediastinal, DVCS<br>
+• Nebulização com SF: secreção brônquica · Ipratrópio: broncoespasmo<br>
+• Furosemida nebulizada 40 mg: dispneia refratária (estudos pequenos, benefício incerto)<br><br>
+<strong>Agonias do estertor de morte (death rattle):</strong><br>
+Hioscina (brometo de escopolamina) 0,2 mg SC 4/4h OU 0,8–2,4 mg/dia em infusão SC · Reduz secreção e ruído · Reposicionar o paciente`,
+     note:'Morfina em insuficiência respiratória aguda: a literatura paliatória suporta uso criterioso — não causa depressão respiratória em doses adequadas ao controle de dispneia, mas monitorar FR. Documentar avaliação prévia de causa tratável antes de iniciar morfina para dispneia.'},
+    {col:'#b45309',nome:'Náuseas e Vômitos em Cuidados Paliativos',
+     body:`<strong>Causas e antieméticos direcionados:</strong><br>
+<table>
+  <tr><th>Causa</th><th>Antiemético de Escolha</th><th>Dose</th></tr>
+  <tr><td>Opioide (náusea inicial — 1ª sem)</td><td>Haloperidol SC/VO (antiD2 da ZGQ)</td><td>0,5–1 mg 8/8h VO ou SC · Cede em 1–2 semanas</td></tr>
+  <tr><td>Gastroparesia / motilidade reduzida</td><td>Metoclopramida</td><td>10 mg 3×/dia · Estimula motilidade gástrica</td></tr>
+  <tr><td>Hipertensão intracraniana</td><td>Dexametasona</td><td>8–16 mg/dia IV/SC · Reduz edema perilesional</td></tr>
+  <tr><td>Constipação (reflexo)</td><td>Laxativo (tratar constipação)</td><td>Macrogol + senósida/bisacodil</td></tr>
+  <tr><td>Quimioterapia (agudo/tardio)</td><td>Ondansetrona + dexametasona + aprepitante</td><td>Ondansetrona 8 mg IV antes da QT; aprepitante 125 mg D1 → 80 mg D2/D3</td></tr>
+  <tr><td>Causas vestibulares (movimento)</td><td>Dimenidrinato / Prometazina</td><td>Dimenidrinato 50 mg VO/IM</td></tr>
+  <tr><td>Metabólica (uremia, hipercalcemia)</td><td>Haloperidol</td><td>Tratar causa + haloperidol 0,5–2 mg VO/SC</td></tr>
+  <tr><td>Náusea refratária</td><td>Olanzapina 2,5–5 mg/noite</td><td>Antipsicótico com perfil antiemético amplo</td></tr>
+</table>
+<br>
+<strong>Antieméticos em paciente sem deglutição:</strong><br>
+• Haloperidol SC 0,5–2 mg/24h · Metoclopramida SC 30–60 mg/24h · Ondansetrona SC 16–24 mg/24h<br>
+• "Butterfly" SC (infusor contínuo): morfina + midazolam + haloperidol (compatíveis em SF)`,
+     note:'Dronabinol (THC oral): indicado em náusea refratária à QT (FDA) e perda de apetite no HIV/AIDS. Disponível em farmácias especializadas. Hipercalcemia maligna: causa náusea + confusão + constipação + poliúria; tratar com zolendronato 4 mg IV + hidratação vigorosa.'},
+    {col:'#dc2626',nome:'Delirium em Cuidados Paliativos',
+     body:`<strong>Subtipos de delirium:</strong><br>
+Hiperativo (agitação, alucinação): facilmente identificado · Hipoativo (sonolência, confusão discreta): mais comum e subdiagnosticado<br><br>
+<strong>Avaliação:</strong> CAM (Confusion Assessment Method) ou CAM-ICU · Pesquisa de causas reversíveis antes de sedar<br><br>
+<strong>Causas reversíveis a tratar (DELIRIUM mnemônico):</strong><br>
+Drogas (opioides, BZD, anticolinérgicos) · Eletrólitos (Na, Ca, Mg, glicemia) · Lesão cerebral (AVC, metástase) · Infecção (ITU, PNM) · Retenção urinária/fecal · Imobilidade + dor não tratada · Uremia · Medicações novas<br><br>
+<strong>Manejo farmacológico:</strong><br>
+• <strong>Haloperidol 0,5–2 mg VO, IM ou SC</strong> (1ª linha em delirium): 2×/dia ou a cada 4–6h PRN agitação<br>
+  IV em ambiente hospitalar (off-label) · ECG antes (QTc)<br>
+• <strong>Risperidona 0,5–1 mg 2×/dia:</strong> alternativa (oral) menos efeitos extrapiramidais<br>
+• <strong>Quetiapina 25–100 mg/noite:</strong> delirium hipoativo ou no Parkinson (sem EP) · Sedação útil à noite<br>
+• <strong>BZD (midazolam 2,5–5 mg SC):</strong> delirium hiperagitado refratário + cuidados de últimas horas · Risco de piora de delirium se isolado (sem antipsicótico)<br>
+• Lorazepam: delirium em Parkinson/Lewy Body (antipsicóticos causam parkinsonismo grave) · Delirium por abstinência<br>
+• Melatonina 3–5 mg/noite + iluminação diurna: medidas não farmacológicas (prevenção)<br><br>
+<strong>Sedação paliativa proporcional (refratária):</strong><br>
+Indicação: sofrimento refratário (sintoma impossível de controlar com doses tituladas) em doente com prognóstico de horas a dias<br>
+• <strong>Midazolam 2,5–5 mg SC bolus → 10–30 mg/dia SC infusão contínua</strong><br>
+• Fenobarbital 100–200 mg SC/IV: sedação profunda · Carbamazepina VO/IM em convulsão<br>
+• Associar morfina para analgesia (sedação paliativa não é eutanásia — opioide não é sedativo, sedativo não é analgésico)<br>
+• Decisão multiprofissional + consentimento de família + documentação no prontuário`,
+     note:'Neurolépticos malignos em delirium por CP: raridade mas haloperidol em altas doses pode precipitar. Delirium terminal (últimas horas): frequentemente irreversível — avaliação de causas deve ser balanceada com o ônus do tratamento. Proposta de sedação paliativa: ato médico legítimo e distinto da eutanásia — alívio de sofrimento refratário, não abreviação intencional de vida.'},
+    {col:'#7c3aed',nome:'Constipação Induzida por Opioides (OIC)',
+     body:`<strong>Definição:</strong> ≤3 evacuações/semana + esforço/evacuação incompleta + fezes duras EM PACIENTE EM OPIOIDE<br>
+Ocorre em 50–90% dos usuários de opioides crônicos · NÃO desenvolve tolerância (ao contrário de náusea e sedação)<br><br>
+<strong>Regra de ouro: laxativo PREVENTIVO desde o início do opioide</strong><br><br>
+<strong>1ª Linha — Osmótico + Estimulante (combinação):</strong><br>
+• <strong>Macrogol (Muvinlax/Triacol) 17 g VO 1–2×/dia</strong> + <strong>Senósida 12,5–25 mg/noite</strong> (ou bisacodil 5–10 mg)<br>
+• Lactulose 15–30 mL 2×/dia: alternativa osmótica (mais gases)<br>
+• Aumento de fibra e água: coadjuvante, mas insuficiente como único tratamento<br><br>
+<strong>2ª Linha — Antagonistas periféricos de receptores mu (PAMORAs) — mantêm analgesia:</strong><br>
+• <strong>Naloxegol (Moventig) 25 mg/dia VO</strong>: inibidor periférico de mu-receptor GI · Não atravessa BHE (mantém analgesia) · KODIAK trial<br>
+• <strong>Metilnaltrexona (Relistor) 8–12 mg SC</strong> a cada 2 dias (máx 1/24h): ação em 30–60 min · Urgência urgente/refratária<br>
+• <strong>Naloxona oral (Targiniq = oxicodona+naloxona):</strong> naloxona de baixa absorção sistêmica (80% first-pass) em combinação fixa 2:1 com oxicodona · Menor OIC sem reverter analgesia<br>
+• Linaclotida 290 mcg/dia: indicado em SII-C, pode auxiliar em OIC refratária<br><br>
+<strong>3ª Linha — Procedimentos:</strong><br>
+• Enema glicerina: fecaloma · Enema fosfato: impactação grave (cautela em DRC — hiperfosfatemia)<br>
+• Digital manual: fecaloma baixo resistente a enema<br>
+• Irrigação colônica (se ostomizado)`,
+     note:'PAMORAs: usar quando laxativo convencional insuficiente após dose otimizada. Não suspender opioide para tratar constipação — usar PAMORA. Metilnaltrexona: pode precipitar síndrome de abstinência em usuários de heroína (receptores mu GI se tornaram tolerantes — reversão pode ser intensa). Custo: naloxegol oral muito mais barato que metilnaltrexona SC.'},
+  ];
+  document.getElementById('sintList').innerHTML=CARDS.map(c=>`<div class="pal-card" style="border-color:${c.col}"><div class="pal-nome" style="color:${c.col}">${c.nome}</div><div class="pal-body">${c.body}</div>${c.note?`<div style="font-size:.7rem;color:#64748b;margin-top:6px">💡 ${c.note}</div>`:''}</div>`).join('');
+}
+
+/* ─── COMUNICAÇÃO & ÉTICA ─────────────────────────────────────────── */
+function renderEtica(){
+  if(document.getElementById('eticaList').innerHTML) return;
+  const CARDS=[
+    {col:'#374151',nome:'Protocolo SPIKES — Comunicação de Más Notícias',
+     body:`<strong>S — Setting (Preparação do Ambiente):</strong><br>
+• Local privado · Sentar ao mesmo nível · Sem interrupções · Familiar próximo (com permissão do paciente)<br>
+• Revisão do prontuário antes da conversa<br><br>
+<strong>P — Perception (Percepção do Paciente):</strong><br>
+"Como o senhor/a está entendendo sua situação até agora?" · "O que você sabe sobre o que está acontecendo com sua saúde?"<br>
+Avaliar o que já sabe e o nível de entendimento antes de dizer<br><br>
+<strong>I — Invitation (Convite para Ouvir):</strong><br>
+"O senhor/a gostaria que eu explicasse em detalhes o resultado dos exames?" · "Algumas pessoas preferem não saber tudo — o que é melhor para você?"<br>
+Respeitar direito de não querer saber (autonomia)<br><br>
+<strong>K — Knowledge (Transmissão de Informação):</strong><br>
+• Alertar antes: "Infelizmente tenho informações difíceis para compartilhar"<br>
+• Linguagem simples, sem jargão médico · Dar a informação em pequenas partes · Verificar compreensão<br>
+• Evitar ambiguidade: "Os exames mostram que o tumor voltou e está se espalhando"<br><br>
+<strong>E — Emotions (Resposta às Emoções):</strong><br>
+• Silêncio após a notícia · Identificar a emoção: "Parece que isso foi muito difícil de ouvir"<br>
+• Validar: "É compreensível que esteja com medo" · Toque empático se adequado culturalmente<br>
+• Não apressar para soluções antes de elaborar a emoção<br><br>
+<strong>S — Strategy/Summary (Estratégia e Resumo):</strong><br>
+• Resumir o que foi dito · Verificar compreensão · Propor próximos passos concretos<br>
+• "O que é mais importante para você neste momento?" (valores e prioridades)<br>
+• Dar esperança realista: "Não podemos curar, mas podemos fazer muito para garantir qualidade de vida"`,
+     note:'Conspiração do silêncio: família pede para esconder diagnóstico do paciente. Eticamente problemático — respeitar autonomia do paciente. Abordar família antes: "Vou conversar com seu pai — é ele quem precisa decidir o que quer saber". Documentar a conversa no prontuário (horário, presentes, o que foi dito).'},
+    {col:'#1e3a8a',nome:'Diretivas Antecipadas de Vontade (DAV) e Cuidados de Últimas Horas',
+     body:`<strong>Diretivas Antecipadas de Vontade (DAV) — Resolução CFM 1995/2012:</strong><br>
+• Documento em que o paciente expressa seus valores, desejos e preferências para situações de incapacidade futura<br>
+• Registro em prontuário ou escritura pública em cartório<br>
+• Tutela antecipada: nomear representante (tutor) para tomar decisões se incapacitado<br>
+• Conteúdo: ressuscitação cardiopulmonar, ventilação mecânica, diálise, nutrição artificial, local de morte<br><br>
+<strong>Distinções éticas fundamentais:</strong><br>
+• Limitação de suporte de vida / Ortotanásia: permitir morte natural sem obstinação terapêutica · LEGAL e ÉTICO no Brasil (CFM 1805/2006)<br>
+• Eutanásia ativa: ato intencional para causar morte · ILEGAL no Brasil<br>
+• Distanásia: prolongamento artificial de processo de morte com sofrimento · Deve ser evitada<br>
+• Suicídio assistido: ILEGAL no Brasil<br><br>
+<strong>Cuidados de Últimas Horas (Fase de Agonia — horas a dias de vida):</strong><br>
+Sinais: extremidades frias e manchadas (livedo), respiração de Cheyne-Stokes, redução de diurese, rebaixamento de consciência, períodos de apneia<br><br>
+<strong>Farmácia das últimas horas (via SC — sem acesso oral):</strong><br>
+• Morfina SC 2,5–5 mg/h (infusão) ou 2–4 mg SC 2/2h PRN: analgesia + dispneia<br>
+• Midazolam SC 2,5–5 mg 2/2h PRN ou 10–20 mg/dia: ansiedade + agitação terminal<br>
+• Haloperidol SC 0,5–2 mg 4/4h: delirium terminal<br>
+• Hioscina SC 0,2 mg 4/4h: estertor<br>
+• Suspender medicações sem benefício imediato (anti-hipertensivos, estatinas, antibióticos por sobrevida, suplementos)<br>
+• Suspender monitorização contínua desnecessária (SpO2, PA frequente, pesagens)<br>
+• Manter: analgesia, sedação adequada, cuidados de boca, conforto, presença da família`,
+     note:'Butterfly SC (CSCI — Continuous SC Infusion): seringa drivada com 3 a 4 medicamentos compatíveis em SF. Morfina + midazolam + haloperidol: geralmente compatíveis em mesma seringa por 24h. Metoclopramida pode ser adicionada. Verificar compatibilidade no guia IV-DRUGS antes. Dexametasona: infundir separadamente (cristaliza com muitos medicamentos).'},
+    {col:'#059669',nome:'Hipercalcemia Maligna e Outras Emergências em CP',
+     body:`<strong>Hipercalcemia Maligna (Ca &gt;12 mg/dL com sintomas):</strong><br>
+Causa: PTHrP tumoral (Ca de mama, pulmão, rim, mieloma) · Metástases ósseas osteolíticas<br>
+Sintomas: "bones, stones, groans, moans" — dor óssea, cálculo renal, náusea/constipação, confusão<br><br>
+<strong>Tratamento:</strong><br>
+• <strong>SF 0,9% 200–500 mL/h × 24h (2–4 L/dia):</strong> hidratação agressiva (se o paciente tolerar)<br>
+• <strong>Zolendronato 4 mg IV em 15 min</strong>: bisfosfanato de escolha · Efeito completo em 48–72h · Mantém Ca normal 3–4 semanas<br>
+  Ajustar se TFG &lt;35: 3,5 mg se TFG 35–49; 3,3 mg se TFG 30–34; CI se TFG &lt;30 (pamidrônico alternativa 60–90 mg em 2h)<br>
+• <strong>Denosumabe 120 mg SC:</strong> alternativa em DRC (sem excreção renal) · Efeito &gt;30 dias · Hipocalcemia na retirada<br>
+• Calcitonina 4–8 UI/kg IM: efeito rápido (2–4h) mas taquifilaxia em 48h · Útil apenas nas primeiras horas<br>
+• Furosemida: NÃO indicar rotineiramente (hipercalcemia não responde a furosemida sem hidratação prévia)<br><br>
+<strong>Compressão Medular Tumoral (urgência oncológica):</strong><br>
+Dor lombar/torácica + fraqueza de MMII + disfunção esfincteriana = compressão medular por metástase<br>
+• <strong>Dexametasona 10 mg IV bolus → 4–8 mg 6/6h:</strong> reduzir edema perimetastático · Iniciar IMEDIATAMENTE (antes de RM)<br>
+• RM de coluna total: urgente (24h) para planejar radioterapia ou cirurgia<br>
+• Radioterapia paliativa: tumor radiosensível · Cirurgia descompressiva: instabilidade vertebral + boa performance<br><br>
+<strong>Síndrome de Veia Cava Superior (DVCS):</strong><br>
+Edema facial, pescoço e MMSS + ingurgitamento jugular + dispneia + cefaleia ortostática<br>
+• Dexametasona 8–16 mg/dia IV: redução do edema perimetastático imediato<br>
+• Radioterapia/quimioterapia: segundo histologia · Stent de VCS: para alívio rápido e duradouro`,
+     note:'Oncologia e CP não são excludentes — integração precoce dos cuidados paliativos ao diagnóstico oncológico melhora qualidade de vida E sobrevida (Temel NEJM 2010 em câncer de pulmão). Reunião familiar (Family Meeting): ferramenta estruturada para alinhamento de expectativas, objetivos de cuidado e planejamento antecipado em pacientes graves.'},
+  ];
+  document.getElementById('eticaList').innerHTML=CARDS.map(c=>`<div class="pal-card" style="border-color:${c.col}"><div class="pal-nome" style="color:${c.col}">${c.nome}</div><div class="pal-body">${c.body}</div>${c.note?`<div style="font-size:.7rem;color:#64748b;margin-top:6px">💡 ${c.note}</div>`:''}</div>`).join('');
+}
+</script>
+</body>
+</html>

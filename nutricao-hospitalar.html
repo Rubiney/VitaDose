@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Nutrição Hospitalar — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .nut-hdr{background:linear-gradient(135deg,#78350f,#b45309);color:#fff;border-radius:14px;padding:18px;margin-bottom:14px}
+    .nut-title{font-size:1rem;font-weight:800;margin-bottom:4px}
+    .nut-sub{font-size:.73rem;opacity:.8}
+    label{font-size:.75rem;font-weight:700;color:#1e3a5f;display:block;margin-bottom:4px}
+    select,input{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:10px;padding:10px 12px;font-size:.85rem;background:#fff;margin-bottom:10px}
+    select:focus,input:focus{border-color:#b45309;outline:none}
+    .btn-calc{width:100%;background:#b45309;color:#fff;border:none;border-radius:12px;padding:13px;font-size:.87rem;font-weight:700;cursor:pointer;margin:8px 0}
+    .tab-bar{display:flex;gap:6px;margin-bottom:14px}
+    .tab-btn{flex:1;padding:9px 4px;border-radius:10px;border:2px solid #e2e8f0;background:#fff;font-size:.72rem;font-weight:700;cursor:pointer;color:#64748b}
+    .tab-btn.active{border-color:#b45309;background:#fffbeb;color:#b45309}
+    .rec-card{border-radius:12px;border:2px solid;padding:14px;margin-bottom:10px}
+    .rec-hdr{font-size:.63rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+    .rec-nome{font-size:.88rem;font-weight:800;margin-bottom:6px}
+    .rec-badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:.65rem;font-weight:800;color:#fff;margin:2px}
+    .rec-body{font-size:.78rem;margin-top:6px;line-height:1.7}
+    .rec-note{font-size:.71rem;color:#64748b;margin-top:6px;padding-top:6px;border-top:1px solid #f1f5f9}
+    .nut-card{border-radius:10px;border-left:5px solid;padding:10px 14px;margin-bottom:8px;background:#fff}
+    .nut-nome{font-size:.83rem;font-weight:800;margin-bottom:4px}
+    .nut-body{font-size:.76rem;line-height:1.7;color:#374151}
+    .result-box{background:#f8fafc;border:2px solid #b45309;border-radius:12px;padding:14px;margin-top:8px}
+    .result-line{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #e2e8f0;font-size:.8rem}
+    .result-val{font-weight:800;color:#b45309}
+    .alerta{background:#fef2f2;border:2px solid #dc2626;border-radius:10px;padding:8px;margin:6px 0;font-size:.75rem;color:#7f1d1d;font-weight:700}
+    table{width:100%;border-collapse:collapse;font-size:.73rem;margin-top:6px}
+    th{background:#78350f;color:#fff;padding:5px 8px;text-align:left}
+    td{padding:5px 8px;border-bottom:1px solid #f1f5f9}
+    tr:nth-child(even) td{background:#fffbeb}
+  </style>
+</head>
+<body>
+<header class="top-bar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <span class="top-title">Nutrição Hospitalar</span>
+  <div class="top-right"></div>
+</header>
+<main class="container" style="padding-bottom:90px">
+  <div class="nut-hdr">
+    <div class="nut-title">🍽️ Nutrição Hospitalar & UTI</div>
+    <div class="nut-sub">Avaliação Nutricional · Enteral · Parenteral · Síndrome de Realimentação</div>
+  </div>
+  <div class="tab-bar">
+    <button class="tab-btn active" id="tb0" onclick="showTab(0)">Avaliação & Cálculo</button>
+    <button class="tab-btn" id="tb1" onclick="showTab(1)">Enteral & Refeeding</button>
+    <button class="tab-btn" id="tb2" onclick="showTab(2)">Parenteral & Doenças</button>
+  </div>
+
+  <!-- TAB 0 — AVALIAÇÃO NUTRICIONAL -->
+  <div id="tab0">
+    <div class="card" style="padding:12px 14px">
+      <label>Peso atual (kg)</label>
+      <input type="number" id="peso" placeholder="ex: 70" min="20" max="300">
+      <label>Altura (cm)</label>
+      <input type="number" id="alt" placeholder="ex: 170" min="100" max="220">
+      <label>Idade (anos)</label>
+      <input type="number" id="idade" placeholder="ex: 55" min="18" max="110">
+      <label>Sexo</label>
+      <select id="sex"><option value="M">Masculino</option><option value="F">Feminino</option></select>
+      <label>Condição clínica / estresse metabólico</label>
+      <select id="stress">
+        <option value="1.0">Sem estresse — ambulatorial / pós-operatório leve</option>
+        <option value="1.1">Estresse leve — cirurgia eletiva, infecção leve</option>
+        <option value="1.25" selected>Estresse moderado — sepse, pós-op grave, trauma moderado</option>
+        <option value="1.4">Estresse grave — grande queimado &lt;50%, trauma grave, SARA</option>
+        <option value="1.5">Estresse muito grave — grande queimado &gt;50%, politrauma crítico</option>
+      </select>
+    </div>
+    <button class="btn-calc" onclick="calcNut()">🍽️ Calcular Necessidades</button>
+    <div id="nutResult" style="display:none"></div>
+
+    <div style="margin-top:14px">
+      <div style="font-size:.78rem;font-weight:800;color:#78350f;margin-bottom:8px">📋 NRS-2002 — Rastreio Nutricional em Internados</div>
+      <div class="nut-card" style="border-color:#b45309">
+        <div class="nut-nome" style="color:#b45309">NRS-2002 (recomendado ESPEN para hospitalizados)</div>
+        <div class="nut-body">
+          <strong>Triagem inicial (qualquer SIM = aplicar NRS-2002 completo):</strong><br>
+          • IMC &lt;20,5? · Perdeu peso nas últimas semanas? · Reduziu ingestão alimentar? · Doença grave?<br><br>
+          <strong>Score NRS-2002 (Componente 1 — Estado Nutricional):</strong><br>
+          <table>
+            <tr><th>Escore</th><th>Estado Nutricional</th></tr>
+            <tr><td>0</td><td>Estado nutricional normal</td></tr>
+            <tr><td>1 (leve)</td><td>Perda de peso &gt;5% em 3 meses OU ingestão &lt;75% nas últimas semanas</td></tr>
+            <tr><td>2 (moderado)</td><td>Perda de peso &gt;5% em 2 meses OU IMC 18,5–20,5 + estado geral reduzido OU ingestão 25–60%</td></tr>
+            <tr><td>3 (grave)</td><td>Perda &gt;5% em 1 mês (&gt;15% em 3 meses) OU IMC &lt;18,5 + estado geral reduzido OU ingestão 0–25%</td></tr>
+          </table>
+          <br>
+          <strong>Score NRS-2002 (Componente 2 — Gravidade da Doença):</strong><br>
+          <table>
+            <tr><th>Escore</th><th>Exemplo</th></tr>
+            <tr><td>1 (leve)</td><td>Fratura de quadril, DPOC, DM, paciente oncológico em quimio</td></tr>
+            <tr><td>2 (moderado)</td><td>Cirurgia abdominal, AVC, pneumonia grave, leucemia, linfoma</td></tr>
+            <tr><td>3 (grave)</td><td>TCE, transplante de MO, UTI com VM ou APACHE &gt;10</td></tr>
+          </table>
+          <br>
+          + 1 ponto se idade ≥70 anos<br>
+          <strong>Score total ≥3 = Risco nutricional → iniciar terapia nutricional</strong><br>
+          Score &lt;3 = reavaliação semanal<br><br>
+          <strong>Outras ferramentas:</strong><br>
+          MUST (Malnutrition Universal Screening Tool): usado em ambulatório e comunidade (IMC + perda de peso + efeito de doença aguda)<br>
+          MAN-SF (Mini Avaliação Nutricional): idosos ambulatoriais (6 perguntas, máx 14 pts; ≤11 = risco)<br>
+          NutriSCREEN-2 (ESPEN 2022): substitui NRS em algunos contextos — peso + doença + ingestão
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 1 — ENTERAL & REFEEDING -->
+  <div id="tab1" style="display:none">
+    <div id="enteralList"></div>
+  </div>
+
+  <!-- TAB 2 — PARENTERAL & DOENÇAS -->
+  <div id="tab2" style="display:none">
+    <div id="pnList"></div>
+  </div>
+</main>
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+<script src="js/db.js"></script>
+<script>
+function showTab(n){[0,1,2].forEach(i=>{document.getElementById('tab'+i).style.display=i===n?'block':'none';document.getElementById('tb'+i).classList.toggle('active',i===n);});if(n===1)renderEnteral();if(n===2)renderPN();}
+
+/* ─── CÁLCULO NUTRICIONAL ─────────────────────────────────────────── */
+function calcNut(){
+  const p=parseFloat(document.getElementById('peso').value);
+  const h=parseFloat(document.getElementById('alt').value);
+  const id=parseFloat(document.getElementById('idade').value);
+  const sx=document.getElementById('sex').value;
+  const st=parseFloat(document.getElementById('stress').value);
+  if(!p||!h||!id||p<20||h<100){alert('Preencha todos os campos.');return;}
+  // Mifflin-St Jeor (REE basal)
+  const miff=sx==='M'?(10*p)+(6.25*h)-(5*id)+5:(10*p)+(6.25*h)-(5*id)-161;
+  const get=miff*st;
+  const imc=p/((h/100)**2);
+  // Peso ideal
+  const pi=sx==='M'?50+0.906*(h-152):45.5+0.906*(h-152);
+  const pesoCalc=imc>30?pi+(p-pi)*0.25:p; // obesidade: usar peso ajustado
+  // Proteínas: ESPEN 2023 UTI
+  const protMin=pesoCalc*1.2;
+  const protMax=pesoCalc*2.0;
+  // Lipídios: 30% das calorias / 9 kcal/g → g/dia
+  const lipMin=Math.round(get*0.25/9);
+  const lipMax=Math.round(get*0.35/9);
+  // CHO: resto
+  const choMax=Math.round((get-lipMax*9-protMin*4)/4);
+  let obs='';
+  if(imc>=30) obs='<div class="alerta">⚠️ Obesidade: usar peso ajustado (PI + 25% excesso) para cálculo de proteínas e lipídios. Meta calórica: 22–25 kcal/kg PI em obesos (ASPEN/ESPEN).</div>';
+  const html=`<div class="result-box">
+    <div class="result-line"><span>IMC</span><span class="result-val">${imc.toFixed(1)} kg/m²</span></div>
+    <div class="result-line"><span>GEB basal (Mifflin)</span><span class="result-val">${Math.round(miff)} kcal/dia</span></div>
+    <div class="result-line"><span>Gasto Energético Total (fator estresse ×${st})</span><span class="result-val">${Math.round(get)} kcal/dia</span></div>
+    <div class="result-line"><span>Proteínas (1,2–2,0 g/kg)</span><span class="result-val">${Math.round(protMin)}–${Math.round(protMax)} g/dia</span></div>
+    <div class="result-line"><span>Lipídios alvo (25–35% do GET)</span><span class="result-val">${lipMin}–${lipMax} g/dia</span></div>
+    <div class="result-line"><span>Carboidratos (resto)</span><span class="result-val">~${choMax} g/dia (máx 7 g/kg/dia)</span></div>
+    <div style="margin-top:8px;font-size:.72rem;color:#64748b">
+      Meta UTI ESPEN 2023: 20–25 kcal/kg/dia fase aguda · Fase estável: atingir GER completo<br>
+      Glicemia alvo UTI: 140–180 mg/dL (NICE-SUGAR: controle estrito aumenta mortalidade)<br>
+      Nitrogênio: proteínas(g)/6,25 · Relação kcal não-proteica:N = 100–150:1 (UTI grave)
+    </div>
+  </div>${obs}`;
+  document.getElementById('nutResult').style.display='block';
+  document.getElementById('nutResult').innerHTML=html;
+}
+
+/* ─── ENTERAL & REFEEDING ─────────────────────────────────────────── */
+function renderEnteral(){
+  if(document.getElementById('enteralList').innerHTML) return;
+  const CARDS=[
+    {col:'#b45309',nome:'Terapia Nutricional Enteral (TNE) — Indicações e Início',
+     body:`<strong>Indicação de TNE:</strong><br>
+Trato gastrointestinal funcionante + incapacidade de ingestão oral ≥60% das necessidades por ≥3–5 dias<br>
+Prioridade: ENT sempre antes de TPN quando TGI funciona (custo, infecção, troficidade intestinal)<br><br>
+<strong>Início na UTI:</strong><br>
+• <strong>Início precoce: 24–48h após admissão em UTI</strong> (ESPEN 2023): reduz mortalidade, infecção, tempo de internação<br>
+• Volume inicial: 10–20 mL/h → aumentar 10–20 mL/h a cada 6–8h até meta (full feeding em 48–72h)<br>
+• "Hipocalórica permissiva" fase aguda: 70% do GET (80–100% de proteínas mantidas)<br>
+• Posição HOB: 30–45° obrigatório (previne aspiração e PAV)<br>
+• Checar resíduo gástrico: NÃO usar como único parâmetro de tolerância · Só pausar se &gt;500 mL em 6h COM intolerância clínica (distensão, vômito)<br><br>
+<strong>Via de acesso:</strong><br>
+• Sonda nasogástrica (SNG): 1ª escolha (estômago normal) · SNE pós-pilórica se gastroparesia<br>
+• SNE (nasoentérica, nasoduodenal, nasojejunal): íleo gastroparético · CI de SNG<br>
+• Gastrostomia (PEG): longo prazo (&gt;4 semanas) · Jejunostomia: pós-cirurgia gástrica<br><br>
+<strong>Fórmulas de Enteral — Seleção:</strong><br>
+<table>
+  <tr><th>Tipo</th><th>Indicação</th><th>Densidade</th></tr>
+  <tr><td>Polimérica padrão</td><td>Paciente geral com TGI normal</td><td>1,0–1,5 kcal/mL</td></tr>
+  <tr><td>Hipercalórica (1,5–2,0)</td><td>Restrição de volume (IC, SDRA)</td><td>1,5–2,0 kcal/mL</td></tr>
+  <tr><td>Hiperproteica (&gt;20% PTN)</td><td>UTI, feridas, sarcopenia, queimados</td><td>1,2–1,5 kcal/mL</td></tr>
+  <tr><td>Oligomérica (peptídios)</td><td>Síndrome má-absorção, pâncreas</td><td>1,0 kcal/mL</td></tr>
+  <tr><td>Elementar (AA livres)</td><td>Curto intestino, MICI grave, mucosites</td><td>1,0 kcal/mL</td></tr>
+  <tr><td>Renal (baixo K, P, N)</td><td>DRC em diálise (sem diálise: baixo PTN + baixo fósforo)</td><td>2,0 kcal/mL</td></tr>
+  <tr><td>Hepática (BCAA)</td><td>Encefalopatia hepática grave refratária</td><td>1,0 kcal/mL</td></tr>
+  <tr><td>Diabética (baixo CHO)</td><td>DM descompensado, controle glicêmico</td><td>1,2 kcal/mL</td></tr>
+</table>
+<br>
+<strong>Fibras em Enteral:</strong><br>
+Fibra solúvel (pectina, goma): controle glicêmico, diarreia · Fibra insolúvel: constipação<br>
+<strong>CI de fibra:</strong> risco de isquemia intestinal, pré/pós-operatório imediato, obstrução`,
+     note:'Módulos de adição: proteína em pó (caseinato/proteína de soro): aumentar PTN sem volume. Ômega-3 e EPA: benefício em SARA e oncológicos (ESPEN 2023: pode adicionar em SARA, mas evidência fraca). Prebióticos e probióticos: benefício em cirurgia eletiva (L. acidophilus, B. longum); NÃO usar em imunossuprimidos severos (risco de bacteremia).'},
+    {col:'#dc2626',nome:'Síndrome de Realimentação (Refeeding Syndrome)',
+     body:`<strong>Fisiopatologia:</strong> Introdução de carboidratos após jejum prolongado → pico de insulina → influxo celular de P, K, Mg → hipofosfatemia, hipocalemia, hipomagnesemia graves<br><br>
+<strong>Fatores de risco (critérios NICE 2006):</strong><br>
+<strong>Alto risco (qualquer 1 das seguintes):</strong><br>
+• IMC &lt;16 kg/m² · Perda de peso &gt;15% em 3–6 meses · Ingestão mínima &gt;10 dias · Eletrólitos baixos antes do início<br>
+OU &gt;2 dos seguintes: IMC 16–18,5 · Perda 10–15% em 3–6 meses · Ingestão mínima &gt;5 dias · Álcool, insulina, quimio, antiácidos<br><br>
+<strong>Manifesta:</strong> insuficiência cardíaca (IC por hipoP), fraqueza muscular respiratória, arritmias, edema periférico (retenção sódio), rábdomiólise, hemólise, confusão<br><br>
+<strong>Prevenção e tratamento:</strong><br>
+• <strong>Tiamina 200–300 mg/dia IV × 7–10 dias</strong> antes de reiniciar dieta (Wernicke!)<br>
+• Iniciar com <strong>10 kcal/kg/dia (máx 1000 kcal/dia)</strong> e aumentar lentamente ao longo de 5–7 dias<br>
+• Meta calórica plena: somente após eletrólitos normalizados<br>
+• <strong>Monitorar fósforo, potássio, magnésio e glicemia</strong> 2×/dia durante reinício<br>
+• Reposição PROATIVA antes de atingir hipoeletrolitemias graves:<br>
+  Fósforo: fosfato de potássio 0,3–0,6 mmol/kg/dia IV · Potássio: KCl IV/oral conforme nível<br>
+  Magnésio: sulfato de Mg 1–2 g IV 6/6h se &lt;1,2 mg/dL · Sódio: NÃO restringir excessivamente<br>
+• Vitaminas: polivitamínico IV (incluindo tiamina, riboflavina, folato) por 10 dias`,
+     note:'Síndrome de realimentação vs. síndrome de realimentação no alcoolista: ambas precisam tiamina; a do alcoolista tem maior risco de Wernicke. Monitorar ECG em hipofosfatemia grave: alargamento QT, ondas T planas/invertidas. Anorexia nervosa: síndrome de realimentação de alto risco — internação nutricional especializada com reinício muito gradual.'},
+    {col:'#065f46',nome:'Complicações de Nutrição Enteral — Manejo',
+     body:`<strong>Diarreia (complicação mais comum — 30–70% dos pacientes):</strong><br>
+Causas: C. difficile (descartar com toxina/PCR) · Fórmula hiperosmolar em velocidade alta · Antibióticos · Laxativos · Medicamentos em solução sorbitol (paracetamol xarope, ácido valproico solução)<br>
+• Velocidade inicial baixa (10 mL/h) e progressão lenta: previne<br>
+• Probióticos (L. rhamnosus GG): adjuvante em diarreia pós-antibiótico<br>
+• Fórmula com fibra solúvel: diarreia funcional<br>
+• Descartar Clostridioides difficile: SEMPRE em diarreia em uso de ATB (&gt;3 evacuações/24h)<br><br>
+<strong>Constipação:</strong><br>
+• Fibra insolúvel + hidratação adequada · Metilcelulose · Laxativos osmóticos (macrogol, lactulose)<br>
+• Prucaloprida 2 mg/dia: motilidade GI (útil em gastroparesia/constipação refratária)<br><br>
+<strong>Aspiração pulmonar:</strong><br>
+• HOB 30–45° SEMPRE · SNE pós-pilórica se resíduo elevado recorrente<br>
+• Metoclopramida 10 mg IV 3×/dia (curto prazo): procinético · Eritromicina 250 mg IV 3×/dia: potente procinético gástrico<br>
+• Domperidona: CI IV; VO com risco de QTc<br><br>
+<strong>Hiperglicemia enteral:</strong><br>
+• Meta: glicemia 140–180 mg/dL em UTI · 140–200 mg/dL na enfermaria<br>
+• Insulina NPH 10 UI SC ao início da TNE + correção com regular · Ou protocolo de infusão IV<br>
+• Fórmula diabética: menor índice glicêmico (fibra + ômega-3 + CHO complexo)`,
+     note:'Resíduo gástrico alto (>500 mL/6h): pausar TNE 1–2h e reiniciar com volume reduzido. Adicionar metoclopramida. Considerar SNE nasoentérica. NÃO usar resíduo alto isolado como motivo de suspensão se paciente sem intolerância clínica (ESPEN 2023). SONDA DE SILICONADA vs. PVC: PVC é rígida e adequada para curto prazo (até 2 semanas); sonda de silicone de longo prazo para PEG e SNE prolongada.'},
+  ];
+  document.getElementById('enteralList').innerHTML=CARDS.map(c=>`<div class="nut-card" style="border-color:${c.col}"><div class="nut-nome" style="color:${c.col}">${c.nome}</div><div class="nut-body">${c.body}</div>${c.note?`<div style="font-size:.7rem;color:#64748b;margin-top:6px">💡 ${c.note}</div>`:''}</div>`).join('');
+}
+
+/* ─── PARENTERAL & DOENÇAS ─────────────────────────────────────────── */
+function renderPN(){
+  if(document.getElementById('pnList').innerHTML) return;
+  const CARDS=[
+    {col:'#1e3a8a',nome:'Terapia Nutricional Parenteral (TNP) — Indicações, Composição e Complicações',
+     body:`<strong>Indicações de TNP:</strong><br>
+• TGI não-funcionante (obstrução intestinal total, íleo paralítico prolongado, fístula de alto débito &gt;500 mL/dia, isquemia intestinal, síndrome do intestino curto &lt;150 cm sem adaptação)<br>
+• Falha de TNE documentada após 48–72h com TGI parcialmente funcionante<br>
+• TNP NUNCA é 1ª escolha — sempre tentar TNE antes<br><br>
+<strong>Composição da bolsa de TNP (adulto 70 kg, 25 kcal/kg = 1750 kcal):</strong><br>
+<table>
+  <tr><th>Componente</th><th>Quantidade</th><th>Concentração usual</th></tr>
+  <tr><td>Glicose</td><td>200–250 g/dia</td><td>50% (500 mL) → diluir se via periférica</td></tr>
+  <tr><td>Aminoácidos</td><td>100–140 g/dia (PTN 1,2–2 g/kg)</td><td>10% (1000–1400 mL)</td></tr>
+  <tr><td>Emulsão lipídica</td><td>50–70 g/dia (1 g/kg)</td><td>20% (250–350 mL)</td></tr>
+  <tr><td>Sódio</td><td>80–120 mEq/dia</td><td>NaCl 20% ampolas</td></tr>
+  <tr><td>Potássio</td><td>60–120 mEq/dia</td><td>KCl 19,1% ampolas</td></tr>
+  <tr><td>Fósforo</td><td>20–40 mmol/dia</td><td>Fosfato de sódio/potássio</td></tr>
+  <tr><td>Magnésio</td><td>8–20 mEq/dia</td><td>MgSO4 50% ampolas</td></tr>
+  <tr><td>Cálcio</td><td>10–15 mEq/dia</td><td>Gluconato de Ca 10%</td></tr>
+  <tr><td>Oligoelementos</td><td>1 ampola/dia</td><td>Trace elements IV</td></tr>
+  <tr><td>Vitaminas</td><td>1 ampola/dia</td><td>Polivitamínico IV (A, B1, B2, B6, B12, C, D, E, K)</td></tr>
+</table>
+<br>
+<strong>Osmolaridade:</strong><br>
+Via central (CVC/PICC): bolsas de qualquer osmolaridade (tipicamente 1200–1800 mOsm/L)<br>
+Via periférica: osmolaridade ≤900 mOsm/L (limita concentração de glicose e aminoácidos)<br><br>
+<strong>Emulsão lipídica — evolução:</strong><br>
+Óleo de soja puro (Intralipid): rico em ômega-6 (pró-inflamatório) · Evitar &gt;1 g/kg em UTI<br>
+Misturas modernas (SMOF — Soja+Cadeia Média+Oliva+Óleo de peixe): anti-inflamatório, melhor em UTI e hepatopatia<br>
+Limpar: infundir lipídios em máx 12h (risco de contaminação e embolismo gasoso em prolongadas)<br>
+TG sérico &gt;400 mg/dL: pausar emulsão · &gt;1000 mg/dL: suspender (risco de pancreatite)<br><br>
+<strong>Glicemia em TNP:</strong><br>
+• Protocolo de insulina IV em UTI: glicemia 140–180 mg/dL<br>
+• Insulina adicionada à bolsa: somente em TNP cíclica de pacientes estáveis (adicionar 1 UI: 10 g glicose como ponto de partida)`,
+     note:'TNP cíclica (12–16h/noite): preferir quando possível — permite "janela" sem infusão, reduz complicações hepáticas da TNP contínua. Síndrome metabólica da TNP (steatose hepática): GGT + FA elevadas + esteatose → reduzir glicose, usar SMOF, tentar início de TNE mesmo em volume mínimo (troficidade intestinal). Infecção de cateter central (ICSRC): febre sem foco em TNP → coletar hemocultura do cateter e periférica; ATB e considerar troca de cateter.'},
+    {col:'#dc2626',nome:'Complicações Mecânicas e Metabólicas da TNP',
+     body:`<strong>Complicações mecânicas do cateter central (CVC/PICC):</strong><br>
+• Pneumotórax (punção subclávia/jugular): Rx tórax SEMPRE após inserção<br>
+• Hemotórax, lesão de veia subclávia, mal-posicionamento<br>
+• Trombose de CVC: heparina de flush preventiva · HBPM profilática em pacientes com histórico<br>
+• Embolia gasosa: posição Trendelenburg à esquerda + clamp + O2 100%<br>
+• PICC: menos pneumotórax, mais trombose de MMSS · Verificar posição com Rx<br><br>
+<strong>Complicações metabólicas:</strong><br>
+• <strong>Hiperglicemia:</strong> monitorar glicemia 4/4h inicialmente · Protocolo insulina<br>
+• <strong>Hipoglicemia (ao suspender TNP):</strong> reduzir velocidade em 50% por 30 min antes de suspender; ou manter glicose 10% temporariamente<br>
+• <strong>Síndrome de realimentação:</strong> ver Tab 1<br>
+• <strong>Hipertrigliceridemia:</strong> TG &gt;400 → reduzir/suspender lipídios; TG &gt;1000 → suspender (pancreatite)<br>
+• <strong>Hipofosfatemia:</strong> monitorar P sérico 2×/dia nas primeiras 72h (refeeding)<br>
+• <strong>Hepatotoxicidade:</strong> esteatose (TNP &gt;2 semanas contínua) · GGT/FA/Bil elevadas<br>
+  Reduzir glicose → aumentar lipídios · Iniciar qualquer TNE (mesmo 10 mL/h) · SMOF em vez de intralipid<br>
+• <strong>Doença metabólica óssea:</strong> TNP longa (&gt;3 meses) + hipercalciúria + hipomagnesemia → DEXA anual<br>
+• <strong>Déficits de micronutrientes:</strong> zinco (cicatrização), selênio (imunidade), cromo (glicemia), vitamina C`,
+     note:'ICSRC prevenção: troca de curativo a cada 7 dias com clorexidina · Técnica asséptica · Máx 1 luz dedicada à TNP (não colher sangue pela luz da TNP) · Linha de TNP não é para coleta de sangue ou outros medicamentos. Avaliar descontinuação de TNP: quando ENT atingir 60% das necessidades → suspender TNP (overlap de 1–2 dias).'},
+    {col:'#059669',nome:'Suporte Nutricional em Doenças Específicas',
+     body:`<strong>DRC em diálise (HD/DP):</strong><br>
+• Calorias: 30–35 kcal/kg PI/dia<br>
+• Proteínas: HD 1,2–1,4 g/kg/dia · DP 1,4–1,8 g/kg/dia (perda de PTN no dialisato)<br>
+• K: ≤2 g/dia (HD) · P: quelantes com refeições (carbonato de Ca, sevelamer, lantânio)<br>
+• TNP em HD: IDPN (intradiálise) — glicose 70 g + AA 70 g + lipídios 17 g durante sessão<br>
+• Fórmula enteral renal (Nepro, Suplena): hipercalórica, baixo P, baixo K<br><br>
+<strong>Insuficiência Hepática e Encefalopatia:</strong><br>
+• Calorias: 35–40 kcal/kg/dia (catabolismo aumentado) · NÃO restringir proteínas (pioram EH por longo prazo)<br>
+• Proteínas: 1,2–1,5 g/kg/dia (ESPEN 2019) · Preferir proteína vegetal e caseína (≥BCAA)<br>
+• BCAA (Aminofusin, Hepasol): EH grave refratária a lactulose + neomicina — pode adicionar BCAA IV<br>
+• Fórmula enteral com BCAA (Hepatic): EH grave, intolerância ao leite/carne<br>
+• Lactulose 30 mL 3×/dia: EH + constipação (reduz amônia absorvida)<br>
+• Zinco 200 mg/dia: deficiência frequente em hepatopatas (cofator urease)<br><br>
+<strong>Cirurgia Gastrointestinal (ERAS Protocol — Enhanced Recovery):</strong><br>
+• Carboidrato oral 400 mL (maltodextrina 12,5%) até 2h pré-operatório (reduz resistência à insulina, náusea)<br>
+• Jejum APENAS para sólidos: 6h antes; líquidos claros: 2h antes<br>
+• Início enteral pós-op: em 24h (mesmo com colostomia ou anastomose coloretal)<br>
+• Glutamina parenteral 0,5 g/kg/dia: grandes cirurgias e queimados (ESPEN 2023)<br><br>
+<strong>Queimados (&gt;20% SCQ):</strong><br>
+• Início enteral: 6–12h pós-lesão (menor íleo, menor translocação bacteriana)<br>
+• Necessidades calóricas: Curreri simplificado = 25 kcal/kg + 40 kcal × % SCQ (Cap: 2500–3000 kcal/dia)<br>
+• Proteínas: 2,0–2,5 g/kg/dia · Glutamina 0,5 g/kg/dia oral (reduz mortalidade em queimados)<br>
+• Vitamina C 1–2 g/dia IV × 24h pós-queimadura: reduz ressuscitação volêmica (Parque-Collins)`,
+     note:'Síndrome do Intestino Curto (SIC — <150 cm de intestino remanescente): TNP domiciliar de longo prazo. Medicamentos: teduglutida (análogo GLP-2) 0,05 mg/kg/dia SC: aumenta absorção intestinal → reduz dependência de TNP. Cuidado com hiperoxalúria renal em SIC com cólon remanescente (absorve oxalato → nefropatia por oxalato). Enzimas pancreáticas: pancreatite crônica exócrina (Creon 25.000–80.000 UI lipase com refeições).'},
+  ];
+  document.getElementById('pnList').innerHTML=CARDS.map(c=>`<div class="nut-card" style="border-color:${c.col}"><div class="nut-nome" style="color:${c.col}">${c.nome}</div><div class="nut-body">${c.body}</div>${c.note?`<div style="font-size:.7rem;color:#64748b;margin-top:6px">💡 ${c.note}</div>`:''}</div>`).join('');
+}
+</script>
+</body>
+</html>
