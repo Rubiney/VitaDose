@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Gota & Hiperuricemia — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .gota-hdr{background:linear-gradient(135deg,#b45309,#d97706);color:#fff;border-radius:14px;padding:18px;margin-bottom:14px}
+    .gota-title{font-size:1rem;font-weight:800;margin-bottom:4px}
+    .gota-sub{font-size:.73rem;opacity:.8}
+    label{font-size:.75rem;font-weight:700;color:#1e3a5f;display:block;margin-bottom:4px}
+    input[type=number]{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:10px;padding:10px 12px;font-size:.85rem;background:#fff;outline:none;margin-bottom:10px}
+    input:focus{border-color:#b45309}
+    select{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:10px;padding:10px 12px;font-size:.85rem;background:#fff;margin-bottom:10px}
+    .checkbox-group{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
+    .checkbox-item{display:flex;align-items:center;gap:8px;font-size:.8rem;cursor:pointer}
+    .checkbox-item input[type=checkbox]{width:18px;height:18px;accent-color:#b45309;cursor:pointer}
+    .btn-calc{width:100%;background:#b45309;color:#fff;border:none;border-radius:12px;padding:13px;font-size:.87rem;font-weight:700;cursor:pointer;margin:8px 0}
+    .btn-auto{background:#0f766e;color:#fff;border:none;border-radius:10px;padding:10px 16px;font-size:.8rem;font-weight:700;cursor:pointer;margin-bottom:10px}
+    .tab-bar{display:flex;gap:6px;margin-bottom:14px}
+    .tab-btn{flex:1;padding:9px 4px;border-radius:10px;border:2px solid #e2e8f0;background:#fff;font-size:.76rem;font-weight:700;cursor:pointer;color:#64748b}
+    .tab-btn.active{border-color:#b45309;background:#fffbeb;color:#b45309}
+    .rec-card{border-radius:12px;border:2px solid;padding:14px;margin-bottom:10px}
+    .rec-hdr{font-size:.63rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+    .rec-nome{font-size:.88rem;font-weight:800;margin-bottom:6px}
+    .rec-badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:.65rem;font-weight:800;color:#fff;margin:2px}
+    .rec-body{font-size:.78rem;margin-top:6px;line-height:1.7}
+    .rec-note{font-size:.71rem;color:#64748b;margin-top:6px;padding-top:6px;border-top:1px solid #f1f5f9}
+    .urato-card{border-radius:14px;border:4px solid;padding:14px;margin-bottom:10px;text-align:center}
+    .urato-num{font-size:2rem;font-weight:900;line-height:1}
+    .urato-lbl{font-size:.85rem;font-weight:800;margin-top:4px}
+    .urato-sub{font-size:.72rem;margin-top:6px}
+    .input-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .mon-row{padding:8px 0;border-bottom:1px solid #f1f5f9;font-size:.77rem}
+    .mon-row:last-child{border-bottom:none}
+    .mon-lbl{font-weight:800;color:#1e3a5f;margin-bottom:2px}
+    .mon-sub{font-size:.7rem;color:#64748b}
+    .diet-item{padding:6px 0;border-bottom:1px dashed #fef3c7;font-size:.77rem}
+    .diet-item:last-child{border-bottom:none}
+  </style>
+</head>
+<body>
+<header class="top-bar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <span class="top-title">Gota & Hiperuricemia</span>
+  <div class="top-right"></div>
+</header>
+<main class="container" style="padding-bottom:90px">
+
+  <div class="gota-hdr">
+    <div class="gota-title">🦶 Gota & Hiperuricemia — Manejo Farmacológico</div>
+    <div class="gota-sub">Crise aguda · Alopurinol / Febuxostat · Profilaxia · Meta &lt;6 mg/dL · Interação alopurinol+azatioprina</div>
+  </div>
+
+  <div class="tab-bar">
+    <button class="tab-btn active" id="tb0" onclick="showTab(0)">Crise Aguda</button>
+    <button class="tab-btn" id="tb1" onclick="showTab(1)">Hipouricemiante</button>
+    <button class="tab-btn" id="tb2" onclick="showTab(2)">Monitoramento</button>
+  </div>
+
+  <!-- TAB 0 – CRISE AGUDA -->
+  <div id="tab0">
+    <button class="btn-auto" onclick="autoFill()">⚡ Auto-preencher do paciente ativo</button>
+    <div class="card" style="padding:12px 14px">
+      <label>Perfil do paciente</label>
+      <select id="g_perfil">
+        <option value="geral">Adulto sem contraindicação específica</option>
+        <option value="drc">DRC (TFG &lt;60)</option>
+        <option value="ic_anticoag">IC / Anticoagulado (risco sangramento GI)</option>
+        <option value="ulcera">Úlcera péptica ativa / sangramento GI prévio</option>
+      </select>
+      <label>Número de articulações envolvidas</label>
+      <select id="g_articular">
+        <option value="mono">Monoarticular (1 articulação — clássico: hálux/halux)</option>
+        <option value="oligo">Oligoarticular (2–3 articulações)</option>
+        <option value="poli">Poliarticular (>3 articulações)</option>
+      </select>
+      <label>Comorbidades relevantes</label>
+      <div class="checkbox-group">
+        <label class="checkbox-item"><input type="checkbox" id="g_aza"> Em uso de azatioprina ou mercaptopurina (6-MP)</label>
+        <label class="checkbox-item"><input type="checkbox" id="g_warfar"> Em uso de warfarina</label>
+        <label class="checkbox-item"><input type="checkbox" id="g_dm"> Diabetes mellitus</label>
+        <label class="checkbox-item"><input type="checkbox" id="g_card"> Cardiopata (IC, pós-IAM)</label>
+      </div>
+    </div>
+    <button class="btn-calc" onclick="calcCrise()">🔥 Gerar protocolo para crise de gota</button>
+    <div id="criseResult" style="display:none"></div>
+  </div>
+
+  <!-- TAB 1 – HIPOURICEMIANTE -->
+  <div id="tab1" style="display:none">
+    <div class="card" style="padding:12px 14px">
+      <div class="input-row">
+        <div><label>Ácido úrico atual (mg/dL)</label><input type="number" id="au_atual" placeholder="ex.: 8.4" step="0.1" min="0"></div>
+        <div><label>TFG (mL/min/1,73m²)</label><input type="number" id="au_tfg" placeholder="ex.: 55" min="0"></div>
+      </div>
+      <label>Indicação de terapia hipouricemiante</label>
+      <select id="au_indic">
+        <option value="crises">≥2 crises/ano de gota</option>
+        <option value="tofo">Gota tofácea (tofos palpáveis)</option>
+        <option value="dano">Lesão articular radiológica</option>
+        <option value="drc_au">DRC + hiperuricemia &gt;9 mg/dL</option>
+        <option value="1crise">1ª crise + comorbidade (DRC, litíase, hiperuricemia grave)</option>
+      </select>
+    </div>
+    <button class="btn-calc" onclick="calcHipouric()">💊 Calcular esquema hipouricemiante</button>
+    <div id="hipouricResult" style="display:none"></div>
+  </div>
+
+  <!-- TAB 2 – MONITORAMENTO -->
+  <div id="tab2" style="display:none">
+    <div class="card" style="padding:10px 14px;margin-bottom:10px">
+      <div style="font-size:.78rem;font-weight:800;color:#b45309;margin-bottom:8px">📋 Monitoramento e Seguimento</div>
+      <div id="monList"></div>
+    </div>
+    <div class="card" style="padding:10px 14px;margin-bottom:10px">
+      <div style="font-size:.78rem;font-weight:800;color:#dc2626;margin-bottom:8px">⚠️ Interação Crítica: Alopurinol + Azatioprina</div>
+      <div id="interAza"></div>
+    </div>
+    <div class="card" style="padding:10px 14px">
+      <div style="font-size:.78rem;font-weight:800;color:#0f766e;margin-bottom:8px">🥗 Dieta, Estilo de Vida e Desencadeantes</div>
+      <div id="dietList"></div>
+    </div>
+  </div>
+
+</main>
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+<script src="js/db.js"></script>
+<script>
+const pid=localStorage.getItem('vd_active');
+function showTab(n){[0,1,2].forEach(i=>{document.getElementById('tab'+i).style.display=i===n?'block':'none';document.getElementById('tb'+i).classList.toggle('active',i===n);});if(n===2){renderMon();renderInterAza();renderDiet();}}
+async function autoFill(){if(!pid){alert('Nenhum paciente ativo.');return;}const pac=await dbGet('pacientes',parseInt(pid));if(!pac)return;const conds=pac.condicoes||[];if(conds.includes('dm'))document.getElementById('g_dm').checked=true;if(conds.includes('ic'))document.getElementById('g_card').checked=true;}
+function recHTML(r){return `<div class="rec-card" style="border-color:${r.col}"><div class="rec-hdr" style="color:${r.col}">${r.hdr}</div><div class="rec-nome">${r.nome}</div><div>${(r.badges||[]).map(b=>`<span class="rec-badge" style="background:${b.c}">${b.t}</span>`).join('')}</div><div class="rec-body">${r.body}</div>${r.note?`<div class="rec-note">${r.note}</div>`:''}</div>`;}
+
+/* ── CRISE AGUDA ──────────────────────────────────────────────────────── */
+function calcCrise(){
+  const perfil  =document.getElementById('g_perfil').value;
+  const articular=document.getElementById('g_articular').value;
+  const aza     =document.getElementById('g_aza').checked;
+  const warfar  =document.getElementById('g_warfar').checked;
+  const dm      =document.getElementById('g_dm').checked;
+  const card    =document.getElementById('g_card').checked;
+  const recs=[];
+
+  const antiAINE = perfil==='drc'||perfil==='ic_anticoag'||perfil==='ulcera'||card;
+
+  // Colchicina
+  recs.push({hdr:'1ª Escolha — Colchicina (Dose Baixa)',col:'#16a34a',nome:'Colchicina 0,5 mg — Esquema ACR/EULAR 2020',badges:[{t:'1ª linha ACR/EULAR',c:'#16a34a'},{t:'Eficácia = AINE sem RAM GI',c:'#059669'}],
+    body:`<strong>Colchicina 0,5 mg:</strong> 2 comprimidos na 1ª hora (dose de ataque 1 mg) → 1 comprimido 1h depois (0,5 mg) → 0,5 mg 2×/dia até resolução da crise (máx 7 dias)<br><br><strong>Dose baixa preferida sobre dose alta:</strong> eficácia equivalente com menos diarreia/vômito (AGREE trial)<br><br><strong>Iniciar em até 24–36h do início da crise</strong> — eficácia cai muito se iniciada tardiamente<br><strong>Se já em uso de colchicina profilática:</strong> dose extra de 1 mg + 0,5 mg após 1h; sem colchicina nas próximas 12h`,
+    note:perfil==='drc'?'⚠️ DRC (TFG <30): colchicina acumula — reduzir para 0,5 mg/dia máximo; TFG <10 ou diálise: usar corticoide (evitar colchicina).':''});
+
+  // AINE
+  if(!antiAINE){
+    recs.push({hdr:'Alternativa — AINE (se colchicina contraindicada)',col:'#d97706',nome:'Indometacina, Naproxeno ou Etoricoxibe',badges:[{t:'AINE',c:'#d97706'}],
+      body:`<strong>Indometacina</strong> 50 mg 3×/dia × 5–7 dias (protótipo — mais RAM GI)<br><strong>Naproxeno</strong> 500 mg 2×/dia × 5–7 dias (melhor perfil CV vs indometacina)<br><strong>Etoricoxibe</strong> 120 mg/dia × 5 dias (COX-2: menor RAM GI; eficácia superior a indometacina no ACR 2020)<br><br>Sempre associar: Omeprazol 20 mg/dia durante uso de AINE (gastroproteção)`,
+      note:`${warfar?'⚠️ AINE + Warfarina: risco aumentado de sangramento GI + ↑ INR. Monitorar INR diariamente nos primeiros dias e usar etoricoxibe (menor efeito plaquetário).':''}`});
+  } else {
+    recs.push({hdr:'AINE — Contraindicado neste perfil',col:'#dc2626',nome:`AINE evitado: ${perfil==='drc'?'DRC (↓ TFG, ↑ K⁺, retenção hídrica)':perfil==='ic_anticoag'?'IC / anticoagulado (↑ risco sangramento + retenção hídrica)':'Úlcera / sangramento GI ativo'}`,
+      badges:[{t:'AINE contraindicado',c:'#dc2626'}],
+      body:'Usar colchicina ou corticoide como alternativa.',note:''});
+  }
+
+  // Corticoide
+  recs.push({hdr:'Corticoide — Quando colchicina E AINE estão contraindicados',col:'#7c3aed',nome:'Prednisona 0,5 mg/kg/dia × 5–7 dias (≈ 30–40 mg/dia)',badges:[{t:'Corticoide',c:'#7c3aed'}],
+    body:`<strong>Prednisona</strong> 30–40 mg/dia × 5 dias → retirar sem desmame se ≤7 dias<br><strong>Betametasona / Triamcinolona intra-articular:</strong> excelente para monoartrite de grande articulação (joelho, tornozelo); aspiração do líquido sinovial + injeção intra-articular — início de ação rápido e sem efeitos sistêmicos<br><strong>Metilprednisolona</strong> 40–80 mg IM: dose única; alternativa se poliarticular e VO não tolerado`,
+    note:dm?'⚠️ Corticoide em diabético: hiperglicemia pós-uso — monitorar glicemia capilar 2–3×/dia durante curso curto. Preferir colchicina em DM se possível.':perfil==='drc'?'DRC avançada: corticoide oral ou intra-articular é a 1ª opção (evitar AINE e reduzir colchicina).':''});
+
+  // Não mexer no hipouricemiante durante crise
+  recs.push({hdr:'⚠️ NÃO ALTERAR hipouricemiante durante a crise',col:'#dc2626',nome:'Manter dose de alopurinol/febuxostat — iniciar após 4–6 semanas',badges:[{t:'Regra crítica',c:'#dc2626'}],
+    body:`Iniciar alopurinol/febuxostat DURANTE crise aguda: ↑ risco de prolongar ou recrudescer a artrite<br>Se já em uso: <strong>manter</strong> (não suspender — a suspensão também precipita crise)<br>Se nunca iniciado: aguardar 4–6 semanas após resolução completa da crise para iniciar`,
+    note:'A queda aguda de urato (seja para cima ou para baixo) mobiliza cristais das articulações e precipita crises — a estabilidade é mais importante que o nível absoluto durante a crise.'});
+
+  if(articular==='poli') recs.push({hdr:'Gota Poliarticular — Abordagem Específica',col:'#0369a1',nome:'Diagnóstico diferencial e tratamento sistêmico',badges:[{t:'Poliarticular',c:'#0369a1'}],
+    body:'Gota poliarticular: excluir artrite séptica (artrocentese com cultura) e artrite reumatoide (FR, anti-CCP)<br>Tratamento: corticoide sistêmico (prednisona 30–40 mg/dia) + colchicina juntos (complementar)<br>Canakinumabe 150 mg SC (IL-1β bloqueador) — aprovado para gota poliarticular refratária em contraindicação a AINE, colchicina e corticoide',note:''});
+
+  document.getElementById('criseResult').style.display='block';
+  document.getElementById('criseResult').innerHTML=recs.map(recHTML).join('');
+  document.getElementById('criseResult').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+/* ── HIPOURICEMIANTE ──────────────────────────────────────────────────── */
+function calcHipouric(){
+  const au   =parseFloat(document.getElementById('au_atual').value)||0;
+  const tfg  =parseFloat(document.getElementById('au_tfg').value)||0;
+  const indic=document.getElementById('au_indic').value;
+  const recs=[];
+
+  const metaAlvo=indic==='tofo'?5:6;
+  let cor=au>metaAlvo?'#dc2626':'#16a34a';
+
+  if(au){
+    document.getElementById('hipouricResult').style.display='block';
+    document.getElementById('hipouricResult').innerHTML=`<div class="urato-card" style="border-color:${cor};background:${cor}15">
+      <div class="urato-num" style="color:${cor}">${au} mg/dL</div>
+      <div class="urato-lbl" style="color:${cor}">Ácido úrico atual · Meta: &lt;${metaAlvo} mg/dL</div>
+      <div class="urato-sub">${indic==='tofo'?'Gota tofácea: meta mais rigorosa (<5 mg/dL) para dissolução dos tofos':'Meta padrão: <6 mg/dL (abaixo do ponto de saturação do urato monossódico)'}</div>
+    </div>`;
+  } else {
+    document.getElementById('hipouricResult').style.display='none';
+  }
+
+  // Alopurinol
+  const alopMax=tfg>60?900:tfg>45?600:tfg>30?400:tfg>15?200:100;
+  recs.push({hdr:'1ª Linha — Alopurinol (Inibidor de Xantina Oxidase)',col:'#b45309',nome:'Alopurinol — titulação obrigatória e lenta',badges:[{t:'1ª linha ACR/EULAR',c:'#b45309'},{t:'SHJ: HLA-B*58:01',c:'#dc2626'}],
+    body:`<strong>Início OBRIGATÓRIO com dose baixa:</strong> 50–100 mg/dia (nunca iniciar já em dose terapêutica → ↑ risco de crise de mobilização)<br><strong>Titulação:</strong> aumentar 50–100 mg a cada 2–4 semanas baseado no ácido úrico sérico<br><strong>Dose habitual:</strong> 300 mg/dia; <strong>Dose máxima:</strong> ${alopMax} mg/dia (ajustado para TFG ${tfg||'?'} mL/min)<br><br><strong>Ajuste por TFG (dose máxima segura):</strong><br>TFG &gt;60: até 900 mg/dia · TFG 45–60: até 600 mg · TFG 30–44: até 400 mg · TFG 15–29: até 200 mg · TFG &lt;15: até 100 mg<br><br>⚠️ <strong>SHJ (Síndrome de Hipersensibilidade ao Alopurinol):</strong> rash generalizado → DRESS/necrólise epidérmica tóxica. Risco: HLA-B*58:01 (mais comum em asiáticos — triagem genética recomendada em tailandeses, coreanos, han-chineses). Mortalidade: 25–30% se SHJ grave`,
+    note:'Warfarina: alopurinol inibe CYP2C9 → ↑ INR significativo. Monitorar INR semanalmente no início. Azatioprina/6-MP: INTERAÇÃO GRAVE — ver aba Monitoramento.'});
+
+  recs.push({hdr:'2ª Linha — Febuxostate (Inibidor de XO não-purínico)',col:'#0369a1',nome:'Febuxostat 40–80 mg/dia — alternativa ao alopurinol',badges:[{t:'2ª linha',c:'#0369a1'},{t:'Sem ajuste TFG leve-mod.',c:'#059669'}],
+    body:`<strong>Febuxostat 40 mg/dia</strong> → avaliar urato em 4–6 semanas → 80 mg/dia se necessário (máx 120 mg/dia em refratários)<br><strong>Vantagem:</strong> sem ajuste renal significativo até TFG &gt;30; não requer triagem HLA-B*58:01<br><strong>Desvantagem:</strong> sinal de ↑ eventos cardiovasculares vs alopurinol no estudo CARES (pacientes de alto risco CV) → black box warning FDA<br>Preferir alopurinol em cardiopata; febuxostat: DRC moderada ou intolerância/falha ao alopurinol`,
+    note:'Febuxostat e alopurinol são interadicáveis — ao trocar, manter mesmas recomendações de início com dose baixa e profilaxia com colchicina.'});
+
+  // Profilaxia
+  recs.push({hdr:'Profilaxia de Crises durante Hipouricemiante',col:'#7c3aed',nome:'Colchicina 0,5 mg/dia × 3–6 meses (padrão ACR)',badges:[{t:'Profilaxia',c:'#7c3aed'}],
+    body:`<strong>Colchicina 0,5 mg/dia:</strong> iniciar junto com alopurinol/febuxostat e manter por 3–6 meses (ou até 6 meses após atingir meta de urato)<br><strong>Racional:</strong> queda do urato mobiliza cristais das articulações → crises de mobilização nas primeiras semanas<br><strong>Se colchicina contraindicada (DRC grave):</strong> Naproxeno 250 mg 2×/dia como profilaxia<br><strong>Duração mínima:</strong> até ácido úrico estável na meta por ≥3 meses consecutivos`,
+    note:'Sem profilaxia ao iniciar hipouricemiante: ↑3× o risco de crise nos primeiros 3 meses. Profilaxia NÃO aumenta o urato — apenas previne crises de mobilização.'});
+
+  // Uricosúrico
+  recs.push({hdr:'Uricosúrico — Probenecida (subutilizado no Brasil)',col:'#0f766e',nome:'Probenecida 250–1000 mg 2×/dia — excretores lentos',badges:[{t:'Alternativa',c:'#0f766e'}],
+    body:`<strong>Indicação:</strong> sub-excretores de urato (uricosúria/24h &lt;800 mg/dia) · Intolerância/falha a alopurinol e febuxostat<br><strong>Dose:</strong> 250 mg 2×/dia → 500 mg 2×/dia → até 1000 mg 2×/dia<br><strong>Contraindicações:</strong> TFG &lt;50 (ineficaz); litíase úrica (↑ urato urinário); hiperuricosúria (produtores excessivos)<br><br><strong>Lesinurad</strong> (em combinação com XOI): disponível em outros países; potencializa uricosúria`,
+    note:'Hidratação obrigatória ≥2 L/dia durante uso de uricosúrico (↑ excreção renal de urato → risco de litíase). Alcalinizar urina (bicarbonato de sódio): pH urinário 6–6,5 ↑ solubilidade do urato.'});
+
+  document.getElementById('hipouricResult').innerHTML+= recs.map(recHTML).join('');
+}
+
+/* ── MONITORAMENTO ────────────────────────────────────────────────────── */
+function renderMon(){
+  const MON=[
+    {lbl:'Ácido úrico sérico',sub:'Baseline → 4–6 semanas após início ou ajuste de dose → a cada 3–6 meses após estabilização. Meta: <6 mg/dL (padrão); <5 mg/dL (tofácea). Evitar coleta em crise aguda (ácido úrico pode estar falsamente normal durante inflamação aguda)'},
+    {lbl:'Hemograma + TGO/TGP + Creatinina (alopurinol)',sub:'Basalmente e 4–6 semanas após início; depois anualmente. Citopenia rara. Hepatotoxicidade: rara mas pode ocorrer. TFG guia dose máxima.'},
+    {lbl:'INR (se warfarina + alopurinol)',sub:'Alopurinol inibe CYP2C9: ↑ warfarina. Monitorar INR semanalmente nos primeiros 2–4 meses. Ajustar warfarina conforme INR.'},
+    {lbl:'Frequência de crises de gota',sub:'Objetivo: zero crises após 6–12 meses com ácido úrico na meta. Persistência de crises apesar de urato <6: revisar diagnóstico (pseudogota/CPPD? artrite séptica?). Tofos: regridem em 1–3 anos com urato <5 mg/dL'},
+    {lbl:'Função renal (TFG)',sub:'DRC e hiperuricemia: relação bidirecional. Urato >9 mg/dL independentemente piora TFG. Controle do urato melhora desfechos renais. TFG reavaliada a cada 3–6 meses.'},
+    {lbl:'Radiografias articulares',sub:'Baseline em suspeita de dano articular. Tofos subcondrais, cistos, erosões. Reavaliação anual em gota tofácea. DXA em osteoporose associada (mobilização de cálcio por inflamação crônica).'},
+  ];
+  document.getElementById('monList').innerHTML=MON.map(m=>`<div class="mon-row"><div class="mon-lbl">${m.lbl}</div><div class="mon-sub">${m.sub}</div></div>`).join('');
+}
+
+function renderInterAza(){
+  document.getElementById('interAza').innerHTML=`<div style="font-size:.77rem;line-height:1.8">
+<strong>⚠️ INTERAÇÃO GRAVE — POTENCIALMENTE FATAL</strong><br>
+Alopurinol inibe a xantina oxidase, que metaboliza a azatioprina e a 6-mercaptopurina (6-MP).<br>
+Resultado: acúmulo de metabólitos tóxicos (6-TGN) → mielossupressão grave (pancitopenia, aplasia medular)<br><br>
+<strong>Conduta obrigatória:</strong><br>
+• Se paciente JÁ usa azatioprina ou 6-MP: <strong>NUNCA iniciar alopurinol sem reduzir dose da azatioprina para 25% da dose habitual</strong><br>
+• Monitorar hemograma semanalmente nas primeiras 4–8 semanas<br>
+• Alternativa: <strong>febuxostat</strong> em vez de alopurinol (febuxostat NÃO inibe xantina oxidase da mesma forma — interação significativamente menor, mas ainda presente — usar com cautela e reduzir azatioprina 50%)<br>
+• Alternativa melhor ainda: <strong>probenecida</strong> (sem interação com azatioprina)<br><br>
+Medicamentos afetados: azatioprina (Imuno), mercaptopurina (6-MP, Purinethol), tioguanina
+</div>`;
+}
+
+function renderDiet(){
+  const DIET=[
+    {t:'🚫 Evitar sempre',c:'#dc2626',items:'Vísceras (fígado, rim, coração, miolo) — purinas altíssimas · Frutos do mar (anchova, sardinha, atum enlatado, camarão, mexilhão) · Cerveja (↑ urato + desidrataação) · Bebidas adoçadas com frutose (refrigerante, suco industrializado) — frutose metabolizada a urato'},
+    {t:'⚠️ Consumir com moderação',c:'#d97706',items:'Carnes vermelhas (boi, porco) e aves · Feijão, lentilha, ervilha (purinas moderadas mas evidência de impacto menor que as proteínas animais) · Vinho (menos que cerveja, mas ainda ↑ urato) · Espinafre, aspargo, couve-flor (purinas vegetais — menor absorção e impacto clínico menor)'},
+    {t:'✅ Alimentos com efeito protetor',c:'#16a34a',items:'Leite desnatado e iogurte (↓ urato em 10–15% — estimula excreção renal) · Cerejas / extrato de cereja: ↓ inflamação e cristalização do urato · Vitamina C ≥500 mg/dia (leve efeito uricosúrico) · Café (↓ urato e risco de gota em estudos prospectivos) · Água: ≥2 L/dia (↑ excreção renal de urato)'},
+    {t:'💊 Medicamentos que ↑ urato (identificar e ajustar)',c:'#7c3aed',items:'Diuréticos tiazídicos (hidroclorotiazida) e de alça (furosemida) — principal causa iatrogênica · AAS em baixas doses (salicilato retém urato) · Ciclosporina / tacrolimo · Pirazinamida (anti-TB) · Nicotinato (niacina) · Etanol · Frutose IV · Losartana e fenofibrato têm efeito uricosúrico leve — preferíveis em hipertensos com gota'},
+  ];
+  document.getElementById('dietList').innerHTML=DIET.map(d=>`<div class="diet-item"><div style="font-weight:800;color:${d.c};margin-bottom:3px">${d.t}</div><div style="color:#374151">${d.items}</div></div>`).join('');
+}
+</script>
+</body>
+</html>

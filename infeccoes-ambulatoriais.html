@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Infecções Ambulatoriais — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .inf-hdr{background:linear-gradient(135deg,#065f46,#047857);color:#fff;border-radius:14px;padding:18px;margin-bottom:14px}
+    .inf-title{font-size:1rem;font-weight:800;margin-bottom:4px}
+    .inf-sub{font-size:.73rem;opacity:.8}
+    label{font-size:.75rem;font-weight:700;color:#1e3a5f;display:block;margin-bottom:4px}
+    select{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:10px;padding:10px 12px;font-size:.85rem;background:#fff;margin-bottom:10px}
+    select:focus{border-color:#065f46;outline:none}
+    .checkbox-group{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
+    .checkbox-item{display:flex;align-items:center;gap:8px;font-size:.8rem;cursor:pointer}
+    .checkbox-item input[type=checkbox]{width:18px;height:18px;accent-color:#065f46;cursor:pointer}
+    .btn-calc{width:100%;background:#065f46;color:#fff;border:none;border-radius:12px;padding:13px;font-size:.87rem;font-weight:700;cursor:pointer;margin:8px 0}
+    .tab-bar{display:flex;gap:6px;margin-bottom:14px}
+    .tab-btn{flex:1;padding:9px 4px;border-radius:10px;border:2px solid #e2e8f0;background:#fff;font-size:.76rem;font-weight:700;cursor:pointer;color:#64748b}
+    .tab-btn.active{border-color:#065f46;background:#f0fdf4;color:#065f46}
+    .inf-card{border-radius:12px;border-left:5px solid;padding:14px;margin-bottom:10px;background:#fff}
+    .inf-tipo{font-size:.63rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+    .inf-nome{font-size:.88rem;font-weight:800;margin-bottom:6px}
+    .inf-badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:.65rem;font-weight:800;color:#fff;margin:2px}
+    .inf-body{font-size:.78rem;margin-top:6px;line-height:1.7}
+    .inf-note{font-size:.71rem;color:#64748b;margin-top:6px;padding-top:6px;border-top:1px solid #f1f5f9}
+    .hp-step{border-radius:10px;border:2px solid #d1fae5;background:#f0fdf4;padding:12px 14px;margin-bottom:8px}
+    .hp-title{font-size:.8rem;font-weight:800;color:#065f46;margin-bottom:6px}
+    .hp-body{font-size:.77rem;line-height:1.7;color:#374151}
+    .hp-note{font-size:.7rem;color:#64748b;margin-top:4px}
+  </style>
+</head>
+<body>
+<header class="top-bar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <span class="top-title">Infecções Ambulatoriais</span>
+  <div class="top-right"></div>
+</header>
+<main class="container" style="padding-bottom:90px">
+
+  <div class="inf-hdr">
+    <div class="inf-title">🦠 Infecções Ambulatoriais — Protocolo Farmacológico</div>
+    <div class="inf-sub">ITU · Pneumonia comunitária · Faringite · H. pylori · Celulite/erisipela · Critérios de hospitalização</div>
+  </div>
+
+  <div class="tab-bar">
+    <button class="tab-btn active" id="tb0" onclick="showTab(0)">ITU & Respiratório</button>
+    <button class="tab-btn" id="tb1" onclick="showTab(1)">H. pylori</button>
+    <button class="tab-btn" id="tb2" onclick="showTab(2)">Pele & Partes Moles</button>
+  </div>
+
+  <!-- TAB 0 – ITU & RESPIRATÓRIO -->
+  <div id="tab0">
+    <div class="card" style="padding:12px 14px">
+      <label>Selecione a infecção</label>
+      <select id="inf_tipo">
+        <option value="itu_simples">ITU não-complicada (mulher, &lt;65 anos, sem fatores de risco)</option>
+        <option value="itu_comp">ITU complicada / Recorrente / Pielonefrite leve-mod</option>
+        <option value="itu_masc">ITU masculina / Prostatite bacteriana aguda</option>
+        <option value="ivas">IVAS — Faringite / Amigdalite estreptocócica</option>
+        <option value="pnc">Pneumonia Comunitária (PAC)</option>
+        <option value="bq_aguda">Bronquite aguda em adulto (sem DPOC)</option>
+        <option value="sinusite">Sinusite bacteriana aguda</option>
+      </select>
+      <label>Perfil e comorbidades</label>
+      <div class="checkbox-group">
+        <label class="checkbox-item"><input type="checkbox" id="i_gest"> Gestante</label>
+        <label class="checkbox-item"><input type="checkbox" id="i_alergia"> Alergia à penicilina</label>
+        <label class="checkbox-item"><input type="checkbox" id="i_drc"> DRC (TFG &lt;60)</label>
+        <label class="checkbox-item"><input type="checkbox" id="i_imuno"> Imunossuprimido / DM descompensado</label>
+      </div>
+    </div>
+    <button class="btn-calc" onclick="calcInf()">🔬 Gerar protocolo de tratamento</button>
+    <div id="infResult" style="display:none"></div>
+  </div>
+
+  <!-- TAB 1 – H. PYLORI -->
+  <div id="tab1" style="display:none">
+    <div class="card" style="padding:12px 14px">
+      <label>Situação clínica</label>
+      <select id="hp_sit">
+        <option value="1linha">1ª linha — sem exposição prévia a antibióticos</option>
+        <option value="falha_clari">Falha após esquema com claritromicina</option>
+        <option value="falha_metro">Falha após esquema com metronidazol</option>
+        <option value="alergia_pen">Alergia à penicilina</option>
+        <option value="3linha">3ª linha / Refratário (≥2 falhas)</option>
+      </select>
+    </div>
+    <button class="btn-calc" onclick="calcHP()">🧫 Gerar esquema de erradicação</button>
+    <div id="hpResult" style="display:none"></div>
+    <div class="card" style="padding:10px 14px;margin-top:8px">
+      <div style="font-size:.78rem;font-weight:800;color:#065f46;margin-bottom:8px">📋 Confirmação de erradicação e diagnóstico</div>
+      <div id="hpMon"></div>
+    </div>
+  </div>
+
+  <!-- TAB 2 – PELE & PARTES MOLES -->
+  <div id="tab2" style="display:none">
+    <div id="peleList"></div>
+  </div>
+
+</main>
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+<script src="js/db.js"></script>
+<script>
+function showTab(n){[0,1,2].forEach(i=>{document.getElementById('tab'+i).style.display=i===n?'block':'none';document.getElementById('tb'+i).classList.toggle('active',i===n);});if(n===1){renderHPMon();}if(n===2){renderPele();}}
+
+function infCard(tipo,nome,col,badges,body,note){return `<div class="inf-card" style="border-color:${col}"><div class="inf-tipo" style="color:${col}">${tipo}</div><div class="inf-nome">${nome}</div><div>${badges.map(b=>`<span class="inf-badge" style="background:${b.c}">${b.t}</span>`).join('')}</div><div class="inf-body">${body}</div>${note?`<div class="inf-note">${note}</div>`:''}</div>`;}
+
+/* ── ITU & RESPIRATÓRIO ─────────────────────────────────────────────── */
+function calcInf(){
+  const tipo   =document.getElementById('inf_tipo').value;
+  const gest   =document.getElementById('i_gest').checked;
+  const alergia=document.getElementById('i_alergia').checked;
+  const drc    =document.getElementById('i_drc').checked;
+  const imuno  =document.getElementById('i_imuno').checked;
+  let html='';
+
+  if(tipo==='itu_simples'){
+    html+=infCard('ITU Não-Complicada — Cistite Aguda Simples',gest?'ITU na Gestação — Tratar SEMPRE (mesmo se assintomática)':'Mulher <65 anos, sem comorbidade, sem fatores de risco',gest?'#9d174d':'#065f46',
+      gest?[{t:'Gestação',c:'#9d174d'},{t:'Tratar sempre',c:'#dc2626'}]:[{t:'Cistite simples',c:'#065f46'},{t:'3–5 dias',c:'#059669'}],
+      gest?`<strong>1ª linha (gestação):</strong><br>Cefalexina 500 mg 4×/dia × 7 dias <em>ou</em><br>Amoxicilina + clavulanato 875/125 mg 2×/dia × 7 dias<br><strong>Nitrofurantoína:</strong> apenas 2T (evitar 1T e 3T); macrocristais 100 mg 2×/dia × 5–7 dias<br><strong>Fosfomicina</strong> 3 g dose única — segura na gestação (não absorvida sistemicamente)<br><br>⚠️ Evitar na gestação: Quinolonas (articulações fetais), TMP-SMX no 3T (kernicterus), Tetraciclinas`
+      :`<strong>Preferência:</strong><br><strong>Fosfomicina trometamol</strong> 3 g pó VO dose única (= 1 sachê; 94% eficácia; sem resistência cruzada; conveniente) — <strong>1ª linha ESBL+</strong><br><strong>Nitrofurantoína macrocristais</strong> 100 mg 2×/dia × 5 dias (ou 50 mg 4×/dia × 7 dias) — NÃO usar se TFG<30<br><strong>Pivmecilinam</strong> 400 mg 2×/dia × 5 dias — ótimo perfil de resistência<br><strong>TMP-SMX</strong> 160/800 mg 2×/dia × 3 dias — se resistência local <20%<br><br>⚠️ Quinolonas (ciprofloxacino): <strong>NÃO são 1ª linha</strong> em ITU simples (preservar para complicadas — resistência crescente)`,
+      gest?'Cultura de urina na gestação: obrigatória. Tratar bacteriúria assintomática na gestação (risco de pielonefrite e parto prematuro). Urocultura de cura: 7 dias após fim do tratamento.':'Critério clínico suficiente para cistite não-complicada (disúria + polaciúria + sem febre/dor lombar) — cultura não obrigatória na 1ª crise. Cultura após falha terapêutica ou ≥3 episódios/ano.');
+  }
+
+  else if(tipo==='itu_comp'){
+    html+=infCard('ITU Complicada / Pielonefrite Ambulatorial','TFG baixa, DM, gravidez, anomalia urológica, cateter, sintomas sistêmicos leves','#d97706',[{t:'ITU complicada',c:'#d97706'},{t:'7–14 dias',c:'#b45309'}],
+      `<strong>Ambulatorial (pielonefrite leve-moderada sem sinal de sepse):</strong><br><strong>Ciprofloxacino</strong> 500 mg 2×/dia × 7 dias (preferido se suspeita de envolvimento renal — boa penetração no parênquima)<br><strong>Levofloxacino</strong> 750 mg/dia × 5–7 dias<br><strong>Cefalexina</strong> 500 mg 4×/dia × 10–14 dias (se quinolona resistente/contraindicada)<br><strong>Amoxicilina + clavulanato</strong> 875/125 mg 2×/dia × 10–14 dias (se cultura sensível)<br><br>Critérios de hospitalização: sepse (FC>100, FR>22, temp>38,5 ou <36, alteração consciência), náusea/vômito impossibilitando VO, suspeita de cálculo/obstrução`,
+      `${drc?'DRC: ciprofloxacino ajuste se TFG <30 (250 mg 2×/dia). Nitrofurantoína CI se TFG<30 (ineficaz + toxicidade).':`${imuno?'Imunossuprimido / DM: risco de sepse e resistência ↑ — limiar baixo para internação e cobertura mais ampla (cefepime, piperacilina/tazobactam)':'Cultura de urina OBRIGATÓRIA antes de iniciar AB. Revisitar com resultado da cultura em 48–72h.'}`}`);
+  }
+
+  else if(tipo==='itu_masc'){
+    html+=infCard('ITU Masculina / Prostatite Bacteriana Aguda','Homem: ITU sempre complicada — investigar próstata e anomalia urológica','#7c3aed',[{t:'ITU masculina',c:'#7c3aed'},{t:'14–28 dias',c:'#4c1d95'}],
+      `<strong>Prostatite bacteriana aguda:</strong><br><strong>Ciprofloxacino</strong> 500 mg 2×/dia × 28 dias (penetração prostática excelente)<br><strong>Levofloxacino</strong> 500 mg/dia × 28 dias<br><strong>TMP-SMX</strong> 160/800 mg 2×/dia × 28 dias (se cultura sensível)<br><br><strong>Cistite simples masculina (sem envolvimento prostático provável):</strong><br>Ciprofloxacino 500 mg 2×/dia × 7 dias<br><br><strong>Prostatite crônica:</strong> 4–6 semanas de quinolona; referência à urologia`,
+      'Prostatite aguda febril com retenção urinária ou sepse: hospitalizar. Cateterismo suprapúbico preferível ao uretral em retenção aguda na prostatite (menor risco de bacteremia).');
+  }
+
+  else if(tipo==='ivas'){
+    html+=infCard('Faringite / Amigdalite Estreptocócica','Critério de Centor/McIsaac — tratar se ≥3 critérios (TSFA ou Centor 3–4)','#0369a1',[{t:'SBHGA',c:'#0369a1'},{t:'Centor ≥3',c:'#1e3a8a'}],
+      `<strong>Critérios de Centor (1 ponto cada):</strong><br>• Exsudato tonsilar · Linfonodomegalia cervical anterior dolorosa · Ausência de tosse · Febre ≥38°C · Idade 3–14 anos (+1); 15–44 anos (0); >44 anos (-1)<br><br><strong>Centor 0–1:</strong> Não tratar (causa viral — > 85% das faringites)<br><strong>Centor 2–3:</strong> Testar (TSFA rápido ou cultura de orofaringe)<br><strong>Centor 4–5:</strong> Tratar empiricamente<br><br><strong>Tratamento de escolha (SBHGA confirmado):</strong><br><strong>Amoxicilina</strong> 500 mg 3×/dia × 10 dias <em>ou</em> 875 mg 2×/dia × 10 dias (SBP)<br><strong>Penicilina V</strong> 500 mg 3×/dia × 10 dias<br><strong>Penicilina benzatina</strong> 1.200.000 UI IM dose única (>27 kg) — garante adesão<br><br>${alergia?`<strong>Alergia à penicilina:</strong><br>Azitromicina 500 mg/dia × 3 dias (resistência: ~8–12% no Brasil)<br>Cefalexina 500 mg 4×/dia × 10 dias (cruzamento <2% se alergia não-anafilática)`:'Duração MÍNIMA de 10 dias para erradicar SBHGA (prevenção de febre reumática)'}`,
+      'Objetivo do tratamento: reduzir duração, prevenir febre reumática, reduzir transmissão. NÃO tratar faringite viral — antibiótico não reduz duração. Amigdalite recorrente ≥7×/ano: indicação de amigdalectomia.');
+  }
+
+  else if(tipo==='pnc'){
+    html+=infCard('Pneumonia Comunitária (PAC) — Ambulatorial','PSI Classe I–II (idade <50 sem comorbidade) ou III (escore <70)','#065f46',[{t:'PAC ambulatorial',c:'#065f46'},{t:'PSI I–III',c:'#059689'}],
+      `<strong>Critérios de hospitalização:</strong> PSI ≥IV (>90 pontos) · CURB-65 ≥2 · SpO₂ <90% · Confusão · Instabilidade hemodinâmica → internar<br><br><strong>Ambulatorial — sem comorbidade:</strong><br><strong>Amoxicilina</strong> 1 g 3×/dia × 5–7 dias (PAC típica em jovem saudável — S. pneumoniae)<br>OU se suspeita atípica (Mycoplasma, Chlamydophila):<br><strong>Azitromicina</strong> 500 mg/dia × 5 dias · <strong>Claritromicina</strong> 500 mg 2×/dia × 7 dias<br><br><strong>Ambulatorial — com comorbidade</strong> (DM, DRC, IC, DPOC, imunossupressão, tabagismo):<br><strong>Amoxicilina + clavulanato</strong> 875/125 mg 2×/dia × 5–7 dias (cobertura de H. influenzae, M. catarrhalis)<br><strong>Levofloxacino</strong> 750 mg/dia × 5 dias ou <strong>Moxifloxacino</strong> 400 mg/dia × 5 dias (fluoroquinolona respiratória — alternativa ou alergia à penicilina)<br><br><strong>Monoterapia com macrolídeo (azitromicina):</strong> NÃO recomendada como 1ª linha na PAC com comorbidade (resistência pneumocócica ~20–30% no Brasil)`,
+      `${imuno?'Imunossuprimido: pensar em PCP (pneumocistose) se linfócitos CD4 <200. Ampliar cobertura — internar para avaliação.':''}Critérios CURB-65: Confusão + Ureia>50 + FR≥30 + PAS<90 ou PAD≤60 + Idade≥65. CURB-65=0–1: domicílio; 2: considerar internar; ≥3: UTI.`);
+  }
+
+  else if(tipo==='bq_aguda'){
+    html+=infCard('Bronquite Aguda em Adulto Imunocompetente','Causa viral em >95% — antibiótico NÃO indicado na maioria','#64748b',[{t:'Viral – AB não indicado',c:'#64748b'}],
+      `<strong>NÃO usar antibiótico</strong> na bronquite aguda em adulto saudável (causa: rinovírus, influenza, parainfluenza, coronavírus)<br><br><strong>Tratamento sintomático:</strong><br>• Repouso · Hidratação · AINE/paracetamol para febre e mialgia<br>• Mel (1–2 col. sopa à noite) — reduz tosse em adultos (evidência moderada)<br>• Dextrometorfano 30 mg 4×/dia (antitussígeno)<br>• Salbutamol inalatório SOS — apenas se componente broncoespástico (sibilo)<br><br><strong>Quando considerar AB:</strong> Febre &gt;38,5°C persistente ≥5 dias · Expectoração purulenta crescente · DPOC subjacente (maior risco de superinfecção bacteriana) · Suspeita de coqueluche (tosse paroxística &gt;2 semanas → azitromicina 500 mg/dia × 5 dias)`,
+      'Gripe (influenza): oseltamivir 75 mg 2×/dia × 5 dias se dentro de 48h do início dos sintomas ou se paciente de risco (idoso, DM, gestante, cardiopata). COVID-19: nirmatrelvir/ritonavir (Paxlovid) se dentro de 5 dias e paciente de risco.');
+  }
+
+  else if(tipo==='sinusite'){
+    html+=infCard('Sinusite Bacteriana Aguda','10 dias de sintomas SEM melhora OU piora após melhora inicial (double sickening)','#b45309',[{t:'Sinusite bacteriana',c:'#b45309'},{t:'5–10 dias',c:'#d97706'}],
+      `<strong>Diagnóstico clínico:</strong> purulência + obstrução nasal + dor facial/pressão × ≥10 dias sem melhora, OU piora dos sintomas após melhora inicial (dupla piora)<br><strong>Maioria é viral nos primeiros 7–10 dias — NÃO tratar com AB antes de 10 dias</strong><br><br><strong>Tratamento de 1ª linha:</strong><br><strong>Amoxicilina</strong> 500 mg 3×/dia × 5–7 dias (IDSA: amoxicilina-clavulanato preferida desde 2012)<br><strong>Amoxicilina + clavulanato</strong> 875/125 mg 2×/dia × 5–7 dias (cobre H. influenzae + M. catarrhalis β-lactamase+)<br><br><strong>Alergia à penicilina:</strong> Doxiciclina 100 mg 2×/dia × 5–7 dias · Moxifloxacino 400 mg/dia × 5 dias<br><br><strong>Tratamento adjuvante (reduz sintomas):</strong><br>• Solução salina nasal hipertônica (irrigação nasal 2–3×/dia)<br>• Budesonida nasal 64 mcg 2×/dia (reduz edema)<br>• Descongestionante nasal VO: pseudoefedrina (máx 3 dias)`,
+      'TC de seios da face: apenas em suspeita de complicação (celulite orbitária, meningite, abscesso). Não necessária para diagnóstico ambulatorial. Sinusite recorrente (≥4 episódios/ano): encaminhar à otorrinolaringologia.');
+  }
+
+  document.getElementById('infResult').style.display='block';
+  document.getElementById('infResult').innerHTML=html;
+  document.getElementById('infResult').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+/* ── H. PYLORI ──────────────────────────────────────────────────────── */
+function calcHP(){
+  const sit=document.getElementById('hp_sit').value;
+  const esquemas={
+    '1linha':{title:'1ª Linha — Tríplice com Claritromicina ou Quádruplo com Bismuto',col:'#065f46',
+      body:`<strong>Opção A — Tríplice com Claritromicina (14 dias):</strong><br>
+• IBP dose plena 2×/dia + Amoxicilina 1 g 2×/dia + Claritromicina 500 mg 2×/dia × 14 dias<br>Erradicação: ~75–80% (Brasil — resistência crescente à claritromicina ~20–25%)<br><br>
+<strong>Opção B — Quádruplo com Bismuto (10–14 dias) — PREFERIDA onde resistência à claritromicina >15%:</strong><br>
+• IBP dose plena 2×/dia + Subcitrato de bismuto 120 mg 4×/dia + Tetraciclina 500 mg 4×/dia + Metronidazol 500 mg 3×/dia<br>Erradicação: ~90% (superior à tríplice)<br><br>
+<strong>Opção C — Quádruplo concomitante sem bismuto (10–14 dias):</strong><br>
+• IBP 2×/dia + Amoxicilina 1 g 2×/dia + Claritromicina 500 mg 2×/dia + Metronidazol 500 mg 2×/dia`,
+      note:'IBP de dose plena: omeprazol 20 mg, pantoprazol 40 mg, lansoprazol 30 mg, rabeprazol 20 mg. Tomar IBP e AB 30 min ANTES das refeições. Álcool proibido durante metronidazol. Confirmação de erradicação: 4 semanas após término do esquema.'},
+    'falha_clari':{title:'2ª Linha — Falha com Claritromicina',col:'#d97706',
+      body:`<strong>Quádruplo com Bismuto (14 dias) — 1ª escolha após falha da claritromicina:</strong><br>IBP + Bismuto 120 mg 4×/dia + Tetraciclina 500 mg 4×/dia + Metronidazol 500 mg 3×/dia<br><br><strong>Alternativa — Levofloxacino (14 dias):</strong><br>IBP 2×/dia + Amoxicilina 1 g 2×/dia + Levofloxacino 500 mg/dia`,
+      note:'NÃO repetir claritromicina após falha — resistência adquirida. Quádruplo com bismuto e esquemas com levofloxacino são as principais alternativas após falha da tríplice.'},
+    'falha_metro':{title:'2ª Linha — Falha com Metronidazol',col:'#d97706',
+      body:`<strong>Tríplice com Claritromicina (se não usada antes) — 14 dias:</strong><br>IBP + Amoxicilina 1 g 2×/dia + Claritromicina 500 mg 2×/dia<br><br><strong>Alternativa — Levofloxacino:</strong><br>IBP + Amoxicilina 1 g 2×/dia + Levofloxacino 500 mg/dia × 14 dias`,
+      note:'Resistência ao metronidazol é alta no Brasil (~40%) mas a falha de metronidazol não impede uso de bismuto em nova tentativa (mecanismo diferente de resistência).'},
+    'alergia_pen':{title:'Alergia à Penicilina — Esquemas sem Amoxicilina',col:'#9d174d',
+      body:`<strong>Quádruplo com bismuto (SEM amoxicilina) — 10–14 dias:</strong><br>IBP + Bismuto + Tetraciclina + Metronidazol (esquema clássico — não usa amoxicilina)<br><br><strong>Alternativa:</strong><br>IBP + Claritromicina 500 mg 2×/dia + Metronidazol 500 mg 3×/dia × 14 dias`,
+      note:'Quinolona pode substituir a amoxicilina: IBP + Levofloxacino + Claritromicina × 14 dias. Atenção: tetraciclina pode ser difícil de encontrar em algumas regiões — alternativa: doxiciclina 100 mg 2×/dia.'},
+    '3linha':{title:'3ª Linha — Refratário (≥2 Falhas)',col:'#7f1d1d',
+      body:`<strong>Cultura + Teste de sensibilidade antibiótica</strong> obrigatório (endoscopia + biópsia)<br>Tratar conforme perfil de sensibilidade do isolado<br><br><strong>Rifabutina 150 mg 2×/dia + IBP + Amoxicilina:</strong> opção para cepas multirresistentes (uso especializado)<br><strong>Esquemas baseados em levofloxacino de alta dose:</strong> IBP + Amoxicilina + Levofloxacino 500–1000 mg/dia<br><strong>Encaminhar ao gastroenterologista</strong>`,
+      note:'Rifabutina: custo elevado, efeito mielotóxico raro. Probióticos (Lactobacillus reuteri, Saccharomyces boulardii): reduzem efeitos GI dos antibióticos mas não aumentam erradicação de forma consistente.'},
+  };
+  const e=esquemas[sit];
+  document.getElementById('hpResult').style.display='block';
+  document.getElementById('hpResult').innerHTML=`<div class="hp-step"><div class="hp-title" style="color:${e.col}">${e.title}</div><div class="hp-body">${e.body}</div><div class="hp-note">💡 ${e.note}</div></div>`;
+}
+
+function renderHPMon(){
+  const items=[
+    '🔬 <strong>Confirmação de erradicação obrigatória:</strong> 4 semanas após fim do esquema E pelo menos 2 semanas após suspensão do IBP',
+    '✅ <strong>Teste respiratório com ureia marcada (C13):</strong> método padrão-ouro não invasivo — sensibilidade 95%, especificidade 96%',
+    '✅ <strong>Antígeno fecal (ELISA monoclonal):</strong> alternativa ao teste respiratório; boa acurácia pós-tratamento',
+    '🩸 <strong>Sorologia (IgG anti-H. pylori):</strong> NÃO serve para confirmar erradicação (permanece positiva anos após cura)',
+    '📋 <strong>Indicações de erradicação (SBG/ACG):</strong> úlcera péptica (ativa ou prévia), MALT gástrico, gastrectomia parcial prévia, familiar 1º grau com CA gástrico, uso crônico de AINE, anemia ferropriva sem outra causa, PTI, dispepsia funcional',
+    '⏱️ <strong>Controle endoscópico:</strong> após erradicação em úlcera gástrica (confirmar cicatrização e ausência de malignidade em 8–12 semanas)',
+  ];
+  document.getElementById('hpMon').innerHTML=items.map(t=>`<div style="font-size:.76rem;line-height:1.7;padding:5px 0;border-bottom:1px dashed #d1fae5">${t}</div>`).join('');
+}
+
+/* ── PELE & PARTES MOLES ────────────────────────────────────────────── */
+function renderPele(){
+  const PELE=[
+    {tipo:'Erisipela / Celulite Não-Complicada',col:'#d97706',badges:[{t:'SBHGA / S. aureus',c:'#b45309'},{t:'5–10 dias',c:'#d97706'}],
+     body:`<strong>Celulite não-complicada, sem sepse, sem úlcera ou abscesso:</strong><br><strong>Cefalexina</strong> 500 mg 4×/dia × 5–7 dias (S. aureus sensível + SBHGA) — 1ª escolha<br><strong>Amoxicilina + clavulanato</strong> 875/125 mg 2×/dia × 5–7 dias (alternativa ou mordidas)<br><strong>Erisipela (SBHGA puro, bordas bem demarcadas):</strong> Penicilina V 500 mg 4×/dia × 7–10 dias <em>ou</em> Amoxicilina 500 mg 3×/dia<br><br><strong>Alergia à penicilina:</strong><br>Clindamicina 300–450 mg 3×/dia × 7 dias (cobertura MRSA comunitário + SBHGA)`,
+     note:'Demarcar limites da celulite com caneta marcadora para acompanhar progressão. Elevar o membro afetado. Sem melhora em 48–72h: internação, debridamento ou MRSA — mupirocina + considerar doxiciclina/SMX-TMP.'},
+    {tipo:'Abscesso de Partes Moles (Furúnculo / Carbúnculo)',col:'#dc2626',badges:[{t:'S. aureus / MRSA-CA',c:'#dc2626'}],
+     body:`<strong>Drenagem incisão e drenagem (I&D): TRATAMENTO PRINCIPAL</strong><br>Antibiótico isolado sem I&D: ineficaz para abscesso (biofilme + cavidade pus)<br><br><strong>Quando adicionar AB após I&D:</strong><br>• Abscesso >2 cm · Múltiplos abscessos · Imunossuprimido / DM · Febre ou celulite associada · Localização em face<br><br><strong>Escolha para MRSA comunitário:</strong><br><strong>TMP-SMX</strong> 160/800 mg 2×/dia × 5–7 dias (cobertura MRSA-CA em >90%)<br><strong>Doxiciclina</strong> 100 mg 2×/dia × 5–7 dias<br><strong>Clindamicina</strong> 300 mg 3×/dia × 5–7 dias (resistência crescente — testar D-zona)`,
+     note:'Mupirocina nasal 2×/dia × 5 dias em portadores assintomáticos de MRSA com infecções de repetição (descolonização). MRSA-CA ≠ MRSA hospitalar — geralmente sensível a TMP-SMX e doxiciclina.'},
+    {tipo:'Mordedura (Humana / Animal)',col:'#7c3aed',badges:[{t:'Pasteurella / Eikenella',c:'#7c3aed'},{t:'Profilaxia 3–5 dias',c:'#4c1d95'}],
+     body:`<strong>Profilaxia antibiótica em mordeduras (risco de infecção):</strong><br>Amoxicilina + clavulanato 875/125 mg 2×/dia × 3–5 dias (cobertura ampla: Pasteurella, Eikenella, anaeróbios)<br><br><strong>Indicações de profilaxia obrigatória:</strong><br>• Mordedura de humano · Mordedura profunda ou esmagamento · Mão, face, genitália · Imunossuprimido / asplênico · Mordedura >8h sem limpeza<br><br><strong>Lavagem imediata:</strong> soro fisiológico abundante por 5 min (reduz 90% do risco de raiva)<br><strong>Raiva:</strong> imunoterapia antirrábica conforme protocolo do estado (cão/gato observável × morcego/animal silvestre)<br><strong>Tétano:</strong> atualizar DT se >5 anos`,
+     note:'Mordedura de gato: maior risco de infecção por Pasteurella multocida (perfuração mais profunda pelo dente). Tratar sempre por 5–7 dias. Mordedura de humano (soco — clenched fist): alto risco de osteomielite e artrite séptica — sempre AB, sempre radiografia.'},
+    {tipo:'Infecções Fúngicas Superficiais (Tínea / Candidíase)',col:'#0369a1',badges:[{t:'Fungo',c:'#0369a1'}],
+     body:`<strong>Tínea pedis (pé de atleta):</strong> Terbinafina creme 1% 1×/dia × 2 semanas <em>ou</em> clotrimazol 1% 2×/dia × 4 semanas<br><strong>Tínea unguium (onicomicose):</strong> Terbinafina 250 mg/dia × 6 sem (mãos) ou 12 sem (pés) — taxas de cura: 70–80%<br><strong>Tínea capitis:</strong> Griseofulvina 15–20 mg/kg/dia × 8–12 sem (criança) — tratamento sistêmico obrigatório<br><strong>Candidíase oral (muguet):</strong> Nistatina suspensão 100.000 UI/mL 4–6×/dia × 14 dias · Fluconazol 150 mg dose única (refratária)<br><strong>Candidíase vaginal não-complicada:</strong> Fluconazol 150 mg VO dose única <em>ou</em> clotrimazol vaginal 500 mg óvulo dose única<br><strong>Candidíase recorrente (≥4 episódios/ano):</strong> Fluconazol 150 mg semanal × 6 meses (manutenção — REVIVE trial)`,
+     note:'Terbinafina sistêmica: monitorar TGP basal e após 6 semanas (hepatotoxicidade rara). Itraconazol (pulse therapy): alternativa para onicomicose — 200 mg 2×/dia × 1 sem/mês × 3 meses.'},
+  ];
+  document.getElementById('peleList').innerHTML=PELE.map(p=>`<div class="inf-card" style="border-color:${p.col}"><div class="inf-tipo" style="color:${p.col}">${p.tipo}</div><div>${p.badges.map(b=>`<span class="inf-badge" style="background:${b.c}">${b.t}</span>`).join('')}</div><div class="inf-body">${p.body}</div>${p.note?`<div class="inf-note">${p.note}</div>`:''}</div>`).join('');
+}
+</script>
+</body>
+</html>
