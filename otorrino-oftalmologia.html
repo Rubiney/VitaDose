@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>ORL & Oftalmologia — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .orl-hdr{background:linear-gradient(135deg,#0f4c81,#0369a1);color:#fff;border-radius:14px;padding:18px;margin-bottom:14px}
+    .orl-title{font-size:1rem;font-weight:800;margin-bottom:4px}
+    .orl-sub{font-size:.73rem;opacity:.8}
+    label{font-size:.75rem;font-weight:700;color:#1e3a5f;display:block;margin-bottom:4px}
+    select{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:10px;padding:10px 12px;font-size:.85rem;background:#fff;margin-bottom:10px}
+    select:focus{border-color:#0369a1;outline:none}
+    .btn-calc{width:100%;background:#0369a1;color:#fff;border:none;border-radius:12px;padding:13px;font-size:.87rem;font-weight:700;cursor:pointer;margin:8px 0}
+    .tab-bar{display:flex;gap:6px;margin-bottom:14px}
+    .tab-btn{flex:1;padding:9px 4px;border-radius:10px;border:2px solid #e2e8f0;background:#fff;font-size:.72rem;font-weight:700;cursor:pointer;color:#64748b}
+    .tab-btn.active{border-color:#0369a1;background:#eff6ff;color:#0369a1}
+    .rec-card{border-radius:12px;border:2px solid;padding:14px;margin-bottom:10px}
+    .rec-hdr{font-size:.63rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+    .rec-nome{font-size:.88rem;font-weight:800;margin-bottom:6px}
+    .rec-badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:.65rem;font-weight:800;color:#fff;margin:2px}
+    .rec-body{font-size:.78rem;margin-top:6px;line-height:1.7}
+    .rec-note{font-size:.71rem;color:#64748b;margin-top:6px;padding-top:6px;border-top:1px solid #f1f5f9}
+    .orl-card{border-radius:10px;border-left:5px solid;padding:10px 14px;margin-bottom:8px;background:#fff}
+    .orl-nome{font-size:.83rem;font-weight:800;margin-bottom:4px}
+    .orl-body{font-size:.76rem;line-height:1.7;color:#374151}
+    .alerta{background:#fef2f2;border:2px solid #dc2626;border-radius:10px;padding:8px;margin:6px 0;font-size:.75rem;color:#7f1d1d;font-weight:700}
+    table{width:100%;border-collapse:collapse;font-size:.73rem;margin-top:6px}
+    th{background:#0f4c81;color:#fff;padding:5px 8px;text-align:left}
+    td{padding:5px 8px;border-bottom:1px solid #f1f5f9}
+    tr:nth-child(even) td{background:#eff6ff}
+  </style>
+</head>
+<body>
+<header class="top-bar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <span class="top-title">ORL & Oftalmologia</span>
+  <div class="top-right"></div>
+</header>
+<main class="container" style="padding-bottom:90px">
+  <div class="orl-hdr">
+    <div class="orl-title">👁️ Otorrino & Oftalmologia Clínica</div>
+    <div class="orl-sub">Olho Vermelho · Glaucoma · DMRI · Vertigem · Sinusite · Otite · Epistaxe</div>
+  </div>
+  <div class="tab-bar">
+    <button class="tab-btn active" id="tb0" onclick="showTab(0)">Olho Vermelho & Glaucoma</button>
+    <button class="tab-btn" id="tb1" onclick="showTab(1)">Vertigem & Otite</button>
+    <button class="tab-btn" id="tb2" onclick="showTab(2)">Sinusite & Epistaxe</button>
+  </div>
+
+  <!-- TAB 0 — OFTALMOLOGIA -->
+  <div id="tab0">
+    <div class="card" style="padding:12px 14px">
+      <label>Condição Ocular</label>
+      <select id="oft_cond">
+        <option value="conj_bact">Conjuntivite Bacteriana</option>
+        <option value="conj_viral">Conjuntivite Viral (adenovírus)</option>
+        <option value="conj_alerg">Conjuntivite Alérgica</option>
+        <option value="glauc_ag">Glaucoma Agudo de Ângulo Fechado — URGÊNCIA</option>
+        <option value="glauc_cr">Glaucoma Crônico de Ângulo Aberto — Colírios</option>
+        <option value="uveite">Uveíte Anterior</option>
+        <option value="erosao">Erosão Corneana / Úlcera de Córnea</option>
+        <option value="dmri">DMRI — Degeneração Macular Relacionada à Idade</option>
+      </select>
+    </div>
+    <button class="btn-calc" onclick="calcOft()">👁️ Protocolo ocular</button>
+    <div id="oftResult" style="display:none"></div>
+  </div>
+
+  <!-- TAB 1 — VERTIGEM & OTITE -->
+  <div id="tab1" style="display:none">
+    <div id="vertList"></div>
+  </div>
+
+  <!-- TAB 2 — SINUSITE & EPISTAXE -->
+  <div id="tab2" style="display:none">
+    <div id="sinList"></div>
+  </div>
+</main>
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+<script src="js/db.js"></script>
+<script>
+function showTab(n){[0,1,2].forEach(i=>{document.getElementById('tab'+i).style.display=i===n?'block':'none';document.getElementById('tb'+i).classList.toggle('active',i===n);});if(n===1)renderVert();if(n===2)renderSin();}
+function recHTML(r){return `<div class="rec-card" style="border-color:${r.col}"><div class="rec-hdr" style="color:${r.col}">${r.hdr}</div><div class="rec-nome">${r.nome}</div><div>${(r.badges||[]).map(b=>`<span class="rec-badge" style="background:${b.c}">${b.t}</span>`).join('')}</div><div class="rec-body">${r.body}</div>${r.note?`<div class="rec-note">${r.note}</div>`:''}</div>`;}
+
+/* ─── OFTALMOLOGIA ─────────────────────────────────────────────── */
+const PROTO_OFT={
+  conj_bact:{hdr:'Conjuntivite Bacteriana',col:'#059669',nome:'Colírio antibacteriano 7 dias',
+    body:`<strong>Clínica:</strong> secreção mucopurulenta + olho vermelho unilateral (depois bilateral) · Sem fotofobia intensa · Sem baixa de visão<br>
+Agentes comuns: S. aureus, H. influenzae, S. pneumoniae, Moraxella<br><br>
+<strong>Tratamento:</strong><br>
+• <strong>Tobramicina 0,3% (Tobrex) 1 gt 8/8h × 7 dias</strong>: amplo espectro, bem tolerada<br>
+• Ciprofloxacino 0,3% (Cilox): boa cobertura gram-negativa + gram-positiva · 1 gt 6/6h × 7 dias<br>
+• Moxifloxacino 0,5% (Vigamox): espectro amplo, colírio sem conservante · 1 gt 3×/dia × 7 dias<br>
+• Cloranfenicol 0,5% (Quemicetase): mais barato; resistência crescente<br><br>
+<strong>Situações especiais:</strong><br>
+• Recém-nascido (oftalmia neonatal):<br>
+  Gonococo (D1–5): eritromicina 0,5% tópica + ceftriaxona 25–50 mg/kg IV (dose única)<br>
+  Clamídia (D5–14): eritromicina 50 mg/kg/dia VO × 14 dias (tratamento sistêmico — apenas tópico é insuficiente)<br>
+• Adulto sexualmente ativo: pesquisar Chlamydia (dosar) + azitromicina 1 g dose única OU doxiciclina 100 mg 2×/dia × 7 dias<br><br>
+<strong>Medidas gerais:</strong><br>
+Lavar mãos · Não compartilhar toalhas · Afastar da escola (enquanto houver secreção)`,
+    note:'Diagnóstico diferencial: conjuntivite viral (secreção serosa, gânglios pré-auriculares, contexto de IVRS) vs bacteriana (purulenta, ausência de gânglios). A maioria das conjuntivites infecciosas é viral (adenovírus) — colírio ATB desnecessário, mas rotineiramente prescrito por dificuldade de diagnóstico clínico e ansiedade do paciente.'},
+  conj_viral:{hdr:'Conjuntivite Viral — Adenovírus',col:'#b45309',nome:'Tratamento de suporte — altamente contagiosa',
+    body:`<strong>Clínica:</strong> secreção clara/serosa · Gânglios pré-auriculares palpáveis · Frequentemente bilateral · Contexto de IVRS · Ceratoconjuntivite epidêmica: hemorragia subconjuntival<br><br>
+<strong>Tratamento (sem antiviral eficaz para adenovírus):</strong><br>
+• Compressa fria: alívio de sintomas · Lágrimas artificiais 4–6×/dia<br>
+• Anti-histamínico oral: epinastina 0,05% (Relestat) 1 gt 2×/dia se prurido<br>
+• <strong>Colírio antibacteriano: NÃO indicado</strong> (a menos que superinfecção bacteriana suspeita)<br>
+• Colírio corticoide: discutido; alguns usam em ceratoconjuntivite grave (fluorometolona) — apenas por oftalmologista<br><br>
+<strong>Contágio:</strong><br>
+Isolamento 7–14 dias · Lavar mãos frequentemente · NÃO usar mesmas toalhas · Higienizar superfícies com álcool 70%<br>
+Adenovírus: resiste 35 dias em superfícies secas → altamente contagioso em ambiente hospitalar<br><br>
+<strong>Herpes simples ocular (úlcera dendrítica — diagnóstico por fluorescência):</strong><br>
+• Aciclovir 3% colírio (pomada oftálmica) 5×/dia × 7–10 dias OU aciclovir VO 400 mg 5×/dia<br>
+• <strong>NUNCA corticoide em herpes ocular</strong> (piora e perfura)<br>
+• Valaciclovir VO 1 g 2×/dia: alternativa mais prática`,
+    note:'Herpes zóster oftálmico (sinal de Hutchinson — vesícula na ponta do nariz = risco de envolvimento ocular pela via nasociliar): valaciclovir 1 g 3×/dia × 7 dias + referência urgente a oftalmologista. VZV pode causar glaucoma, uveíte e necrorrectina.'},
+  conj_alerg:{hdr:'Conjuntivite Alérgica',col:'#7c3aed',nome:'Anti-histamínico/estabilizador de mastócito tópico',
+    body:`<strong>Clínica:</strong> prurido ocular intenso + lacrimejamento + hiperemia + quemose · Bilateral · Sazonal ou perene · Papilas conjuntivais (tarsais superiores)<br><br>
+<strong>1ª Linha — Colírios combinados (anti-H1 + estabilizador de mastócito):</strong><br>
+• <strong>Olopatadina 0,1% (Patanol) 1 gt 2×/dia</strong>: preferido por eficácia e duração<br>
+• Epinastina 0,05% (Relestat) 1 gt 2×/dia<br>
+• Cetotifeno 0,025% (Zaditen) 1 gt 2–3×/dia: mais barato<br>
+• Todos têm dupla ação: anti-histamínico H1 + estabilizador de mastócito<br><br>
+<strong>Adjuvantes:</strong><br>
+• Lágrimas artificiais sem conservante (lavagem de alérgenos) · Anti-histamínico oral (loratadina, cetirizina)<br>
+• Colírio corticoide (fluorometolona 0,1%): conjuntivite alérgica grave / VKC (ceratoconjuntivite vernal) · Monitorar PIO<br><br>
+<strong>Ceratoconjuntivite Vernal (VKC — crianças atópicas):</strong><br>
+• Olopatadina + ciclosporina 1% tópica (off-label) + corticoide em ciclos curtos<br>
+• Colírio de tacrolimus 0,05%: poupador de corticoide em VKC grave<br>
+• Óculos de sol (UV piora) · Evitar coçar (risco de ceratocone)`,
+    note:'Colírio descongestionante (nafazolina, tetrizolina): efeito vasoconstritor de rebote com uso crônico — taquifilaxia em 72h. Evitar em conjuntivite alérgica crônica. Uso máximo: 3 dias. Glaucoma de ângulo aberto: monitorar PIO em qualquer colírio corticoide mesmo tópico (responsivos a corticoide — 35% da população sobe PIO).'},
+  glauc_ag:{hdr:'Glaucoma Agudo de Ângulo Fechado — URGÊNCIA OFTALMOLÓGICA',col:'#dc2626',nome:'Reduzir PIO urgentemente + iridotomia a laser',
+    body:`<div class="alerta">⚠️ Glaucoma de ângulo fechado agudo = emergência. Cegueira permanente em horas sem tratamento.</div>
+<strong>Clínica:</strong> dor ocular intensa + visão turva + halos ao redor de luzes + náusea/vômito + olho vermelho + midríase fixa média · Córnea opaca · PIO &gt;21 mmHg (frequentemente &gt;40–60 mmHg)<br><br>
+<strong>Tratamento imediato:</strong><br>
+1. <strong>Acetazolamida 500 mg IV ou VO</strong> (inibidor de anidrase carbônica sistêmico): reduz produção de humor aquoso<br>
+2. <strong>Timolol 0,5% 1 gt</strong> (beta-bloqueador tópico): reduz produção de HA<br>
+3. <strong>Pilocarpina 2% 1 gt 15/15 min × 4 doses</strong>: miótico (pupiloconstrição abre seio camerular)<br>
+   NÃO usar pilocarpina em PIO &gt;50 mmHg (isquemia do esfíncter pupilar — ineficaz)<br>
+4. <strong>Manitol 20% 1–2 g/kg IV em 30 min</strong>: hiperosmótico para reduzir PIO rapidamente<br>
+5. Encaminhar a oftalmologista IMEDIATAMENTE → iridotomia a laser<br><br>
+<strong>Fatores precipitantes:</strong><br>
+• Midriáticos (tropicamida, fenilefrina) · Anticolinérgicos · Antidepressivos tricíclicos · Ambiente escuro<br>
+• Hipermetropia (câmara anterior rasa) predispõe<br>
+<strong>Profilaxia no olho contralateral:</strong> iridotomia profilática`,
+    note:'Glaucoma agudo x crise migrânea com aura: confundir é perigoso. Glaucoma: olho vermelho + dor ocular + náusea. Migrânea: fotofobia + dor frontal sem olho vermelho. Pupila fixa e midriática em glaucoma agudo é sinal patognomônico. Colírio corticoide de depósito peribulbar (betametasona): pode precipitar crise em predispostos — perguntar se usa colírio no screening.'},
+  glauc_cr:{hdr:'Glaucoma Crônico de Ângulo Aberto — Colírios',col:'#0369a1',nome:'Análogos de Prostaglandinas — 1ª linha (1×/dia)',
+    body:`<strong>Meta de tratamento:</strong> reduzir PIO para nível alvo (redução de 20–30% da PIO pré-tratamento) e prevenir progressão do campo visual<br><br>
+<strong>1ª Linha — Análogos de Prostaglandinas (PG):</strong><br>
+• <strong>Latanoprosta 0,005% 1 gt/noite</strong>: PG F2α · Redução PIO 25–35% · 1 vez ao dia = melhor adesão<br>
+• Bimatoprosta 0,01% 1 gt/noite: ligeiramente mais potente · Mais hiperemia ocular<br>
+• Travoprosta 0,004% 1 gt/noite: similar ao latanoprosta<br>
+RAM PG: hiperemia ocular (reversível), alteração de cor da íris (aumento de melanina — permanente em olhos heterocromos), crescimento de cílios (hipertricose)<br><br>
+<strong>2ª Linha — Beta-bloqueadores:</strong><br>
+• <strong>Timolol 0,5% 1 gt 2×/dia</strong>: mais antigo · Redução PIO 20–25%<br>
+  RAM: absorção sistêmica → bradicardia, broncoespasmo (CI em asma/DPOC, bradiarritmia, BAV 2–3), extremidades frias<br>
+  Timolol gel 0,1% 1×/dia: alternativa com melhor adesão<br><br>
+<strong>Outras classes (combinação ou 3ª linha):</strong><br>
+• <strong>Brimonidina 0,2% (alfa-2 agonista) 1 gt 3×/dia</strong>: redução 20% · Não sistêmico · Sonolência, boca seca · Alternativa a timolol em asma<br>
+• <strong>Dorzolamida 2% (IAC tópico) 1 gt 3×/dia</strong>: poupador de PG ou timolol · Gosto metálico · CI em IRA<br>
+• Acetazolamida VO 250 mg 2–4×/dia: sistêmica · Apenas para redução rápida (pré-cirurgia ou falha tópica)<br>
+• Netarsudil (Rhopressa): inibidor ROCK (2019); redução de drenagem<br><br>
+<strong>Cirurgia (trabeculectomia / MIGS):</strong><br>
+Progressão em uso de 3+ colírios · Intolerância a colírios · Não adesão · PIO alvo não atingida`,
+    note:'Adesão ao colírio de glaucoma: problema maior que a doença em si (50% de não-adesão em 1 ano). Estratégias: 1 vez ao dia (PG), técnica de punctoplug, lembrete no celular. Colírio PG: aplicar à noite (efeito ótimo de manhã). Conservante benzalcônio: toxicidade epitelial com uso crônico → preferir colírios sem conservante (monodoses).'},
+  uveite:{hdr:'Uveíte Anterior (Iridociclite)',col:'#b45309',nome:'Colírio corticoide + midriático',
+    body:`<strong>Clínica:</strong> fotofobia + dor ocular + olho vermelho (injeção ciliar periquerática) + visão turva + precipitados corneais (KP) na lâmpada de fenda · Sem secreção (diferencial de conjuntivite)<br><br>
+<strong>Causas (investigar):</strong><br>
+Autoimune: Espondilite Anquilosante (HLA-B27), Doença de Crohn, Behçet, Sarcoidose · Infecciosa: HSV, VZV, CMV, Toxoplasmose (uveíte posterior), TB · Idiopática 50%<br><br>
+<strong>Tratamento:</strong><br>
+• <strong>Prednisolona 1% (Pred Forte) 1 gt hora em hora × 2 dias → desmame gradual</strong>: corticoide tópico 1ª linha<br>
+  Frequência baseada na gravidade (celularidade na câmara anterior)<br>
+• <strong>Midriático (ciclopentolato 1% ou atropina 1%) 1 gt 2–3×/dia</strong>: dilata pupila (evita sinéquias posteriores) + alivia espasmo do músculo ciliar (dor)<br>
+• Uveíte anterior recorrente (HLA-B27+): AINE tópico + investigar doença sistêmica<br>
+• Uveíte grave refratária: triancinolona periocular (injeção subtenoniana) OU sistêmica (prednisona VO)<br>
+• Uveíte posterior (toxoplasma): pirimetamina + sulfadiazina + prednisolona VO 1 mg/kg (após 48h de ATB)`,
+    note:'NUNCA usar colírio corticoide sem diagnóstico confirmado: herpes ocular melhora inicialmente com corticoide mas piora catastrophicamente depois (úlcera dendrítica vai perfurar a córnea). Usar fluorescência para excluir herpes antes do corticoide. Todas as uveítes devem ser avaliadas por oftalmologista para lamp slit.'},
+  erosao:{hdr:'Erosão Corneana / Úlcera de Córnea',col:'#374151',nome:'Instilação de anestésico para diagnóstico · Antibiótico tópico para úlcera',
+    body:`<strong>Erosão Corneana Traumática:</strong><br>
+Dor ocular intensa + fotofobia + lacrimejamento · Diagnóstico: fluorescência positiva (verde) em área denudada<br>
+• Colírio anestésico (tetracaína, proximetacaína) para diagnóstico (NÃO prescever para o paciente usar em casa — dependência e pior cicatrização)<br>
+• <strong>Tobramicina 0,3% 6/6h × 3–5 dias</strong>: prevenir infecção<br>
+• Lubricante ocular (pomada ofálmica) à noite · Óculos de sol<br>
+• Agendar retorno em 24h (erosões maiores cicatrizam em 24–72h)<br>
+• Curativo oclusivo: controverso (mais confortável; não acelera cicatrização)<br><br>
+<strong>Úlcera de Córnea (Infecciosa):</strong><br>
+Lesão esbranquiçada/amarelada na córnea + fotofobia intensa + hipópio (pus na câmara anterior)<br>
+Causas: S. aureus, P. aeruginosa (usuário de lente de contato), Acanthamoeba (água de torneira + lente)<br>
+• <strong>Colírio antibiótico fortíssimo (moxifloxacino 0,5% ou ciprofloxacino 0,3%) 1 gt a cada 1h (dia) e a cada 2h (noite)</strong> · Hospitalar em casos graves<br>
+• Lente de contato: SUSPENDER · Enviar para cultura (raspagem corneal)<br>
+• Úlcera por Acanthamoeba: colírio de polihexametileno biguanida (PHMB) 0,02% + propamidina (Brolene) · Tratamento por meses<br>
+• Encaminhamento urgente ao oftalmologista em toda úlcera corneal`,
+    note:'Lente de contato e úlcera de córnea: risco aumentado 10–80× em usuários de lente noturna. Pseudomonas aeruginosa: úlcera de progressão rápida (12–24h perfura em P. aeruginosa) — emergência oftalmológica. Nunca dormir com lente de contato. Máscara de proteção em trabalho com soldagem/usinagem: erosão por corpo estranho metálico.'},
+  dmri:{hdr:'DMRI — Degeneração Macular Relacionada à Idade',col:'#1e3a8a',nome:'DMRI Seca: antioxidantes · DMRI Úmida: anti-VEGF intravítreo',
+    body:`<strong>Classificação:</strong><br>
+DMRI Seca (Atrófica — 85%): drusas + atrofia do EPR · Progressão lenta · Sem tratamento modificador comprovado<br>
+DMRI Úmida (Neovascular — 15%): neovascularização coroidal + exsudação + edema macular · Progressão rápida · Tratável<br><br>
+<strong>DMRI Seca — Prevenção de Progressão:</strong><br>
+• <strong>Fórmula AREDS2:</strong> vitamina C 500 mg + E 400 UI + luteína 10 mg + zeaxantina 2 mg + zinco 80 mg + cobre 2 mg<br>
+  Preserva 25% dos pacientes de progressão para DMRI avançada (AREDS2 study)<br>
+  NÃO retarda em estágio inicial · Reduz risco em DMRI intermediária/avançada unilateral<br>
+• Fatores de risco: tabagismo (dobra risco) · UV sem proteção · HAS<br><br>
+<strong>DMRI Úmida — Anti-VEGF Intravítreo:</strong><br>
+• <strong>Ranibizumabe (Lucentis) 0,5 mg intravítreo mensalmente × 3 meses → conforme atividade</strong><br>
+• <strong>Bevacizumabe (Avastin) 1,25 mg intravítreo</strong>: off-label · Custo muito inferior · CATT trial: não-inferior ao ranibizumabe<br>
+• <strong>Aflibercept (Eylea) 2 mg intravítreo</strong>: maior intervalo (a cada 2 meses após fase de carga) · VIEW-1/2 trials<br>
+• <strong>Faricimabe (Vabysmo) 6 mg intravítreo</strong>: anti-VEGF + anti-Ang2 · Menor frequência (8–16 semanas) · Approve 2022<br>
+• Tratamento "PRN" (pro re nata) vs "tratar e estender": individualizar conforme OCT<br><br>
+<strong>Monitoramento:</strong><br>
+OCT macular (tomografia de coerência óptica): detecta fluido subretiniano e atividade de neovasos<br>
+Grade de Amsler: automonitoramento em casa (metamorfopsia = distorção de linhas retas = REAVALIAR)`,
+    note:'DMRI úmida: PRP (fotocoagulação laser) é obsoleta para DMRI úmida em área central — era padrão antes do anti-VEGF. Anti-VEGF sistêmico: bevacizumabe é idêntico ao usado em oncologia (ranibizumabe é fragmento Fab do mesmo anticorpo) — o uso intravítreo tem absorção sistêmica mínima mas não desprezível (monitorar PA e risco tromboembólico em pacientes de alto risco).'},
+};
+
+function calcOft(){
+  const cond=document.getElementById('oft_cond').value;
+  const p=PROTO_OFT[cond];
+  document.getElementById('oftResult').style.display='block';
+  document.getElementById('oftResult').innerHTML=recHTML({hdr:p.hdr,col:p.col,nome:p.nome,badges:[{t:'OFTALMOLOGIA',c:p.col}],body:p.body,note:p.note});
+  document.getElementById('oftResult').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+/* ─── VERTIGEM & OTITE ─────────────────────────────────────────────── */
+function renderVert(){
+  if(document.getElementById('vertList').innerHTML) return;
+  const CARDS=[
+    {col:'#0369a1',nome:'Vertigem — VPPB, Labirintite, Ménière',
+     body:`<strong>Diagnóstico diferencial de vertigem:</strong><br>
+<table>
+  <tr><th>Causa</th><th>Características</th><th>Teste</th></tr>
+  <tr><td>VPPB</td><td>Vertigem posicional &lt;1 min · Latência 5s · Piora ao deitar de lado</td><td>Dix-Hallpike positivo (nistagmo rotatório-vertical)</td></tr>
+  <tr><td>Neurite Vestibular</td><td>Vertigem contínua &gt;24h · Sem surdez · Pós-viral</td><td>Head Impulse Test positivo · Skew deviation</td></tr>
+  <tr><td>Labirintite</td><td>Vertigem + surdez + zumbido · Infecciosa (viral/bact) ou autoimune</td><td>Audiograma + timpanograma</td></tr>
+  <tr><td>Doença de Ménière</td><td>Episódios recorrentes &gt;20 min · Surdez flutuante + zumbido + plenitude aural</td><td>Audiograma (perda em baixas freq) · EMCoG</td></tr>
+  <tr><td>AVC Cerebelar</td><td>Vertigem + sinais cerebelares (ataxia, nistagmo direção variável) · Sem latência</td><td>RM DWI (urgência) · HINTS: Impulso-Nistagmo-Skew</td></tr>
+</table>
+<br>
+<strong>VPPB (Vertigem Posicional Paroxística Benigna) — mais comum:</strong><br>
+• <strong>Manobra de Epley (canalolítiase posterior):</strong><br>
+  1. Posição sentada com cabeça virada 45° para o lado afetado<br>
+  2. Deitar rapidamente (cabeça pendente 30° para o lado afetado) — aguardar 30s<br>
+  3. Girar cabeça 90° para o lado oposto (cabeça pendente 30° para o lado são) — aguardar 30s<br>
+  4. Virar o corpo todo 90° para o lado são (nariz apontado para o chão) — aguardar 30s<br>
+  5. Sentar lentamente<br>
+  Eficácia: 80–90% na 1ª tentativa · Repetir se necessário<br>
+  Variante (canalolítiase horizontal): Manobra de Barbecue (360°)<br><br>
+<strong>Medicamentos para vertigem:</strong><br>
+• <strong>Dimenidrinato (Dramin) 50 mg VO/IV</strong>: anti-histamínico H1 + anticolinérgico · Sintomático em crise · Sedação · Usar somente em crise aguda<br>
+• Meclizina 25 mg: anti-histamínico H1 (EUA) · Menos sedativo<br>
+• Betaistina 16–48 mg 3×/dia: Ménière · Melhora microcirculação endolinfática · Uso crônico<br>
+• Metoclopramida 10 mg IV: náusea associada à vertigem<br>
+• Prednisolona 60 mg/dia × 3 dias → desmame: neurite vestibular grave (evidência limitada)`,
+     note:'HINTS (Head Impulse, Nystagmus, Test of Skew): ferramenta para diferenciar vertigem periférica (VPPB/labirintite) de central (AVC cerebelar). Head Impulse anormal + nistagmo unidirecional + sem skew = periférico. Head Impulse normal + nistagmo multidirecional + skew = CENTRAL → RM urgente. Benzodiazepínicos em vertigem: suprimem resposta vestibular → retardam reabilitação; usar apenas em crise aguda intensa por ≤48h.'},
+    {col:'#b45309',nome:'Otite — Média Aguda e Externa',
+     body:`<strong>Otite Média Aguda (OMA):</strong><br>
+Clínica: otalgia + febre + abaulamento da membrana timpânica + hiperemia<br>
+Agentes: S. pneumoniae (30%), H. influenzae (20%), M. catarrhalis (15%) · Viral (25%)<br><br>
+<strong>Tratamento OMA:</strong><br>
+• Leve-moderada (criança ≥2 anos ou adulto): <strong>Analgesia + observação 48–72h</strong><br>
+  Melhora espontânea em 80% dos casos · Ibuprofeno 10 mg/kg ou paracetamol<br>
+• <strong>ATB obrigatório em:</strong> &lt;2 anos · Otorreia · Sintomas graves (otalgia intensa, febre &gt;39°C) · Bilateral<br>
+  <strong>Amoxicilina 80–90 mg/kg/dia × 5–10 dias</strong> (dose alta penetra melhor no fluido do ouvido médio)<br>
+  Falha em 48–72h: Amoxicilina-clavulanato 45–90 mg/kg/dia (H. influenzae/M. catarrhalis produtores de beta-lactamase)<br>
+  Alergia não-grave à penicilina: cefuroxima 30 mg/kg/dia · Grave: azitromicina (resistência S. pneumoniae 30%)<br>
+• Adulto: amoxicilina 500 mg 8/8h × 5–7 dias<br><br>
+<strong>Otite Externa (Nadador):</strong><br>
+Dor à tração do pavilhão auricular + canal edemaciado + otorreia purulenta · Agente: P. aeruginosa, S. aureus<br>
+• <strong>Ciprofloxacino 0,3% + dexametasona 0,1% ótico 4 gt 2×/dia × 7 dias</strong>: 1ª linha<br>
+• Neomicina + polimixina B + hidrocortisona ótico: alternativa mais barata (ototóxica se MP perfurada)<br>
+• Limpeza suave do canal · NÃO mergulhar · Tampão de algodão para banho<br>
+• Otite externa maligna (DM, imunossuprimido — P. aeruginosa invasiva → base do crânio):<br>
+  Ciprofloxacino VO 750 mg 2×/dia × 6–8 semanas · TC/RM crânio · Internação se progressão`,
+     note:'Inserção de tubos de ventilação (timpanostomia): OMA recorrente (≥3 em 6 meses ou ≥4 em 12 meses) OU derrame seroso bilateral persistente &gt;3 meses com perda auditiva &gt;25 dB. Evitar gotas otóxicas (neomicina, aminoglicosídeos) se membrana timpânica perfurada (ototoxicidade por contato direto). Mastoidite (complicação de OMA): dor e edema retroauricular → internação + ceftriaxona IV.'},
+  ];
+  document.getElementById('vertList').innerHTML=CARDS.map(c=>`<div class="orl-card" style="border-color:${c.col}"><div class="orl-nome" style="color:${c.col}">${c.nome}</div><div class="orl-body">${c.body}</div>${c.note?`<div style="font-size:.7rem;color:#64748b;margin-top:6px">💡 ${c.note}</div>`:''}</div>`).join('');
+}
+
+/* ─── SINUSITE & EPISTAXE ─────────────────────────────────────────── */
+function renderSin(){
+  if(document.getElementById('sinList').innerHTML) return;
+  const CARDS=[
+    {col:'#059669',nome:'Sinusite — Diagnóstico e Tratamento',
+     body:`<strong>Rinossinusite Aguda (RSA):</strong><br>
+Sintomas &lt;12 semanas: congestão nasal + rinorreia purulenta + pressão facial + anosmia + febre<br><br>
+<strong>Critérios EPOS para ATB:</strong><br>
+• Sintomas graves OU piora após melhora inicial (double-sickening) OU persistência &gt;10 dias sem melhora<br>
+• Sinusite frontal, esfenoidal ou etmoidal (maior risco de complicações)<br>
+• A maioria das RSA é VIRAL (rinovírus, adenovírus) — ATB em apenas 2–3% causa melhora adicional<br><br>
+<strong>Tratamento não-medicamentoso (RSA viral):</strong><br>
+• Lavagem nasal com SF: 240 mL 2–3×/dia (reduz sintomas e carga viral)<br>
+• Descongestionante nasal: xilometazolina 0,1% tópica 3×/dia × máx 3–5 dias (uso mais longo → rinite medicamentosa de rebote)<br>
+• Corticoide intranasal: mometasona, budesonida, fluticasona 2 jatos/narina 1–2×/dia · Melhora discreta os sintomas · Sem impacto na duração<br>
+• Paracetamol/ibuprofeno: controle da dor e febre<br><br>
+<strong>Antibioticoterapia em RSA (quando indicado):</strong><br>
+• <strong>Amoxicilina 500 mg 8/8h × 5–7 dias</strong>: 1ª linha (IDSA 2012)<br>
+• Resistência S. pneumoniae: Amoxicilina-clavulanato 875/125 mg 12/12h × 5–7 dias (se falha em 72h)<br>
+• Alergia a penicilina: doxiciclina 100 mg 2×/dia ou levofloxacino 500 mg/dia × 5 dias<br><br>
+<strong>Rinossinusite Crônica (RSC — &gt;12 sem):</strong><br>
+• Corticoide intranasal contínuo · Lavagem nasal diária · Alérgeno evitação<br>
+• RSC com pólipos (RSCcPN): corticoide nasal + cursos orais de prednisolona · Dupilumabe (Dupixent) SC (anticorpo anti-IL-4/IL-13) aprovado SWET/LIBERTY UNION para RSCcPN grave · Mepolizumabe/benralizumabe em RSCcPN eosinofílica<br>
+• FESS (cirurgia endoscópica funcional): RSC refratária a tratamento clínico`,
+     note:'Rinite medicamentosa (rebote por descongestionantes nasais tópicos): congestão nasal piora após suspensão do spray. Tratamento: suspensão gradual + corticoide nasal (mometasona) × 4 semanas. Sinusite fúngica (aspergillus em diabético/imunossuprimido): TC coronal + cultura + cirurgia + antifúngico sistêmico — não é RSA comum.'},
+    {col:'#dc2626',nome:'Epistaxe — Anterior e Posterior',
+     body:`<strong>Epistaxe Anterior (90%):</strong><br>
+Plexo de Kiesselbach (área de Little) · Bilateral na maioria · Frequentemente benigna<br><br>
+<strong>Manejo imediato:</strong><br>
+1. <strong>Comprimir as narinas com os dedos × 10–15 min</strong> (boca aberta) · Sentar com cabeça levemente inclinada para frente (não para trás — evita deglutição de sangue)<br>
+2. <strong>Descongestionante tópico</strong> (oximetazolina 0,05% ou xilometazolina 0,1%) em gaze: vasoconstrição · Tamponar com gaze embebida<br>
+3. Se sangramento persiste: cauterização química com nitrato de prata (aplicar em plexo visualizado) · Apenas um lado de cada vez<br>
+4. Tamponamento nasal anterior (esponja hemostática Merocel ou gaze com pomada): fica 24–48h<br><br>
+<strong>Causa identificar e tratar:</strong><br>
+• Hipertensão (controlar PA) · Anticoagulação (verificar INR/nível de DOAC) · Seca/mucosa ressecada: pomada de vaselina nas narinas à noite · Epistaxe recorrente: investigar HHT (Osler-Weber-Rendu)<br><br>
+<strong>Epistaxe Posterior (10%) — plexo de Woodruff:</strong><br>
+Sangramento mais intenso · Escoa pela rinofaringe (deglutido) · Difícil visualização · ORL URGENTE<br>
+• Tamponamento nasal posterior: sonda com balonete (Foley 12F) ou atadura · Internação<br>
+• Embolização transarterial ou ligadura da artéria esfenopalatina: sangramento refratário<br><br>
+<strong>Epistaxe e anticoagulação:</strong><br>
+Warfarina: verificar INR · Se INR &gt;3 + sangramento ativo: vitamina K 2,5 mg VO · DOAC: aguardar próxima dose se sangramento controlado; considerar reversor se grave`,
+     note:'Telangiectasia Hemorrágica Hereditária (HHT / Osler-Weber-Rendu): epistaxe recorrente + telangiectasias em lábio/língua/dedos + MAV pulmonares/hepáticas. AD. Embolização + bevacizumabe IV (off-label) ou talidomida para epistaxe refratária severa. Hemostasia local: gaze iodoformada (72h) ou Surgicel/Gelfoam reabsorvíveis. Nares secas: umidificador ambiente + vitamina E tópica.'},
+  ];
+  document.getElementById('sinList').innerHTML=CARDS.map(c=>`<div class="orl-card" style="border-color:${c.col}"><div class="orl-nome" style="color:${c.col}">${c.nome}</div><div class="orl-body">${c.body}</div>${c.note?`<div style="font-size:.7rem;color:#64748b;margin-top:6px">💡 ${c.note}</div>`:''}</div>`).join('');
+}
+</script>
+</body>
+</html>

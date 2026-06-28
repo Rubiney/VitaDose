@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Psiquiatria Clínica — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .psi-hdr{background:linear-gradient(135deg,#312e81,#4f46e5);color:#fff;border-radius:14px;padding:18px;margin-bottom:14px}
+    .psi-title{font-size:1rem;font-weight:800;margin-bottom:4px}
+    .psi-sub{font-size:.73rem;opacity:.8}
+    label{font-size:.75rem;font-weight:700;color:#1e3a5f;display:block;margin-bottom:4px}
+    select{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:10px;padding:10px 12px;font-size:.85rem;background:#fff;margin-bottom:10px}
+    select:focus{border-color:#4f46e5;outline:none}
+    .btn-calc{width:100%;background:#4f46e5;color:#fff;border:none;border-radius:12px;padding:13px;font-size:.87rem;font-weight:700;cursor:pointer;margin:8px 0}
+    .tab-bar{display:flex;gap:6px;margin-bottom:14px}
+    .tab-btn{flex:1;padding:9px 4px;border-radius:10px;border:2px solid #e2e8f0;background:#fff;font-size:.72rem;font-weight:700;cursor:pointer;color:#64748b}
+    .tab-btn.active{border-color:#4f46e5;background:#eef2ff;color:#4f46e5}
+    .rec-card{border-radius:12px;border:2px solid;padding:14px;margin-bottom:10px}
+    .rec-hdr{font-size:.63rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+    .rec-nome{font-size:.88rem;font-weight:800;margin-bottom:6px}
+    .rec-badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:.65rem;font-weight:800;color:#fff;margin:2px}
+    .rec-body{font-size:.78rem;margin-top:6px;line-height:1.7}
+    .rec-note{font-size:.71rem;color:#64748b;margin-top:6px;padding-top:6px;border-top:1px solid #f1f5f9}
+    .psi-card{border-radius:10px;border-left:5px solid;padding:10px 14px;margin-bottom:8px;background:#fff}
+    .psi-nome{font-size:.83rem;font-weight:800;margin-bottom:4px}
+    .psi-body{font-size:.76rem;line-height:1.7;color:#374151}
+    .alerta{background:#fef2f2;border:2px solid #dc2626;border-radius:10px;padding:8px;margin:6px 0;font-size:.75rem;color:#7f1d1d;font-weight:700}
+    table{width:100%;border-collapse:collapse;font-size:.73rem;margin-top:6px}
+    th{background:#312e81;color:#fff;padding:5px 8px;text-align:left}
+    td{padding:5px 8px;border-bottom:1px solid #f1f5f9}
+    tr:nth-child(even) td{background:#eef2ff}
+  </style>
+</head>
+<body>
+<header class="top-bar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <span class="top-title">Psiquiatria Clínica</span>
+  <div class="top-right"></div>
+</header>
+<main class="container" style="padding-bottom:90px">
+  <div class="psi-hdr">
+    <div class="psi-title">🧠 Psiquiatria Clínica — Algoritmos</div>
+    <div class="psi-sub">Esquizofrenia · TAB · TDAH · TOC · Insônia · Efeitos Adversos</div>
+  </div>
+  <div class="tab-bar">
+    <button class="tab-btn active" id="tb0" onclick="showTab(0)">Esquizofrenia & Antipsic.</button>
+    <button class="tab-btn" id="tb1" onclick="showTab(1)">TAB & Estabilizadores</button>
+    <button class="tab-btn" id="tb2" onclick="showTab(2)">TDAH · TOC · Insônia</button>
+  </div>
+
+  <!-- TAB 0 — ESQUIZOFRENIA -->
+  <div id="tab0">
+    <div class="card" style="padding:12px 14px">
+      <label>Cenário Clínico</label>
+      <select id="esq_cond">
+        <option value="esq_ini">Esquizofrenia — 1º Episódio / Início de Antipsicótico</option>
+        <option value="esq_ref">Esquizofrenia Refratária — Clozapina</option>
+        <option value="esq_dep">Esquizofrenia — Antipsicóticos de Depósito (LAI)</option>
+        <option value="esq_ram">Efeitos Adversos — Acatisia, Discinesia, SNM</option>
+        <option value="esq_psico">Psicose Aguda — Agitação em PS</option>
+      </select>
+    </div>
+    <button class="btn-calc" onclick="calcEsq()">🧠 Gerar protocolo</button>
+    <div id="esqResult" style="display:none"></div>
+    <div style="margin-top:14px">
+      <div style="font-size:.78rem;font-weight:800;color:#312e81;margin-bottom:8px">📋 Perfil de Efeitos Adversos dos Antipsicóticos</div>
+      <div class="psi-card" style="border-color:#4f46e5">
+        <div class="psi-nome" style="color:#4f46e5">Comparativo de Antipsicóticos Atípicos (SGAs)</div>
+        <div class="psi-body">
+          <table>
+            <tr><th>Droga</th><th>Sedação</th><th>Ganho de Peso</th><th>EPS</th><th>QTc</th><th>Metabólico</th></tr>
+            <tr><td>Clozapina</td><td>++++</td><td>++++</td><td>0</td><td>+</td><td>++++ (DM)</td></tr>
+            <tr><td>Olanzapina</td><td>+++</td><td>++++</td><td>+</td><td>+</td><td>+++ (DM)</td></tr>
+            <tr><td>Quetiapina</td><td>+++</td><td>++</td><td>0–+</td><td>+</td><td>++</td></tr>
+            <tr><td>Risperidona</td><td>+</td><td>++</td><td>++</td><td>+</td><td>++</td></tr>
+            <tr><td>Paliperidona</td><td>+</td><td>++</td><td>++</td><td>+</td><td>+</td></tr>
+            <tr><td>Aripiprazol</td><td>+</td><td>0–+</td><td>+</td><td>0</td><td>+</td></tr>
+            <tr><td>Ziprasidona</td><td>+</td><td>0</td><td>+</td><td>++</td><td>0</td></tr>
+            <tr><td>Cariprazina</td><td>+</td><td>0–+</td><td>+</td><td>0</td><td>+</td></tr>
+            <tr><td>Lurasidona</td><td>+</td><td>0</td><td>+</td><td>0</td><td>0</td></tr>
+            <tr><td>Haloperidol (típico)</td><td>+</td><td>+</td><td>++++</td><td>+</td><td>+</td></tr>
+          </table>
+          <div style="margin-top:6px;font-size:.71rem;color:#64748b">EPS: efeitos extrapiramidais (acatisia, parkinsonismo, distonia). Hiperprolactinemia: risperidona &gt; paliperidona (potentes bloqueadores de D2 na hipófise). Aripiprazol: agonista parcial D2 → menos bloqueio dopaminérgico → menos EPS e hiperprolactinemia.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 1 — TAB -->
+  <div id="tab1" style="display:none">
+    <div id="tabList"></div>
+  </div>
+
+  <!-- TAB 2 — TDAH / TOC / INSÔNIA -->
+  <div id="tab2" style="display:none">
+    <div id="tdahList"></div>
+  </div>
+</main>
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+<script src="js/db.js"></script>
+<script>
+function showTab(n){[0,1,2].forEach(i=>{document.getElementById('tab'+i).style.display=i===n?'block':'none';document.getElementById('tb'+i).classList.toggle('active',i===n);});if(n===1)renderTAB();if(n===2)renderTDAH();}
+function recHTML(r){return `<div class="rec-card" style="border-color:${r.col}"><div class="rec-hdr" style="color:${r.col}">${r.hdr}</div><div class="rec-nome">${r.nome}</div><div>${(r.badges||[]).map(b=>`<span class="rec-badge" style="background:${b.c}">${b.t}</span>`).join('')}</div><div class="rec-body">${r.body}</div>${r.note?`<div class="rec-note">${r.note}</div>`:''}</div>`;}
+
+/* ─── ESQUIZOFRENIA ─────────────────────────────────────────────── */
+const PROTO_ESQ={
+  esq_ini:{hdr:'Esquizofrenia — 1º Episódio / Início de Tratamento',col:'#4f46e5',nome:'Antipsicótico atípico (SGA) em dose baixa — 1ª linha',
+    body:`<strong>Diagnóstico DSM-5 (≥1 dos critérios A por ≥1 mês):</strong><br>
+Delírios · Alucinações · Discurso desorganizado · Comportamento desorganizado/catatônico · Sintomas negativos<br>
++ Declínio funcional · Duração ≥6 meses (incluindo pródromos)<br><br>
+<strong>1ª Escolha (1º episódio — menor dose eficaz):</strong><br>
+• <strong>Risperidona 1–6 mg/dia VO</strong> (iniciar 1 mg/noite → aumentar 1 mg/sem)<br>
+  Eficaz em sintomas positivos · Hiperprolactinemia é limitação · Menos sedação<br>
+• <strong>Aripiprazol 10–30 mg/dia VO</strong>: agonista parcial D2/5HT1A · Menor ganho de peso · Menor EPS · Boa tolerabilidade<br>
+  Acatisia em 10–20% (dose-dependente) · Menos sonolência<br>
+• <strong>Olanzapina 5–20 mg/dia VO</strong>: muito eficaz em positivos E negativos · Mas ganho de peso significativo (3–9 kg/ano)<br>
+• <strong>Quetiapina 150–800 mg/dia VO</strong>: em 2 tomadas · Muito sedativa (útil se insônia) · Menor EPS<br>
+• <strong>Lurasidona 37–148 mg/dia VO</strong> (COM refeição ≥350 kcal): poucos efeitos metabólicos · Boa opção em DM/obesidade<br><br>
+<strong>Monitoramento após início:</strong><br>
+Peso + IMC · Glicemia · Lipídeos · PA · Prolactina (se sintomas) · Movimentos involuntários (AIMS) · QTc (ziprasidona, quetiapina)<br><br>
+<strong>Duração:</strong> 1º episódio → mínimo 2 anos (risco de recaída 80% se suspender precocemente) · Episódios múltiplos → tratamento indefinido`,
+    note:'Antipsicóticos típicos (haloperidol, clorpromazina): menor custo, muito eficazes em positivos, mas EPS 30–50% dos pacientes (akathisia, parkinsonismo, distonia aguda) e discinesia tardia 5% ao ano. Reservar para quando atípicos indisponíveis. Distonia aguda: biperideno 2–4 mg IM.'},
+  esq_ref:{hdr:'Esquizofrenia Refratária — Clozapina',col:'#dc2626',nome:'Clozapina — único antipsicótico eficaz em refratários',
+    body:`<strong>Definição de Refratariedade (APA/RANZCP):</strong><br>
+Falha de ≥2 antipsicóticos diferentes (incluindo 1 de 1ª geração) por ≥6 semanas em dose adequada · NÃO aderência excluída<br><br>
+<strong>Clozapina — Regime:</strong><br>
+• Iniciar 12,5 mg/noite → 25 mg/noite (D2–3) → 50 mg/noite → aumentar 25–50 mg/sem até resposta<br>
+• Dose-alvo: 200–450 mg/dia (2×/dia) · Nível sérico: 350–600 ng/mL (> nível de 350 = resposta mais provável)<br>
+• Dose máxima: 900 mg/dia<br><br>
+<strong>Efeitos adversos graves:</strong><br>
+• <strong>Agranulocitose (1–2%):</strong> neutrófilos &lt;500/µL · Risco maior em primeiras 18 semanas · OBRIGATÓRIO protocolo de hemograma:<br>
+  Semanal × 26 sem → quinzenal × 26 sem → mensal por tempo indeterminado<br>
+  Suspender se NAN &lt;1500 · Interromper se &lt;500 (UTI + G-CSF)<br>
+• Convulsão dose-dependente (&gt;600 mg/dia): adicionar ácido valproico (não carbamazepina — agranulocitose)<br>
+• Síndrome metabólica grave (DM, dislipidemia, obesidade) · Sialorreia (hioscina SL)<br>
+• Hipotensão ortostática · Miocardite (primeiras 4 sem — monitorar troponina e eco)<br>
+• Sedação intensa (titular muito lentamente)<br><br>
+<strong>Associação clozapina + aripiprazol:</strong> adicionar ARP 5–30 mg/dia reduz peso, melhora metabólico, potencializa eficácia<br>
+<strong>Eletroconvulsoterapia (ECT) + clozapina:</strong> opção em esquizofrenia refratária à própria clozapina`,
+    note:'Clozapina: único antipsicótico com evidência de redução de suicídio em esquizofrenia (FDA: redução 88% — InterSePT trial). Registrar no CNRAC (Central Nacional de Registro de Administração da Clozapina) no Brasil. Não dispensar sem hemograma atual dentro do período protocolar.'},
+  esq_dep:{hdr:'Antipsicóticos de Depósito (LAI — Long-Acting Injectables)',col:'#059669',nome:'Paliperidona palmitato · Aripiprazol monoidratado · Risperidona microspheres',
+    body:`<strong>Indicações de LAI:</strong><br>
+• Baixa adesão ao tratamento oral · Múltiplas recaídas · Preferência do paciente · Psicose forense<br>
+• Superioridade ao oral demonstrada em adesão e redução de hospitalizações<br><br>
+<strong>Principais LAIs disponíveis:</strong><br>
+<table>
+  <tr><th>LAI</th><th>Intervalo</th><th>Dose</th><th>Observação</th></tr>
+  <tr><td>Paliperidona palmitato 1M (Xeplion)</td><td>Mensal (IM deltóide/glúteo)</td><td>150 mg D1 + 100 mg D8 → 75 mg/mês</td><td>Sem necessidade de oral concomitante após 2 doses de ataque</td></tr>
+  <tr><td>Paliperidona palmitato 3M (Trevicta)</td><td>A cada 3 meses</td><td>3,5× dose mensal estável</td><td>Após ≥4 meses estável no 1M</td></tr>
+  <tr><td>Aripiprazol monoidratado (Abilify Maintena)</td><td>Mensal (IM glúteo)</td><td>400 mg/mês (300 mg se intolerância)</td><td>Oral por 14 dias concomitante no início</td></tr>
+  <tr><td>Risperidona microspheres (Risperdal Consta)</td><td>A cada 2 semanas</td><td>25–50 mg IM</td><td>Inicio de ação: 3 semanas — oral obrigatório nas 3 primeiras semanas</td></tr>
+  <tr><td>Haloperidol decanoato</td><td>A cada 4 semanas</td><td>100–200 mg IM</td><td>Mais barato; maior EPS; manter oral por 1 sem após 1ª dose</td></tr>
+</table>`,
+    note:'LAI: eficácia equivalente ao oral, mas taxa de recaída 30–40% menor por melhor adesão (Lacro et al. 2015). Dor no sítio de injeção: maior com risperidona microspheres (aquosa) vs paliperidona palmitato (oleosa). LAI pode ser iniciado no PS após agitação tratada — inicia "garantia" de medicação.'},
+  esq_ram:{hdr:'Efeitos Adversos de Antipsicóticos — Manejo',col:'#b45309',nome:'Acatisia · Parkinsonismo · Discinesia Tardia · SNM',
+    body:`<strong>Acatisia (inquietação subjetiva + movimentos):</strong><br>
+• Reduzir dose do antipsicótico · Trocar para agente com menor risco (aripiprazol, clozapina, quetiapina)<br>
+• <strong>Propranolol 20–40 mg 2×/dia</strong>: 1ª linha (mais eficaz) · Reduz sintoma periférico e subjetivo<br>
+• <strong>Mirtazapina 15 mg/noite</strong>: antagonista 5HT2A · Eficaz em acatisia<br>
+• Biperideno 2 mg VO 3×/dia: menos eficaz em acatisia que parkinsonismo<br>
+• Lorazepam 1–2 mg VO/IM: agudo (ansiedade + motor)<br><br>
+<strong>Parkinsonismo Induzido por Antipsicótico (bradicinesia, tremor, rigidez):</strong><br>
+• Reduzir dose · Trocar para antipsicótico com menor EPS<br>
+• <strong>Biperideno 2 mg VO 2–3×/dia</strong> (anticolinérgico): 1ª linha<br>
+  RAM: boca seca, visão turva, constipação, confusão em idosos · CI em glaucoma<br>
+• Amantadina 100–200 mg/dia: alternativa; menos anticolinérgico<br><br>
+<strong>Distonia Aguda (torcicolos, crise oculogírica):</strong><br>
+• <strong>Biperideno 2–5 mg IM ou IV</strong>: resolução em 15 min · 1ª linha<br>
+• Diazepam 10 mg IV: alternativa<br>
+• Prevenção: biperideno VO 2 mg 3×/dia nas primeiras semanas de típico<br><br>
+<strong>Discinesia Tardia (movimentos orofaciais involuntários crônicos):</strong><br>
+• <strong>Valbenazina (Ingrezza) 40 mg/dia → 80 mg/dia</strong>: inibidor VMAT2 · FDA 2017 · 1ª linha<br>
+• Deutetrabenazina: alternativa (2×/dia)<br>
+• Clonazepam 0,5–2 mg/dia: adjuvante · Vitamina E 1600 UI: moderada evidência (prevenção?)<br>
+• Trocar antipsicótico para clozapina (zero EPS · melhora DT em muitos casos)<br><br>
+<strong>Síndrome Neuroléptica Maligna (SNM):</strong><br>
+<div class="alerta">🚨 EMERGÊNCIA — mortalidade até 20% se não tratada</div>
+Tétrade: hipertermia (&gt;38,5°C) + rigidez muscular "cano de chumbo" + alteração de consciência + instabilidade autonômica<br>
+CPK muito elevada (&gt;1000 U/L) · Diferencial: síndrome serotoninérgica (início rápido, hiperreflexia, sem rigidez cano de chumbo)<br>
+• Suspender antipsicótico IMEDIATAMENTE<br>
+• Hidratação IV · Resfriamento ativo · UTI<br>
+• <strong>Bromocriptina 2,5–5 mg VO 3×/dia</strong> (agonista D2) + <strong>Dantrolene 1–2,5 mg/kg IV</strong> (relaxante muscular direto)<br>
+• ECT: casos refratários ou catatonia grave`,
+    note:'Síndrome Serotoninérgica vs SNM: início SS em horas (combinação serotoninérgica); início SNM em dias/semanas. SS: hiperreflexia + clonus + diarreia + pupila dilatada. SNM: rigidez lead-pipe + CPK muito alta + sem hiperreflexia. Tratamento diverge: SS → ciproeptadina; SNM → bromocriptina + dantrolene.'},
+  esq_psico:{hdr:'Psicose Aguda com Agitação — Protocolo de PS',col:'#991b1b',nome:'Calmar com farmacologia · Não usar força desnecessária',
+    body:`<strong>Abordagem verbal primeiro:</strong> Ambiente calmo · Tom de voz calmo · Não confrontar · Não constranger · Oferecer medicação VO primeiro<br><br>
+<strong>FARMACOLOGIA DE ACALMIA (preferir VO — adesão é tratamento):</strong><br>
+Opção A (menos sedativa — preferível em psicose primária):<br>
+• <strong>Aripiprazol 9,75 mg IM</strong> (única dose em 2h; máx 29,25 mg/dia) + lorazepam 2 mg IM (separado — não na mesma seringa)<br>
+Opção B (mais sedativa — preferível em delirium ou intoxicação):<br>
+• <strong>Haloperidol 5 mg IM + Prometazina 25 mg IM</b> (mesma seringa possível) · TREC trial: seguro e eficaz<br>
+• Alternativa: haloperidol 5 mg IM + lorazepam 2 mg IM (separados)<br>
+Opção C (agitação extrema):<br>
+• <strong>Midazolam 5–10 mg IM</strong>: rapidíssimo mas depressão respiratória (monitorar SpO2)<br>
+• Droperidol 10 mg IM: muito eficaz; disponibilidade limitada no Brasil<br><br>
+<strong>CI absoluta: misturar haloperidol + prometazina + benzodiazepínico na mesma seringa</strong> — risco de parada respiratória<br>
+<strong>CI lorazepam IV rápido + prometazina:</strong> risco de apneia<br><br>
+<strong>Pós-agitação:</strong><br>
+• Iniciar antipsicótico oral assim que paciente colabora<br>
+• Investigar causa: substâncias, crise psicótica, delirium, hipoglicemia, TCE<br>
+• Internação psiquiátrica se risco a si ou a outros`,
+    note:'TREC Collaborative Group: haloperidol IM + prometazina IM supera haloperidol isolado em rapidez de sedação sem diferença em eventos adversos. Preferir abordagem VO quando possível (ziprasidona VO, risperidona VO, olanzapina ZD que dissolve debaixo da língua). Contenção mecânica: últimos recursos após falha das demais medidas, com monitoramento contínuo.'},
+};
+
+function calcEsq(){
+  const cond=document.getElementById('esq_cond').value;
+  const p=PROTO_ESQ[cond];
+  document.getElementById('esqResult').style.display='block';
+  document.getElementById('esqResult').innerHTML=recHTML({hdr:p.hdr,col:p.col,nome:p.nome,badges:[{t:'PSIQUIATRIA',c:p.col}],body:p.body,note:p.note});
+  document.getElementById('esqResult').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+/* ─── TAB — TRANSTORNO AFETIVO BIPOLAR ─────────────────────────────── */
+function renderTAB(){
+  if(document.getElementById('tabList').innerHTML) return;
+  const CARDS=[
+    {col:'#4f46e5',nome:'TAB Tipo I — Mania Aguda',
+     body:`<strong>Primeira linha (monoterapia):</strong><br>
+• <strong>Lítio 900–1800 mg/dia</strong> (nível sérico alvo: 0,8–1,2 mEq/L em mania aguda; 0,6–0,8 manutenção)<br>
+  Inicio: 300 mg 2–3×/dia → titular a cada 3–5 dias · Coleta: 12h após última dose<br>
+  RAM: tremor fino (propranolol 10–40 mg), poliúria, ganho de peso, bócio (TSH anual), hipotireoidismo<br>
+  Toxicidade (&gt;1,5 mEq/L): tremor grosseiro, confusão, ataxia, vômitos, convulsão → hemodiálise<br>
+  CI: IR (&gt;1,5 mEq/L em DRC), diuréticos tiazídicos/IECA/AINE (aumentam nível), gravidez 1T (Ebstein raro)<br>
+• <strong>Valproato (ácido valproico) 1000–2500 mg/dia</strong> (nível: 50–125 µg/mL)<br>
+  Inicio: 500 mg/dia → titular · Mais rápido que lítio para mania · Eficaz em cicladoras rápidas<br>
+  RAM: hepatotoxicidade (TGP/TGO antes e a cada 3 meses), plaquetopenia, alopecia (zinco + biotina), náusea<br>
+  CI: gravidez (espinha bífida 1–2% + retardo cognitivo fetal — avaliar CUIDADOSAMENTE em mulheres em idade fértil)<br>
+• <strong>Antipsicótico atípico adjuvante:</strong> olanzapina 10–20 mg/dia + lítio = resposta mais rápida (EMBLEM/LEMIS trials)`,
+     note:'Mania mista (disfórica): valproato &gt; lítio. Ciclagem rápida (≥4 episódios/ano): valproato, lamotrigina, olanzapina OU combinação. Lítio é o único agente com evidência de redução de suicídio em TAB (meta-análises). Não suspender lítio abruptamente — risco de mania rebote e ideação suicida.'},
+    {col:'#7c3aed',nome:'TAB — Depressão Bipolar',
+     body:`<strong>⚠️ NÃO usar antidepressivo em monoterapia em TAB (risco de virada maníaca e ciclagem rápida)</strong><br><br>
+<strong>1ª linha para depressão bipolar (TAB I):</strong><br>
+• <strong>Quetiapina 300–600 mg/dia VO</strong>: único fármaco aprovado FDA para depressão bipolar (BOLDER I/II) · Início 50 mg/noite → titular · Sedação significativa<br>
+• <strong>Lurasidona 20–120 mg/dia</strong> (COM refeição ≥350 kcal): aprovada depressão bipolar (PREVAIL 2) · Menor sedação que quetiapina · Bom perfil metabólico<br>
+• <strong>Lítio OU Valproato + antidepressivo (se monoterapia inadequada):</strong> sertralinaa ou bupropiona (menor virada que ISRS)<br>
+• <strong>Lamotrigina 25–200 mg/dia</strong> (titulação obrigatória lenta — risco de Stevens-Johnson):<br>
+  sem valproato: 25 mg/dia × 2 sem → 50 mg × 2 sem → 100 mg × 1 sem → 200 mg<br>
+  COM valproato: metade da velocidade (valproato inibe eliminação de lamotrigina → dobra o nível)<br>
+  Prevenção de episódios depressivos (&gt; que maniaco) · Menos eficaz em mania aguda<br><br>
+<strong>TAB II (depressão &gt;&gt; hipomania):</strong><br>
+Quetiapina OU Lurasidona OU Lamotrigina · Lítio adjuvante · Antidepressivo com maior margem de segurança que no TAB I`,
+     note:'Lamotrigina e contraceptivo oral: etinilestradiol induz metabolismo da lamotrigina → nível cai até 50% ao iniciar AC hormonal → aumentar dose de lamotrigina. Ao suspender AC: reduzir lamotrigina gradualmente. Rash por lamotrigina: 10% dos pacientes (benigno) vs Stevens-Johnson: 0,1% (grave, início nas 2–8 semanas, mucosas envolvidas). Suspender imediatamente se rash mucoso.'},
+    {col:'#059669',nome:'TAB — Manutenção e Prevenção de Recaídas',
+     body:`<strong>Agentes de manutenção por nível de evidência:</strong><br>
+<table>
+  <tr><th>Fármaco</th><th>Nível de Evidência</th><th>Efeito Preferencial</th></tr>
+  <tr><td>Lítio</td><td>A (forte)</td><td>Mania e depressão · Antisuicida</td></tr>
+  <tr><td>Valproato</td><td>A</td><td>Mania · Ciclagem rápida</td></tr>
+  <tr><td>Lamotrigina</td><td>A</td><td>Depressão bipolar · Fraco em mania</td></tr>
+  <tr><td>Aripiprazol LAI</td><td>A</td><td>Prevenção de episódios maníacos</td></tr>
+  <tr><td>Olanzapina</td><td>A</td><td>Mania · Manutenção (mas peso/metabólico)</td></tr>
+  <tr><td>Quetiapina</td><td>A</td><td>Ambos polos · Manutenção</td></tr>
+  <tr><td>Asenapina</td><td>B</td><td>Mania aguda e manutenção</td></tr>
+  <tr><td>Cariprazina</td><td>B</td><td>Mania aguda · Depressão bipolar</td></tr>
+</table>
+<br>
+<strong>Monitoramento do Lítio (semestral/anual):</strong><br>
+Litemia (nível sérico) · TFG + creatinina · TSH · Ca sérico (hiperparatireoidismo crônico) · ECG se &gt;50 anos<br><br>
+<strong>Lítio e Gravidez:</strong><br>
+1T: anomalia de Ebstein (VD tricúspide) — risco absoluto 0,05–0,1% (RR 1,5–3×) · Avaliar risco/benefício<br>
+Se mantido: ecocardiograma fetal (20 sem) · Dose antes do parto: reduzir 25–50% (nível flutua no puerpério)`,
+     note:'TAB x TDAH: comorbidade frequente (30–40%). Iniciar estabilizador de humor ANTES de psicoestimulante — risco de virada maníaca se TDAH tratado sem estabilizador em TAB. Psicoterapia (TCC, psicoeducação) é adjuvante imprescindível ao farmacológico em TAB — reduz hospitalizações 40%.'},
+  ];
+  document.getElementById('tabList').innerHTML=CARDS.map(c=>`<div class="psi-card" style="border-color:${c.col}"><div class="psi-nome" style="color:${c.col}">${c.nome}</div><div class="psi-body">${c.body}</div>${c.note?`<div style="font-size:.7rem;color:#64748b;margin-top:6px">💡 ${c.note}</div>`:''}</div>`).join('');
+}
+
+/* ─── TDAH / TOC / INSÔNIA ─────────────────────────────────────────── */
+function renderTDAH(){
+  if(document.getElementById('tdahList').innerHTML) return;
+  const CARDS=[
+    {col:'#312e81',nome:'TDAH em Adultos — Diagnóstico e Tratamento',
+     body:`<strong>Critérios diagnósticos (DSM-5 para adultos):</strong><br>
+≥5 sintomas de desatenção E/OU ≥5 hiperatividade-impulsividade (de 9 cada) · Presentes antes dos 12 anos · ≥2 ambientes (trabalho, casa) · Comprometimento funcional significativo<br><br>
+<strong>1ª Linha — Estimulantes:</strong><br>
+• <strong>Metilfenidato LI (Ritalina) 5–20 mg 2–3×/dia</strong> (iniciar 5–10 mg/dia, aumentar 5–10 mg/sem)<br>
+• <strong>Metilfenidato LA/XR (Ritalina LA, Concerta) 18–72 mg/dia</strong>: 1 tomada/dia, melhor para trabalho/escola<br>
+• <strong>Lisdexanfetamina (Vyvanse) 20–70 mg/dia</strong>: pró-droga → baixo potencial de abuso · Duração 12–14h · Alta eficácia<br>
+Estimulantes: taquicardia, HAS (monitorar PA), anorexia, insônia (evitar dose após 15–16h)<br>
+CI absoluta: TAB não-tratado, psicose ativa, DCV grave, glaucoma de ângulo fechado<br><br>
+<strong>2ª Linha — Não-estimulantes (menor potencial de abuso · início mais lento — 4–6 sem):</strong><br>
+• <strong>Atomoxetina (Strattera) 40–100 mg/dia</strong> (peso &gt;70 kg: 80–100 mg): inibidor seletivo de recaptação de NE · Eficaz em TDAH + ansiedade + TAB<br>
+  Início de resposta: 4–6 semanas · RAM: insônia, boca seca, aumento de PA, náusea<br>
+• <strong>Bupropiona 150–300 mg/dia</strong>: eficaz em TDAH adulto (off-label) + depressão comórbida · CI em bulimia/epilepsia<br>
+• Guanfacina XR 1–4 mg/noite: agonista alfa-2 · Útil se tiques ou ansiedade comórbida · Hipotensão<br>
+• Clonidina 0,1–0,3 mg: alternativa mais antiga (mais hipotensão)`,
+     note:'Abuso de estimulantes: usar LAI (lisdexanfetamina) OU formulações LR de difícil trituração. TDAH + insônia: estimulante mais cedo no dia; melatonina 1–3 mg à noite (melhora latência de sono induzida por estimulante). TDAH + ansiedade: atomoxetina ou combinação estimulante + ISRS. TDAH e amamentação: estimulantes — evitar; atomoxetina — dados insuficientes (avaliar risco/benefício).'},
+    {col:'#b45309',nome:'TOC — Transtorno Obsessivo-Compulsivo',
+     body:`<strong>Diagnóstico:</strong> obsessões + compulsões · Egodistônico · &gt;1h/dia · Comprometimento funcional<br>
+Espectro: TOC (compulsões/verificação) · BDD (corpo) · Hipocondria · Tricotilomania · Escoriação<br><br>
+<strong>1ª Linha — ISRS em dose ALTA:</strong><br>
+• <strong>Sertralina 100–200 mg/dia</strong> (mais prescrita; iniciar 50 mg, titular até 200 mg)<br>
+• Fluoxetina 60–80 mg/dia · Fluvoxamina 200–300 mg/dia · Paroxetina 40–60 mg/dia<br>
+• Escitalopram 20–40 mg/dia (off-label; dose acima de 20 mg não aprovada para TOC)<br>
+<strong>Resposta: 8–12 semanas de tratamento adequado antes de considerar falha · Doses &gt; ansiedade são necessárias</strong><br><br>
+<strong>2ª Linha — Clomipramina 75–225 mg/dia:</strong><br>
+Tricíclico inibidor de recaptação de serotonina e NE · Muito eficaz em TOC (≥ISRS em alguns estudos)<br>
+RAM significativa: cardiotoxicidade (ECG antes), boca seca, constipação, sedação, ganho de peso<br>
+Interação: ISRS + clomipramina → síndrome serotoninérgica e ↑nível de clomipramina (CYP2D6)<br><br>
+<strong>Potencialização (falha de ISRS):</strong><br>
+• <strong>Aripiprazol 5–15 mg/dia</strong> (mais evidência de augmentação): melhora sintomas residuais<br>
+• Risperidona 0,5–2 mg/dia: alternativa (mais EPS)<br>
+• Memantina 10–20 mg/dia (antagonista NMDA): evidência emergente em TOC refratário<br>
+• <strong>TCC com Exposição e Prevenção de Resposta (ERP)</strong>: psicoterapia padrão-ouro · Essencial em combinação com farmacológico<br><br>
+<strong>Duração:</strong> mínimo 1–2 anos após remissão · Recaída em 90% se ISRS suspenso precocemente`,
+     note:'TOC e BDD (Transtorno Dismórfico Corporal): BDD responde melhor à sertralina que à clomipramina. Cirurgia cosmética em BDD: NÃO — piora sintomas. TOC em Parkinson: agonistas dopaminérgicos (pramipexol, ropinirol) podem induzir comportamentos compulsivos (jogo patológico, hipersexualidade) — reduzir dose ou trocar.'},
+    {col:'#374151',nome:'Insônia — Algoritmo Escalonado',
+     body:`<strong>Avaliação inicial:</strong> duração (&lt;3 meses = aguda; ≥3 meses = crônica) · Causa subjacente (depressão, ansiedade, apneia, dor, fármacos) · Higiene do sono<br><br>
+<strong>1ª Linha — Higiene do Sono + CBTI (Terapia Cognitivo-Comportamental para Insônia):</strong><br>
+• CBTI: controle de estímulos, restrição de sono, relaxamento, psicoeducação<br>
+• Higiene: hora fixa, sem telas 1h antes, quarto escuro/frio, sem álcool/cafeína após 14h<br>
+• CBTI superior às medicações a longo prazo (AASM 2023 — 1ª linha obrigatória antes de farmácia)<br><br>
+<strong>2ª Linha — Melatonina (preferir a hipnóticos):</strong><br>
+• <strong>Melatonina 1–5 mg</strong> 30–60 min antes de dormir · Mais eficaz em atraso de fase do sono · Segura em idosos · Mínimo efeito dependência<br>
+• Agomelatina 25 mg/noite: antidepressivo + agonista MT1/MT2 · Insônia + depressão · Monitorar TGP<br><br>
+<strong>3ª Linha — Hipnóticos não-benzodiazepínicos (Z-drugs):</strong><br>
+• <strong>Zolpidem 5–10 mg VO</strong> (ações curtas): latência de sono · Risco de parassonias (sonambulismo, comer dormindo) · Dependência com uso &gt;4 sem<br>
+• Eszopiclona 1–3 mg: eficaz em manutenção do sono · Gosto metálico<br>
+• CI em SAOS não-tratado · Usar por ≤2–4 semanas<br><br>
+<strong>Alternativas (menos hipnóticos clássicos):</strong><br>
+• <strong>Doxepina 3–6 mg</strong> (antidepressivo a dose ultra-baixa): aprovada FDA insônia de manutenção · Antagonista H1 seletivo nesta dose · Mínima dependência<br>
+• <strong>Suvorexante (Belsomra) 10–20 mg</strong>: antagonista dual de orexina (DORA) · Menos dependência que zolpidem · Aprovado FDA 2014 · Sonolência residual<br>
+• Lemborexante 5–10 mg: DORA similar · Menos interações que suvorexante<br>
+• Trazodona 25–100 mg/noite: antidepressivo sedativo; off-label insônia; muito usado na prática<br><br>
+<strong>Insônia em idosos:</strong><br>
+• EVITAR: BZD (quedas, delirium, dependência), difenidramina, anticolinérgicos sedativos (Beers criteria)<br>
+• Preferir: melatonina 0,5–2 mg, trazodona 25–50 mg, suvorexante 10 mg, doxepina 3 mg`,
+     note:'Apneia Obstrutiva do Sono (SAOS): excluir antes de hipnóticos (CPAP pode resolver insônia secundária). Polissonografia indicada: suspeita de SAOS (ronco + apneias referidas + IAH calculado pelo Epworth ≥10). Síndrome das Pernas Inquietas: pramipexol 0,125–0,5 mg/noite OU gabapentina 300–600 mg/noite — frequentemente confundida com insônia.'},
+  ];
+  document.getElementById('tdahList').innerHTML=CARDS.map(c=>`<div class="psi-card" style="border-color:${c.col}"><div class="psi-nome" style="color:${c.col}">${c.nome}</div><div class="psi-body">${c.body}</div>${c.note?`<div style="font-size:.7rem;color:#64748b;margin-top:6px">💡 ${c.note}</div>`:''}</div>`).join('');
+}
+</script>
+</body>
+</html>
