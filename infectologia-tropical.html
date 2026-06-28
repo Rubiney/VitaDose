@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Infectologia Tropical — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .trop-hdr{background:linear-gradient(135deg,#14532d,#15803d);color:#fff;border-radius:14px;padding:18px;margin-bottom:14px}
+    .trop-title{font-size:1rem;font-weight:800;margin-bottom:4px}
+    .trop-sub{font-size:.73rem;opacity:.8}
+    label{font-size:.75rem;font-weight:700;color:#1e3a5f;display:block;margin-bottom:4px}
+    select{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:10px;padding:10px 12px;font-size:.85rem;background:#fff;margin-bottom:10px}
+    .btn-calc{width:100%;background:#15803d;color:#fff;border:none;border-radius:12px;padding:13px;font-size:.87rem;font-weight:700;cursor:pointer;margin:8px 0}
+    .tab-bar{display:flex;gap:6px;margin-bottom:14px}
+    .tab-btn{flex:1;padding:9px 4px;border-radius:10px;border:2px solid #e2e8f0;background:#fff;font-size:.72rem;font-weight:700;cursor:pointer;color:#64748b}
+    .tab-btn.active{border-color:#15803d;background:#f0fdf4;color:#15803d}
+    .trop-card{border-radius:10px;border-left:5px solid;padding:10px 14px;margin-bottom:8px;background:#fff}
+    .trop-nome{font-size:.83rem;font-weight:800;margin-bottom:4px}
+    .trop-body{font-size:.76rem;line-height:1.7;color:#374151}
+    .rec-card{border-radius:12px;border:2px solid;padding:14px;margin-bottom:10px}
+    .rec-hdr{font-size:.63rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+    .rec-nome{font-size:.88rem;font-weight:800;margin-bottom:6px}
+    .rec-body{font-size:.78rem;margin-top:6px;line-height:1.7}
+    .rec-note{font-size:.71rem;color:#64748b;margin-top:6px;padding-top:6px;border-top:1px solid #f1f5f9}
+    .alerta{background:#fef2f2;border:2px solid #dc2626;border-radius:10px;padding:8px;margin:6px 0;font-size:.75rem;color:#7f1d1d;font-weight:700}
+    .atencao{background:#fffbeb;border:2px solid #d97706;border-radius:10px;padding:8px;margin:6px 0;font-size:.75rem;color:#78350f;font-weight:700}
+    .ok-box{background:#f0fdf4;border:2px solid #15803d;border-radius:10px;padding:8px;margin:6px 0;font-size:.75rem;color:#14532d;font-weight:700}
+    table{width:100%;border-collapse:collapse;font-size:.73rem;margin-top:6px}
+    th{background:#15803d;color:#fff;padding:5px 8px;text-align:left}
+    td{padding:5px 8px;border-bottom:1px solid #f1f5f9}
+    tr:nth-child(even) td{background:#f0fdf4}
+  </style>
+</head>
+<body>
+<header class="top-bar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <span class="top-title">Infectologia Tropical</span>
+  <div class="top-right"></div>
+</header>
+<main class="container" style="padding-bottom:90px">
+  <div class="trop-hdr">
+    <div class="trop-title">🌿 Infectologia Tropical & Doenças Negligenciadas</div>
+    <div class="trop-sub">Malária · Dengue · Leishmaniose · Chagas · Leptospirose</div>
+  </div>
+  <div class="tab-bar">
+    <button class="tab-btn active" id="tb0" onclick="showTab(0)">Malária & Dengue</button>
+    <button class="tab-btn" id="tb1" onclick="showTab(1)">Leishmaniose & Chagas</button>
+    <button class="tab-btn" id="tb2" onclick="showTab(2)">Leptospirose & Outros</button>
+  </div>
+
+  <!-- TAB 0 -->
+  <div id="tab0">
+    <div class="card" style="padding:12px 14px;margin-bottom:10px">
+      <label>Doença</label>
+      <select id="trop_cond">
+        <option value="mal_viv">Malária por P. vivax (mais comum no Brasil)</option>
+        <option value="mal_fal">Malária por P. falciparum / Malária grave</option>
+        <option value="dengue">Dengue — Classificação e Manejo MS 2024</option>
+      </select>
+      <button class="btn-calc" onclick="calcTrop()">🌿 Ver protocolo</button>
+    </div>
+    <div id="tropResult" style="display:none"></div>
+  </div>
+
+  <!-- TAB 1 -->
+  <div id="tab1" style="display:none">
+    <div id="leishList"></div>
+  </div>
+
+  <!-- TAB 2 -->
+  <div id="tab2" style="display:none">
+    <div id="leptList"></div>
+  </div>
+</main>
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+<script src="js/db.js"></script>
+<script>
+function showTab(n){[0,1,2].forEach(i=>{document.getElementById('tab'+i).style.display=i===n?'block':'none';document.getElementById('tb'+i).classList.toggle('active',i===n);});if(n===1)renderLeish();if(n===2)renderLept();}
+
+const PROTO_TROP={
+  mal_viv:{col:'#15803d',hdr:'Malária por Plasmodium vivax — Protocolo MS 2024',nome:'Cloroquina 3 dias + Primaquina 7–14 dias (testar G6PD antes!)',
+   body:`<strong>Epidemiologia Brasil:</strong> 95% dos casos na Amazônia Legal (AM, PA, RO, AC, RR, AP, MT, TO, MA) · P. vivax: 80% · P. falciparum: 15% · P. malariae: 5%<br><br>
+<strong>Diagnóstico:</strong><br>
+• <strong>Gota espessa</strong> (padrão-ouro): identifica espécie e parasitemia · Limite: 5–10 parasitos/µL<br>
+• <strong>TDR (Teste de Diagnóstico Rápido)</strong>: antígeno HRP-2 (falciparum) + pLDH (vivax) · Resultado em 20 min · Disponível em UBS amazônicas · Sensibilidade 95%+<br>
+• PCR: confirmatório para parasitemia baixa ou mista<br><br>
+<strong>Protocolo P. vivax (MS 2024):</strong><br>
+<table>
+  <tr><th>Fármaco</th><th>Dose</th><th>Duração</th><th>Observação</th></tr>
+  <tr><td><strong>Cloroquina</strong></td><td>25 mg base/kg dividida em 3 dias: D1=10, D2=7,5, D3=7,5 mg/kg</td><td>3 dias</td><td>VO, dose única diária. Comprimidos de 150 mg base.</td></tr>
+  <tr><td><strong>Primaquina</strong> (erradicação de hipnozoítas)</td><td>0,5 mg base/kg/dia</td><td>7 dias</td><td>TESTAR G6PD ANTES. Se G6PD deficiente grave: regime semanal 0,75 mg/kg × 8 semanas com supervisão ou usar CHWV.</td></tr>
+</table>
+<br>
+<div class="atencao">⚠️ G6PD e Primaquina: dosagem obrigatória antes de iniciar. G6PD normal: 7 dias. G6PD deficiente (moderado): 0,75 mg/kg 1×/semana × 8 semanas com monitoramento de hemoglobina. G6PD deficiente grave: contra-indicado — avaliar individualmente com especialista.</div>
+<br>
+<strong>Controle de cura:</strong> Gota espessa D3, D7, D14, D21, D28, D45 e D60 · Parasitemia deve zerar em D7<br>
+<strong>Recaída:</strong> Parasitemia após D14 de tratamento completo = recaída por hipnozoítas. Re-tratar com cloroquina + primaquina 14 dias (dose maior: 0,5 mg/kg/dia × 14d)`,
+   note:'Malária na gestação: cloroquina é segura em todos os trimestres. Primaquina: contraindicada na gestação e lactação (G6PD não avaliável em feto/lactente). Gestante com P. vivax: apenas cloroquina (sem primaquina) + retratamento após puerpério. Malária e amamentação: primaquina pode ser usada se lactente testado G6PD normal. Resistência à cloroquina: P. vivax resistente raro no Brasil (alguns relatos em RO/AM — contato com SIVEP-Malária se suspeita).'},
+  mal_fal:{col:'#dc2626',hdr:'Malária por P. falciparum e Malária Grave — Protocolo MS 2024',nome:'Artemeter-lumefantrina 3 dias (não-grave) OU Artesunato IV (grave)',
+   body:`<div class="alerta">⚠️ MALÁRIA GRAVE: Artesunato IV + UTI. Critérios OMS de gravidade: coma (Glasgow≤10), convulsões, hiperparasitemia &gt;5%, insuficiência renal (creatinina&gt;3mg/dL), hipoglicemia (&lt;40mg/dL), acidose (pH&lt;7,25), anemia grave (Hb&lt;5g/dL), choque, hemorragia, hemoglobinúria, edema pulmonar/SARA.</div>
+<br>
+<strong>Malária falciparum NÃO complicada:</strong><br>
+<table>
+  <tr><th>Esquema</th><th>Dose (adulto ≥35 kg)</th><th>Duração</th></tr>
+  <tr><td><strong>Artemeter-lumefantrina (Coartem®)</strong> — 1ª linha</td><td>4 comprimidos (80/480 mg) às 0h, 8h, 24h, 36h, 48h, 60h</td><td>3 dias (6 doses)</td></tr>
+  <tr><td>Artesunato + mefloquina (ASMQ®)</td><td>Artesunato 200 mg + Mefloquina 500 mg × 3 dias</td><td>3 dias</td></tr>
+  <tr><td>Artesunato + doxiciclina</td><td>Artesunato 100 mg/dia + Doxiciclina 100 mg 2×/dia</td><td>7 dias (alternativa)</td></tr>
+</table>
+<br>
+<strong>+ Primaquina 0,75 mg/kg dose única</strong> no D1 (gametocitocida — reduz transmissão, não precisa testar G6PD em dose única exceto em deficientes graves)<br><br>
+<strong>Malária GRAVE — Artesunato IV (MS + OMS):</strong><br>
+• Artesunato IV 2,4 mg/kg na admissão → 2,4 mg/kg às 12h → 2,4 mg/kg às 24h → depois 2,4 mg/kg/dia<br>
+• Mínimo 24h IV; quando tolerar VO: completar com artemeter-lumefantrina × 3 dias<br>
+• Suporte intensivo: glicose 50% IV (hipoglicemia), SF 0,9% (hipovolemia), anticonvulsivante (diazepam IV), diálise (IRA), transfusão (Hb&lt;7 g/dL com parasitemia alta), ventilação mecânica (SARA)<br>
+• Quinino IV (alternativa se artesunato indisponível): 20 mg/kg em 4h (ataque) → 10 mg/kg a cada 8h + doxiciclina · QTc: monitorar (prolonga QT)<br><br>
+<strong>Malária mista (P. vivax + P. falciparum):</strong><br>
+Tratar como falciparum (artemeter-lumefantrina) + primaquina 0,5 mg/kg/dia × 7 dias (erradicação de hipnozoítas)`,
+   note:'Quimioprofilaxia para viajantes à Amazônia: doxiciclina 100 mg/dia (início D1–D2, até D28 após saída) OU atovaquona-proguanil (Malarone®) 1 comprimido/dia D1–D7 após retorno OU mefloquina (efeitos neuropsiquiátricos: 25%) · NÃO indicada para moradores endêmicos. Dengue e malária: febre indiferenciada em zona endêmica → investigar ambas (TDR malária + NS1 dengue simultaneamente). Síndrome de hipereatividade esplênica malárica: esplenomegalia crônica + IgM elevada em indivíduos em zona endêmica; cloroquina por 6–12 meses.'},
+  dengue:{col:'#b45309',hdr:'Dengue — Classificação e Manejo MS 2024 (Revisão Nota Técnica CGDE)',nome:'Classificação A/B/C/D · Hidratação guiada pelo grupo · Sinais de alarme são emergência',
+   body:`<strong>Diagnóstico laboratorial:</strong><br>
+<table>
+  <tr><th>Exame</th><th>Janela diagnóstica</th><th>Interpretação</th></tr>
+  <tr><td>NS1 (antígeno)</td><td>D1–D5 da febre</td><td>Positivo = dengue confirmado · Sensibilidade 70–90% (maior em D1–D3)</td></tr>
+  <tr><td>IgM anti-dengue (MAC-ELISA)</td><td>A partir de D5–D6</td><td>Positivo = infecção recente (primária ou secundária)</td></tr>
+  <tr><td>IgG anti-dengue</td><td>A partir de D7–D10</td><td>Positivo em reinfecção / imunidade prévia</td></tr>
+  <tr><td>PCR RT-PCR</td><td>D1–D5</td><td>Padrão-ouro na fase aguda · Identifica sorotipo (1,2,3,4)</td></tr>
+</table>
+<br>
+<strong>Classificação clínica (MS 2024):</strong><br>
+<table>
+  <tr><th>Grupo</th><th>Critérios</th><th>Local de tratamento</th></tr>
+  <tr><td style="color:#15803d;font-weight:800">A</td><td>Dengue sem sinais de alarme + sem condições especiais</td><td>Ambulatorial · Hidratação VO</td></tr>
+  <tr><td style="color:#b45309;font-weight:800">B</td><td>Dengue + condições especiais (gestante, lactente &lt;2 anos, DM, DRC, hemoglobinopatia, obesidade, ≥65 anos) OU sinais de alarme AUSENTES mas hematócrito elevado</td><td>Ambulatorial/UPA com hidratação IV supervisionada</td></tr>
+  <tr><td style="color:#dc2626;font-weight:800">C</td><td><strong>SINAIS DE ALARME:</strong> dor abdominal intensa/contínua · vômitos persistentes · acúmulo de líquidos (ascite, derrame pleural) · hipotensão postural · letargia/irritabilidade · hepatomegalia &gt;2 cm · sangramento de mucosas · aumento de hematócrito com queda de plaquetas</td><td><strong>INTERNAÇÃO + Hidratação IV imediata</strong></td></tr>
+  <tr><td style="color:#7f1d1d;font-weight:800">D</td><td>Dengue grave: choque, disfunção grave de órgãos, sangramento grave</td><td><strong>UTI</strong></td></tr>
+</table>
+<br>
+<strong>Hidratação — Protocolo por Grupo:</strong><br>
+<strong>Grupo A:</strong> 60 mL/kg/dia VO · Água, soro de reidratação oral (SRO), suco de frutas · Retornar se sinais de alarme<br>
+<strong>Grupo B:</strong> 60 mL/kg VO na 1ª hora supervisionado · Hemograma + hematócrito · Se hematócrito &gt;22% acima basal → IV<br>
+<strong>Grupo C (Sinais de Alarme):</strong><br>
+• Fase 1 (expansão rápida): SF 0,9% 10 mL/kg em 1h · Repetir se hemodinâmica instável · Total máx 30 mL/kg em 3h<br>
+• Fase 2 (manutenção): 7,5 mL/kg/h × 2h → 5 mL/kg/h × 2h → 3,5 mL/kg/h × 2–4h · Reavaliação frequente<br>
+• Fase 3 (reidratação pós-crítica): 2,5 mL/kg/h por 24–48h<br>
+• Coloides: reservar para choque refratário a cristaloides<br>
+<strong>Grupo D (Choque):</strong> SF 0,9% 20 mL/kg em 15 min → repetir → UTI + suporte<br><br>
+<strong>Conduta por alteração laboratorial:</strong><br>
+• Plaquetas &lt;100.000: repouso + monitoramento · &lt;20.000 + sangramento ativo: transfusão<br>
+• Hematócrito &gt;22% acima basal = hemoconcentração = extravasamento plasmático = internação<br>
+• Leucopenia (&lt;1.500/mm³): esperada no dengue — NÃO é indicação de ATB empírico<br><br>
+<div class="atencao">⚠️ CONTRAINDICADOS no dengue: AAS, AINEs (risco de sangramento). Dipirona: pode mascarar febre — avaliar caso a caso. Paracetamol é analgésico/antipirético de 1ª escolha.</div>`,
+   note:'Dengue e gestação: alto risco de prematuridade e óbito fetal. Classificar como Grupo B independentemente de outros fatores. Hospitalização em sinais de alarme. Dengue grave na gestação: UTI obstétrica. Dengue e amamentação: DENV-2 foi detectado no leite materno — OMS recomenda manter amamentação (benefícios superam riscos). Dengue x Chikungunya x Zika: diagnóstico clínico pode ser idêntico. PCR e sorologia diferencial em casos graves ou suspeita de Zika em gestante (microcefalia). Vacina dengue (Dengvaxia®): registro ANVISA apenas para soropositivos comprovados ≥9 anos em regiões endêmicas — vacinar soro-negativo aumenta risco de dengue grave.'},
+};
+
+function calcTrop(){
+  const c=document.getElementById('trop_cond').value;
+  const p=PROTO_TROP[c];
+  document.getElementById('tropResult').style.display='block';
+  document.getElementById('tropResult').innerHTML=`<div class="rec-card" style="border-color:${p.col}"><div class="rec-hdr" style="color:${p.col}">INFECTOLOGIA TROPICAL — ${p.hdr}</div><div class="rec-nome">${p.nome}</div><div class="rec-body">${p.body}</div>${p.note?`<div class="rec-note">${p.note}</div>`:''}</div>`;
+  document.getElementById('tropResult').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+function renderLeish(){
+  if(document.getElementById('leishList').innerHTML) return;
+  document.getElementById('leishList').innerHTML=`
+  <div class="trop-card" style="border-color:#7c3aed">
+    <div class="trop-nome" style="color:#7c3aed">Leishmaniose Visceral (LV / Calazar) — Protocolo MS 2024</div>
+    <div class="trop-body">
+      <strong>Agente:</strong> Leishmania (L.) chagasi (= L. infantum) · Vetor: Lutzomyia longipalpis (flebotomíneo) · Reservatório: cão doméstico<br>
+      <strong>Distribuição BR:</strong> Nordeste (70%), Norte, Sudeste, Centro-Oeste · Especialmente crianças &lt;5 anos (50% dos casos)<br><br>
+      <strong>Diagnóstico:</strong><br>
+      • <strong>Clínico:</strong> febre prolongada (&gt;2 semanas) + esplenomegalia + anemia + perda de peso em área endêmica<br>
+      • <strong>Sorológico:</strong> ELISA anti-Leishmania + rK39 TDR (sensibilidade 90%+) · IFI<br>
+      • <strong>Parasitológico:</strong> aspirado de medula óssea (padrão-ouro) OU punção esplênica (sensibilidade 95%, risco de sangramento) · PCR em sangue periférico<br>
+      • Leucopenia + anemia + plaquetopenia (pancitopenia) + hipergamaglobulinemia + albumina baixa<br><br>
+      <strong>Tratamento (MS 2024):</strong><br>
+      <table>
+        <tr><th>Fármaco</th><th>Dose</th><th>Duração</th><th>Uso preferencial</th></tr>
+        <tr><td><strong>Anfotericina B Lipossomal (AmBisome®)</strong> — 1ª linha MS</td><td>3 mg/kg/dia IV</td><td>7 dias (D1–D7)</td><td>Crianças · Gestantes (único seguro) · Imunossuprimidos · Falha ao antimoniato</td></tr>
+        <tr><td>Anfotericina B Desoxicolato</td><td>1 mg/kg/dia IV (máx 50 mg/dia)</td><td>14–20 dias</td><td>Quando lipossomal indisponível · Monitorar creatinina, K, Mg diariamente</td></tr>
+        <tr><td>Antimoniato de N-metilglucamina (Glucantime®)</td><td>20 mg Sb⁵/kg/dia IM ou IV</td><td>28–30 dias</td><td>Alternativa em adultos imunocompetentes sem cardiopatia · ECG antes e durante (QTc)</td></tr>
+        <tr><td>Miltefosina (Impavido®)</td><td>&lt;25 kg: 2,5 mg/kg/dia; ≥25 kg: 100 mg/dia ÷ 2</td><td>28 dias</td><td>VO · Registro ANVISA para LV · Contraindicada na gravidez (teratogênica)</td></tr>
+      </table>
+      <br>
+      <strong>Critério de cura:</strong> Melhora clínica + hemograma · Gota espessa negativa · Controle D7, D30, D90 e D180<br>
+      <strong>Recidiva:</strong> mais comum em imunossuprimidos (HIV, pós-transplante) → AnfoB lipossomal + manutenção mensal
+    </div>
+  </div>
+  <div class="trop-card" style="border-color:#c2410c;margin-top:8px">
+    <div class="trop-nome" style="color:#c2410c">Leishmaniose Tegumentar Americana (LTA) — Cutânea e Mucosa</div>
+    <div class="trop-body">
+      <strong>Espécies BR:</strong> L. braziliensis (mais grave, mucosa) · L. guyanensis · L. amazonensis · L. lainsoni<br>
+      <strong>Formas:</strong> Cutânea localizada (úlcera "em moldura de quadro") · Disseminada · Mucosa (nariz, palato, laringe) · Difusa<br><br>
+      <strong>Diagnóstico:</strong><br>
+      • Intradermorreação de Montenegro (IDRM): &gt;5 mm = positiva · Sensibilidade 85%+<br>
+      • Histopatologia + cultura de raspado de borda da úlcera<br>
+      • PCR de tecido: melhor sensibilidade para espécie<br><br>
+      <strong>Tratamento:</strong><br>
+      <table>
+        <tr><th>Forma Clínica</th><th>Fármaco</th><th>Dose</th><th>Duração</th></tr>
+        <tr><td>Cutânea localizada</td><td><strong>Antimoniato N-metilglucamina (Glucantime®)</strong></td><td>15 mg Sb⁵/kg/dia IM (máx 1 ampola = 5 mL = 1,5 g Sb⁵)</td><td>20 dias</td></tr>
+        <tr><td>Cutânea extensa/disseminada</td><td>Glucantime ou AnfoB lipossomal</td><td>20 mg/kg/dia IM</td><td>30 dias</td></tr>
+        <tr><td><strong>Mucosa</strong></td><td><strong>Glucantime 20 mg Sb⁵/kg/dia</strong> OU AnfoB lipossomal 3 mg/kg D1-5, D10, D17</td><td>20 mg/kg/dia</td><td><strong>30 dias (mucosa exige tratamento mais longo)</strong></td></tr>
+        <tr><td>Imunossuprimidos / Recidiva</td><td>AnfoB lipossomal 3 mg/kg/dia</td><td>3 mg/kg/dia</td><td>10 dias (ou esquema personalizado)</td></tr>
+      </table>
+      <br>
+      <strong>Contraindicações do Glucantime:</strong> cardiopatia grave (QTc prolongado), insuficiência renal (TFG&lt;30), hepatopatia grave · Gestação (1º trimestre — AnfoB lipossomal alternativa) · Monitoramento: ECG (QTc), creatinina, TGO/TGP, amilase semanalmente
+    </div>
+  </div>
+  <div class="trop-card" style="border-color:#0369a1;margin-top:8px">
+    <div class="trop-nome" style="color:#0369a1">Doença de Chagas — Fase Aguda e Crônica</div>
+    <div class="trop-body">
+      <strong>Agente:</strong> Trypanosoma cruzi · Vetores: triatomíneos (barbeiro/vinchuca) · Transmissão: vetorial, transfusional, vertical (congênita), oral (suco de açaí/cana contaminado — surtos BR)<br><br>
+      <strong>Diagnóstico:</strong><br>
+      • <strong>Fase aguda:</strong> parasitemia detectável → pesquisa direta (gota espessa, Strout, creme leucocitário) · PCR · IgM reagente<br>
+      • <strong>Fase crônica:</strong> 2 testes sorológicos diferentes (ELISA + IFI OU ELISA + hemaglutinação indireta) · PCR para controle de cura<br><br>
+      <strong>Tratamento Específico:</strong><br>
+      <table>
+        <tr><th>Fase</th><th>Indicação</th><th>Fármaco</th><th>Dose / Duração</th></tr>
+        <tr><td>Aguda</td><td>Sempre tratar</td><td><strong>Benznidazol (1ª linha)</strong></td><td>5 mg/kg/dia ÷ 2 × 60 dias (adultos) · Crianças: 5–10 mg/kg/dia</td></tr>
+        <tr><td>Crónica (recente — &lt;10 anos)</td><td>Tratar</td><td>Benznidazol</td><td>5 mg/kg/dia ÷ 2 × 60 dias</td></tr>
+        <tr><td>Crônica tardia (forma cardíaca/digestiva estabelecida)</td><td>Controverso — BENEFIT trial (2015): sem melhora de eventos cardiovasculares após 5 anos em cardiopatia estabelecida</td><td>Benznidazol (avaliar caso a caso)</td><td>5 mg/kg/dia × 60 dias (discutir com especialista)</td></tr>
+        <tr><td>Mulher em idade fértil sem planejamento de gestação</td><td>Tratar (previne transmissão vertical)</td><td>Benznidazol</td><td>5 mg/kg/dia × 60 dias</td></tr>
+      </table>
+      <br>
+      <strong>RAM do Benznidazol:</strong> Dermatite (30–50%) — manter com anti-histamínico se leve · Neuropatia periférica (suspender) · Leucopenia · Síndrome tipo DRESS rara<br>
+      Nifurtimox (alternativa, menos usado no Brasil): 8–10 mg/kg/dia × 60–90 dias · Distribuído pelo MS<br><br>
+      <strong>Cardiopatia Chagásica Crônica:</strong><br>
+      • Escore de Rassi (prediz mortalidade em 10 anos): 6 variáveis · Alto risco: carvedilol, IECA, espironolactona (como ICC sistólica)<br>
+      • Bloqueio de ramo esquerdo + BRD + hemibloco AE = padrão eletrocardiográfico clássico · Marca-passo em BAV 2°/3°<br>
+      • CDI (desfibrilador implantável): FEVE &lt;35% + Chagas (mesmo critérios que cardiomiopatia não-isquêmica)<br>
+      • Tromboembolismo: anticoagulação (warfarina) em fibrilação atrial ou aneurisma apical com trombo
+    </div>
+  </div>`;
+}
+
+function renderLept(){
+  if(document.getElementById('leptList').innerHTML) return;
+  document.getElementById('leptList').innerHTML=`
+  <div class="trop-card" style="border-color:#b45309">
+    <div class="trop-nome" style="color:#b45309">Leptospirose — Síndrome de Weil e Formas Graves</div>
+    <div class="trop-body">
+      <strong>Agente:</strong> Leptospira interrogans (sorotipos: icterohaemorrhagiae = forma grave) · Reservatório: ratos (urina) · Transmissão: contato com água/lama contaminada (enchentes, leptospirose urbana)<br><br>
+      <strong>Fases clínicas:</strong><br>
+      <table>
+        <tr><th>Fase</th><th>Duração</th><th>Manifestações</th></tr>
+        <tr><td>Leptospirêmica (septicêmica)</td><td>D1–D7</td><td>Febre aguda + mialgia intensa (panturrilha) + cefaleia + hiperemia conjuntival · Pode confundir com dengue/influenza</td></tr>
+        <tr><td>Imune (leptospirúrica)</td><td>D7–D14</td><td>Maioria melhora · 5–15% → SÍNDROME DE WEIL</td></tr>
+        <tr><td><strong>Síndrome de Weil</strong></td><td>D7+</td><td>Icterícia intensa + IRA (nefrite intersticial) + fenômeno hemorrágico (hemorragia pulmonar + petéquias + epistaxe)</td></tr>
+      </table>
+      <br>
+      <div class="alerta">⚠️ SÍNDROME DE WEIL = EMERGÊNCIA MÉDICA. Mortalidade 5–40% sem tratamento adequado. Internação imediata + antibioticoterapia + suporte renal.</div>
+      <br>
+      <strong>Diagnóstico:</strong><br>
+      • Fase aguda (&lt;7 dias): PCR sérico (mais sensível) · Hemocultura em EMJH (resultado em semanas)<br>
+      • Fase imune (&gt;7 dias): MAT (Microaglutinação em Tubo, padrão-ouro) — título ≥1:800 confirma · ELISA IgM (IgM rápido positivo a partir de D5–D7, sensibilidade 85%)<br>
+      • Bioquímica: bilirrubina direta muito elevada (↑↑ BD com BD/BI &gt;5:1 — característico) · Creatinina ↑ · CK ↑ (miosite)<br><br>
+      <strong>Tratamento:</strong><br>
+      <table>
+        <tr><th>Forma</th><th>Antibiótico</th><th>Dose</th><th>Duração</th></tr>
+        <tr><td>Leve (ambulatorial)</td><td>Doxiciclina</td><td>100 mg 2×/dia VO</td><td>7 dias</td></tr>
+        <tr><td>Leve (alternativa)</td><td>Amoxicilina</td><td>500 mg 3×/dia VO</td><td>7 dias</td></tr>
+        <tr><td><strong>Grave (Weil)</strong></td><td><strong>Penicilina G cristalina</strong></td><td><strong>1,5 milhão UI IV 6/6h</strong></td><td><strong>7 dias</strong></td></tr>
+        <tr><td>Grave (alternativa)</td><td>Ceftriaxona</td><td>1 g IV 1×/dia</td><td>7 dias</td></tr>
+        <tr><td>Grave (alternativa 2)</td><td>Ampicilina</td><td>1 g IV 6/6h</td><td>7 dias</td></tr>
+      </table>
+      <br>
+      <strong>Suporte na Síndrome de Weil:</strong><br>
+      • IRA: hemodiálise em 50% dos casos graves (IRA oligúrica refratária) · Diuréticos (furosemida) se euvolêmico<br>
+      • Hemorragia pulmonar maciça: ventilação mecânica · Plasmaférese (evidência limitada)<br>
+      • Profilaxia pós-exposição de alto risco: doxiciclina 200 mg VO dose única (enchentes — evidência moderada)
+    </div>
+  </div>
+  <div class="trop-card" style="border-color:#0369a1;margin-top:8px">
+    <div class="trop-nome" style="color:#0369a1">Febre Amarela, Febre Maculosa e Arboviroses Emergentes</div>
+    <div class="trop-body">
+      <strong>Febre Amarela (FA):</strong><br>
+      • Flavivírus · Vetores: Haemagogus (silvestre) + Aedes aegypti (urbana — erradicada no BR desde 1958 mas vigilância)
+      <br>
+      • <strong>Vacina YF-17D: obrigatória para residentes e viajantes a áreas de risco</strong> (dose única = imunidade vitalícia - OMS 2013)<br>
+      • Contraindicada: imunocomprometidos graves, HIV com CD4 &lt;200, neoplasias hematológicas, corticoide &gt;2 mg/kg/dia, gestantes (avaliar risco-benefício), &gt;60 anos (ponderar — doença neurológica e viscerotrópica aumenta com idade)<br>
+      • DAAV (Doença Associada à Vacinação Viscerotrópica/Neurológica): rara (1:250.000 – 1:500.000 · Mais fatal que FA selvagem em adultos maiores)<br>
+      • Tratamento: suporte · Sem antiviral específico · UTI em forma grave (hepatite fulminante + IRA + hemorragia)<br><br>
+      <strong>Febre Maculosa Brasileira (FMB):</strong><br>
+      • Rickettsia rickettsii · Carrapato Amblyomma cajennense e A. sculptum · Mata Atlântica, interior SP, MG, RJ<br>
+      • Tríade clássica: febre + exantema maculopapular (evolui para petequial, começa em extremidades) + histórico de carrapato<br>
+      <div class="alerta">⚠️ NÃO aguardar exantema: iniciar doxiciclina assim que suspeitar. FMB tem mortalidade de 20–40% sem tratamento precoce.</div>
+      • <strong>Doxiciclina 100 mg 2×/dia × 7–10 dias</strong> (de escolha em TODAS as idades, inclusive crianças — benefício supera risco de manchas nos dentes em doença com 40% de mortalidade) · Alternativa em gestante: cloranfenicol 50–75 mg/kg/dia ÷ 4 doses<br>
+      • Sorologia RIFI: confirmatória (disponível após D7) · PCR em fase aguda<br><br>
+      <strong>Zika, Chikungunya e Co-infecções (Aedes aegypti e albopictus):</strong><br>
+      • Zika na gestação: microcefalia e síndrome congênita do Zika (SCZ) · Diagnóstico: RT-PCR soro/urina (D1–D7) ou IgM após D7 · Manejo: suporte (sem antiviral) · Rastreio fetal com ultrassom<br>
+      • Chikungunya: artralgia crônica incapacitante (meses a anos) · Antinflamatórios + fisioterapia · Hidroxicloroquina 400 mg/dia em artralgia crônica refratária<br>
+      • Co-infecção dengue+chikungunya+Zika: comum em epidemias sobrepostas · PCR multiplex para diferenciação
+    </div>
+  </div>`;
+}
+</script>
+</body>
+</html>

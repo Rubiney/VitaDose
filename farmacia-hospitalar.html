@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Farmácia Hospitalar — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .fh-hdr{background:linear-gradient(135deg,#1e1b4b,#4338ca);color:#fff;border-radius:14px;padding:18px;margin-bottom:14px}
+    .fh-title{font-size:1rem;font-weight:800;margin-bottom:4px}
+    .fh-sub{font-size:.73rem;opacity:.8}
+    label{font-size:.75rem;font-weight:700;color:#1e3a5f;display:block;margin-bottom:4px}
+    select,input[type=number]{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:10px;padding:10px 12px;font-size:.85rem;background:#fff;margin-bottom:10px}
+    .btn-calc{width:100%;background:#4338ca;color:#fff;border:none;border-radius:12px;padding:13px;font-size:.87rem;font-weight:700;cursor:pointer;margin:8px 0}
+    .tab-bar{display:flex;gap:6px;margin-bottom:14px}
+    .tab-btn{flex:1;padding:9px 4px;border-radius:10px;border:2px solid #e2e8f0;background:#fff;font-size:.72rem;font-weight:700;cursor:pointer;color:#64748b}
+    .tab-btn.active{border-color:#4338ca;background:#eef2ff;color:#4338ca}
+    .fh-card{border-radius:10px;border-left:5px solid;padding:10px 14px;margin-bottom:8px;background:#fff}
+    .fh-nome{font-size:.83rem;font-weight:800;margin-bottom:4px}
+    .fh-body{font-size:.76rem;line-height:1.7;color:#374151}
+    .alerta{background:#fef2f2;border:2px solid #dc2626;border-radius:10px;padding:8px;margin:6px 0;font-size:.75rem;color:#7f1d1d;font-weight:700}
+    .atencao{background:#fffbeb;border:2px solid #d97706;border-radius:10px;padding:8px;margin:6px 0;font-size:.75rem;color:#78350f;font-weight:700}
+    .ok-box{background:#eef2ff;border:2px solid #4338ca;border-radius:10px;padding:8px;margin:6px 0;font-size:.75rem;color:#1e1b4b;font-weight:700}
+    table{width:100%;border-collapse:collapse;font-size:.73rem;margin-top:6px}
+    th{background:#4338ca;color:#fff;padding:5px 8px;text-align:left}
+    td{padding:5px 8px;border-bottom:1px solid #f1f5f9}
+    tr:nth-child(even) td{background:#eef2ff}
+    .result-box{background:#eef2ff;border-radius:10px;padding:14px;margin-top:8px}
+    .result-val{font-size:1.3rem;font-weight:900;color:#4338ca}
+    .result-label{font-size:.7rem;color:#475569;margin-top:2px}
+    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+    .cat-lbl{font-size:.65rem;font-weight:800;text-transform:uppercase;color:#4338ca;margin:8px 0 4px}
+  </style>
+</head>
+<body>
+<header class="top-bar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <span class="top-title">Farmácia Hospitalar</span>
+  <div class="top-right"></div>
+</header>
+<main class="container" style="padding-bottom:90px">
+  <div class="fh-hdr">
+    <div class="fh-title">🏥 Farmácia Clínica Hospitalar</div>
+    <div class="fh-sub">TDM Avançado · Reconciliação · Erros de Medicação · Desprescrição · UTI</div>
+  </div>
+  <div class="tab-bar">
+    <button class="tab-btn active" id="tb0" onclick="showTab(0)">TDM — Vancomicina & Aminoglicosídeos</button>
+    <button class="tab-btn" id="tb1" onclick="showTab(1)">TDM — Fenitoína · Digoxina · Lítio</button>
+    <button class="tab-btn" id="tb2" onclick="showTab(2)">Reconciliação · Erros · Desprescrição</button>
+  </div>
+
+  <!-- TAB 0 — TDM Vanco / Aminoglico -->
+  <div id="tab0">
+    <div class="fh-card" style="border-color:#dc2626">
+      <div class="fh-nome" style="color:#dc2626">Vancomicina — TDM por AUC/MIC (ASHP/IDSA/SIDP 2020)</div>
+      <div class="fh-body">
+        <div class="alerta">⚠️ MUDANÇA DE PARADIGMA 2020: O monitoramento de vancomicina mudou de vale (Ctrough) isolado para AUC₂₄/MIC. Ctrough isolado subestima nefrotoxicidade e superestima eficácia.</div>
+        <br>
+        <strong>Alvo AUC/MIC:</strong><br>
+        <div class="ok-box">🎯 AUC₂₄/MIC = 400–600 mg·h/L (quando MIC = 1 µg/mL por microdiluição em caldo)<br>
+        Ou AUC₂₄ = 400–600 mg·h/L (assumindo MIC ≤ 1 µg/mL para S. aureus sensível)</div>
+        <br>
+        <strong>Métodos de estimativa de AUC (em ordem de preferência):</strong><br>
+        1. <strong>Bayesiano (software):</strong> inserir doses, horários e 1–2 níveis séricos → software calcula AUC individualmente (MWSPharm, InsightRx, DoseMeRx, Pharmaki) — mais preciso<br>
+        2. <strong>Two-point AUC (primeira ordem):</strong> coletar pico (~1h pós-infusão de 1h) e vale (antes da próxima dose estável) → calcular AUC₂₄ por equações de dois-pontos<br>
+        3. <strong>AUC estimado pelo vale (menos preciso):</strong> Ctrough 15–20 mg/L como proxy para AUC 400–600 (aceito como alternativa em infecções menos graves)<br><br>
+        <strong>Dosagem inicial (adultos com função renal normal):</strong><br>
+        <table>
+          <tr><th>Peso</th><th>Dose de ataque</th><th>Manutenção inicial</th><th>Intervalo</th></tr>
+          <tr><td>≤70 kg</td><td>25–30 mg/kg (arredondada para 500 mg)</td><td>15–20 mg/kg/dose</td><td>Q8–12h (ajustar por TFG)</td></tr>
+          <tr><td>71–90 kg</td><td>25–30 mg/kg</td><td>15–20 mg/kg/dose</td><td>Q8–12h</td></tr>
+          <tr><td>&gt;90 kg (obeso)</td><td>Usar peso real, dose máxima ataque 3.000 mg</td><td>15 mg/kg/dose (usar peso real)</td><td>Q8–12h</td></tr>
+        </table>
+        <br>
+        <strong>Infusão contínua de vancomicina:</strong><br>
+        Dose de ataque: 20–25 mg/kg IV → manutenção 35–40 mg/kg/dia em infusão contínua · Alvo nível steady-state 20–25 mg/L<br>
+        Vantagem: menor variabilidade de níveis, sem picos nefrotóxicos, mais fácil de manejar em UTI<br><br>
+        <strong>Ajuste em insuficiência renal:</strong><br>
+        <table>
+          <tr><th>TFG (mL/min)</th><th>Intervalo sugerido</th><th>Monitoramento AUC</th></tr>
+          <tr><td>≥50</td><td>Q12h</td><td>D3–D4 de tratamento</td></tr>
+          <tr><td>30–50</td><td>Q24h</td><td>D2–D3</td></tr>
+          <tr><td>15–29</td><td>Q48h ou Q24h (dose reduzida)</td><td>D1–D2</td></tr>
+          <tr><td>&lt;15 (sem diálise)</td><td>Dose única + monitoramento diário</td><td>Diário</td></tr>
+          <tr><td>HD (intermitente)</td><td>1.000–1.500 mg após cada sessão · Nível pré-HD</td><td>Pré-HD</td></tr>
+          <tr><td>CRRT (contínua)</td><td>Dose usual Q12–24h (CRRT remove vancomicina)</td><td>Diário</td></tr>
+        </table>
+        <br>
+        <strong>Nefrotoxicidade:</strong> ↑ creatinina ≥0,5 mg/dL OU ≥50% acima basal × 2 medições consecutivas → considerar suspensão ou dose reduzida
+      </div>
+    </div>
+    <div class="fh-card" style="border-color:#7c3aed;margin-top:8px">
+      <div class="fh-nome" style="color:#7c3aed">Aminoglicosídeos — Nomograma Hartford (Dose Estendida)</div>
+      <div class="fh-body">
+        <strong>Aminoglicosídeos disponíveis:</strong> Gentamicina · Amicacina · Tobramicina<br>
+        <strong>Farmacologia PK/PD:</strong> Concentração-dependentes (Cmax/MIC) + efeito pós-antibiótico prolongado → <strong>dose estendida (uma vez ao dia) superior à dose fracionada</strong><br><br>
+        <strong>Dosagem inicial — Aminoglicosídeos (adultos com TFG ≥40 mL/min):</strong><br>
+        <table>
+          <tr><th>Fármaco</th><th>Dose</th><th>Intervalo</th><th>Alvo Cmax/MIC</th></tr>
+          <tr><td>Gentamicina</td><td>5–7 mg/kg (peso ideal)</td><td>Q24h (dose estendida)</td><td>Cmax 20–30 mg/L · Vale &lt;1 mg/L</td></tr>
+          <tr><td>Amicacina</td><td>15–20 mg/kg (peso ideal)</td><td>Q24h (dose estendida)</td><td>Cmax 60–80 mg/L · Vale &lt;5 mg/L</td></tr>
+          <tr><td>Tobramicina</td><td>5–7 mg/kg (peso ideal)</td><td>Q24h (dose estendida)</td><td>Cmax 20–30 mg/L · Vale &lt;1 mg/L</td></tr>
+        </table>
+        <br>
+        <strong>Nomograma Hartford (Gentamicina 7 mg/kg Q24h):</strong><br>
+        • Coletar nível sérico de gentamicina ENTRE 6–14 horas após infusão (1 nível)<br>
+        • Plotar no nomograma Hartford (áreas Q24h / Q36h / Q48h) para ajustar intervalo<br>
+        • Nível acima da zona Q48h: suspender dose e reavaliar TFG<br><br>
+        <strong>Casos especiais — NÃO usar dose estendida (usar dose convencional fracionada):</strong><br>
+        • Gestação · Endocardite (sinergia com β-lactâmico em enterococos: gentamicina 3 mg/kg/dia ÷ Q8h) · Fibrosite cística · Queimados (farmacocinética alterada) · Hemodiálise/CRRT · Ascite volumosa<br><br>
+        <strong>Ototoxicidade e Nefrotoxicidade:</strong><br>
+        Fatores de risco: uso prolongado (&gt;5 dias), vales elevados, vancomicina concomitante, furosemida IV, DRC pré-existente · Audiometria em curso &gt;7 dias
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 1 — Fenitoína / Digoxina / Lítio -->
+  <div id="tab1" style="display:none">
+    <div id="tdm2List"></div>
+  </div>
+
+  <!-- TAB 2 — Reconciliação / Erros / Desprescrição -->
+  <div id="tab2" style="display:none">
+    <div id="recoList"></div>
+  </div>
+</main>
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+<script src="js/db.js"></script>
+<script>
+function showTab(n){[0,1,2].forEach(i=>{document.getElementById('tab'+i).style.display=i===n?'block':'none';document.getElementById('tb'+i).classList.toggle('active',i===n);});if(n===1)renderTDM2();if(n===2)renderReco();}
+
+function renderTDM2(){
+  if(document.getElementById('tdm2List').innerHTML) return;
+  document.getElementById('tdm2List').innerHTML=`
+  <div class="fh-card" style="border-color:#b45309">
+    <div class="fh-nome" style="color:#b45309">Fenitoína — Equação de Sheiner-Tozer (Ajuste em Hipoalbuminemia)</div>
+    <div class="fh-body">
+      <strong>Fenitoína:</strong> antiepiléptico com cinética de Michaelis-Menten (saturável em doses terapêuticas — pequenas aumentos de dose = grandes aumentos de nível) · PB (fenobarbital) e CBZ (carbamazepina): cinética linear<br><br>
+      <div class="ok-box">🎯 Nível sérico total alvo: 10–20 µg/mL · Nível livre (fração ativa): 1–2 µg/mL (10% da total)</div>
+      <br>
+      <strong>Problema: Hipoalbuminemia e IRC alteram a fração livre de fenitoína:</strong><br>
+      Fenitoína é 90% ligada à albumina → hipoalbuminemia → mais fração livre (ativa) com nível total menor → TOXICIDADE com nível total "normal"<br><br>
+      <strong>Fórmulas de ajuste de fenitoína:</strong><br>
+      <table>
+        <tr><th>Situação</th><th>Fórmula Sheiner-Tozer</th></tr>
+        <tr><td>Hipoalbuminemia sem IRC</td><td>Nível corrigido = Nível medido / [(0,2 × Albumina) + 0,1]</td></tr>
+        <tr><td>IRC (TFG &lt;10 mL/min) + hipoalbuminemia</td><td>Nível corrigido = Nível medido / [(0,1 × Albumina) + 0,1]</td></tr>
+        <tr><td>Albumina normal, sem IRC</td><td>Correção desnecessária — usar nível total diretamente</td></tr>
+      </table>
+      <br>
+      <strong>Exemplo clínico:</strong><br>
+      Albumina 2,0 g/dL (normal = 4,0 g/dL) · Nível de fenitoína medido = 10 µg/mL<br>
+      Nível corrigido = 10 / [(0,2 × 2,0) + 0,1] = 10 / 0,5 = <strong>20 µg/mL</strong> (equivalente terapêutico)<br>
+      → O nível "baixo" de 10 µg/mL na verdade equivale a um nível terapêutico de 20 µg/mL em albumina normal!<br><br>
+      <strong>Dose de ataque (status epilepticus ou pós-operatório):</strong><br>
+      Fosfenitoína: 15–20 mg PE/kg IV (máx 150 mg PE/min) · Monitorar QRS (parar se alargamento &gt;50%) e PA<br>
+      Fenitoína: 15–20 mg/kg IV (máx 50 mg/min) · Não misturar em SG (precipita) — usar SF<br><br>
+      <strong>Indutor enzimático (CYP2C9, CYP3A4, P-gp):</strong><br>
+      Reduz nível de: varfarina, DOACs, tacrolimus, ciclosporina, itraconazol, verapamil, levotiroxina, anticoncepcionais orais, quimioterápicos múltiplos
+    </div>
+  </div>
+  <div class="fh-card" style="border-color:#0369a1;margin-top:8px">
+    <div class="fh-nome" style="color:#0369a1">Digoxina — TDM e Toxicidade</div>
+    <div class="fh-body">
+      <div class="ok-box">🎯 Nível sérico alvo digoxina:<br>
+      • IC com FE reduzida: 0,5–0,9 ng/mL (benefício mortalidade no DIG trial; acima disso: ↑ mortalidade)<br>
+      • FA (controle de frequência): 0,8–2,0 ng/mL (aceitável)<br>
+      • COLETA: 6–8h após dose oral (pré-vale ou 6–8h pós-dose — antes disso: nível distribuição incorreto)</div>
+      <br>
+      <strong>Toxicidade digitálica:</strong><br>
+      <table>
+        <tr><th>Sistema</th><th>Manifestações</th><th>Nível sérico associado</th></tr>
+        <tr><td>Gastrointestinal (primeiros)</td><td>Náusea, vômito, anorexia, dor abdominal</td><td>Frequentemente &lt;2 ng/mL</td></tr>
+        <tr><td>Neurológico</td><td>Visão com halos amarelo-verdes, diplopia, confusão, alucinações</td><td>&gt;2 ng/mL</td></tr>
+        <tr><td>Cardíaco (mais grave)</td><td>Bradiarritmias (BAV, nó sinusal), taquiarritmias paradoxais (TV bidirecional, FV)</td><td>&gt;2 ng/mL, mas pode ocorrer com nível "normal" se hipoK</td></tr>
+      </table>
+      <br>
+      <strong>Fatores que aumentam toxicidade com nível "normal":</strong><br>
+      • Hipocalemia (K &lt;3,5 mEq/L) — fator principal · Hipomagnesemia · Hipercalcemia · Hipotireoidismo · Insuficiência renal · Idosos (menor Vd + menor TFG)<br><br>
+      <strong>Interações que elevam nível de digoxina:</strong><br>
+      Amiodarona (+70%), Verapamil (+70–100%), Eritromicina/Claritromicina (+50–80%), Itraconazol (+50%), Quinidina (+100%), Espironolactona · Reduzem: rifampicina, fenitoína (indutores P-gp)<br><br>
+      <strong>Tratamento de intoxicação grave (TV bidirecional, BAV completo, K &gt;5 mEq/L pós-intoxicação):</strong><br>
+      <strong>Anticorpo antidigital (Digibind®/DigiFab®):</strong><br>
+      Dose (frascos): Nível sérico × peso (kg) / 100 OU dose ingerida conhecida (mg) × 0,8 / 0,6 mg por frasco (38 mg)
+    </div>
+  </div>
+  <div class="fh-card" style="border-color:#7c3aed;margin-top:8px">
+    <div class="fh-nome" style="color:#7c3aed">Lítio — TDM e Intoxicação</div>
+    <div class="fh-body">
+      <div class="ok-box">🎯 Níveis séricos de lítio (coleta 12h após última dose — vale):<br>
+      • Fase aguda (maníaca): 0,8–1,2 mEq/L<br>
+      • Manutenção (profilaxia): 0,6–0,8 mEq/L<br>
+      • Idosos e resposta: 0,4–0,6 mEq/L (maior sensibilidade)<br>
+      • Tóxico: &gt;1,5 mEq/L</div>
+      <br>
+      <strong>Intoxicação por lítio:</strong><br>
+      <table>
+        <tr><th>Nível (mEq/L)</th><th>Manifestações</th><th>Conduta</th></tr>
+        <tr><td>1,5–2,0</td><td>Tremores grosseiros, ataxia, náusea, diarreia, sonolência</td><td>Suspender lítio + hidratação oral abundante + monitoramento</td></tr>
+        <tr><td>2,0–2,5</td><td>Confusão mental, disartria, nistag, hipotensão</td><td>Internação + SF 0,9% IV (expansão → ↑ excreção renal) + monitoramento cardíaco</td></tr>
+        <tr><td>&gt;2,5</td><td>Convulsão, coma, arritmias, IRA, SILENT (síndrome neurológica irreversível)</td><td><strong>Hemodiálise de emergência</strong> · Meia-vida prolongada em IRA</td></tr>
+      </table>
+      <br>
+      <strong>Indicações de hemodiálise em intoxicação por lítio:</strong><br>
+      Nível &gt;4 mEq/L em assintomático · Nível &gt;2,5 mEq/L com sintomas neurológicos · IRA com nível não caindo<br><br>
+      <strong>Interações que elevam nível de lítio (risco de intoxicação):</strong><br>
+      • AINEs (↓ excreção renal · 25–40% de aumento) · Diuréticos tiazídicos (hiponatremia → ↑ reabsorção de Li) · IECA/BRA (↓ TFG → ↑ nível) · Carbamazepina (neurotoxicidade sem nível elevado)<br>
+      • <strong>Desidratação:</strong> principal fator de intoxicação em crônico — instruir paciente: manter hidratação, não restringir sal, não iniciar AINE sem orientar médico
+    </div>
+  </div>`;
+}
+
+function renderReco(){
+  if(document.getElementById('recoList').innerHTML) return;
+  document.getElementById('recoList').innerHTML=`
+  <div class="fh-card" style="border-color:#4338ca">
+    <div class="fh-nome" style="color:#4338ca">Reconciliação Medicamentosa — Metodologia e Erros de Conciliação</div>
+    <div class="fh-body">
+      <strong>Definição (OMS):</strong> Processo formal e sistemático de obter a melhor história medicamentosa possível (BMHM) e compará-la com a prescrição atual → identificar e resolver discrepâncias<br><br>
+      <strong>Quando realizar:</strong> Admissão hospitalar · Transferência entre setores (UTI → enfermaria, cirurgia → clínica) · Alta hospitalar<br><br>
+      <strong>Metodologia da Reconciliação:</strong><br>
+      1. <strong>Coleta da BMHM</strong> (Melhor Historia Medicamentosa): entrevistar paciente + familiares + contato com farmácia comunitária + prontuário anterior · Lista completa com: nome, dose, frequência, via, data de início, motivo<br>
+      2. <strong>Prescrição hospitalar:</strong> copiar a BMHM para prescrição ou justificar omissões/alterações<br>
+      3. <strong>Identificar discrepâncias:</strong> omissão de medicamento contínuo · Dose alterada sem justificativa · Duplicidade (mesmo fármaco ou mesma classe) · Medicamento contraindicado · Via de administração inadequada<br>
+      4. <strong>Resolução:</strong> contatar médico prescritor para justificar ou corrigir · Registrar em prontuário<br><br>
+      <strong>Tipos de discrepâncias (classificação PCNE):</strong><br>
+      <table>
+        <tr><th>Tipo</th><th>Exemplo clínico</th><th>Prevalência</th></tr>
+        <tr><td>Omissão intencional justificada</td><td>Metformina suspensa por cirurgia → explicar ao paciente</td><td>25–40%</td></tr>
+        <tr><td>Omissão intencional NÃO documentada</td><td>AAS suspensa sem registro (risco de trombose)</td><td>10–20%</td></tr>
+        <tr><td>Omissão não-intencional</td><td>Atorvastatina esquecida na prescrição de admissão</td><td>40–60% dos erros</td></tr>
+        <tr><td>Dose diferente não-justificada</td><td>Levotiroxina 50 mcg em vez de 75 mcg habitual</td><td>15–25%</td></tr>
+        <tr><td>Medicamento novo sem indicação clara</td><td>Omeprazol adicionado sem úlcera ou AINE</td><td>Comum</td></tr>
+      </table>
+      <br>
+      <strong>Alta hospitalar — reconciliação de saída (medication reconciliation on discharge):</strong><br>
+      • Lista de medicamentos de alta: CADA medicamento deve ter: continuar / suspender / novo / dose alterada + explicação ao paciente<br>
+      • Orientação farmacêutica: maior risco de erros é nos primeiros 30 dias pós-alta<br>
+      • Carta de alta farmacêutica: enviada ao médico de referência/UBS
+    </div>
+  </div>
+  <div class="fh-card" style="border-color:#dc2626;margin-top:8px">
+    <div class="fh-nome" style="color:#dc2626">Erros de Medicação — NCC MERP, NOTIVISA e FMEA</div>
+    <div class="fh-body">
+      <strong>Definição (ANVISA/NCC MERP):</strong> Qualquer evento evitável que pode causar dano ao paciente ou resultar em uso inapropriado de medicamento, enquanto o medicamento está sob controle do profissional de saúde<br><br>
+      <strong>Categorias de gravidade NCC MERP:</strong><br>
+      <table>
+        <tr><th>Categoria</th><th>Descrição</th><th>Exemplos</th></tr>
+        <tr><td style="color:#15803d;font-weight:700">A</td><td>Circunstância com capacidade de causar erro (near miss)</td><td>Embalagens similares na mesma prateleira</td></tr>
+        <tr><td style="color:#15803d;font-weight:700">B</td><td>Erro que não alcançou o paciente</td><td>Erro interceptado pela farmácia antes de dispensar</td></tr>
+        <tr><td style="color:#b45309;font-weight:700">C</td><td>Erro que alcançou paciente sem dano</td><td>Dose errada administrada mas sem consequência</td></tr>
+        <tr><td style="color:#b45309;font-weight:700">D</td><td>Erro que alcançou paciente, monitoramento necessário</td><td>Dose dupla → ECG de controle solicitado</td></tr>
+        <tr><td style="color:#dc2626;font-weight:700">E</td><td>Erro causou dano temporário, requer intervenção</td><td>Hipoglicemia por insulina errada → SG IV</td></tr>
+        <tr><td style="color:#dc2626;font-weight:700">F</td><td>Erro causou dano temporário, hospitalização ou prolongamento</td><td>IRA por dose de aminoglicosídeo em IRC</td></tr>
+        <tr><td style="color:#7f1d1d;font-weight:700">G</td><td>Erro causou dano permanente</td><td>Ototoxicidade permanente por aminoglicosídeo</td></tr>
+        <tr><td style="color:#7f1d1d;font-weight:700">H</td><td>Erro quase causou morte (ex: reanimação necessária)</td><td>Overdose de KCl IV → PCR revertida</td></tr>
+        <tr><td style="color:#7f1d1d;font-weight:700">I</td><td>Erro causou morte</td><td>Vincristina IT (intratecal) em vez de IV</td></tr>
+      </table>
+      <br>
+      <strong>NOTIVISA (Sistema de Notificação em Vigilância Sanitária — ANVISA):</strong><br>
+      Notificação obrigatória: erros E, F, G, H, I · Notificação voluntária: A, B, C, D<br>
+      Portal: notivisa.anvisa.gov.br · Anonimato garantido em notificações voluntárias<br><br>
+      <strong>FMEA (Análise dos Modos de Falha e seus Efeitos):</strong><br>
+      Ferramenta prospectiva para identificar falhas ANTES que ocorram · Calcula RPN (Risk Priority Number) = Severidade × Ocorrência × Detecção (cada 1–10) · RPN &gt;100 = ação prioritária<br><br>
+      <strong>Medicamentos de Alta Vigilância (ISMP Brasil):</strong><br>
+      KCl concentrado (≥2 mEq/mL) · Insulinas · Heparina · Citotóxicos · Bloqueadores neuromusculares · Opioides IV concentrados · Metotrexato oral para não-oncológicos · Anticoagulantes orais
+    </div>
+  </div>
+  <div class="fh-card" style="border-color:#15803d;margin-top:8px">
+    <div class="fh-nome" style="color:#15803d">Desprescrição — GPP, STOPPFrail e Algoritmos</div>
+    <div class="fh-body">
+      <strong>Definição:</strong> Processo de redução ou interrupção de medicamentos inapropriados — sistematicamente e supervisionado — visando reduzir polifarmácia desnecessária e melhorar outcomes<br><br>
+      <strong>Algoritmo Good Palliative-Geriatric Practice (GPP — Scott et al. 2015):</strong><br>
+      Para cada medicamento em uso:<br>
+      1. Qual é a indicação atual? (ainda é válida?)<br>
+      2. O medicamento atinge o objetivo terapêutico?<br>
+      3. Há interações significativas?<br>
+      4. Os efeitos adversos superam os benefícios?<br>
+      5. A prioridade deste medicamento é justificada na expectativa de vida atual?<br><br>
+      <strong>STOPPFrail (Screening Tool of Older Persons Prescriptions in Frail adults with limited life expectancy):</strong><br>
+      Critérios para desprescrever em idosos frágeis (expectativa de vida &lt;1 ano): estatinas (prevenção primária), bisfosfonatos (risco de fratura relativo vs RAM), AAS (prevenção 1ária), levotiroxina em hipotireoidismo subclínico assintomático, cálcio/vitamina D isolados, AINEs crônicos, antidepressivos sem depressão documentada, IPPs sem indicação<br><br>
+      <strong>Doenças onde desprescrição é especialmente impactante:</strong><br>
+      <table>
+        <tr><th>Medicamento</th><th>Quando desprescrever</th><th>Como</th></tr>
+        <tr><td>IBPs</td><td>Sem indicação (não está tomando AINE/corticoide, sem DRGE, sem úlcera)</td><td>Reduzir 50% × 2 semanas → suspender · Evitar rebound com ranitidina 2 semanas</td></tr>
+        <tr><td>Benzodiazepínicos (crônicos)</td><td>Insônia de longo prazo (substituir por CBT-I), ansiedade controlada por ISRS</td><td>Redução 10–25% a cada 2 semanas (Ashton Protocol) · Jamais suspender abruptamente</td></tr>
+        <tr><td>Estatinas em prevenção primária ≥85 anos</td><td>Expectativa de vida &lt;3–5 anos, polifarmácia, fragilidade</td><td>Suspender diretamente (sem risco de rebote cardiovascular em &gt;85 anos)</td></tr>
+        <tr><td>Antidiabéticos (glibenclamida, insulinas em altas doses)</td><td>Alvo HbA1c rígido em idoso frágil com hipoglicemias recorrentes</td><td>Flexibilizar alvo para HbA1c 7,5–8,5% · Trocar glibenclamida por gliclazida ou SGLT2i</td></tr>
+        <tr><td>Antihipertensivos (múltiplos) em idoso frágil</td><td>PA baixa (&lt;120 sistólica), hipotensão ortostática, quedas</td><td>Reduzir 1 anti-hipertensivo por vez com monitoramento de PA em 1–2 semanas</td></tr>
+      </table>
+    </div>
+  </div>`;
+}
+</script>
+</body>
+</html>

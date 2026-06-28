@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Medicina do Sono — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .son-hdr{background:linear-gradient(135deg,#0c1445,#1e3a8a);color:#fff;border-radius:14px;padding:18px;margin-bottom:14px}
+    .son-title{font-size:1rem;font-weight:800;margin-bottom:4px}
+    .son-sub{font-size:.73rem;opacity:.8}
+    label{font-size:.75rem;font-weight:700;color:#1e3a5f;display:block;margin-bottom:4px}
+    select,input[type=number]{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:10px;padding:10px 12px;font-size:.85rem;background:#fff;margin-bottom:10px}
+    .btn-calc{width:100%;background:#1e3a8a;color:#fff;border:none;border-radius:12px;padding:13px;font-size:.87rem;font-weight:700;cursor:pointer;margin:8px 0}
+    .tab-bar{display:flex;gap:6px;margin-bottom:14px}
+    .tab-btn{flex:1;padding:9px 4px;border-radius:10px;border:2px solid #e2e8f0;background:#fff;font-size:.72rem;font-weight:700;cursor:pointer;color:#64748b}
+    .tab-btn.active{border-color:#1e3a8a;background:#eff6ff;color:#1e3a8a}
+    .son-card{border-radius:10px;border-left:5px solid;padding:10px 14px;margin-bottom:8px;background:#fff}
+    .son-nome{font-size:.83rem;font-weight:800;margin-bottom:4px}
+    .son-body{font-size:.76rem;line-height:1.7;color:#374151}
+    .alerta{background:#fef2f2;border:2px solid #dc2626;border-radius:10px;padding:8px;margin:6px 0;font-size:.75rem;color:#7f1d1d;font-weight:700}
+    .atencao{background:#fffbeb;border:2px solid #d97706;border-radius:10px;padding:8px;margin:6px 0;font-size:.75rem;color:#78350f;font-weight:700}
+    .ok-box{background:#eff6ff;border:2px solid #1e3a8a;border-radius:10px;padding:8px;margin:6px 0;font-size:.75rem;color:#1e3a5f;font-weight:700}
+    table{width:100%;border-collapse:collapse;font-size:.73rem;margin-top:6px}
+    th{background:#1e3a8a;color:#fff;padding:5px 8px;text-align:left}
+    td{padding:5px 8px;border-bottom:1px solid #f1f5f9}
+    tr:nth-child(even) td{background:#eff6ff}
+    .result-box{background:#eff6ff;border-radius:10px;padding:14px;margin-top:8px}
+    .result-val{font-size:1.3rem;font-weight:900;color:#1e3a8a}
+    .result-label{font-size:.7rem;color:#475569;margin-top:2px}
+    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .chip{display:inline-block;padding:2px 8px;border-radius:999px;font-size:.65rem;font-weight:800;color:#fff;margin:2px}
+  </style>
+</head>
+<body>
+<header class="top-bar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <span class="top-title">Medicina do Sono</span>
+  <div class="top-right"></div>
+</header>
+<main class="container" style="padding-bottom:90px">
+  <div class="son-hdr">
+    <div class="son-title">🌙 Medicina do Sono</div>
+    <div class="son-sub">AOS · Insônia Crônica · Narcolepsia · Síndrome das Pernas Inquietas</div>
+  </div>
+  <div class="tab-bar">
+    <button class="tab-btn active" id="tb0" onclick="showTab(0)">AOS — Apneia do Sono</button>
+    <button class="tab-btn" id="tb1" onclick="showTab(1)">Insônia Crônica</button>
+    <button class="tab-btn" id="tb2" onclick="showTab(2)">Narcolepsia & SPI</button>
+  </div>
+
+  <!-- TAB 0 — AOS -->
+  <div id="tab0">
+    <div class="card" style="padding:12px 14px;margin-bottom:10px">
+      <div style="font-size:.8rem;font-weight:800;color:#1e3a8a;margin-bottom:8px">STOP-Bang — Triagem de Apneia Obstrutiva do Sono</div>
+      <div style="font-size:.74rem;color:#374151;margin-bottom:8px">Marque cada item presente:</div>
+      <div id="stopbang_items" style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+        <label style="display:flex;align-items:center;gap:6px;font-size:.75rem;font-weight:500;color:#374151;background:#f8fafc;border-radius:8px;padding:8px"><input type="checkbox" id="sb_s"> <span><strong>S</strong>nore (ronca alto?)</span></label>
+        <label style="display:flex;align-items:center;gap:6px;font-size:.75rem;font-weight:500;color:#374151;background:#f8fafc;border-radius:8px;padding:8px"><input type="checkbox" id="sb_t"> <span><strong>T</strong>ired (cansado/sonolento?)</span></label>
+        <label style="display:flex;align-items:center;gap:6px;font-size:.75rem;font-weight:500;color:#374151;background:#f8fafc;border-radius:8px;padding:8px"><input type="checkbox" id="sb_o"> <span><strong>O</strong>bserved (apneia observada?)</span></label>
+        <label style="display:flex;align-items:center;gap:6px;font-size:.75rem;font-weight:500;color:#374151;background:#f8fafc;border-radius:8px;padding:8px"><input type="checkbox" id="sb_p"> <span><strong>P</strong>ressão alta (HAS)?</span></label>
+        <label style="display:flex;align-items:center;gap:6px;font-size:.75rem;font-weight:500;color:#374151;background:#f8fafc;border-radius:8px;padding:8px"><input type="checkbox" id="sb_b"> <span><strong>B</strong>MI &gt;35 kg/m²?</span></label>
+        <label style="display:flex;align-items:center;gap:6px;font-size:.75rem;font-weight:500;color:#374151;background:#f8fafc;border-radius:8px;padding:8px"><input type="checkbox" id="sb_a"> <span><strong>A</strong>ge &gt;50 anos?</span></label>
+        <label style="display:flex;align-items:center;gap:6px;font-size:.75rem;font-weight:500;color:#374151;background:#f8fafc;border-radius:8px;padding:8px"><input type="checkbox" id="sb_n"> <span><strong>N</strong>eck (&gt;40 cm mulher / &gt;43 cm homem)?</span></label>
+        <label style="display:flex;align-items:center;gap:6px;font-size:.75rem;font-weight:500;color:#374151;background:#f8fafc;border-radius:8px;padding:8px"><input type="checkbox" id="sb_g"> <span><strong>G</strong>ênero masculino?</span></label>
+      </div>
+      <button class="btn-calc" onclick="calcSTOP()">🌙 Calcular risco de AOS</button>
+    </div>
+    <div id="stopResult" style="display:none"></div>
+
+    <div class="son-card" style="border-color:#1e3a8a;margin-top:4px">
+      <div class="son-nome" style="color:#1e3a8a">AOS — Diagnóstico, Classificação e Tratamento</div>
+      <div class="son-body">
+        <strong>Diagnóstico:</strong><br>
+        • Polissonografia (PSG) noturna: padrão-ouro · IAH (Índice de Apneia-Hipopneia): leve 5–14/h · Moderada 15–29/h · Grave ≥30/h<br>
+        • Poligrafia respiratória domiciliar (Home Sleep Test): adequada para diagnóstico em alta probabilidade pré-teste (STOP-Bang ≥5)<br><br>
+        <strong>Tratamento por gravidade:</strong><br>
+        <table>
+          <tr><th>IAH</th><th>Terapias</th><th>Preferência</th></tr>
+          <tr><td>Leve (5–14)</td><td>Medidas comportamentais + DAM + CPAP se sintomático</td><td>DAM em apneia posicional; CPAP se cardiovascular</td></tr>
+          <tr><td>Moderada (15–29)</td><td>CPAP nasal (padrão) + DAM (alternativa)</td><td>CPAP superior em redução de IAH; DAM melhor adesão</td></tr>
+          <tr><td>Grave (≥30)</td><td>CPAP nasal 1ª linha · BiPAP se CPAP intolerável · Cirurgia selecionada</td><td>CPAP obrigatório se CV significativo</td></tr>
+        </table>
+        <br>
+        <strong>CPAP — Titulação e Parâmetros:</strong><br>
+        Pressão auto-CPAP (APAP): 4–20 cmH₂O (ajusta automaticamente) → após 4–8 semanas: avaliar relatório de conformidade (compliance &gt;4h/noite em &gt;70% das noites = aceitável) e resíduo de IAH (&lt;5 = controlado)<br>
+        Pressão fixa (CPAP): determinada pelo 95° percentil da pressão do APAP durante período de titulação<br><br>
+        <strong>Dispositivo de Avanço Mandibular (DAM):</strong><br>
+        Indicações: AOS leve-moderada · Preferência do paciente · Intolerância a CPAP · Apneia posicional<br>
+        Titulação: avanço de 0,5–1 mm a cada 2 semanas até 75% do avanço máximo tolerável → PSG controle<br><br>
+        <strong>Cirurgia:</strong><br>
+        UPFP (uvulopalatofaringoplastia): IMC &lt;30, IAH moderado, colapso retropalatal · Sucesso 50–60%<br>
+        Estimulação do nervo hipoglosso (Inspire®): IAH 15–65, IMC &lt;32, sem colapso palatal concêntrico · STAR trial: 66% resposta (IAH &lt;15 e redução ≥50%)<br><br>
+        <strong>Medicamentos para AOS (adjuvantes — NÃO substituem CPAP):</strong><br>
+        • Solriamfetol (Sunosi®): sonolência residual em AOS sob tratamento · AD-H (inibição DAT+NET)<br>
+        • Modafinila/Armodafinila: sonolência diurna residual · CI: HAS não-controlada, arritmia<br>
+        • Acetazolamida: apneia central de altitude (não para AOS obstrutiva)
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 1 — Insônia Crônica -->
+  <div id="tab1" style="display:none">
+    <div id="insoniaList"></div>
+  </div>
+
+  <!-- TAB 2 — Narcolepsia & SPI -->
+  <div id="tab2" style="display:none">
+    <div id="narcList"></div>
+  </div>
+</main>
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+<script src="js/db.js"></script>
+<script>
+function showTab(n){[0,1,2].forEach(i=>{document.getElementById('tab'+i).style.display=i===n?'block':'none';document.getElementById('tb'+i).classList.toggle('active',i===n);});if(n===1)renderInsonia();if(n===2)renderNarc();}
+
+function calcSTOP(){
+  const ids=['sb_s','sb_t','sb_o','sb_p','sb_b','sb_a','sb_n','sb_g'];
+  const score=ids.filter(id=>document.getElementById(id).checked).length;
+  let risco,cor,rec;
+  if(score<=2){risco='Baixo risco de AOS';cor='#15803d';rec='AOS moderada/grave improvável. Avalie outras causas de sonolência (insônia, privação de sono, narcolepsia). Poligrafia domiciliar se ainda suspeita clínica.';}
+  else if(score<=4){risco='Risco intermediário de AOS';cor='#b45309';rec='Risco moderado de AOS. Considerar polissonografia ou poligrafia domiciliar, especialmente se paciente cirúrgico ou com comorbidades cardiovasculares.';}
+  else{risco='Alto risco de AOS';cor='#dc2626';rec='Alto risco de AOS moderada/grave (IAH≥30 em ~30% dos pacientes com score≥5). Indicar polissonografia ou poligrafia domiciliar. Alertar para risco cardiovascular (HAS, FA, AVC) e acidentes de trânsito.';}
+  document.getElementById('stopResult').style.display='block';
+  document.getElementById('stopResult').innerHTML=`
+  <div class="result-box">
+    <div class="grid2">
+      <div><div class="result-val" style="color:${cor}">${score}/8</div><div class="result-label">Score STOP-Bang</div></div>
+      <div><div style="font-size:.88rem;font-weight:800;color:${cor};padding-top:6px">${risco}</div></div>
+    </div>
+    <div style="font-size:.74rem;margin-top:8px;color:#374151">${rec}</div>
+    <div style="font-size:.68rem;color:#64748b;margin-top:6px">Sensibilidade para AOS grave (IAH≥30): 93% com score≥3 · Especificidade: score≥5: 75%</div>
+  </div>`;
+  document.getElementById('stopResult').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+function renderInsonia(){
+  if(document.getElementById('insoniaList').innerHTML) return;
+  document.getElementById('insoniaList').innerHTML=`
+  <div class="son-card" style="border-color:#1e3a8a">
+    <div class="son-nome" style="color:#1e3a8a">Insônia Crônica — Diagnóstico e Escalonamento Terapêutico</div>
+    <div class="son-body">
+      <strong>Diagnóstico (DSM-5 / ICSD-3):</strong><br>
+      Dificuldade de iniciar OU manter sono OU acordar precocemente + prejuízo diurno significativo + ≥3 noites/semana + ≥3 meses + apesar de oportunidade adequada de sono<br><br>
+      <strong>Avaliação:</strong> ISI (Insomnia Severity Index) 0–28 · ISI ≥15 = insônia moderada/grave · Diário de sono × 2 semanas · Rastreio de causas: depressão (PHQ-9), ansiedade (GAD-7), AOS (STOP-Bang), SPI (questionário IRLSS), uso de álcool/estimulantes<br><br>
+      <div class="ok-box">🏆 1ª LINHA: Terapia Cognitivo-Comportamental para Insônia (CBT-I) — SUPERIOR a qualquer medicamento em estudos de longo prazo. Eficácia 75–80% em insônia crônica. Sem risco de dependência ou tolerância.</div>
+      <br>
+      <strong>Componentes do CBT-I:</strong><br>
+      1. <strong>Controle de estímulos:</strong> cama apenas para sono e sexo · Sair da cama se não dormir em 20 min · Horário fixo de acordar independente de hora de dormir<br>
+      2. <strong>Restrição de sono:</strong> limitar tempo na cama ao tempo real de sono (ex: 6h de sono → cama às 01h, acordar às 07h) → eficiência &gt;85% → ampliar janela<br>
+      3. <strong>Higiene do sono:</strong> evitar cafeína após 14h, álcool, telas 1h antes, exercício &gt;3h antes de dormir, temperatura fresca (18–20°C)<br>
+      4. <strong>Reestruturação cognitiva:</strong> combater crenças disfuncionais ("preciso de 8h exatas", "não durmir vai me matar")<br>
+      5. <strong>Relaxamento:</strong> respiração diafragmática, PMR (relaxamento muscular progressivo), mindfulness<br><br>
+      <strong>CBT-I Digital:</strong> Sleepio® (aprovado FDA) · SHUTi · Somryst® · Apps como Dozybird · Disponíveis sem prescrição
+    </div>
+  </div>
+  <div class="son-card" style="border-color:#7c3aed;margin-top:8px">
+    <div class="son-nome" style="color:#7c3aed">Farmacoterapia da Insônia — Hierarquia e Perfil de Segurança</div>
+    <div class="son-body">
+      <table>
+        <tr><th>Fármaco</th><th>Dose</th><th>Mecanismo</th><th>Perfil</th><th>Limitações</th></tr>
+        <tr><td><strong>Melatonina</strong></td><td>0,5–5 mg, 30–60 min antes de dormir (ideal: 2 mg liberação prolongada = Circadin®)</td><td>Agonista MT1/MT2</td><td>Seguro, sem dependência · Melhor para dificuldade de início OU dessincronização circadiana (jet lag, trabalho noturno)</td><td>Eficácia modesta em insônia de manutenção · Qualidade de estudos variável</td></tr>
+        <tr><td><strong>Ramelteon</strong></td><td>8 mg, 30 min antes de dormir</td><td>Agonista MT1/MT2 de alta afinidade</td><td>Aprovado FDA para insônia de início · Sem dependência · Único hipnótico sem risco de abuso (DEA Schedule não-controlado)</td><td>Custo · Eficácia modesta em manutenção · Não disponível no Brasil</td></tr>
+        <tr><td><strong>Doxepina 3–6 mg (Silenor®)</strong></td><td>3 mg (idosos) ou 6 mg (adultos), 30 min antes de dormir</td><td>Antagonista H1 de alta seletividade em dose baixa</td><td>Aprovado FDA especificamente para insônia de manutenção (acordar precoce) · Sem dependência · Não sedativo residual</td><td>Interação com álcool · Precaução em glaucoma e retenção urinária</td></tr>
+        <tr><td><strong>Suvorexante (Belsomra®)</strong></td><td>10–20 mg (idosos: 5–10 mg), 30 min antes</td><td>Antagonista duplo de orexina (DORA) — bloqueia OX1R e OX2R</td><td>Aprovado FDA/ANVISA · Sem tolerância ou dependência física significativa · Eficaz em início E manutenção</td><td>Sonolência diurna residual (iniciar com 10 mg) · Paralisia do sono relatada · Custo elevado</td></tr>
+        <tr><td><strong>Lemborexante (Dayvigo®)</strong></td><td>5–10 mg</td><td>DORA (anti-orexina) com maior seletividade OX2R</td><td>Aprovado FDA 2019 · Similar ao suvorexante · Estudos de 12 meses sem tolerância · Melhor perfil de sonolência matinal que suvorexante</td><td>Não disponível Brasil ainda</td></tr>
+        <tr><td><strong>Zolpidem (Z-drug)</strong></td><td>5 mg (mulheres/idosos) · 10 mg (homens) · CR: 6,25 ou 12,5 mg</td><td>Agonista GABA-A seletivo (subunidade α1)</td><td>Eficaz em início e manutenção (CR) · Inicio rápido · Barato</td><td>Tolerância e dependência · Parasomnias (sonambulismo, comer dormindo) · Quedas em idosos · Amnesia anterógrada · Evitar &gt;4 semanas</td></tr>
+        <tr><td>Benzodiazepínicos (temazepam, triazolam, clonazepam)</td><td>—</td><td>Agonistas GABA-A (não seletivos)</td><td>Eficazes a curto prazo</td><td>Dependência, tolerância, rebound, riscos em idosos — NÃO usar como hipnótico de rotina. Reservar para situações específicas.</td></tr>
+      </table>
+      <br>
+      <div class="alerta">⚠️ Difenidramina (Benadryl®, xaropes de gripe com anti-histamínico): NÃO indicada para insônia crônica. Tolerância em 3–4 doses. Efeitos anticolinérgicos graves em idosos (confusão, retenção urinária, quedas). Declínio cognitivo com uso crônico.</div>
+    </div>
+  </div>`;
+}
+
+function renderNarc(){
+  if(document.getElementById('narcList').innerHTML) return;
+  document.getElementById('narcList').innerHTML=`
+  <div class="son-card" style="border-color:#dc2626">
+    <div class="son-nome" style="color:#dc2626">Narcolepsia Tipo 1 e Tipo 2</div>
+    <div class="son-body">
+      <strong>Definição:</strong> Distúrbio neurológico crônico de hipersonolência por deficiência de hipocretina (orexina) nos neurônios do hipotálamo lateral<br><br>
+      <strong>Narcolepsia Tipo 1 (com cataplexia):</strong><br>
+      • Hipocretina-1 no LCR ≤110 pg/mL (ou &lt;1/3 do valor normal) · Cataplexia: fraqueza muscular súbita desencadeada por emoções (riso, surpresa) · Sonolência diurna excessiva (SDE)<br>
+      <strong>Narcolepsia Tipo 2 (sem cataplexia):</strong><br>
+      • Hipocretina normal · Latência de sono MSLT &lt;8 min com ≥2 SOREMPs (sleep-onset REM periods)<br><br>
+      <strong>Tétrade da narcolepsia tipo 1:</strong><br>
+      SDE (100%) + Cataplexia (70%) + Alucinações hipnagógicas (60%) + Paralisia do sono (25%)<br><br>
+      <strong>Tratamento — SDE (sonolência):</strong><br>
+      <table>
+        <tr><th>Fármaco</th><th>Dose</th><th>Mecanismo</th><th>Observação</th></tr>
+        <tr><td><strong>Modafinila (1ª linha)</strong></td><td>100–400 mg/dia (dose única matinal ou ÷ 2)</td><td>Inibidor de recaptação de dopamina (mecanismo exato incerto)</td><td>Aprovado ANVISA para narcolepsia · Menor abuso que estimulantes · Contracepcional: modafinila reduz eficácia de ACO (indutor CYP3A4)</td></tr>
+        <tr><td>Armodafinila</td><td>150–250 mg/dia</td><td>R-enantiômero do modafinila</td><td>Meia-vida maior que modafinila · Melhor para sonolência vespertina</td></tr>
+        <tr><td>Metilfenidato</td><td>10–60 mg/dia ÷ 2–3 doses</td><td>Inibidor DAT/NET</td><td>Alternativa quando modafinila insuficiente · Risco cardiovascular · Substância controlada</td></tr>
+        <tr><td>Pitolisant (Wakix®)</td><td>9–36 mg/dia (titular)</td><td>Antagonista/agonista inverso H3 (↑ histamina + DA/NA/ACh)</td><td>Aprovado FDA/EMA 2019 · Não substância controlada · Benefício também na cataplexia</td></tr>
+        <tr><td>Solriamfetol (Sunosi®)</td><td>75–150 mg/dia</td><td>Inibidor dopamina e noradrenalina (DAT+NET)</td><td>Aprovado FDA 2019 para narcolepsia e AOS · Início rápido de ação</td></tr>
+      </table>
+      <br>
+      <strong>Tratamento — Cataplexia:</strong><br>
+      <table>
+        <tr><th>Fármaco</th><th>Dose</th><th>Observação</th></tr>
+        <tr><td><strong>Oxibato de sódio (Xyrem®) — 1ª linha cataplexia + SDE</strong></td><td>4,5–9 g/noite ÷ 2 doses (2,25 g ao deitar + 2,25 g em 2,5–4h)</td><td>GHB (ácido gama-hidroxibutírico) · Substância controlada grau I nos EUA · Único fármaco que trata SDE + cataplexia + sono fragmentado · Risco: apneia, sedação excessiva, uso indevido · Programa REMS</td></tr>
+        <tr><td>Venlafaxina 75–300 mg/dia</td><td>Inibidor ISRSN (↑ NA suprime cataplexia)</td><td>Mais usada no Brasil (acesso a Xyrem é restrito)</td></tr>
+        <tr><td>Clomipramina 10–75 mg/dia</td><td>TCA (↑ NA+5-HT)</td><td>Alternativa · RAM anticolinérgicas</td></tr>
+      </table>
+    </div>
+  </div>
+  <div class="son-card" style="border-color:#15803d;margin-top:8px">
+    <div class="son-nome" style="color:#15803d">Síndrome das Pernas Inquietas (SPI) e PLMS</div>
+    <div class="son-body">
+      <strong>Critérios diagnósticos (IRLSSG 2014):</strong><br>
+      1. Necessidade imperiosa de mover as pernas (+ braços em 50%), geralmente acompanhada de desconforto<br>
+      2. Piora em repouso (deitado, sentado)<br>
+      3. Alívio com movimento<br>
+      4. Piora à noite ou noite (&gt;dia)<br>
+      5. Não é outra condição (câimbra, desconforto postural, edema)<br><br>
+      <strong>PLMS (Periodic Limb Movements of Sleep):</strong> movimentos periódicos de MMII durante o sono (PSG: ≥4 movimentos em sequência, intervalo 5–90s) · Frequentemente associado a SPI mas pode ser isolado<br><br>
+      <strong>Investigação inicial (toda SPI):</strong><br>
+      <div class="ok-box">🔍 FERRITINA SÉRICA: dosar em toda SPI. Ferritina &lt;75 µg/L = reposição de ferro ANTES de dopaminérgico.<br>
+      Hemoglobina · Creatinina · Glicemia · TSH · Vitamina B12/Folato</div>
+      <br>
+      <strong>Causas secundárias de SPI (tratar a causa):</strong><br>
+      Deficiência de ferro (ferritina &lt;75 µg/L) · DRC (uremia) · Gravidez (3° trimestre) · Neuropatia periférica · SPI induzida por fármacos: antidepressivos (ISRS, TCA), metoclopramida, antihistamínicos H1, antipsicóticos (todos os bloqueadores D2)<br><br>
+      <strong>Reposição de ferro em SPI (ferritina &lt;75 µg/L):</strong><br>
+      • Sulfato ferroso 325 mg × 2/dia com vitamina C (↑ absorção) · Monitorar ferritina a cada 3 meses · Alvo ferritina: 50–100 µg/L<br>
+      • Infusão IV de ferro (ferrocarboxidextrose 1000 mg IV × 1 dose): SPI grave + intolerância oral + DRC + malabsorção · Resposta em 2–6 semanas<br><br>
+      <strong>Tratamento farmacológico (SPI moderada-grave com ferritina normal):</strong><br>
+      <table>
+        <tr><th>Fármaco</th><th>Dose inicial</th><th>Dose máxima</th><th>Vantagem</th><th>Risco</th></tr>
+        <tr><td><strong>Pramipexol (1ª linha)</strong></td><td>0,125 mg/noite (1–3h antes de dormir)</td><td>0,5 mg/noite</td><td>Eficácia rápida · Aprovado FDA</td><td><strong>Augmentation (piora paradoxal)</strong>: sintomas mais cedo no dia, mais intensos, difusão para braços · Compulsão (jogo, hipersexualidade) · Sonolência súbita</td></tr>
+        <tr><td>Ropinirol</td><td>0,25 mg/noite</td><td>4 mg/noite</td><td>Alternativa ao pramipexol</td><td>Mesmos riscos de augmentation e impulso</td></tr>
+        <tr><td>Rotigotina (adesivo)</td><td>1 mg/24h</td><td>3 mg/24h</td><td>Cobertura 24h (augmentation em horário vespertino)</td><td>Náusea, dermatite local</td></tr>
+        <tr><td><strong>Pregabalina (alternativa ligantes α2δ)</strong></td><td>75 mg/noite</td><td>450 mg/noite</td><td>Sem augmentation · Eficaz em SPI + dor neuropática + ansiedade · Preferida em neuropatia periférica</td><td>Sedação, ganho de peso, edema, risco de abuso</td></tr>
+        <tr><td>Gabapentina</td><td>300 mg/noite</td><td>1800 mg/noite</td><td>Sem augmentation · Mais barata que pregabalina</td><td>Sedação, tontura</td></tr>
+        <tr><td>Opioides baixa dose (oxicodona 5 mg, metadona 5 mg)</td><td>—</td><td>—</td><td>Augmentation refratária a dopaminérgicos</td><td>Dependência · Apneia (cuidado com AOS)</td></tr>
+      </table>
+      <br>
+      <strong>Augmentation (problema clínico com dopaminérgicos):</strong><br>
+      Ocorre em 40–70% após &gt;1 ano de uso de dopaminérgicos · Sintomas aparecem cada vez mais cedo, mais intensos, se expandem · Conduta: reduzir/suspender dopaminérgico gradualmente → trocar para ligante α2δ (pregabalina) ou ferro IV se ferritina baixa
+    </div>
+  </div>`;
+}
+</script>
+</body>
+</html>
