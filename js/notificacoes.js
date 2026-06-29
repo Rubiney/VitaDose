@@ -173,6 +173,28 @@ async function registrarSync() {
   } catch(e) {}
 }
 
+/* ── Envia agenda ao SW via postMessage (fallback sem periodicSync) ── */
+async function agendarNoSW(meds) {
+  if (!('serviceWorker' in navigator)) return;
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    if (!reg.active) return;
+    const agora = Date.now();
+    const doses = [];
+    for (const med of meds) {
+      if (med.ativo === false) continue;
+      for (const h of (med.horarios || [])) {
+        const [hh, mm] = h.split(':').map(Number);
+        const t = new Date(); t.setHours(hh, mm, 0, 0);
+        if (t.getTime() > agora) {
+          doses.push({ medId: med.id, nome: med.nome, dose: `${med.dose||''}${med.unidade||''}`, horario: h, timestamp: t.getTime() });
+        }
+      }
+    }
+    reg.active.postMessage({ type: 'SCHEDULE_NOTIFICATIONS', doses });
+  } catch(e) {}
+}
+
 /* ── Ponto de entrada ── */
 async function iniciarNotificacoes(meds) {
   if (!meds || !meds.length) return;
@@ -180,5 +202,6 @@ async function iniciarNotificacoes(meds) {
   await salvarAgendaSW(meds);
   await registrarSync();
   agendarLocais(meds);
-  if (Notification.permission === 'granted') iniciarFirebasePush(meds);
+  await agendarNoSW(meds);
+  if (Notification.permission === 'granted' && typeof iniciarFirebasePush === 'function') iniciarFirebasePush(meds);
 }

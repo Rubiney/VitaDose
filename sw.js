@@ -1,5 +1,5 @@
 /* VitaDose — Service Worker (offline cache + notificações) */
-const CACHE = 'vitadose-v86';
+const CACHE = 'vitadose-v87';
 
 const ASSETS = [
   '/',
@@ -148,6 +148,10 @@ const ASSETS = [
   '/js/diario.js',
   '/js/notificacoes.js',
   '/js/firebase-push.js',
+  '/metricas-farmaceutico.html',
+  '/consulta-rapida.html',
+  '/dossie-clinico.html',
+  '/notificacoes.html',
   '/manifest.json',
   '/icons/icon-192.svg',
   '/icons/icon-512.svg',
@@ -279,6 +283,33 @@ function lerDosesHoje(hoje) {
     req.onerror = () => resolve([]);
   });
 }
+
+/* ── Mensagem da página: agenda notificações via setTimeout ── */
+const _swTimers = [];
+self.addEventListener('message', (e) => {
+  if (e.data?.type !== 'SCHEDULE_NOTIFICATIONS') return;
+  /* Cancela timers anteriores */
+  _swTimers.forEach(t => clearTimeout(t));
+  _swTimers.length = 0;
+
+  const doses = e.data.doses || [];
+  const agora = Date.now();
+  doses.forEach(d => {
+    const delay = d.timestamp - agora;
+    if (delay > 0 && delay < 14 * 60 * 60 * 1000) { // só dentro de 14h
+      _swTimers.push(setTimeout(() => {
+        self.registration.showNotification('💊 Hora do remédio — VitaDose', {
+          body : `${d.nome} ${d.dose} — ${d.horario}`,
+          icon : '/icons/icon-192.svg',
+          badge: '/icons/icon-192.svg',
+          tag  : `vd-dose-${d.medId}-${d.horario}`,
+          data : { url: '/' },
+        });
+      }, delay));
+    }
+  });
+  if (e.source) e.source.postMessage({ type: 'NOTIFICATIONS_SCHEDULED', count: _swTimers.length });
+});
 
 /* ── Clique na notificação: abre o app ── */
 self.addEventListener('notificationclick', (e) => {

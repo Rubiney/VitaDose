@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Consulta Rápida — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    body { background:#0f172a;margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#f1f5f9 }
+
+    .topbar { display:flex;align-items:center;gap:10px;padding:12px 16px;background:#0f172a;position:sticky;top:0;z-index:100;border-bottom:1px solid rgba(255,255,255,.07) }
+    .back-btn { background:rgba(255,255,255,.1);border:none;color:#fff;border-radius:8px;padding:6px 11px;font-size:1rem;cursor:pointer }
+    .topbar-title { font-size:.95rem;font-weight:800;color:#f1f5f9;flex:1 }
+    .topbar-sub { font-size:.65rem;color:#64748b }
+    .topbar-clock { font-size:1rem;font-weight:700;color:#38bdf8;font-variant-numeric:tabular-nums }
+
+    main { padding:12px 14px 90px }
+
+    /* Patient header */
+    .pac-header { background:linear-gradient(135deg,#1e3a5f,#312e81);border-radius:16px;padding:16px;margin-bottom:12px }
+    .pac-nome { font-size:1.1rem;font-weight:900;color:#fff }
+    .pac-meta { font-size:.72rem;color:rgba(255,255,255,.7);margin-top:3px }
+    .pac-conds { display:flex;flex-wrap:wrap;gap:4px;margin-top:8px }
+    .cond-tag { background:rgba(255,255,255,.15);border-radius:6px;padding:3px 8px;font-size:.63rem;font-weight:700;color:#e0f2fe }
+    .alergia-alert { background:#dc2626;border-radius:8px;padding:6px 10px;margin-top:8px;font-size:.72rem;font-weight:700;color:#fff }
+
+    /* Vitals strip */
+    .vitals-row { display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:12px }
+    .vital-box { background:#1e293b;border-radius:12px;padding:10px;text-align:center }
+    .vital-val { font-size:.95rem;font-weight:800;color:#38bdf8 }
+    .vital-lbl { font-size:.58rem;font-weight:700;color:#475569;text-transform:uppercase;margin-top:2px }
+
+    /* Alert strip */
+    .alerts-list { margin-bottom:12px;display:flex;flex-direction:column;gap:6px }
+    .alert-pill { display:flex;align-items:flex-start;gap:8px;background:#1e293b;border-radius:10px;padding:9px 11px;border-left:3px solid #dc2626 }
+    .alert-pill.warn { border-left-color:#f59e0b }
+    .alert-pill.info { border-left-color:#0891b2 }
+    .alert-icon { font-size:.85rem;flex-shrink:0;margin-top:1px }
+    .alert-txt { font-size:.73rem;color:#cbd5e1;line-height:1.45 }
+    .alert-title { font-size:.73rem;font-weight:700;color:#f1f5f9;display:block;margin-bottom:2px }
+
+    /* Medications */
+    .sec-title { font-size:.62rem;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:.08em;margin:0 0 8px }
+    .meds-grid { display:flex;flex-direction:column;gap:6px;margin-bottom:12px }
+    .med-row { background:#1e293b;border-radius:10px;padding:10px 12px;display:flex;align-items:center;gap:10px }
+    .med-dot { width:8px;height:8px;border-radius:50%;background:#6366f1;flex-shrink:0 }
+    .med-nome { font-size:.82rem;font-weight:700;color:#f1f5f9;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap }
+    .med-dose { font-size:.7rem;color:#94a3b8 }
+    .med-hors { display:flex;gap:4px;flex-wrap:wrap;margin-top:4px }
+    .hor-chip { background:#0f172a;color:#38bdf8;border-radius:5px;padding:2px 6px;font-size:.65rem;font-weight:700 }
+
+    /* Actions */
+    .actions-grid { display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px }
+    .action-btn { display:flex;flex-direction:column;align-items:center;gap:5px;background:#1e293b;border:none;border-radius:14px;padding:14px 10px;cursor:pointer;color:#f1f5f9;transition:background .15s;text-decoration:none }
+    .action-btn:hover { background:#253347 }
+    .action-icon { font-size:1.5rem }
+    .action-lbl { font-size:.68rem;font-weight:700;color:#94a3b8;text-align:center }
+    .action-btn.green { background:#064e3b }
+    .action-btn.blue  { background:#0c1a3a }
+    .action-btn.red   { background:#3b0000 }
+    .action-btn.purple{ background:#1e1b4b }
+
+    .no-pac { text-align:center;padding:50px 20px;color:#475569 }
+
+    @media print { body { background:#fff;color:#000 } .topbar { display:none } main { padding:0 } }
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <div style="flex:1">
+    <div class="topbar-title">⚡ Consulta Rápida</div>
+    <div class="topbar-sub" id="pacSubtitulo">Carregando...</div>
+  </div>
+  <div class="topbar-clock" id="relogio">--:--</div>
+</div>
+
+<main id="mainContent">
+  <div class="no-pac">Carregando dados do paciente...</div>
+</main>
+
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+
+<script src="js/db.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/interacoes.js"></script>
+<script src="js/beers.js"></script>
+<script src="js/anticolin.js"></script>
+<script>
+
+/* Relógio */
+function tick() {
+  const n = new Date();
+  document.getElementById('relogio').textContent =
+    n.getHours().toString().padStart(2,'0') + ':' + n.getMinutes().toString().padStart(2,'0');
+}
+tick();
+setInterval(tick, 10000);
+
+const CONDS_LABEL = {
+  has:'HAS',dm:'DM',asma:'Asma/DPOC',ic:'IC',hepatica:'Hepatopatia',
+  epilepsia:'Epilepsia',glaucoma:'Glaucoma',hpb:'HPB',gota:'Gota',
+  gastrite:'Gastrite',gestacao:'Gestação',osteoporose:'Osteoporose',
+  miastenia:'Miastenia',parkinson:'Parkinson',
+};
+
+async function init() {
+  const pid = getActivePacienteId();
+  if (!pid) {
+    document.getElementById('mainContent').innerHTML =
+      '<div class="no-pac"><p style="font-size:2rem">👤</p><p>Nenhum paciente ativo.<br><a href="pacientes.html" style="color:#38bdf8">Selecionar paciente →</a></p></div>';
+    return;
+  }
+
+  const hj = hoje();
+  const [pac, allMeds, allDoses, allLab, agenda] = await Promise.all([
+    dbGet('pacientes', pid),
+    dbGetAll('medicamentos'),
+    dbGetAll('doses'),
+    dbGetAll('laboratorio'),
+    dbGetConfig('agenda'),
+  ]);
+
+  if (!pac) { document.getElementById('mainContent').innerHTML = '<div class="no-pac">Paciente não encontrado.</div>'; return; }
+
+  const meds = (allMeds||[]).filter(m => m.pacienteId===pid && m.ativo!==false && (!m.dataFim||m.dataFim>=hj));
+  document.getElementById('pacSubtitulo').textContent = `${meds.length} medicamentos ativos`;
+
+  /* Horários */
+  const horMap = {};
+  (agenda||[]).forEach(a => {
+    if (!horMap[a.medId]) horMap[a.medId] = [];
+    if (!horMap[a.medId].includes(a.horario)) horMap[a.medId].push(a.horario);
+  });
+  meds.forEach(m => {
+    if (!horMap[m.id] && m.horarios?.length) horMap[m.id] = m.horarios;
+  });
+
+  /* Último diário */
+  let diario = null;
+  try {
+    const todos = (await dbGetAll('diario'))||[];
+    const meus  = todos.filter(d => !d.pacienteId || d.pacienteId===pid).sort((a,b)=>b.data.localeCompare(a.data));
+    if (meus.length) diario = meus[0];
+  } catch(e){}
+
+  /* Últimos labs */
+  const labs = (allLab||[]).filter(l=>l.pacienteId===pid).sort((a,b)=>b.data.localeCompare(a.data));
+  const labMap = {};
+  labs.forEach(l => { if (!labMap[l.tipo]) labMap[l.tipo] = l; });
+
+  /* Alertas clínicos */
+  const alertas = [];
+  if (typeof gerarAlertas === 'function' && meds.length) {
+    gerarAlertas(meds).filter(a=>a.nivel==='grave').slice(0,3).forEach(a =>
+      alertas.push({ cls:'', icon:'⚠️', title: a.titulo, txt: (a.desc||'').slice(0,100) }));
+  }
+  if (typeof buscarBeers === 'function' && typeof pacienteIdoso === 'function' && pacienteIdoso(pac)) {
+    meds.forEach(m => {
+      const b = buscarBeers(m.nome);
+      if (b && alertas.length < 5) alertas.push({ cls:'warn', icon:'🟡', title:'Beers: '+m.nome, txt:(b.motivo||b.obs||'').slice(0,90) });
+    });
+  }
+  if (typeof calcularCargaAnticolin === 'function') {
+    const acb = calcularCargaAnticolin(meds);
+    if (acb.total >= 3 && alertas.length < 5)
+      alertas.push({ cls:'info', icon:'🧠', title:`ACB: ${acb.total} pts (${acb.nivel})`, txt: acb.itens.map(i=>i.nome).join(', ').slice(0,90) });
+  }
+
+  /* Doses de hoje */
+  const dosesHj = (allDoses||[]).filter(d=>d.data===hj);
+  const tomadas = dosesHj.filter(d=>d.status==='tomado').length;
+  const total   = dosesHj.length;
+
+  /* Render */
+  const conds = (pac.condicoes||[]).map(c=>CONDS_LABEL[c]||c).filter(Boolean);
+  const idadeStr = pac.idadePac ? pac.idadePac+' anos' : '';
+  const sexoStr  = {M:'M',F:'F'}[pac.sexoPac]||'';
+  const pesoStr  = pac.pesoPac ? pac.pesoPac+' kg' : '';
+
+  const paVal   = diario?.pa || labMap['PA sistólica']?.valor || '—';
+  const glicVal = diario?.glicemia || labMap['Glicemia jejum']?.valor || '—';
+  const pesoVal = diario?.peso || pac.pesoPac || '—';
+  const fcVal   = diario?.fc || labMap['FC']?.valor || '—';
+
+  document.getElementById('mainContent').innerHTML = `
+
+    <!-- Paciente -->
+    <div class="pac-header">
+      <div class="pac-nome">${esc(pac.nome)}</div>
+      <div class="pac-meta">${[idadeStr,sexoStr,pesoStr,pac.tipoSanguineo].filter(Boolean).join(' · ')}</div>
+      ${conds.length ? `<div class="pac-conds">${conds.map(c=>`<span class="cond-tag">${esc(c)}</span>`).join('')}</div>` : ''}
+      ${pac.alergias ? `<div class="alergia-alert">🚨 ALERGIA: ${esc(pac.alergias)}</div>` : ''}
+    </div>
+
+    <!-- Vitais -->
+    <div class="vitals-row">
+      <div class="vital-box">
+        <div class="vital-val" style="color:${paColorClass(paVal)}">${esc(String(paVal))}</div>
+        <div class="vital-lbl">PA mmHg</div>
+      </div>
+      <div class="vital-box">
+        <div class="vital-val" style="color:${glicColor(glicVal)}">${esc(String(glicVal))}</div>
+        <div class="vital-lbl">Glicemia</div>
+      </div>
+      <div class="vital-box">
+        <div class="vital-val">${esc(String(pesoVal))}</div>
+        <div class="vital-lbl">Peso kg</div>
+      </div>
+      <div class="vital-box">
+        <div class="vital-val" style="color:${total>0?(tomadas/total>=0.8?'#4ade80':tomadas/total>=0.5?'#fbbf24':'#f87171'):'#475569'}">${total>0?tomadas+'/'+total:'—'}</div>
+        <div class="vital-lbl">Doses hoje</div>
+      </div>
+    </div>
+
+    <!-- Alertas -->
+    ${alertas.length ? `
+    <p class="sec-title">🚨 Alertas Clínicos</p>
+    <div class="alerts-list">
+      ${alertas.map(a=>`<div class="alert-pill ${a.cls}">
+        <span class="alert-icon">${a.icon}</span>
+        <div><span class="alert-title">${esc(a.title)}</span>${a.txt?`<span class="alert-txt">${esc(a.txt)}</span>`:''}</div>
+      </div>`).join('')}
+    </div>` : ''}
+
+    <!-- Medicamentos -->
+    <p class="sec-title">💊 Medicamentos Ativos (${meds.length})</p>
+    <div class="meds-grid">
+      ${meds.length ? meds.map(m => {
+        const hors = horMap[m.id] || [];
+        return `<div class="med-row">
+          <div class="med-dot"></div>
+          <div style="flex:1;min-width:0">
+            <div class="med-nome">${esc(m.nome)}</div>
+            <div class="med-dose">${esc(m.dose||'')}${m.unidade?' '+esc(m.unidade):''}</div>
+            ${hors.length ? `<div class="med-hors">${hors.map(h=>`<span class="hor-chip">${h}</span>`).join('')}</div>` : ''}
+          </div>
+        </div>`;
+      }).join('') : '<p style="color:#475569;font-size:.8rem;padding:8px 0">Nenhum medicamento ativo.</p>'}
+    </div>
+
+    <!-- Ações rápidas -->
+    <p class="sec-title">⚡ Ações</p>
+    <div class="actions-grid">
+      <a class="action-btn green" href="relatorio-sft.html">
+        <span class="action-icon">📝</span>
+        <span class="action-lbl">Registrar SOAP</span>
+      </a>
+      <a class="action-btn blue" href="relatorio-sft.html#intervencao">
+        <span class="action-icon">💬</span>
+        <span class="action-lbl">Nova Intervenção</span>
+      </a>
+      <a class="action-btn purple" href="plano-cuidados.html">
+        <span class="action-icon">⚠️</span>
+        <span class="action-lbl">Ver PRMs</span>
+      </a>
+      <a class="action-btn" href="diario.html" style="background:#0f2027">
+        <span class="action-icon">📊</span>
+        <span class="action-lbl">Registrar Vitais</span>
+      </a>
+      <a class="action-btn" href="laboratorio.html" style="background:#0a2020">
+        <span class="action-icon">🔬</span>
+        <span class="action-lbl">Ver Exames</span>
+      </a>
+      <a class="action-btn red" href="dossie-clinico.html">
+        <span class="action-icon">📋</span>
+        <span class="action-lbl">Dossiê Clínico</span>
+      </a>
+    </div>
+  `;
+}
+
+function paColorClass(pa) {
+  if (!pa || pa==='—') return '#475569';
+  const s = parseInt(String(pa).split('/')[0]);
+  if (isNaN(s)) return '#38bdf8';
+  if (s < 120) return '#4ade80';
+  if (s < 140) return '#fbbf24';
+  return '#f87171';
+}
+function glicColor(g) {
+  if (!g || g==='—') return '#475569';
+  const v = parseFloat(g);
+  if (isNaN(v)) return '#38bdf8';
+  if (v < 70)  return '#f87171';
+  if (v <= 130) return '#4ade80';
+  if (v <= 180) return '#fbbf24';
+  return '#f87171';
+}
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>

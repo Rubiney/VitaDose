@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Notificações — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .status-card { border-radius:16px;padding:18px;margin-bottom:12px;display:flex;align-items:flex-start;gap:12px }
+    .status-icon { font-size:1.8rem;flex-shrink:0 }
+    .status-title { font-size:.95rem;font-weight:800;margin-bottom:3px }
+    .status-desc  { font-size:.77rem;line-height:1.55;color:#64748b }
+    .status-ok    { background:#d1fae5;border:1.5px solid #6ee7b7 }
+    .status-ok .status-title { color:#065f46 }
+    .status-warn  { background:#fef3c7;border:1.5px solid #fcd34d }
+    .status-warn .status-title { color:#92400e }
+    .status-err   { background:#fee2e2;border:1.5px solid #fca5a5 }
+    .status-err .status-title { color:#991b1b }
+
+    .sec { background:#fff;border-radius:16px;padding:16px;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,.06) }
+    .sec-title { font-size:.72rem;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px }
+
+    .btn-perm { width:100%;background:#1e3a5f;color:#fff;border:none;border-radius:12px;padding:14px;font-size:.9rem;font-weight:700;cursor:pointer;margin-bottom:8px }
+    .btn-test { width:100%;background:#7c3aed;color:#fff;border:none;border-radius:12px;padding:12px;font-size:.85rem;font-weight:700;cursor:pointer;margin-bottom:8px }
+    .btn-sync { width:100%;background:#0891b2;color:#fff;border:none;border-radius:12px;padding:12px;font-size:.85rem;font-weight:700;cursor:pointer }
+
+    .schedule-item { display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid #f1f5f9 }
+    .schedule-item:last-child { border-bottom:none }
+    .sch-time { background:#ede9fe;color:#6d28d9;border-radius:8px;padding:4px 9px;font-size:.8rem;font-weight:800;flex-shrink:0;min-width:42px;text-align:center }
+    .sch-nome { font-size:.82rem;font-weight:700;color:#1e293b }
+    .sch-dose { font-size:.68rem;color:#94a3b8 }
+    .sch-status { margin-left:auto;font-size:.78rem;flex-shrink:0 }
+
+    .step-row { display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-bottom:1px solid #f1f5f9 }
+    .step-row:last-child { border-bottom:none }
+    .step-num { width:26px;height:26px;border-radius:50%;background:#6366f1;color:#fff;font-size:.7rem;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0 }
+    .step-txt { font-size:.8rem;color:#374151;line-height:1.5;flex:1 }
+    .step-txt strong { color:#1e293b }
+
+    .info-box { background:#eff6ff;border:1.5px solid #bfdbfe;border-radius:12px;padding:12px;font-size:.75rem;color:#1e40af;line-height:1.6;margin-top:8px }
+  </style>
+</head>
+<body>
+
+<header class="top-bar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <span class="top-title">🔔 Notificações de Dose</span>
+  <div class="top-right"></div>
+</header>
+
+<main class="container" style="padding-bottom:90px">
+
+  <!-- Status geral -->
+  <div id="statusCard"></div>
+
+  <!-- Ações -->
+  <div class="sec" id="secAcoes">
+    <div class="sec-title">⚙️ Configurações</div>
+    <button class="btn-perm" id="btnPerm" onclick="solicitarPermissao()">🔔 Ativar Notificações</button>
+    <button class="btn-test" id="btnTest" onclick="testarNotificacao()" style="display:none">🧪 Testar Notificação Agora</button>
+    <button class="btn-sync" id="btnSync" onclick="reagendarTodas()" style="display:none">🔄 Re-agendar Doses de Hoje</button>
+  </div>
+
+  <!-- Agenda de hoje -->
+  <div class="sec" id="secHoje">
+    <div class="sec-title">📅 Agenda de Hoje</div>
+    <div id="listaHoje"><p style="color:#94a3b8;font-size:.82rem;text-align:center;padding:12px 0">Carregando agenda...</p></div>
+  </div>
+
+  <!-- Como funciona -->
+  <div class="sec">
+    <div class="sec-title">ℹ️ Como funciona</div>
+
+    <div class="step-row">
+      <div class="step-num">1</div>
+      <div class="step-txt"><strong>Permissão de notificação</strong> — O sistema precisa da sua autorização para enviar alertas de dose. Toque em "Ativar Notificações".</div>
+    </div>
+    <div class="step-row">
+      <div class="step-num">2</div>
+      <div class="step-txt"><strong>Instale como app</strong> — Para receber lembretes mesmo com o navegador fechado, adicione o VitaDose à tela inicial: no Chrome, toque em ⋮ → <em>Adicionar à tela inicial</em>.</div>
+    </div>
+    <div class="step-row">
+      <div class="step-num">3</div>
+      <div class="step-txt"><strong>Lembretes automáticos</strong> — Nos horários cadastrados nos medicamentos, o app exibe um alerta sonoro e visual. Com o app instalado, as notificações chegam mesmo com a tela bloqueada.</div>
+    </div>
+    <div class="step-row">
+      <div class="step-num">4</div>
+      <div class="step-txt"><strong>Snooze de 15 min</strong> — Se não puder tomar no horário exato, o botão "⏰ 15 min" adia o lembrete.</div>
+    </div>
+
+    <div class="info-box">
+      💡 <strong>No Android com PWA instalada</strong>, o sistema usa <em>Periodic Background Sync</em> para verificar doses a cada 15 minutos, mesmo com o app fechado. No iOS (Safari), as notificações funcionam com o app aberto ou em background imediato.
+    </div>
+  </div>
+
+</main>
+
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+
+<script src="js/db.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/notificacoes.js"></script>
+<script>
+
+async function verificarStatus() {
+  const card = document.getElementById('statusCard');
+
+  if (!('Notification' in window)) {
+    card.innerHTML = `<div class="status-card status-err"><span class="status-icon">❌</span><div><div class="status-title">Notificações não suportadas</div><div class="status-desc">Seu navegador não suporta notificações. Use o Chrome no Android ou Safari no iOS (versão 16.4+).</div></div></div>`;
+    return;
+  }
+
+  const perm = Notification.permission;
+
+  if (perm === 'granted') {
+    const swOk = 'serviceWorker' in navigator;
+    let syncOk = false;
+    try {
+      const reg = await navigator.serviceWorker.ready;
+      syncOk = 'periodicSync' in reg;
+    } catch(e) {}
+
+    card.innerHTML = `<div class="status-card status-ok"><span class="status-icon">✅</span><div>
+      <div class="status-title">Notificações ativas</div>
+      <div class="status-desc">
+        Permissão concedida.<br>
+        Service Worker: ${swOk?'✅ ativo':'❌ inativo'}<br>
+        Background Sync: ${syncOk?'✅ suportado':'⚠️ não disponível (app precisa estar aberto)'}
+      </div>
+    </div></div>`;
+
+    document.getElementById('btnPerm').style.display = 'none';
+    document.getElementById('btnTest').style.display = '';
+    document.getElementById('btnSync').style.display = '';
+
+    /* Registrar periodicSync */
+    if (syncOk) {
+      try {
+        const reg = await navigator.serviceWorker.ready;
+        await reg.periodicSync.register('check-doses', { minInterval: 15 * 60 * 1000 });
+      } catch(e) {}
+    }
+
+  } else if (perm === 'denied') {
+    card.innerHTML = `<div class="status-card status-err"><span class="status-icon">🚫</span><div>
+      <div class="status-title">Permissão negada</div>
+      <div class="status-desc">Você bloqueou as notificações. Para reativar: nas configurações do navegador, procure "Notificações" ou "Permissões" e permita o VitaDose.</div>
+    </div></div>`;
+    document.getElementById('btnPerm').style.display = 'none';
+  } else {
+    card.innerHTML = `<div class="status-card status-warn"><span class="status-icon">⏳</span><div>
+      <div class="status-title">Permissão não concedida</div>
+      <div class="status-desc">Toque em "Ativar Notificações" para receber lembretes de dose nos horários certos.</div>
+    </div></div>`;
+  }
+}
+
+async function solicitarPermissao() {
+  if (!('Notification' in window)) { alert('Notificações não suportadas neste navegador.'); return; }
+  const res = await Notification.requestPermission();
+  if (res === 'granted') {
+    showToast('✅ Notificações ativadas!');
+    await reagendarTodas();
+  } else {
+    showToast('❌ Permissão negada');
+  }
+  await verificarStatus();
+}
+
+async function testarNotificacao() {
+  if (Notification.permission !== 'granted') { alert('Ative as notificações primeiro.'); return; }
+  new Notification('💊 Teste — VitaDose', {
+    body: 'As notificações de dose estão funcionando corretamente.',
+    icon: '/icons/icon-192.svg',
+    badge: '/icons/icon-192.svg',
+    tag: 'vd-teste-' + Date.now(),
+  });
+  showToast('✅ Notificação de teste enviada!');
+}
+
+async function reagendarTodas() {
+  const pid = getActivePacienteId();
+  if (!pid) { showToast('Nenhum paciente ativo'); return; }
+  try {
+    const allMeds = await dbGetAll('medicamentos');
+    const hj = hoje();
+    const meds = (allMeds||[]).filter(m => m.pacienteId===pid && m.ativo!==false && (!m.dataFim||m.dataFim>=hj));
+    await iniciarNotificacoes(meds);
+    showToast(`✅ ${meds.length} medicamentos agendados para hoje`);
+  } catch(e) {
+    showToast('Erro ao agendar: ' + e.message);
+  }
+}
+
+async function carregarAgenda() {
+  const pid = getActivePacienteId();
+  const el = document.getElementById('listaHoje');
+  if (!pid) { el.innerHTML = '<p style="color:#94a3b8;font-size:.82rem;text-align:center;padding:12px 0">Nenhum paciente ativo.</p>'; return; }
+
+  const hj = hoje();
+  const [allMeds, agendaCfg, allDoses] = await Promise.all([
+    dbGetAll('medicamentos'),
+    dbGetConfig('agenda'),
+    dbGetAll('doses'),
+  ]);
+
+  const meds = (allMeds||[]).filter(m => m.pacienteId===pid && m.ativo!==false && (!m.dataFim||m.dataFim>=hj));
+  const horMap = {};
+  (agendaCfg||[]).forEach(a => {
+    if (!horMap[a.medId]) horMap[a.medId] = [];
+    if (!horMap[a.medId].includes(a.horario)) horMap[a.medId].push(a.horario);
+  });
+  meds.forEach(m => { if (!horMap[m.id] && m.horarios?.length) horMap[m.id] = m.horarios; });
+
+  const dosesHj = (allDoses||[]).filter(d=>d.data===hj);
+  const confirmSet = new Set(dosesHj.filter(d=>d.status==='tomado').map(d=>`${d.medicamentoId}-${d.horario}`));
+  const agora = agoraHHMM();
+
+  const items = [];
+  meds.forEach(m => {
+    (horMap[m.id]||[]).forEach(h => {
+      items.push({ h, m });
+    });
+  });
+  items.sort((a,b) => a.h.localeCompare(b.h));
+
+  if (!items.length) { el.innerHTML = '<p style="color:#94a3b8;font-size:.82rem;text-align:center;padding:12px 0">Nenhum horário de medicamento cadastrado.</p>'; return; }
+
+  el.innerHTML = items.map(({ h, m }) => {
+    const tomado = confirmSet.has(`${m.id}-${h}`);
+    const passado = h < agora;
+    const icon = tomado ? '✅' : passado ? '❌' : '⏳';
+    const cor  = tomado ? '#16a34a' : passado ? '#dc2626' : '#0369a1';
+    return `<div class="schedule-item">
+      <div class="sch-time" style="background:${cor}22;color:${cor}">${h}</div>
+      <div style="flex:1;min-width:0">
+        <div class="sch-nome">${esc(m.nome)}</div>
+        <div class="sch-dose">${esc(m.dose||'')}${m.unidade?' '+esc(m.unidade):''}</div>
+      </div>
+      <div class="sch-status">${icon}</div>
+    </div>`;
+  }).join('');
+}
+
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+document.addEventListener('DOMContentLoaded', async () => {
+  await verificarStatus();
+  await carregarAgenda();
+});
+</script>
+</body>
+</html>
