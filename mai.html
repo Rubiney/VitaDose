@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>MAI — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .topbar{display:flex;align-items:center;gap:10px;padding:12px 16px;background:#4a1d96;position:sticky;top:0;z-index:100}
+    .back-btn{background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:8px;padding:6px 11px;cursor:pointer;font-size:1rem}
+    .topbar-title{font-size:.93rem;font-weight:800;color:#fff;flex:1}
+    .topbar-sub{font-size:.62rem;color:rgba(255,255,255,.7);margin-top:1px}
+    .btn-top{background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:8px;padding:7px 11px;font-size:.72rem;font-weight:700;cursor:pointer;margin-left:4px}
+    main{max-width:660px;margin:0 auto;padding:12px 14px 90px}
+    .pac-sel{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:12px;padding:11px 14px;font-size:.88rem;margin-bottom:10px;background:#fff}
+
+    /* Sumário */
+    .sum-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px}
+    .sum-card{background:#fff;border-radius:12px;padding:12px;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,.07);border-top:3px solid}
+    .sum-n{font-size:1.8rem;font-weight:900}
+    .sum-lbl{font-size:.62rem;font-weight:700;color:#64748b;text-transform:uppercase;margin-top:2px}
+
+    /* Med card */
+    .med-card{background:#fff;border-radius:14px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.07);overflow:hidden}
+    .med-header{display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer;border-left:5px solid}
+    .med-nome{font-size:.85rem;font-weight:800;color:#1e293b;flex:1}
+    .med-dose{font-size:.67rem;color:#64748b;margin-top:2px}
+    .mai-score{font-size:.68rem;font-weight:800;padding:3px 10px;border-radius:20px}
+    .score-ok{background:#dcfce7;color:#166534}
+    .score-inapr{background:#fee2e2;color:#991b1b}
+    .score-nd{background:#f1f5f9;color:#64748b}
+    .expand-ico{font-size:.85rem;color:#94a3b8}
+    .med-body{padding:12px 14px;border-top:1px solid #f1f5f9}
+    .med-body.collapsed{display:none}
+
+    /* Critérios */
+    .crit-item{padding:10px 0;border-bottom:1px solid #f8fafc}
+    .crit-item:last-child{border:none;padding-bottom:0}
+    .crit-n{font-size:.6rem;font-weight:800;color:#94a3b8;margin-bottom:2px}
+    .crit-txt{font-size:.79rem;font-weight:700;color:#1e293b;margin-bottom:2px}
+    .crit-guid{font-size:.68rem;color:#64748b;margin-bottom:7px;line-height:1.5;font-style:italic}
+    .crit-btns{display:flex;gap:6px}
+    .crit-btn{flex:1;padding:7px 4px;border-radius:8px;border:1.5px solid #e2e8f0;font-size:.7rem;font-weight:700;cursor:pointer;background:#f8fafc;text-align:center;transition:.12s}
+    .crit-btn.sel-a{background:#dcfce7;border-color:#22c55e;color:#166534}
+    .crit-btn.sel-i{background:#fee2e2;border-color:#f87171;color:#991b1b}
+    .crit-btn.sel-d{background:#fef3c7;border-color:#fbbf24;color:#92400e}
+    .crit-peso{font-size:.58rem;color:#94a3b8;display:block;margin-top:2px}
+
+    .ref-box{background:#f5f3ff;border:1.5px solid #c4b5fd;border-radius:10px;padding:10px 12px;font-size:.72rem;color:#4c1d95;line-height:1.8;margin-top:10px}
+    .empty{text-align:center;padding:40px;color:#94a3b8}
+    @media print{.topbar,.pac-sel,.btn-top,nav,.crit-btns{display:none!important}body{background:#fff}main{padding:0}}
+  </style>
+</head>
+<body>
+<div class="topbar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <div style="flex:1">
+    <div class="topbar-title">⚖️ MAI — Medication Appropriateness Index</div>
+    <div class="topbar-sub">Avaliação racional de cada prescrição • Hanlon, 1992</div>
+  </div>
+  <button class="btn-top" onclick="salvarTudo()">💾</button>
+  <button class="btn-top" onclick="window.print()">🖨️</button>
+</div>
+<main>
+  <select class="pac-sel" id="sel-pac" onchange="init()"><option value="">Selecione o paciente...</option></select>
+  <div id="conteudo"></div>
+</main>
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+<script src="js/db.js"></script>
+<script src="js/utils.js"></script>
+<script>
+// 10 critérios MAI com pesos (Hanlon et al., 1992)
+const CRITERIOS = [
+  {n:1,  txt:'Existe indicação para o medicamento?',
+   guid:'O medicamento trata uma condição ativa, estabelecida ou é usado para prevenção primária documentada?',
+   peso:3, iScore:3},
+  {n:2,  txt:'O medicamento é eficaz para a condição?',
+   guid:'Há evidência de eficácia para esta indicação neste paciente (perfil clínico, comorbidades)?',
+   peso:3, iScore:3},
+  {n:3,  txt:'A dose está correta?',
+   guid:'Considere a função renal (TFG), hepática, peso, idade, interações e condição clínica atual.',
+   peso:2, iScore:2},
+  {n:4,  txt:'As instruções de uso estão corretas?',
+   guid:'Via de administração, horário, forma farmacêutica, administração com/sem alimento.',
+   peso:2, iScore:2},
+  {n:5,  txt:'As instruções são práticas e factíveis?',
+   guid:'O paciente consegue seguir a posologia prescrita? (Ex: 4×/dia em idoso sozinho).',
+   peso:1, iScore:1},
+  {n:6,  txt:'Há interações medicamentosas clinicamente significativas?',
+   guid:'DDI: gravidade moderada/grave que não foi gerenciada. Cruzar com sistema de interações.',
+   peso:2, iScore:2},
+  {n:7,  txt:'Há interações fármaco-doença clinicamente significativas?',
+   guid:'Ex: AINE em DRC, betabloqueador em asma, tricíclico em glaucoma, BZD em demência.',
+   peso:2, iScore:2},
+  {n:8,  txt:'Há duplicação terapêutica desnecessária?',
+   guid:'Dois ou mais fármacos da mesma classe sem indicação para ambos (Ex: 2 BZDs, 2 AINEs).',
+   peso:1, iScore:1},
+  {n:9,  txt:'A duração do tratamento é aceitável?',
+   guid:'Tratamento por tempo indeterminado quando deveria ser temporário (Ex: IBP, BZD, corticoide).',
+   peso:1, iScore:1},
+  {n:10, txt:'Este é o tratamento menos custoso sem comprometer eficácia?',
+   guid:'Existe alternativa genérica equivalente? O custo é compatível com a condição do paciente?',
+   peso:1, iScore:1},
+];
+
+let _meds=[], _resps={}, _pid=null;
+
+function maiScore(medId){
+  const r=_resps[medId]||{};
+  return CRITERIOS.reduce((s,c)=>s+(r[c.n]==='I'?c.iScore:0),0);
+}
+function maiStatus(score){
+  if(score===0) return {lbl:'Apropriado',cls:'score-ok',cor:'#16a34a'};
+  if(score<=4)  return {lbl:'MAI '+score+' — inapropriado',cls:'score-inapr',cor:'#f97316'};
+  return {lbl:'MAI '+score+' — muito inapropriado',cls:'score-inapr',cor:'#dc2626'};
+}
+
+async function init(){
+  _pid=parseInt(document.getElementById('sel-pac').value)||null;
+  if(!_pid){document.getElementById('conteudo').innerHTML='';return;}
+  _meds=(await dbGetByIndex('medicamentos','pacienteId',_pid)||[]).filter(m=>m.ativo!==false&&m.ativo!==0);
+  const saved=await dbGetConfig('mai_'+_pid)||{};
+  _resps=saved.resps||{};
+  render();
+}
+
+function render(){
+  if(!_meds.length){
+    document.getElementById('conteudo').innerHTML=`<div class="empty">Nenhum medicamento ativo cadastrado.<br>Cadastre medicamentos em <a href="cadastro.html">Cadastro</a>.</div>`;
+    return;
+  }
+
+  const scores=_meds.map(m=>({med:m,score:maiScore(m.id)}));
+  const inapr=scores.filter(s=>s.score>0).length;
+  const totalMAI=scores.reduce((a,s)=>a+s.score,0);
+  const respondidos=_meds.filter(m=>{
+    const r=_resps[m.id]||{};
+    return Object.keys(r).length===10;
+  }).length;
+
+  let html=`<div class="sum-grid">
+    <div class="sum-card" style="border-top-color:#4a1d96">
+      <div class="sum-n" style="color:#4a1d96">${_meds.length}</div>
+      <div class="sum-lbl">Medicamentos</div>
+    </div>
+    <div class="sum-card" style="border-top-color:${inapr>0?'#dc2626':'#16a34a'}">
+      <div class="sum-n" style="color:${inapr>0?'#dc2626':'#16a34a'}">${inapr}</div>
+      <div class="sum-lbl">Inapropriados (MAI &gt;0)</div>
+    </div>
+    <div class="sum-card" style="border-top-color:#0369a1">
+      <div class="sum-n" style="color:#0369a1">${respondidos}/${_meds.length}</div>
+      <div class="sum-lbl">Avaliados completos</div>
+    </div>
+  </div>`;
+
+  scores.forEach((s,mi)=>{
+    const {lbl,cls,cor}=maiStatus(s.score);
+    const r=_resps[s.med.id]||{};
+    const nResp=Object.keys(r).length;
+    html+=`<div class="med-card">
+      <div class="med-header" style="border-left-color:${cor}" onclick="toggle(${mi})">
+        <div style="flex:1">
+          <div class="med-nome">${esc(s.med.nome||s.med.medicamento||'Medicamento')}</div>
+          <div class="med-dose">${esc(s.med.dose||'')} ${esc(s.med.frequencia||'')} · ${esc(s.med.indicacao||s.med.condicao||'')}</div>
+        </div>
+        <span class="mai-score ${nResp?cls:'score-nd'}">${nResp?lbl:'Pendente ('+nResp+'/10)'}</span>
+        <span class="expand-ico" id="ico-${mi}">▼</span>
+      </div>
+      <div class="med-body collapsed" id="body-${mi}">
+        ${CRITERIOS.map(c=>{
+          const v=r[c.n];
+          return `<div class="crit-item">
+            <div class="crit-n">Critério ${c.n} · Peso ${c.iScore}</div>
+            <div class="crit-txt">${esc(c.txt)}</div>
+            <div class="crit-guid">${esc(c.guid)}</div>
+            <div class="crit-btns">
+              <div class="crit-btn ${v==='A'?'sel-a':''}" onclick="setC('${s.med.id}',${c.n},'A',this)">✅ Apropriado</div>
+              <div class="crit-btn ${v==='I'?'sel-i':''}" onclick="setC('${s.med.id}',${c.n},'I',this)">❌ Inapropriado<span class="crit-peso">+${c.iScore} pts</span></div>
+              <div class="crit-btn ${v==='D'?'sel-d':''}" onclick="setC('${s.med.id}',${c.n},'D',this)">❔ Indeterminado</div>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>`;
+  });
+
+  html+=`<div class="ref-box">
+    <strong>Interpretação MAI por medicamento:</strong><br>
+    MAI = 0: Prescrição Apropriada &nbsp;·&nbsp; MAI &gt; 0: Prescrição Inapropriada<br>
+    (A = Apropriado = 0 pts; I = Inapropriado = peso do critério; D = Indeterminado = 0 pts)<br><br>
+    O MAI detecta inapropriação prescrição-a-prescrição (não por classe), complementando Critérios de Beers e STOPP.<br><br>
+    Hanlon JT et al. <em>J Clin Epidemiol</em>. 1992;45(10):1045-51 ·
+    Samsa GP et al. <em>J Am Geriatr Soc</em>. 1994;42:1017-25 (confiabilidade)
+  </div>`;
+
+  document.getElementById('conteudo').innerHTML=html;
+}
+
+function toggle(mi){
+  const b=document.getElementById('body-'+mi);
+  const i=document.getElementById('ico-'+mi);
+  b.classList.toggle('collapsed');
+  i.textContent=b.classList.contains('collapsed')?'▼':'▲';
+}
+
+function setC(medId,critN,val,btn){
+  if(!_resps[medId]) _resps[medId]={};
+  _resps[medId][critN]=val;
+  btn.closest('.crit-btns').querySelectorAll('.crit-btn').forEach(b=>b.className='crit-btn');
+  btn.classList.add(val==='A'?'sel-a':val==='I'?'sel-i':'sel-d');
+  // Atualiza badge do header
+  const score=maiScore(medId);
+  const {lbl,cls,cor}=maiStatus(score);
+  const mi=_meds.findIndex(m=>m.id===medId||m.id===parseInt(medId));
+  if(mi<0)return;
+  const header=document.getElementById('body-'+mi).previousElementSibling;
+  const badge=header.querySelector('.mai-score');
+  const nResp=Object.keys(_resps[medId]).length;
+  if(badge){badge.className='mai-score '+cls;badge.textContent=nResp===10?lbl:'Pendente ('+nResp+'/10)';}
+  header.style.borderLeftColor=cor;
+}
+
+async function salvarTudo(){
+  if(!_pid){showToast('Selecione um paciente');return;}
+  const scores=_meds.map(m=>({id:m.id,nome:m.nome||m.medicamento,score:maiScore(m.id)}));
+  const inapr=scores.filter(s=>s.score>0).length;
+  await dbSetConfig('mai_'+_pid,{resps:{..._resps},scores,inapr,data:hoje()});
+  showToast(`✅ MAI salvo — ${inapr} de ${_meds.length} medicamento(s) inapropriado(s)`);
+}
+
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+
+document.addEventListener('DOMContentLoaded',async()=>{
+  const pacs=await dbGetAll('pacientes');
+  const sel=document.getElementById('sel-pac');
+  sel.innerHTML='<option value="">Selecione o paciente...</option>'+pacs.map(p=>`<option value="${p.id}">${esc(p.nome||'Paciente '+p.id)}</option>`).join('');
+  const pid=getActivePacienteId();
+  if(pid){sel.value=pid;await init();}
+});
+</script>
+</body>
+</html>

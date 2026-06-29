@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>MEEM — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .topbar{display:flex;align-items:center;gap:10px;padding:12px 16px;background:#1e3a8a;position:sticky;top:0;z-index:100}
+    .back-btn{background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:8px;padding:6px 11px;cursor:pointer;font-size:1rem}
+    .topbar-title{font-size:.93rem;font-weight:800;color:#fff;flex:1}
+    .topbar-sub{font-size:.62rem;color:rgba(255,255,255,.7);margin-top:1px}
+    .btn-top{background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:8px;padding:7px 11px;font-size:.72rem;font-weight:700;cursor:pointer;margin-left:4px}
+    main{max-width:620px;margin:0 auto;padding:12px 14px 90px}
+    .pac-sel{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:12px;padding:11px 14px;font-size:.88rem;margin-bottom:10px;background:#fff}
+
+    .escol-row{display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap}
+    .escol-row label{font-size:.72rem;font-weight:700;color:#475569}
+    .escol-sel{border:1.5px solid #e2e8f0;border-radius:8px;padding:7px 10px;font-size:.78rem;background:#fff;flex:1}
+
+    /* Score hero */
+    .score-hero{border-radius:16px;padding:16px 20px;color:#fff;text-align:center;margin-bottom:12px;background:linear-gradient(135deg,#1e3a8a,#3b82f6)}
+    .sh-n{font-size:3.4rem;font-weight:900;line-height:1}
+    .sh-max{font-size:1rem;opacity:.7}
+    .sh-nivel{font-size:1rem;font-weight:800;margin-top:4px}
+    .sh-escol{font-size:.68rem;opacity:.75;margin-top:2px}
+    .sh-prog{height:8px;background:rgba(255,255,255,.2);border-radius:6px;margin-top:12px;overflow:hidden}
+    .sh-fill{height:100%;border-radius:6px;background:#fff;transition:width .4s}
+
+    /* Aviso autocuidado */
+    .aviso-autoger{display:none;background:#fef3c7;border:1.5px solid #fbbf24;border-radius:10px;padding:10px 12px;font-size:.75rem;color:#92400e;margin-bottom:10px;line-height:1.6}
+
+    /* Domínios */
+    .dom-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px}
+    .dom-card{background:#fff;border-radius:10px;padding:8px;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,.07);border-top:3px solid}
+    .dom-val{font-size:1.1rem;font-weight:900}
+    .dom-lbl{font-size:.58rem;font-weight:700;color:#64748b;text-transform:uppercase;margin-top:1px}
+
+    /* Seções */
+    .sec-card{background:#fff;border-radius:14px;padding:14px 16px;margin-bottom:8px;box-shadow:0 1px 4px rgba(0,0,0,.07);border-left:4px solid}
+    .sec-title{font-size:.8rem;font-weight:800;margin-bottom:3px}
+    .sec-pts{font-size:.65rem;color:#94a3b8;margin-bottom:10px}
+    .q-item{padding:8px 0;border-bottom:1px solid #f8fafc}
+    .q-item:last-child{border:none;padding-bottom:0}
+    .q-txt{font-size:.79rem;color:#1e293b;font-weight:500;line-height:1.4;margin-bottom:6px}
+    .q-sub{font-size:.67rem;color:#64748b;margin-bottom:6px;font-style:italic}
+    .q-btns{display:flex;gap:6px}
+    .q-btn{flex:1;padding:7px 4px;border-radius:8px;border:1.5px solid #e2e8f0;font-size:.73rem;font-weight:700;cursor:pointer;background:#f8fafc;text-align:center;transition:.12s}
+    .q-btn.ok{background:#dcfce7;border-color:#22c55e;color:#166534}
+    .q-btn.err{background:#fee2e2;border-color:#f87171;color:#991b1b}
+    .q-inp{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:8px;padding:7px 10px;font-size:.78rem;margin-bottom:4px}
+
+    /* Histórico */
+    .hist-card{background:#fff;border-radius:14px;padding:14px;margin-top:10px;box-shadow:0 1px 4px rgba(0,0,0,.07)}
+    .hist-title{font-size:.65rem;font-weight:800;color:#94a3b8;text-transform:uppercase;margin-bottom:10px}
+    svg.grafico{display:block;width:100%;overflow:visible}
+
+    /* Geriátrico integrado */
+    .geriat-strip{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px}
+    .geriat-mini{background:#fff;border-radius:10px;padding:10px 8px;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,.07);border-top:3px solid}
+    .gm-val{font-size:1rem;font-weight:900;color:#1e293b}
+    .gm-lbl{font-size:.6rem;font-weight:700;color:#64748b;text-transform:uppercase;margin-top:1px}
+    .gm-link{font-size:.6rem;color:#0369a1;cursor:pointer;text-decoration:underline}
+
+    .ref-box{background:#eff6ff;border:1.5px solid #bfdbfe;border-radius:10px;padding:10px 12px;font-size:.72rem;color:#1e3a8a;line-height:1.8;margin-top:8px}
+    @media print{.topbar,.pac-sel,.btn-top,nav,.q-btns{display:none!important}body{background:#fff}main{padding:0}}
+  </style>
+</head>
+<body>
+<div class="topbar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <div style="flex:1">
+    <div class="topbar-title">🧩 MEEM — Mini-Exame do Estado Mental</div>
+    <div class="topbar-sub">Rastreio cognitivo • 30 pontos</div>
+  </div>
+  <button class="btn-top" onclick="salvar()">💾</button>
+  <button class="btn-top" onclick="window.print()">🖨️</button>
+</div>
+<main>
+  <select class="pac-sel" id="sel-pac" onchange="init()"><option value="">Selecione o paciente...</option></select>
+
+  <div class="escol-row">
+    <label>Escolaridade do paciente:</label>
+    <select class="escol-sel" id="escolaridade" onchange="atualizarCutoff()">
+      <option value="0">Analfabeto (0 anos)</option>
+      <option value="2">1–3 anos de estudo</option>
+      <option value="5">4–7 anos de estudo</option>
+      <option value="9">8–11 anos de estudo</option>
+      <option value="12">Mais de 11 anos de estudo</option>
+    </select>
+  </div>
+
+  <div id="conteudo"></div>
+</main>
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+<script src="js/db.js"></script>
+<script src="js/utils.js"></script>
+<script>
+// Cutoffs Brucki et al., Arq Neuropsiquiatr. 2003;61(3B):777-81
+const CUTOFFS = {0:19, 2:23, 5:24, 9:26, 12:27};
+
+// Questões por seção
+// Formato: {id, txt, sub, pts, tipo: 'binario'|'multi'}
+const SECOES = [
+  {
+    id:'orient_tempo', lbl:'Orientação Temporal', cor:'#1e3a8a', maxPts:5,
+    itens:[
+      {id:'ano',   txt:'Em que ano estamos?',          pts:1},
+      {id:'estac', txt:'Em que estação do ano estamos?', pts:1},
+      {id:'mes',   txt:'Em que mês estamos?',          pts:1},
+      {id:'dia',   txt:'Qual é a data de hoje?',       pts:1},
+      {id:'dsem',  txt:'Qual é o dia da semana?',      pts:1},
+    ]
+  },
+  {
+    id:'orient_esp', lbl:'Orientação Espacial', cor:'#0369a1', maxPts:5,
+    itens:[
+      {id:'pais',    txt:'Em que país estamos?',           pts:1},
+      {id:'estado',  txt:'Em que estado estamos?',         pts:1},
+      {id:'cidade',  txt:'Em que cidade estamos?',         pts:1},
+      {id:'local',   txt:'Em que local estamos agora?',    pts:1},
+      {id:'andar',   txt:'Em que andar/setor estamos?',    pts:1},
+    ]
+  },
+  {
+    id:'registro', lbl:'Memória Imediata (Registro)', cor:'#7c3aed', maxPts:3,
+    intro:'Diga: "Vou citar 3 palavras. Quero que repita e memorize: CANECA — TIJOLO — TAPETE". Pontue 1 ponto por palavra repetida corretamente.',
+    itens:[
+      {id:'p1', txt:'CANECA — paciente repetiu corretamente?', pts:1},
+      {id:'p2', txt:'TIJOLO — paciente repetiu corretamente?', pts:1},
+      {id:'p3', txt:'TAPETE — paciente repetiu corretamente?', pts:1},
+    ]
+  },
+  {
+    id:'atencao', lbl:'Atenção e Cálculo', cor:'#0f766e', maxPts:5,
+    intro:'Método 1 (Serial 7): "Subtraia 7 de 100 e continue subtraindo de 7 em 7." Pontue 1 por resposta correta (93, 86, 79, 72, 65). OU Método 2 (MUNDO invertido): "Soletre MUNDO ao contrário." (O-D-N-U-M). Use apenas um método.',
+    itens:[
+      {id:'a1', txt:'1ª resposta correta (93 ou O)', pts:1},
+      {id:'a2', txt:'2ª resposta correta (86 ou D)', pts:1},
+      {id:'a3', txt:'3ª resposta correta (79 ou N)', pts:1},
+      {id:'a4', txt:'4ª resposta correta (72 ou U)', pts:1},
+      {id:'a5', txt:'5ª resposta correta (65 ou M)', pts:1},
+    ]
+  },
+  {
+    id:'evocacao', lbl:'Memória de Evocação', cor:'#b45309', maxPts:3,
+    intro:'"Quais eram as 3 palavras que pedi para você memorizar?"',
+    itens:[
+      {id:'e1', txt:'CANECA — paciente lembrou?', pts:1},
+      {id:'e2', txt:'TIJOLO — paciente lembrou?', pts:1},
+      {id:'e3', txt:'TAPETE — paciente lembrou?', pts:1},
+    ]
+  },
+  {
+    id:'linguagem', lbl:'Linguagem', cor:'#065f46', maxPts:8,
+    itens:[
+      {id:'l1', txt:'Nomeação: mostre um RELÓGIO — paciente nomeou corretamente?', pts:1},
+      {id:'l2', txt:'Nomeação: mostre uma CANETA — paciente nomeou corretamente?', pts:1},
+      {id:'l3', txt:'Repetição: "Nem aqui, nem ali, nem lá" — repetiu corretamente?', pts:1},
+      {id:'l4', txt:'Comando 3 etapas: "Pegue este papel com a mão direita, dobre-o ao meio e coloque no chão."', sub:'Pontue 1 por etapa: pegou (mão D), dobrou, colocou no chão.', pts:3, multi:true},
+      {id:'l5', txt:'Leitura: mostre "FECHE OS OLHOS" — paciente fechou os olhos?', pts:1},
+      {id:'l6', txt:'Escrita: paciente escreveu uma frase completa com sentido (sujeito + verbo)?', pts:1},
+    ]
+  },
+  {
+    id:'praxia', lbl:'Praxia Construtiva', cor:'#7c2d12', maxPts:1,
+    intro:'Mostre o desenho de dois pentágonos entrelaçados e peça ao paciente para copiá-lo. Pontue 1 se todos os ângulos estiverem preservados e os dois pentágonos se interceptarem.',
+    itens:[
+      {id:'pent', txt:'Paciente copiou corretamente os pentágonos entrelaçados?', pts:1},
+    ]
+  },
+];
+
+let _resps={}, _pid=null;
+
+function escolaridadeVal(){return parseInt(document.getElementById('escolaridade').value)||0;}
+function cutoff(){return CUTOFFS[escolaridadeVal()]||19;}
+
+function totalPts(){
+  let s=0;
+  SECOES.forEach(sec=>{
+    sec.itens.forEach(it=>{
+      const v=_resps[it.id];
+      if(it.multi) s+=(v||0);
+      else if(v===1) s+=it.pts;
+    });
+  });
+  return s;
+}
+function respondidos(){
+  let n=0;
+  SECOES.forEach(sec=>sec.itens.forEach(it=>{ if(_resps[it.id]!=null) n++; }));
+  return n;
+}
+function totalItens(){return SECOES.reduce((a,s)=>a+s.itens.length,0);}
+
+function nivel(t){
+  const ct=cutoff();
+  if(t>ct) return ['Normal para escolaridade','#16a34a'];
+  if(t>ct-5) return ['Comprometimento leve','#f97316'];
+  if(t>ct-15) return ['Comprometimento moderado','#dc2626'];
+  return ['Comprometimento grave','#991b1b'];
+}
+
+function atualizarCutoff(){
+  const ct=cutoff(), T=totalPts(), [niv,cor]=nivel(T);
+  const el=document.querySelector('.sh-nivel');
+  const el2=document.querySelector('.sh-escol');
+  if(el){el.textContent=niv;el.style.color='#fff';}
+  if(el2) el2.textContent='Cutoff: ≤'+ct+' = cognitivo comprometido';
+  const aviso=document.getElementById('aviso-autoger');
+  if(aviso) aviso.style.display=T<=ct?'block':'none';
+}
+
+function render(){
+  const T=totalPts(); const ct=cutoff(); const [niv]=nivel(T);
+
+  // Sub-scores por domínio
+  const dom={};
+  SECOES.forEach(sec=>{
+    let s=0;
+    sec.itens.forEach(it=>{
+      const v=_resps[it.id];
+      if(it.multi) s+=(v||0);
+      else if(v===1) s+=it.pts;
+    });
+    dom[sec.id]=s;
+  });
+
+  let html=`
+  <div class="score-hero">
+    <div class="sh-n">${T}<span class="sh-max">/30</span></div>
+    <div class="sh-nivel">${niv}</div>
+    <div class="sh-escol">Cutoff: ≤${ct} = cognitivo comprometido · ${respondidos()}/${totalItens()} itens</div>
+    <div class="sh-prog"><div class="sh-fill" style="width:${T/30*100}%"></div></div>
+  </div>
+
+  <div id="aviso-autoger" class="aviso-autoger" style="display:${T<=ct?'block':'none'}">
+    ⚠️ <strong>Atenção:</strong> Score MEEM ≤ cutoff para este nível de escolaridade.
+    Paciente pode ter dificuldade de autogerir o regime farmacoterapêutico — considere simplificação, cuidador e calendário posológico.
+    <a href="calendario-posologico.html" style="color:#92400e;font-weight:700">Abrir Calendário Posológico</a>
+  </div>
+
+  <div class="dom-grid">
+    <div class="dom-card" style="border-top-color:#1e3a8a"><div class="dom-val" style="color:#1e3a8a">${dom.orient_tempo||0}/5</div><div class="dom-lbl">Orient. Temporal</div></div>
+    <div class="dom-card" style="border-top-color:#0369a1"><div class="dom-val" style="color:#0369a1">${dom.orient_esp||0}/5</div><div class="dom-lbl">Orient. Espacial</div></div>
+    <div class="dom-card" style="border-top-color:#7c3aed"><div class="dom-val" style="color:#7c3aed">${dom.registro||0}/3</div><div class="dom-lbl">Memória Imediata</div></div>
+    <div class="dom-card" style="border-top-color:#0f766e"><div class="dom-val" style="color:#0f766e">${dom.atencao||0}/5</div><div class="dom-lbl">Atenção/Cálculo</div></div>
+    <div class="dom-card" style="border-top-color:#b45309"><div class="dom-val" style="color:#b45309">${dom.evocacao||0}/3</div><div class="dom-lbl">Evocação</div></div>
+    <div class="dom-card" style="border-top-color:#065f46"><div class="dom-val" style="color:#065f46">${dom.linguagem||0}/8</div><div class="dom-lbl">Linguagem</div></div>
+  </div>
+  <div id="geriat-div"></div>`;
+
+  SECOES.forEach(sec=>{
+    html+=`<div class="sec-card" style="border-left-color:${sec.cor}">
+      <div class="sec-title" style="color:${sec.cor}">${esc(sec.lbl)}</div>
+      <div class="sec-pts">${dom[sec.id]||0} / ${sec.maxPts} pts</div>
+      ${sec.intro?`<div style="font-size:.71rem;color:#64748b;margin-bottom:10px;line-height:1.5;border-left:3px solid ${sec.cor}12;padding-left:8px">${esc(sec.intro)}</div>`:''}`;
+    sec.itens.forEach(it=>{
+      if(it.multi){
+        // Comando 3 etapas — slider 0,1,2,3
+        const v=_resps[it.id]||0;
+        html+=`<div class="q-item">
+          <div class="q-txt">${esc(it.txt)}</div>
+          ${it.sub?`<div class="q-sub">${esc(it.sub)}</div>`:''}
+          <div style="display:flex;gap:6px">
+            ${[0,1,2,3].map(n=>`<div class="q-btn ${v===n?'ok':''}" style="${v===n?'':''}font-size:.7rem" onclick="setMulti('${it.id}',${n},this)">${n} etapa${n!==1?'s':''}</div>`).join('')}
+          </div>
+        </div>`;
+      } else {
+        const v=_resps[it.id];
+        html+=`<div class="q-item">
+          <div class="q-txt">${esc(it.txt)}</div>
+          ${it.sub?`<div class="q-sub">${esc(it.sub)}</div>`:''}
+          <div class="q-btns">
+            <div class="q-btn ${v===1?'ok':''}" onclick="setR('${it.id}',1,this)">✅ Correto (${it.pts} pt${it.pts>1?'s':''})</div>
+            <div class="q-btn ${v===0?'err':''}" onclick="setR('${it.id}',0,this)">❌ Incorreto (0 pts)</div>
+          </div>
+        </div>`;
+      }
+    });
+    html+=`</div>`;
+  });
+
+  html+=`<div id="hist-div"></div>
+  <div class="ref-box">
+    <strong>Interpretação:</strong> Normal para escolaridade | ≤cutoff: comprometimento cognitivo<br>
+    Cutoffs por escolaridade (Brucki et al., 2003): Analfabeto ≤19 · 1–3 anos ≤23 · 4–7 anos ≤24 · 8–11 anos ≤26 · &gt;11 anos ≤27<br><br>
+    Folstein MF, Folstein SE, McHugh PR. <em>J Psychiatr Res</em>. 1975;12:189-98<br>
+    Brucki SMD et al. <em>Arq Neuropsiquiatr</em>. 2003;61(3B):777-81 (validação brasileira)
+  </div>`;
+
+  document.getElementById('conteudo').innerHTML=html;
+  carregarGeriatrico();
+  carregarHistorico();
+}
+
+function setR(id,val,btn){
+  _resps[id]=val;
+  btn.closest('.q-btns').querySelectorAll('.q-btn').forEach(b=>{b.classList.remove('ok','err');});
+  btn.classList.add(val===1?'ok':'err');
+  atualizarScore();
+}
+function setMulti(id,val,btn){
+  _resps[id]=val;
+  btn.closest('div').querySelectorAll('.q-btn').forEach(b=>b.classList.remove('ok'));
+  btn.classList.add('ok');
+  atualizarScore();
+}
+function atualizarScore(){
+  const T=totalPts(), ct=cutoff(); const [niv]=nivel(T);
+  document.querySelector('.sh-n').innerHTML=T+'<span class="sh-max">/30</span>';
+  document.querySelector('.sh-nivel').textContent=niv;
+  document.querySelector('.sh-escol').textContent='Cutoff: ≤'+ct+' = cognitivo comprometido · '+respondidos()+'/'+totalItens()+' itens';
+  document.querySelector('.sh-fill').style.width=(T/30*100)+'%';
+  const av=document.getElementById('aviso-autoger');
+  if(av) av.style.display=T<=ct?'block':'none';
+  // Dom
+  const doms=document.querySelectorAll('.dom-val');
+  SECOES.forEach((sec,i)=>{
+    let s=0;
+    sec.itens.forEach(it=>{const v=_resps[it.id];if(it.multi)s+=(v||0);else if(v===1)s+=it.pts;});
+    if(doms[i]) doms[i].textContent=s+'/'+sec.maxPts;
+  });
+}
+
+async function carregarGeriatrico(){
+  if(!_pid)return;
+  const [frail,morse,sarc,barthel]=await Promise.all([
+    dbGetConfig('frail_'+_pid),dbGetConfig('morse_'+_pid),
+    dbGetConfig('sarcf_hist_'+_pid),dbGetConfig('barthel_hist_'+_pid)
+  ]);
+  const items=[];
+  if(frail) items.push({cor:'#f97316',val:frail.score+'/5',lbl:'FRAIL',url:'escala-fragilidade.html'});
+  if(morse) items.push({cor:'#dc2626',val:morse.score+'/125',lbl:'Morse',url:'risco-queda.html'});
+  if(sarc?.length) items.push({cor:'#b45309',val:sarc.at(-1).total+'/10',lbl:'SARC-F',url:'sarcf.html'});
+  if(barthel?.length) items.push({cor:'#065f46',val:barthel.at(-1).total+'/100',lbl:'Barthel',url:'barthel.html'});
+  const el=document.getElementById('geriat-div');
+  if(!el||!items.length) return;
+  el.innerHTML=`<div class="geriat-strip">${items.map(i=>`
+    <div class="geriat-mini" style="border-top-color:${i.cor}">
+      <div class="gm-val" style="color:${i.cor}">${i.val}</div>
+      <div class="gm-lbl">${i.lbl}</div>
+      <div class="gm-link" onclick="location.href='${i.url}'">> abrir</div>
+    </div>`).join('')}
+  </div>`;
+}
+
+async function carregarHistorico(){
+  if(!_pid)return;
+  const hist=await dbGetConfig('meem_hist_'+_pid)||[];
+  const el=document.getElementById('hist-div');
+  if(!hist.length){el.innerHTML='';return;}
+  const W=500,H=90,px=30,py=10;
+  const vals=hist.map(h=>h.total);
+  const sx=i=>px+(W-2*px)*i/(Math.max(hist.length-1,1));
+  const sy=v=>py+(H-2*py)*(1-v/30);
+  const pts=hist.map((h,i)=>`${sx(i)},${sy(h.total)}`).join(' ');
+  const fill=`${sx(0)},${H-py} ${pts} ${sx(hist.length-1)},${H-py}`;
+  el.innerHTML=`<div class="hist-card">
+    <div class="hist-title">Evolução MEEM</div>
+    <svg class="grafico" viewBox="0 0 ${W} ${H}">
+      <polygon points="${fill}" fill="#1e3a8a" opacity=".1"/>
+      <polyline points="${pts}" fill="none" stroke="#1e3a8a" stroke-width="2.5" stroke-linejoin="round"/>
+      ${hist.map((h,i)=>{
+        const x=sx(i),y=sy(h.total);
+        const ct=CUTOFFS[h.escol]||19;
+        const cor=h.total>ct?'#16a34a':'#dc2626';
+        return `<circle cx="${x}" cy="${y}" r="5" fill="${cor}" stroke="white" stroke-width="1.5"/>
+                <text x="${x}" y="${y-8}" text-anchor="middle" font-size="10" fill="${cor}" font-weight="800">${h.total}</text>
+                <text x="${x}" y="${H-1}" text-anchor="middle" font-size="8" fill="#94a3b8">${(h.data||'').slice(5).split('-').join('/')}</text>`;
+      }).join('')}
+    </svg>
+  </div>`;
+}
+
+async function init(){
+  _pid=parseInt(document.getElementById('sel-pac').value)||null;
+  if(!_pid){document.getElementById('conteudo').innerHTML='';return;}
+  const saved=await dbGetConfig('meem_'+_pid)||{};
+  _resps=saved.resps||{};
+  if(saved.escol!=null) document.getElementById('escolaridade').value=saved.escol;
+  render();
+}
+
+async function salvar(){
+  if(!_pid){showToast('Selecione um paciente');return;}
+  const T=totalPts(); const ct=cutoff(); const [niv]=nivel(T);
+  const escol=escolaridadeVal();
+  await dbSetConfig('meem_'+_pid,{resps:{..._resps},total:T,nivel:niv,cutoff:ct,escol,data:hoje()});
+  const hist=await dbGetConfig('meem_hist_'+_pid)||[];
+  hist.push({data:hoje(),total:T,nivel:niv,cutoff:ct,escol});
+  await dbSetConfig('meem_hist_'+_pid,hist);
+  showToast('✅ MEEM: '+T+'/30 — '+niv);
+  await carregarHistorico();
+}
+
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+
+document.addEventListener('DOMContentLoaded',async()=>{
+  const pacs=await dbGetAll('pacientes');
+  const sel=document.getElementById('sel-pac');
+  sel.innerHTML='<option value="">Selecione o paciente...</option>'+pacs.map(p=>`<option value="${p.id}">${esc(p.nome||'Paciente '+p.id)}</option>`).join('');
+  const pid=getActivePacienteId();
+  if(pid){sel.value=pid;await init();}
+});
+</script>
+</body>
+</html>

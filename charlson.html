@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>Índice de Charlson — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .topbar{display:flex;align-items:center;gap:10px;padding:12px 16px;background:#134e4a;position:sticky;top:0;z-index:100}
+    .back-btn{background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:8px;padding:6px 11px;cursor:pointer;font-size:1rem}
+    .topbar-title{font-size:.93rem;font-weight:800;color:#fff;flex:1}
+    .topbar-sub{font-size:.62rem;color:rgba(255,255,255,.7);margin-top:1px}
+    .btn-top{background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:8px;padding:7px 11px;font-size:.72rem;font-weight:700;cursor:pointer;margin-left:4px}
+    main{max-width:620px;margin:0 auto;padding:12px 14px 90px}
+    .pac-sel{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:12px;padding:11px 14px;font-size:.88rem;margin-bottom:10px;background:#fff}
+
+    /* Score hero */
+    .score-hero{border-radius:16px;padding:16px 20px;color:#fff;text-align:center;margin-bottom:12px}
+    .sh-n{font-size:3.4rem;font-weight:900;line-height:1}
+    .sh-nivel{font-size:.95rem;font-weight:800;margin-top:4px}
+    .sh-mort{font-size:.72rem;opacity:.85;margin-top:3px}
+    .sh-prog{height:8px;background:rgba(255,255,255,.2);border-radius:6px;margin-top:12px;overflow:hidden}
+    .sh-fill{height:100%;border-radius:6px;background:#fff;transition:width .4s}
+
+    /* Idade */
+    .idade-row{background:#fff;border-radius:12px;padding:12px 14px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.07);display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+    .idade-row label{font-size:.73rem;font-weight:700;color:#475569}
+    .idade-inp{border:1.5px solid #e2e8f0;border-radius:8px;padding:7px 10px;font-size:.9rem;width:80px;text-align:center}
+    .idade-adj{font-size:.73rem;color:#64748b;margin-left:8px}
+    .idade-pts{font-size:.9rem;font-weight:800;color:#134e4a;margin-left:4px}
+
+    /* Seção */
+    .sec-hdr{font-size:.65rem;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.05em;margin:14px 0 6px;padding:0 2px}
+    .cond-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:4px}
+    @media(min-width:480px){.cond-grid{grid-template-columns:repeat(2,1fr)}}
+    .cond-btn{background:#fff;border:1.5px solid #e2e8f0;border-radius:10px;padding:10px 12px;cursor:pointer;transition:.15s;display:flex;align-items:center;gap:8px;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+    .cond-btn:hover{border-color:#5eead4}
+    .cond-btn.ativa{border-color:#0d9488;background:#f0fdfa}
+    .cond-nome{font-size:.77rem;font-weight:600;color:#1e293b;flex:1;line-height:1.3}
+    .cond-btn.ativa .cond-nome{color:#134e4a;font-weight:800}
+    .cond-peso{font-size:.65rem;font-weight:800;background:#f1f5f9;color:#64748b;padding:2px 7px;border-radius:20px;white-space:nowrap}
+    .cond-btn.ativa .cond-peso{background:#ccfbf1;color:#0f766e}
+
+    /* Mortalidade */
+    .mort-card{background:#fff;border-radius:14px;padding:14px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.07)}
+    .mort-title{font-size:.73rem;font-weight:800;color:#475569;margin-bottom:10px}
+    .mort-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid #f8fafc;font-size:.78rem}
+    .mort-row:last-child{border:none}
+    .mort-pct{font-weight:900;font-size:.92rem}
+    .prog-bar{height:8px;background:#f1f5f9;border-radius:6px;overflow:hidden;flex:1;margin:0 12px}
+    .prog-fill{height:100%;border-radius:6px}
+
+    /* Histórico */
+    .hist-card{background:#fff;border-radius:14px;padding:14px;margin-top:10px;box-shadow:0 1px 4px rgba(0,0,0,.07)}
+    .hist-title{font-size:.65rem;font-weight:800;color:#94a3b8;text-transform:uppercase;margin-bottom:10px}
+    .hist-row{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid #f8fafc;font-size:.76rem}
+    .hist-row:last-child{border:none}
+
+    .ref-box{background:#f0fdfa;border:1.5px solid #99f6e4;border-radius:10px;padding:10px 12px;font-size:.72rem;color:#134e4a;line-height:1.8;margin-top:8px}
+    @media print{.topbar,.pac-sel,.btn-top,nav{display:none!important}body{background:#fff}main{padding:0}}
+  </style>
+</head>
+<body>
+<div class="topbar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <div style="flex:1">
+    <div class="topbar-title">🏥 Índice de Charlson</div>
+    <div class="topbar-sub">Comorbidades e predição de mortalidade</div>
+  </div>
+  <button class="btn-top" onclick="salvar()">💾</button>
+  <button class="btn-top" onclick="window.print()">🖨️</button>
+</div>
+<main>
+  <select class="pac-sel" id="sel-pac" onchange="init()"><option value="">Selecione o paciente...</option></select>
+  <div id="conteudo"></div>
+</main>
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+<script src="js/db.js"></script>
+<script src="js/utils.js"></script>
+<script>
+// Índice de Charlson — Charlson ME et al., J Chronic Dis. 1987;40(5):373-83
+// Atualizado: Quan H et al., Med Care. 2011;49(6):e49-75
+const CONDICOES = [
+  // Peso 1
+  {id:'im',   nome:'Infarto agudo do miocárdio (IAM)',    peso:1, cat:'Cardiovascular'},
+  {id:'icc',  nome:'Insuficiência cardíaca congestiva',   peso:1, cat:'Cardiovascular'},
+  {id:'dpoc', nome:'DPOC / Doença pulmonar crônica',      peso:1, cat:'Pulmonar'},
+  {id:'dcp',  nome:'Doença cerebrovascular (AVC/AIT)',    peso:1, cat:'Neurológico'},
+  {id:'dvp',  nome:'Doença vascular periférica',          peso:1, cat:'Cardiovascular'},
+  {id:'dem',  nome:'Demência',                            peso:1, cat:'Neurológico'},
+  {id:'tco',  nome:'Doença do tecido conjuntivo',         peso:1, cat:'Reumatológico'},
+  {id:'dup',  nome:'Doença ulcerosa péptica',             peso:1, cat:'Gastrointestinal'},
+  {id:'dhl',  nome:'Doença hepática leve (sem hipertensão portal)', peso:1, cat:'Hepático'},
+  {id:'dms',  nome:'Diabetes mellitus sem complicações tardias', peso:1, cat:'Endócrino'},
+  // Peso 2
+  {id:'hemi', nome:'Hemiplegia ou paraplegia',            peso:2, cat:'Neurológico'},
+  {id:'drc',  nome:'DRC moderada/grave (Cr ≥3 mg/dL ou diálise)', peso:2, cat:'Renal'},
+  {id:'dmc',  nome:'Diabetes mellitus com complicações (nefro, retino, neuro)', peso:2, cat:'Endócrino'},
+  {id:'neo',  nome:'Neoplasia sólida sem metástase (últimos 5 anos)', peso:2, cat:'Oncológico'},
+  {id:'leuc', nome:'Leucemia (aguda ou crônica)',         peso:2, cat:'Oncológico'},
+  {id:'linf', nome:'Linfoma',                             peso:2, cat:'Oncológico'},
+  // Peso 3
+  {id:'dhm',  nome:'Doença hepática moderada/grave (cirrose com hipertensão portal)', peso:3, cat:'Hepático'},
+  // Peso 6
+  {id:'meta', nome:'Neoplasia sólida com metástase',      peso:6, cat:'Oncológico'},
+  {id:'aids', nome:'AIDS (não apenas HIV+)',              peso:6, cat:'Infeccioso'},
+];
+
+const CATS = [...new Set(CONDICOES.map(c=>c.cat))];
+
+// Mortalidade 10 anos (Charlson 1987, Deyo 1992)
+function mortTabela(score){
+  const t=[
+    {score:0,  mort10:'12%', mort1:'~1%',  cor:'#16a34a'},
+    {score:1,  mort10:'26%', mort1:'~3%',  cor:'#65a30d'},
+    {score:2,  mort10:'52%', mort1:'~6%',  cor:'#d97706'},
+    {score:3,  mort10:'85%', mort1:'~14%', cor:'#dc2626'},
+    {score:4,  mort10:'>85%',mort1:'~26%', cor:'#991b1b'},
+    {score:5,  mort10:'>85%',mort1:'~35%', cor:'#7f1d1d'},
+  ];
+  const idx=Math.min(score,5);
+  return t[idx];
+}
+function nivel(score){
+  if(score===0) return ['Baixo risco','#16a34a'];
+  if(score<=2)  return ['Risco moderado','#d97706'];
+  if(score<=4)  return ['Risco alto','#dc2626'];
+  return ['Risco muito alto','#991b1b'];
+}
+function corHero(score){
+  if(score===0)  return 'linear-gradient(135deg,#134e4a,#0d9488)';
+  if(score<=2)   return 'linear-gradient(135deg,#78350f,#d97706)';
+  if(score<=4)   return 'linear-gradient(135deg,#9a3412,#dc2626)';
+  return 'linear-gradient(135deg,#450a0a,#991b1b)';
+}
+
+let _ativas=new Set(), _idade=null, _pid=null;
+
+function scoreCond(){return [..._ativas].reduce((s,id)=>{const c=CONDICOES.find(x=>x.id===id);return s+(c?c.peso:0);},0);}
+function scoreIdade(){
+  const a=parseInt(_idade)||0;
+  if(a<40) return 0;
+  return Math.floor((a-31)/10)-Math.floor(31/10); // +1 por década > 40
+  // Simplificado: 40-49=+1, 50-59=+2, 60-69=+3, 70-79=+4, 80+=+5
+}
+function scoreIdadeCorreto(){
+  const a=parseInt(_idade)||0;
+  if(a<40) return 0;
+  if(a<50) return 1;
+  if(a<60) return 2;
+  if(a<70) return 3;
+  if(a<80) return 4;
+  return 5;
+}
+function totalScore(){return scoreCond()+scoreIdadeCorreto();}
+
+function render(){
+  const Tc=scoreCond(), Ti=scoreIdadeCorreto(), T=Tc+Ti;
+  const [niv,corNiv]=nivel(T);
+  const mort=mortTabela(T);
+
+  let html=`
+  <div class="score-hero" style="background:${corHero(T)}">
+    <div class="sh-n">${T}</div>
+    <div class="sh-nivel">${niv}</div>
+    <div class="sh-mort">Mortalidade estimada em 10 anos: ${mort.mort10} &nbsp;·&nbsp; 1 ano: ${mort.mort1}</div>
+    <div class="sh-prog"><div class="sh-fill" style="width:${Math.min(T/10*100,100)}%"></div></div>
+  </div>
+
+  <div class="idade-row">
+    <label>Idade do paciente:</label>
+    <input type="number" class="idade-inp" id="idade-inp" value="${_idade||''}" placeholder="anos" min="0" max="120" onchange="atualizarIdade(this.value)">
+    <span class="idade-adj">(ajuste por idade: <span class="idade-pts">+${Ti} pts</span>)</span>
+  </div>
+
+  <div class="mort-card">
+    <div class="mort-title">Predição de mortalidade — Score ${T} (comorbidade ${Tc} + idade ${Ti})</div>
+    <div class="mort-row">
+      <span style="width:90px">Mortalidade 1 ano</span>
+      <div class="prog-bar"><div class="prog-fill" style="background:${corNiv};width:${parseFloat(mort.mort1)||5}%"></div></div>
+      <span class="mort-pct" style="color:${corNiv}">${mort.mort1}</span>
+    </div>
+    <div class="mort-row">
+      <span style="width:90px">Mortalidade 10 anos</span>
+      <div class="prog-bar"><div class="prog-fill" style="background:${corNiv};width:${parseFloat(mort.mort10)||12}%"></div></div>
+      <span class="mort-pct" style="color:${corNiv}">${mort.mort10}</span>
+    </div>
+  </div>`;
+
+  // Agrupado por categoria e peso
+  const pesos=[1,2,3,6];
+  pesos.forEach(p=>{
+    const grupo=CONDICOES.filter(c=>c.peso===p);
+    if(!grupo.length) return;
+    html+=`<div class="sec-hdr">Peso ${p} — ${p===1?'1 ponto':p===2?'2 pontos':p===3?'3 pontos':'6 pontos'}</div>
+    <div class="cond-grid">
+      ${grupo.map(c=>`
+        <div class="cond-btn ${_ativas.has(c.id)?'ativa':''}" onclick="toggleCond('${c.id}')">
+          <span class="cond-nome">${esc(c.nome)}</span>
+          <span class="cond-peso">+${c.peso}</span>
+        </div>`).join('')}
+    </div>`;
+  });
+
+  html+=`<div id="hist-div"></div>
+  <div class="ref-box">
+    <strong>Interpretação do Índice de Charlson com ajuste de idade:</strong><br>
+    Score 0: mortalidade 10 anos ~12% &nbsp;·&nbsp; Score 1: ~26% &nbsp;·&nbsp; Score 2: ~52% &nbsp;·&nbsp; Score ≥3: ~85%<br>
+    Ajuste de idade: +1 ponto por cada década de vida acima de 40 anos (40–49: +1, 50–59: +2, 60–69: +3, etc.)<br><br>
+    Charlson ME et al. <em>J Chronic Dis</em>. 1987;40(5):373-83 (original)<br>
+    Quan H et al. <em>Med Care</em>. 2011;49(6):e49-75 (atualização ICD-10)<br>
+    Deyo RA et al. <em>J Clin Epidemiol</em>. 1992;45(6):613-9 (versão adaptada)
+  </div>`;
+
+  document.getElementById('conteudo').innerHTML=html;
+  carregarHistorico();
+}
+
+function toggleCond(id){
+  if(_ativas.has(id)) _ativas.delete(id); else _ativas.add(id);
+  atualizarScore();
+  document.querySelector(`[onclick="toggleCond('${id}')"]`).classList.toggle('ativa');
+}
+
+function atualizarIdade(v){
+  _idade=parseInt(v)||null;
+  atualizarScore();
+}
+
+function atualizarScore(){
+  const T=totalScore(), Tc=scoreCond(), Ti=scoreIdadeCorreto();
+  const [niv,corNiv]=nivel(T); const mort=mortTabela(T);
+  const hero=document.querySelector('.score-hero');
+  if(hero){
+    hero.style.background=corHero(T);
+    hero.querySelector('.sh-n').textContent=T;
+    hero.querySelector('.sh-nivel').textContent=niv;
+    hero.querySelector('.sh-mort').textContent='Mortalidade estimada em 10 anos: '+mort.mort10+' · 1 ano: '+mort.mort1;
+    hero.querySelector('.sh-fill').style.width=Math.min(T/10*100,100)+'%';
+  }
+  const adjEl=document.querySelector('.idade-pts');
+  if(adjEl) adjEl.textContent='+'+Ti+' pts';
+  // Mortalidade
+  const mortTtl=document.querySelector('.mort-title');
+  if(mortTtl) mortTtl.textContent=`Predição de mortalidade — Score ${T} (comorbidade ${Tc} + idade ${Ti})`;
+  const mortFills=document.querySelectorAll('.prog-fill');
+  const mortPcts=document.querySelectorAll('.mort-pct');
+  if(mortFills[0]){mortFills[0].style.background=corNiv;mortFills[0].style.width=(parseFloat(mort.mort1)||5)+'%';}
+  if(mortFills[1]){mortFills[1].style.background=corNiv;mortFills[1].style.width=(parseFloat(mort.mort10)||12)+'%';}
+  if(mortPcts[0]){mortPcts[0].textContent=mort.mort1;mortPcts[0].style.color=corNiv;}
+  if(mortPcts[1]){mortPcts[1].textContent=mort.mort10;mortPcts[1].style.color=corNiv;}
+}
+
+async function carregarHistorico(){
+  if(!_pid)return;
+  const hist=await dbGetConfig('charlson_hist_'+_pid)||[];
+  const el=document.getElementById('hist-div');
+  if(!hist.length){el.innerHTML='';return;}
+  el.innerHTML=`<div class="hist-card">
+    <div class="hist-title">Histórico</div>
+    ${hist.slice().reverse().map(h=>{
+      const [niv,cor]=nivel(h.total);
+      return `<div class="hist-row">
+        <span style="color:#64748b;flex:1">${(h.data||'').split('-').reverse().join('/')}</span>
+        <span>Score: <strong style="color:${cor}">${h.total}</strong> (${h.cond} comorb. + ${h.idade} idade)</span>
+        <span style="margin-left:8px;font-size:.68rem;color:${cor}">${niv}</span>
+      </div>`;
+    }).join('')}
+  </div>`;
+}
+
+async function init(){
+  _pid=parseInt(document.getElementById('sel-pac').value)||null;
+  if(!_pid){document.getElementById('conteudo').innerHTML='';return;}
+  const saved=await dbGetConfig('charlson_'+_pid)||{};
+  _ativas=new Set(saved.ativas||[]);
+  _idade=saved.idade||null;
+  // Tenta carregar idade do perfil do paciente
+  if(!_idade){
+    const pac=await dbGet('pacientes',_pid);
+    if(pac?.dataNascimento){
+      const nasc=new Date(pac.dataNascimento);
+      const hoje2=new Date();
+      _idade=hoje2.getFullYear()-nasc.getFullYear();
+    }
+  }
+  render();
+  if(_idade){const el=document.getElementById('idade-inp');if(el)el.value=_idade;}
+}
+
+async function salvar(){
+  if(!_pid){showToast('Selecione um paciente');return;}
+  const T=totalScore(), Tc=scoreCond(), Ti=scoreIdadeCorreto();
+  const [niv]=nivel(T); const mort=mortTabela(T);
+  await dbSetConfig('charlson_'+_pid,{ativas:[..._ativas],total:T,cond:Tc,idadeAdj:Ti,nivel:niv,mort10:mort.mort10,idade:_idade,data:hoje()});
+  const hist=await dbGetConfig('charlson_hist_'+_pid)||[];
+  hist.push({data:hoje(),total:T,cond:Tc,idade:Ti,nivel:niv,mort10:mort.mort10});
+  await dbSetConfig('charlson_hist_'+_pid,hist);
+  showToast('✅ Charlson: '+T+' pts — '+niv+' · Mort. 10 anos: '+mort.mort10);
+  carregarHistorico();
+}
+
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+
+document.addEventListener('DOMContentLoaded',async()=>{
+  const pacs=await dbGetAll('pacientes');
+  const sel=document.getElementById('sel-pac');
+  sel.innerHTML='<option value="">Selecione o paciente...</option>'+pacs.map(p=>`<option value="${p.id}">${esc(p.nome||'Paciente '+p.id)}</option>`).join('');
+  const pid=getActivePacienteId();
+  if(pid){sel.value=pid;await init();}
+});
+</script>
+</body>
+</html>
