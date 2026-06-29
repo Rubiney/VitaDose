@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>KPIs do Serviço — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .topbar{display:flex;align-items:center;gap:10px;padding:12px 16px;background:#1e3a5f;position:sticky;top:0;z-index:100}
+    .back-btn{background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:8px;padding:6px 11px;cursor:pointer;font-size:1rem}
+    .topbar-title{font-size:.93rem;font-weight:800;color:#fff;flex:1}
+    .topbar-sub{font-size:.62rem;color:rgba(255,255,255,.7);margin-top:1px}
+    .btn-top{background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:8px;padding:7px 11px;font-size:.72rem;font-weight:700;cursor:pointer;margin-left:4px}
+    main{max-width:680px;margin:0 auto;padding:12px 14px 90px}
+
+    /* Header do painel */
+    .painel-header{background:linear-gradient(135deg,#1e3a5f,#0f172a);border-radius:16px;padding:16px 20px;margin-bottom:14px;color:#fff}
+    .ph-title{font-size:1.1rem;font-weight:900}
+    .ph-sub{font-size:.72rem;opacity:.7;margin-top:3px}
+    .ph-stats{display:flex;gap:12px;margin-top:12px;flex-wrap:wrap}
+    .ph-stat{background:rgba(255,255,255,.1);border-radius:10px;padding:8px 12px;text-align:center;flex:1;min-width:70px}
+    .ph-stat-n{font-size:1.4rem;font-weight:900}
+    .ph-stat-l{font-size:.6rem;opacity:.75;font-weight:700;text-transform:uppercase;margin-top:2px}
+
+    /* KPI Card */
+    .kpi-section{margin-bottom:16px}
+    .sec-title{font-size:.65rem;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;padding-left:4px}
+    .kpi-card{background:#fff;border-radius:14px;padding:14px 16px;margin-bottom:8px;box-shadow:0 1px 4px rgba(0,0,0,.08);display:flex;align-items:center;gap:12px}
+    .kpi-icon{font-size:1.8rem;width:40px;text-align:center;flex-shrink:0}
+    .kpi-body{flex:1;min-width:0}
+    .kpi-nm{font-size:.83rem;font-weight:700;color:#1e293b;margin-bottom:2px}
+    .kpi-meta{font-size:.65rem;color:#94a3b8;margin-bottom:6px}
+    .kpi-barra{height:8px;background:#f1f5f9;border-radius:4px;overflow:hidden}
+    .kpi-fill{height:100%;border-radius:4px;transition:width .5s}
+    .kpi-ref{font-size:.62rem;margin-top:4px;display:flex;justify-content:space-between;color:#94a3b8}
+    .kpi-right{text-align:right;flex-shrink:0;min-width:70px}
+    .kpi-val{font-size:1.5rem;font-weight:900}
+    .kpi-badge{font-size:.62rem;font-weight:800;border-radius:6px;padding:2px 7px;display:inline-block;margin-top:3px}
+    .badge-green{background:#dcfce7;color:#166534}
+    .badge-yellow{background:#fef3c7;color:#92400e}
+    .badge-red{background:#fee2e2;color:#991b1b}
+    .badge-gray{background:#f1f5f9;color:#64748b}
+
+    /* Tabela para TCC */
+    .tcc-card{background:#fff;border-radius:14px;padding:14px 16px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.07)}
+    .tcc-title{font-size:.65rem;font-weight:800;color:#94a3b8;text-transform:uppercase;margin-bottom:12px}
+    table.tcc{width:100%;border-collapse:collapse;font-size:.76rem}
+    table.tcc th{background:#f8fafc;padding:8px 10px;text-align:left;font-size:.63rem;font-weight:800;color:#64748b;text-transform:uppercase;border-bottom:2px solid #f1f5f9}
+    table.tcc td{padding:8px 10px;border-bottom:1px solid #f8fafc;color:#1e293b}
+    table.tcc tr:last-child td{border:none}
+    .status-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px}
+    .dot-green{background:#22c55e}.dot-yellow{background:#f59e0b}.dot-red{background:#ef4444}
+
+    .ref-box{background:#f0f9ff;border:1.5px solid #bae6fd;border-radius:10px;padding:10px 12px;font-size:.73rem;color:#0369a1;line-height:1.8;margin-top:10px}
+    .loading{text-align:center;padding:40px;color:#94a3b8}
+    @media print{.topbar,.btn-top,nav{display:none!important}body{background:#fff}main{padding:0;max-width:none}}
+  </style>
+</head>
+<body>
+<div class="topbar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <div style="flex:1">
+    <div class="topbar-title">🎯 KPIs do Serviço Farmacêutico</div>
+    <div class="topbar-sub">Indicadores de qualidade com metas da literatura</div>
+  </div>
+  <button class="btn-top" onclick="window.print()">🖨️</button>
+  <button class="btn-top" onclick="init()">↻</button>
+</div>
+<main>
+  <div class="loading" id="loading">⏳ Calculando indicadores...</div>
+  <div id="conteudo" style="display:none"></div>
+</main>
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+<script src="js/db.js"></script>
+<script src="js/utils.js"></script>
+<script>
+async function init(){
+  document.getElementById('loading').style.display='block';
+  document.getElementById('conteudo').style.display='none';
+  const pacs=await dbGetAll('pacientes');
+  if(!pacs.length){document.getElementById('loading').textContent='Nenhum paciente cadastrado.';return;}
+
+  // Carrega todos os dados em paralelo
+  const dados=await Promise.all(pacs.map(async p=>{
+    const pid=p.id;
+    const [ints,plano,soaps,mmas8Hist,letHist,mrciHist,rams,eq5dHist]=await Promise.all([
+      dbGetConfig('sft_int_'+pid),
+      dbGetConfig('plano_cuidados_'+pid),
+      dbGetConfig('soap_'+pid),
+      dbGetConfig('mmas8_hist_'+pid),
+      dbGetConfig('letramento_hist_'+pid),
+      dbGetConfig('mrci_hist_'+pid),
+      dbGetConfig('ram_'+pid),
+      dbGetConfig('eq5d_hist_'+pid),
+    ]);
+    const allMedsP=await dbGetByIndex('medicamentos','pacienteId',pid);
+    return {pac:p,pid,ints:ints||[],probs:(plano?.problemas)||[],soaps:soaps||[],
+      mmas8Hist:mmas8Hist||[],letHist:letHist||[],mrciHist:mrciHist||[],
+      rams:rams||[],eq5dHist:eq5dHist||[],meds:allMedsP||[]};
+  }));
+
+  // ── KPI 1: Taxa de Aceitação de Intervenções (meta ≥70%)
+  const todasInts=dados.flatMap(d=>d.ints);
+  const intsComResult=todasInts.filter(i=>i.resultado||i.result);
+  const intsAceitas=intsComResult.filter(i=>(i.resultado||i.result)==='aceita'||i.result==='aceita');
+  const txAceit=intsComResult.length?Math.round(intsAceitas.length/intsComResult.length*100):null;
+
+  // ── KPI 2: Taxa de Resolução de PRMs (meta ≥60%)
+  const todosProbs=dados.flatMap(d=>d.probs);
+  const probsComDesfecho=todosProbs.filter(p=>p.desfecho);
+  const probsResolvidos=probsComDesfecho.filter(p=>p.desfecho==='Resolvido');
+  const txResol=todosProbs.length?Math.round(probsResolvidos.length/todosProbs.length*100):null;
+
+  // ── KPI 3: Proporção com alta aderência MMAS-8 (meta ≥60%)
+  const pacsComMmas=dados.filter(d=>d.mmas8Hist.length>0);
+  const pacsAltaAdh=pacsComMmas.filter(d=>{ const ult=d.mmas8Hist.at(-1); return ult&&ult.score>=8; });
+  const txAltaAdh=pacsComMmas.length?Math.round(pacsAltaAdh.length/pacsComMmas.length*100):null;
+
+  // ── KPI 4: Proporção com letramento adequado (meta ≥70%)
+  const pacsComLet=dados.filter(d=>d.letHist.length>0);
+  const pacsLetOk=pacsComLet.filter(d=>{ const ult=d.letHist.at(-1); return ult&&ult.pct>=80; });
+  const txLetOk=pacsComLet.length?Math.round(pacsLetOk.length/pacsComLet.length*100):null;
+
+  // ── KPI 5: Redução média de MRCI (meta: score atual < score inicial)
+  const pacsComMrci=dados.filter(d=>d.mrciHist.length>=2);
+  const deltasMRCI=pacsComMrci.map(d=>{ const h=d.mrciHist; return h[0].score-h.at(-1).score; }); // positivo=melhora
+  const mediaDeltaMRCI=deltasMRCI.length?parseFloat((deltasMRCI.reduce((a,b)=>a+b,0)/deltasMRCI.length).toFixed(1)):null;
+
+  // ── KPI 6: Taxa de detecção de interações graves (por 100 consultas)
+  const todasSoaps=dados.flatMap(d=>d.soaps);
+  const intsGraves=todasInts.filter(i=>(i.tipo||i.categoria||'').toLowerCase().includes('intera')||(i.descricao||i.acao||'').toLowerCase().includes('grave'));
+  const txIntGrave=todasSoaps.length?parseFloat((intsGraves.length/todasSoaps.length*100).toFixed(1)):null;
+
+  // ── KPI 7: RAMs com causalidade definida (Naranjo ≥9) notificadas
+  const todasRAMs=dados.flatMap(d=>d.rams);
+  const ramsDefinidas=todasRAMs.filter(r=>r.naranjoScore!=null&&r.naranjoScore>=9);
+
+  // ── KPI 8: Consultas por paciente (índice de intensidade do acompanhamento)
+  const mediaSoaps=pacs.length?parseFloat((todasSoaps.length/pacs.length).toFixed(1)):0;
+
+  // ── KPI 9: Média MMAS-8 atual da carteira
+  const scoresAtuais=pacsComMmas.map(d=>d.mmas8Hist.at(-1).score);
+  const mediaMmas=scoresAtuais.length?parseFloat((scoresAtuais.reduce((a,b)=>a+b,0)/scoresAtuais.length).toFixed(1)):null;
+
+  // ── KPI 10: Média EQ-5D atual
+  const eq5dAtuais=dados.filter(d=>d.eq5dHist.length>0).map(d=>d.eq5dHist.at(-1).util);
+  const mediaEq5d=eq5dAtuais.length?parseFloat((eq5dAtuais.reduce((a,b)=>a+b,0)/eq5dAtuais.length).toFixed(3)):null;
+
+  render({pacs,txAceit,txResol,txAltaAdh,txLetOk,mediaDeltaMRCI,txIntGrave,ramsDefinidas,todasRAMs,
+    mediaSoaps,mediaMmas,mediaEq5d,pacsComMmas,pacsComLet,pacsComMrci,
+    todasInts,intsComResult,intsAceitas,todosProbs,probsResolvidos,todasSoaps,eq5dAtuais,dados});
+}
+
+function kpiCard(icon,nome,meta,val,metaNum,unid,cor,emoji,badge,badgeCls){
+  const pct=metaNum>0&&val!==null?Math.min(val/metaNum*100,100):0;
+  const fillColor=badgeCls==='badge-green'?'#22c55e':badgeCls==='badge-yellow'?'#f59e0b':'#ef4444';
+  return `<div class="kpi-card">
+    <div class="kpi-icon">${icon}</div>
+    <div class="kpi-body">
+      <div class="kpi-nm">${nome}</div>
+      <div class="kpi-meta">Meta: ${meta}</div>
+      <div class="kpi-barra"><div class="kpi-fill" style="width:${pct}%;background:${fillColor}"></div></div>
+      <div class="kpi-ref"><span>0</span><span>${meta}</span></div>
+    </div>
+    <div class="kpi-right">
+      <div class="kpi-val" style="color:${fillColor}">${val!==null?val+(unid||''):'N/D'}</div>
+      <div class="kpi-badge ${badgeCls}">${emoji} ${badge}</div>
+    </div>
+  </div>`;
+}
+
+function statusKPI(val,meta,inv=false){
+  if(val===null) return {badge:'N/D',cls:'badge-gray',emoji:'⬜'};
+  const ok=inv?(val>=0):(val>=meta);
+  const warn=inv?(val>=-1):(val>=meta*0.7);
+  if(ok) return {badge:'Meta atingida',cls:'badge-green',emoji:'✅'};
+  if(warn) return {badge:'Em risco',cls:'badge-yellow',emoji:'⚠️'};
+  return {badge:'Abaixo da meta',cls:'badge-red',emoji:'❌'};
+}
+
+function render(K){
+  const s1=statusKPI(K.txAceit,70);
+  const s2=statusKPI(K.txResol,60);
+  const s3=statusKPI(K.txAltaAdh,60);
+  const s4=statusKPI(K.txLetOk,70);
+  const s5=statusKPI(K.mediaDeltaMRCI,0,true);
+  const s6=statusKPI(null,0); // detecção: não há meta absoluta
+  const s7=statusKPI(K.mediaMmas,7);
+  const s8=statusKPI(K.mediaEq5d,0.7);
+
+  const dataGer=hoje().split('-').reverse().join('/');
+  const nAtingidas=[s1,s2,s3,s4,s5,s7,s8].filter(s=>s.cls==='badge-green').length;
+  const nTotal=[K.txAceit,K.txResol,K.txAltaAdh,K.txLetOk,K.mediaDeltaMRCI,K.mediaMmas,K.mediaEq5d].filter(v=>v!==null).length;
+
+  document.getElementById('loading').style.display='none';
+  document.getElementById('conteudo').style.display='block';
+  document.getElementById('conteudo').innerHTML=`
+
+    <div class="painel-header">
+      <div class="ph-title">🎯 Painel de Indicadores</div>
+      <div class="ph-sub">Serviço Farmacêutico Clínico · Gerado em ${dataGer}</div>
+      <div class="ph-stats">
+        <div class="ph-stat"><div class="ph-stat-n">${K.pacs.length}</div><div class="ph-stat-l">Pacientes</div></div>
+        <div class="ph-stat"><div class="ph-stat-n">${K.todasSoaps.length}</div><div class="ph-stat-l">Consultas</div></div>
+        <div class="ph-stat"><div class="ph-stat-n">${K.todasInts.length}</div><div class="ph-stat-l">Intervenções</div></div>
+        <div class="ph-stat"><div class="ph-stat-n">${K.todosProbs.length}</div><div class="ph-stat-l">PRMs</div></div>
+        <div class="ph-stat"><div class="ph-stat-n" style="color:${nAtingidas===nTotal&&nTotal>0?'#4ade80':'#fbbf24'}">${nAtingidas}/${nTotal}</div><div class="ph-stat-l">Metas</div></div>
+      </div>
+    </div>
+
+    <div class="kpi-section">
+      <div class="sec-title">💊 Farmacoterapia</div>
+      ${kpiCard('📋','Taxa de Aceitação de Intervenções','≥ 70%',K.txAceit,70,'%','','',s1.badge,s1.cls)}
+      ${kpiCard('✅','Taxa de Resolução de PRMs','≥ 60%',K.txResol,60,'%','','',s2.badge,s2.cls)}
+      ${kpiCard('📐','Redução Média de MRCI (T0→atual)','> 0 pts',K.mediaDeltaMRCI!==null?K.mediaDeltaMRCI:null,5,' pts','','',s5.badge,s5.cls)}
+    </div>
+
+    <div class="kpi-section">
+      <div class="sec-title">🤝 Aderência e Letramento</div>
+      ${kpiCard('💊','Pacientes com Alta Aderência MMAS-8 (=8)','≥ 60%',K.txAltaAdh,60,'%','','',s3.badge,s3.cls)}
+      ${kpiCard('📊','Média MMAS-8 da Carteira','≥ 7,0',K.mediaMmas,8,'','','',s7.badge,s7.cls)}
+      ${kpiCard('📚','Pacientes com Letramento Adequado (≥80%)','≥ 70%',K.txLetOk,70,'%','','',s4.badge,s4.cls)}
+    </div>
+
+    <div class="kpi-section">
+      <div class="sec-title">🌿 Qualidade de Vida</div>
+      ${kpiCard('🌿','Média EQ-5D-3L (Índice de Utilidade)','≥ 0,70',K.mediaEq5d,1,'','','',s8.badge,s8.cls)}
+    </div>
+
+    <div class="kpi-section">
+      <div class="sec-title">🔬 Farmacovigilância</div>
+      <div class="kpi-card">
+        <div class="kpi-icon">🔬</div>
+        <div class="kpi-body">
+          <div class="kpi-nm">RAMs com Causalidade Definida (Naranjo ≥9)</div>
+          <div class="kpi-meta">Referência: todas as RAMs graves devem ser notificadas</div>
+          <div class="kpi-barra"><div class="kpi-fill" style="width:${K.todasRAMs.length?K.ramsDefinidas.length/K.todasRAMs.length*100:0}%;background:#8b5cf6"></div></div>
+          <div class="kpi-ref"><span>${K.ramsDefinidas.length} definidas</span><span>${K.todasRAMs.length} total RAMs</span></div>
+        </div>
+        <div class="kpi-right">
+          <div class="kpi-val" style="color:#8b5cf6">${K.ramsDefinidas.length}</div>
+          <div class="kpi-badge badge-gray">⬜ Absoluto</div>
+        </div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-icon">📊</div>
+        <div class="kpi-body">
+          <div class="kpi-nm">Consultas por Paciente (intensidade do acompanhamento)</div>
+          <div class="kpi-meta">Referência: ≥ 3 consultas/ano = acompanhamento ativo</div>
+          <div class="kpi-barra"><div class="kpi-fill" style="width:${Math.min(K.mediaSoaps/6*100,100)}%;background:#0f4c81"></div></div>
+          <div class="kpi-ref"><span>0</span><span>6+ consultas</span></div>
+        </div>
+        <div class="kpi-right">
+          <div class="kpi-val" style="color:#0f4c81">${K.mediaSoaps}</div>
+          <div class="kpi-badge ${K.mediaSoaps>=3?'badge-green':K.mediaSoaps>=1?'badge-yellow':'badge-red'}">${K.mediaSoaps>=3?'✅ Ativo':K.mediaSoaps>=1?'⚠️ Inicial':'❌ Insuf.'}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tabela para TCC -->
+    <div class="tcc-card">
+      <div class="tcc-title">📄 Tabela de Indicadores — Pronta para TCC</div>
+      <table class="tcc">
+        <thead><tr><th>Indicador</th><th>Meta</th><th>Resultado</th><th>Status</th></tr></thead>
+        <tbody>
+          ${[
+            ['Taxa de aceitação de intervenções','≥70%',K.txAceit!==null?K.txAceit+'%':'N/D',s1],
+            ['Taxa de resolução de PRMs','≥60%',K.txResol!==null?K.txResol+'%':'N/D',s2],
+            ['Proporção com alta aderência MMAS-8','≥60%',K.txAltaAdh!==null?K.txAltaAdh+'%':'N/D',s3],
+            ['Proporção com letramento adequado','≥70%',K.txLetOk!==null?K.txLetOk+'%':'N/D',s4],
+            ['Redução média de MRCI','> 0 pts',K.mediaDeltaMRCI!==null?K.mediaDeltaMRCI+' pts':'N/D',s5],
+            ['Média MMAS-8 da carteira','≥7,0',K.mediaMmas!==null?K.mediaMmas.toFixed(1):'N/D',s7],
+            ['Média EQ-5D-3L (índice de utilidade)','≥0,70',K.mediaEq5d!==null?K.mediaEq5d.toFixed(3):'N/D',s8],
+            ['RAMs com causalidade definida (Naranjo)','—',K.ramsDefinidas.length+' caso(s)',{badge:'Absoluto',cls:'badge-gray'}],
+            ['Consultas farmacêuticas/paciente','≥3/ano',K.mediaSoaps+' (média)',{badge:K.mediaSoaps>=3?'Meta atingida':'Em avaliação',cls:K.mediaSoaps>=3?'badge-green':'badge-yellow'}],
+          ].map(([nm,meta,res,st])=>`<tr>
+            <td>${nm}</td>
+            <td>${meta}</td>
+            <td><strong>${res}</strong></td>
+            <td><span class="kpi-badge ${st.cls}" style="font-size:.65rem">${st.badge}</span></td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+      <div style="margin-top:12px;font-size:.7rem;color:#64748b;line-height:1.6">
+        Pacientes avaliados: n=${K.pacs.length} · Data: ${dataGer} · Metodologia: Dáder/SFT · PRMs: PCNE v9.1<br>
+        Aderência: MMAS-8 (Morisky et al., 2008) · Qualidade de vida: EQ-5D-3L (EuroQol, 1990) · MRCI: George et al., 2004
+      </div>
+    </div>
+
+    <div class="ref-box">
+      <strong>Referências das metas:</strong><br>
+      Aceitação de intervenções ≥70%: Cipolle RJ, Strand LM, Morley PC (2004)<br>
+      Resolução de PRMs ≥60%: Fernández-Llimós F, et al. <em>Pharm Care Esp</em>. 2002<br>
+      MMAS-8 média ≥7: Morisky DE, et al. <em>J Clin Hypertens</em>. 2008<br>
+      EQ-5D ≥0,70: Leidl R, et al. <em>Eur J Health Econ</em>. 2010<br>
+      Consultas/paciente ≥3: Bluml BM. <em>J Am Pharm Assoc</em>. 2005
+    </div>`;
+}
+
+document.addEventListener('DOMContentLoaded',()=>init());
+</script>
+</body>
+</html>

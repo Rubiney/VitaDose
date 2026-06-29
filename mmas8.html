@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>MMAS-8 — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .topbar{display:flex;align-items:center;gap:10px;padding:12px 16px;background:#0f4c81;position:sticky;top:0;z-index:100}
+    .back-btn{background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:8px;padding:6px 11px;cursor:pointer;font-size:1rem}
+    .topbar-title{font-size:.93rem;font-weight:800;color:#fff;flex:1}
+    .topbar-sub{font-size:.62rem;color:rgba(255,255,255,.7);margin-top:1px}
+    .btn-top{background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:8px;padding:7px 11px;font-size:.72rem;font-weight:700;cursor:pointer;margin-left:4px}
+    main{max-width:600px;margin:0 auto;padding:12px 14px 90px}
+    .pac-sel{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:12px;padding:11px 14px;font-size:.88rem;margin-bottom:10px;background:#fff}
+
+    .score-hero{border-radius:16px;padding:20px;text-align:center;margin-bottom:12px;color:#fff}
+    .score-hero.alta{background:linear-gradient(135deg,#0f4c81,#1565c0)}
+    .score-hero.media{background:linear-gradient(135deg,#b45309,#d97706)}
+    .score-hero.baixa{background:linear-gradient(135deg,#991b1b,#dc2626)}
+    .score-n{font-size:4rem;font-weight:900;line-height:1}
+    .score-lbl{font-size:1rem;font-weight:800;margin-top:4px}
+    .score-sub{font-size:.75rem;opacity:.75;margin-top:4px}
+    .barra-prog{height:10px;background:rgba(255,255,255,.2);border-radius:8px;overflow:hidden;margin-top:12px}
+    .barra-fill{height:100%;border-radius:8px;background:#fff;transition:width .5s}
+
+    .card{background:#fff;border-radius:14px;padding:14px 16px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.07)}
+    .card-title{font-size:.65rem;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px}
+    .q-item{padding:12px 0;border-bottom:1px solid #f8fafc}
+    .q-item:last-child{border:none}
+    .q-num{font-size:.62rem;font-weight:800;color:#94a3b8;margin-bottom:4px}
+    .q-txt{font-size:.83rem;color:#1e293b;line-height:1.5;margin-bottom:8px;font-weight:500}
+    .opt-row{display:flex;gap:8px;flex-wrap:wrap}
+    .opt-btn{border:1.5px solid #e2e8f0;border-radius:8px;padding:6px 12px;font-size:.76rem;cursor:pointer;background:#f8fafc;font-weight:600;transition:.12s;color:#475569}
+    .opt-btn.sel-sim{background:#dcfce7;border-color:#4ade80;color:#166534}
+    .opt-btn.sel-nao{background:#fee2e2;border-color:#f87171;color:#991b1b}
+    .opt-btn.sel-freq{background:#dbeafe;border-color:#93c5fd;color:#1e40af}
+
+    /* Histograma */
+    .hist-wrap{display:flex;gap:6px;align-items:flex-end;height:60px;margin-top:8px}
+    .hist-bar{flex:1;background:#dbeafe;border-radius:4px 4px 0 0;position:relative;min-height:4px}
+    .hist-lbl{font-size:.6rem;text-align:center;margin-top:3px;color:#64748b}
+
+    .ref-box{background:#eff6ff;border:1.5px solid #bfdbfe;border-radius:10px;padding:10px 12px;font-size:.74rem;color:#1e40af;line-height:1.8;margin-top:10px}
+    .resumo-strip{display:flex;gap:6px;margin-bottom:10px}
+    .res-item{flex:1;background:#fff;border-radius:10px;padding:10px 8px;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,.07)}
+    .res-n{font-size:1.35rem;font-weight:900}
+    .res-l{font-size:.6rem;color:#64748b;font-weight:700;text-transform:uppercase;margin-top:2px}
+    @media print{.topbar,.pac-sel,.btn-top,nav,.opt-btn{display:none!important}body{background:#fff}main{padding:0;max-width:none}}
+  </style>
+</head>
+<body>
+<div class="topbar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <div style="flex:1">
+    <div class="topbar-title">💊 MMAS-8 — Aderência ao Tratamento</div>
+    <div class="topbar-sub">Morisky Medication Adherence Scale · versão em português</div>
+  </div>
+  <button class="btn-top" onclick="salvar()">💾</button>
+  <button class="btn-top" onclick="window.print()">🖨️</button>
+</div>
+<main>
+  <select class="pac-sel" id="sel-pac" onchange="init()"><option value="">Selecione o paciente...</option></select>
+  <div id="conteudo"></div>
+</main>
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+<script src="js/db.js"></script>
+<script src="js/utils.js"></script>
+<script>
+// MMAS-8 validado em português: Gusmão et al., 2009, Arq Bras Cardiol
+const QS = [
+  { id:'q1', n:1,  txt:'Às vezes as pessoas esquecem de tomar seus remédios. Com que frequência você esquece de tomar seu(s) remédio(s)?', tipo:'sim-nao', label:'Você já esqueceu?', inv:true },
+  { id:'q2', n:2,  txt:'Nas últimas duas semanas houve algum dia em que você não tomou o(s) seu(s) remédio(s)?', tipo:'sim-nao', inv:true },
+  { id:'q3', n:3,  txt:'Alguma vez você parou de tomar seu(s) remédio(s) ou diminuiu a dose sem avisar seu médico porque se sentiu pior ao tomá-lo(s)?', tipo:'sim-nao', inv:true },
+  { id:'q4', n:4,  txt:'Quando você viaja ou sai de casa, alguma vez se esquece de levar o(s) seu(s) remédio(s)?', tipo:'sim-nao', inv:true },
+  { id:'q5', n:5,  txt:'Você tomou o(s) seu(s) remédio(s) ontem?', tipo:'sim-nao', inv:false },
+  { id:'q6', n:6,  txt:'Quando você sente que sua doença está sob controle, às vezes para de tomar o(s) remédio(s)?', tipo:'sim-nao', inv:true },
+  { id:'q7', n:7,  txt:'Tomar remédio todo dia é inconveniente para algumas pessoas. Você já se sentiu incomodado(a) em cumprir o seu plano de tratamento?', tipo:'sim-nao', inv:true },
+  { id:'q8', n:8,  txt:'Com que frequência você tem dificuldade para lembrar de tomar todos os seus remédios?', tipo:'freq',
+    opts:[
+      {label:'Nunca',       val:1},
+      {label:'Raramente',   val:0.75},
+      {label:'Às vezes',    val:0.5},
+      {label:'Vez por outra', val:0.25},
+      {label:'Sempre',      val:0},
+    ]},
+];
+
+let _resp={}, _pid=null;
+
+async function init(){
+  _pid=parseInt(document.getElementById('sel-pac').value)||null;
+  if(!_pid){document.getElementById('conteudo').innerHTML='';return;}
+  _resp=(await dbGetConfig('mmas8_'+_pid))||{};
+  render();
+}
+
+function calcScore(){
+  let total=0,n=0;
+  QS.forEach(q=>{
+    if(q.tipo==='sim-nao'){
+      const v=_resp[q.id];
+      if(v===undefined)return;
+      n++;
+      if(q.inv) total+=(v==='nao'?1:0);
+      else      total+=(v==='sim'?1:0);
+    } else {
+      const v=_resp[q.id];
+      if(v===undefined)return;
+      n++;
+      total+=parseFloat(v);
+    }
+  });
+  return {total:parseFloat(total.toFixed(2)),n};
+}
+
+function render(){
+  const {total,n}=calcScore();
+  const nivel=total>=8?'Alta':total>=6?'Média':'Baixa';
+  const heroCls=total>=8?'alta':total>=6?'media':'baixa';
+  const corN=total>=8?'#1565c0':total>=6?'#d97706':'#dc2626';
+
+  let html=`
+    <div class="score-hero ${heroCls}">
+      <div class="score-n">${total.toFixed(1)}</div>
+      <div class="score-lbl">Aderência ${nivel}</div>
+      <div class="score-sub">${n}/8 questões respondidas · Score máximo: 8,0</div>
+      <div class="barra-prog"><div class="barra-fill" style="width:${total/8*100}%"></div></div>
+    </div>`;
+
+  if(n===8){
+    html+=`<div class="resumo-strip">
+      <div class="res-item"><div class="res-n" style="color:${corN}">${total.toFixed(1)}</div><div class="res-l">Score MMAS-8</div></div>
+      <div class="res-item"><div class="res-n" style="color:${corN}">${nivel}</div><div class="res-l">Aderência</div></div>
+      <div class="res-item"><div class="res-n">${Math.round(total/8*100)}%</div><div class="res-l">% do máximo</div></div>
+    </div>`;
+  }
+
+  html+=`<div class="card"><div class="card-title">Questões MMAS-8</div>`;
+  QS.forEach(q=>{
+    html+=`<div class="q-item">
+      <div class="q-num">Questão ${q.n}</div>
+      <div class="q-txt">${esc(q.txt)}</div>
+      <div class="opt-row">`;
+    if(q.tipo==='sim-nao'){
+      const vA=_resp[q.id];
+      html+=`<button class="opt-btn ${vA==='sim'?'sel-sim':''}" onclick="setResp('${q.id}','sim',this)">✓ Sim</button>`;
+      html+=`<button class="opt-btn ${vA==='nao'?'sel-nao':''}" onclick="setResp('${q.id}','nao',this)">✗ Não</button>`;
+    } else {
+      q.opts.forEach(op=>{
+        const sel=_resp[q.id]!=null&&parseFloat(_resp[q.id])===op.val;
+        html+=`<button class="opt-btn ${sel?'sel-freq':''}" onclick="setResp('${q.id}','${op.val}',this)">${esc(op.label)}</button>`;
+      });
+    }
+    html+=`</div></div>`;
+  });
+  html+=`</div>`;
+
+  // Histórico
+  html+=`<div id="hist-wrap"></div>`;
+
+  html+=`<div class="ref-box">
+    <strong>Interpretação (Morisky et al., 2008):</strong><br>
+    Score 8,0 → Alta aderência &nbsp;·&nbsp; 6,0–7,75 → Média aderência &nbsp;·&nbsp; &lt;6,0 → Baixa aderência<br><br>
+    <strong>Referência:</strong> Gusmão JL, et al. Adesão ao tratamento — conceitos. <em>Rev Bras Hipertens</em>. 2006;13(1):23-25.
+    Morisky DE, Ang A, Krousel-Wood M, Ward HJ. <em>J Clin Hypertens</em>. 2008;10(5):348-354.
+  </div>`;
+
+  document.getElementById('conteudo').innerHTML=html;
+  carregarHistorico();
+}
+
+function setResp(qid, val, btn){
+  _resp[qid]=val;
+  const row=btn.closest('.opt-row');
+  row.querySelectorAll('.opt-btn').forEach(b=>b.className='opt-btn');
+  if(val==='sim') btn.className='opt-btn sel-sim';
+  else if(val==='nao') btn.className='opt-btn sel-nao';
+  else btn.className='opt-btn sel-freq';
+  const {total}=calcScore();
+  const nivel=total>=8?'Alta':total>=6?'Média':'Baixa';
+  const heroCls=total>=8?'alta':total>=6?'media':'baixa';
+  const corN=total>=8?'#1565c0':total>=6?'#d97706':'#dc2626';
+  const hero=document.querySelector('.score-hero');
+  if(hero){hero.className='score-hero '+heroCls; hero.querySelector('.score-n').textContent=total.toFixed(1); hero.querySelector('.score-lbl').textContent='Aderência '+nivel; hero.querySelector('.barra-fill').style.width=total/8*100+'%';}
+}
+
+async function carregarHistorico(){
+  if(!_pid)return;
+  const hist=(await dbGetConfig('mmas8_hist_'+_pid))||[];
+  if(!hist.length){document.getElementById('hist-wrap').innerHTML='';return;}
+  const max=8;
+  const W=300,H=70,px=10,py=10;
+  const ew=(W-2*px)/(Math.max(hist.length-1,1));
+  const pts=hist.map((h,i)=>({x:px+i*ew,y:py+(H-2*py)*(1-h.score/max)}));
+  const poly=pts.map(p=>`${p.x},${p.y}`).join(' ');
+  const fill=`${pts[0].x},${H-py} ${poly} ${pts[pts.length-1].x},${H-py}`;
+  document.getElementById('hist-wrap').innerHTML=`
+    <div class="card">
+      <div class="card-title">Histórico de aderência (MMAS-8)</div>
+      <svg viewBox="0 0 ${W} ${H}" style="width:100%;display:block">
+        <polygon points="${fill}" fill="#dbeafe" opacity=".7"/>
+        <line x1="${px}" y1="${py+(H-2*py)*0.25}" x2="${W-px}" y2="${py+(H-2*py)*0.25}" stroke="#fde68a" stroke-width="1" stroke-dasharray="4,3"/>
+        <line x1="${px}" y1="${py+(H-2*py)*0" x2="${W-px}" y2="${py+(H-2*py)*0}" stroke="#dcfce7" stroke-width="1" stroke-dasharray="4,3"/>
+        <polyline points="${poly}" fill="none" stroke="#0f4c81" stroke-width="2.5"/>
+        ${pts.map((p,i)=>`<circle cx="${p.x}" cy="${p.y}" r="4" fill="#0f4c81"/>
+          <text x="${p.x}" y="${p.y-6}" text-anchor="middle" font-size="8" fill="#0f4c81" font-weight="700">${hist[i].score.toFixed(1)}</text>
+          <text x="${p.x}" y="${H-2}" text-anchor="middle" font-size="7" fill="#94a3b8">${hist[i].data.slice(5).split('-').join('/')}</text>`).join('')}
+      </svg>
+      <div style="display:flex;gap:8px;font-size:.65rem;margin-top:6px;justify-content:center">
+        <span style="color:#16a34a">■ Alta (=8)</span><span style="color:#d97706">■ Média (6–7,75)</span><span style="color:#dc2626">■ Baixa (&lt;6)</span>
+      </div>
+    </div>`;
+}
+
+async function salvar(){
+  if(!_pid){showToast('Selecione um paciente');return;}
+  const {total,n}=calcScore();
+  if(n<8){showToast('Responda todas as 8 questões antes de salvar');return;}
+  await dbSetConfig('mmas8_'+_pid,_resp);
+  const nivel=total>=8?'Alta':total>=6?'Média':'Baixa';
+  const hist=(await dbGetConfig('mmas8_hist_'+_pid))||[];
+  hist.push({data:hoje(),score:total,nivel,nResps:n});
+  await dbSetConfig('mmas8_hist_'+_pid,hist);
+  showToast('✅ MMAS-8 salvo — Score: '+total.toFixed(1)+' ('+nivel+' aderência)');
+  await carregarHistorico();
+}
+
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+
+document.addEventListener('DOMContentLoaded',async()=>{
+  const pacs=await dbGetAll('pacientes');
+  const sel=document.getElementById('sel-pac');
+  sel.innerHTML='<option value="">Selecione o paciente...</option>'+pacs.map(p=>`<option value="${p.id}">${esc(p.nome||'Paciente '+p.id)}</option>`).join('');
+  const pid=getActivePacienteId();
+  if(pid){sel.value=pid;await init();}
+});
+</script>
+</body>
+</html>

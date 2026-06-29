@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>EQ-5D-3L — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .topbar{display:flex;align-items:center;gap:10px;padding:12px 16px;background:#065f46;position:sticky;top:0;z-index:100}
+    .back-btn{background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:8px;padding:6px 11px;cursor:pointer;font-size:1rem}
+    .topbar-title{font-size:.93rem;font-weight:800;color:#fff;flex:1}
+    .topbar-sub{font-size:.62rem;color:rgba(255,255,255,.7);margin-top:1px}
+    .btn-top{background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:8px;padding:7px 11px;font-size:.72rem;font-weight:700;cursor:pointer;margin-left:4px}
+    main{max-width:600px;margin:0 auto;padding:12px 14px 90px}
+    .pac-sel{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:12px;padding:11px 14px;font-size:.88rem;margin-bottom:10px;background:#fff}
+
+    /* Perfil visual das 5 dimensões */
+    .perfil-hero{background:#fff;border-radius:16px;padding:16px;margin-bottom:10px;box-shadow:0 1px 6px rgba(0,0,0,.08)}
+    .perfil-title{font-size:.65rem;font-weight:800;color:#94a3b8;text-transform:uppercase;margin-bottom:14px}
+    .dim-row{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+    .dim-lbl{font-size:.72rem;font-weight:700;color:#1e293b;width:130px;flex-shrink:0}
+    .dim-bar-wrap{flex:1;display:flex;gap:2px}
+    .dim-seg{flex:1;height:20px;border-radius:4px;background:#e2e8f0;display:flex;align-items:center;justify-content:center;font-size:.62rem;font-weight:700;cursor:pointer;transition:.12s;color:#94a3b8;border:2px solid transparent}
+    .dim-seg.L1{background:#dcfce7;color:#166534;border-color:#4ade80}
+    .dim-seg.L2{background:#fef3c7;color:#92400e;border-color:#fbbf24}
+    .dim-seg.L3{background:#fee2e2;color:#991b1b;border-color:#f87171}
+    .dim-val{font-size:.7rem;font-weight:700;width:20px;text-align:right}
+
+    /* EVA */
+    .eva-card{background:#fff;border-radius:14px;padding:14px 16px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.07)}
+    .eva-title{font-size:.65rem;font-weight:800;color:#94a3b8;text-transform:uppercase;margin-bottom:10px}
+    .eva-wrap{position:relative;height:28px;margin:8px 0}
+    .eva-track{width:100%;height:8px;border-radius:4px;background:linear-gradient(to right,#fee2e2,#fef3c7,#dcfce7);position:absolute;top:10px}
+    input[type=range].eva{width:100%;position:absolute;top:0;accent-color:#065f46;cursor:pointer}
+    .eva-labels{display:flex;justify-content:space-between;font-size:.62rem;color:#94a3b8;margin-top:4px}
+    .eva-n{font-size:2.5rem;font-weight:900;color:#065f46;text-align:center;margin:8px 0}
+
+    /* Score utility */
+    .util-card{background:linear-gradient(135deg,#065f46,#047857);border-radius:14px;padding:16px;margin-bottom:10px;color:#fff;text-align:center}
+    .util-n{font-size:3rem;font-weight:900;line-height:1}
+    .util-lbl{font-size:.85rem;font-weight:800;opacity:.85;margin-top:4px}
+    .util-sub{font-size:.7rem;opacity:.65;margin-top:4px}
+    .util-state{font-size:.78rem;margin-top:8px;background:rgba(255,255,255,.15);border-radius:8px;padding:4px 10px;display:inline-block}
+
+    /* Estado descritivo */
+    .desc-card{background:#fff;border-radius:14px;padding:14px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.07)}
+    .desc-title{font-size:.65rem;font-weight:800;color:#94a3b8;text-transform:uppercase;margin-bottom:10px}
+    .dim-desc-row{display:flex;align-items:flex-start;gap:8px;padding:8px 0;border-bottom:1px solid #f8fafc}
+    .dim-desc-row:last-child{border:none}
+    .dim-icon{font-size:1.2rem;width:26px;flex-shrink:0}
+    .dim-desc-nm{font-size:.78rem;font-weight:700;color:#1e293b;margin-bottom:2px}
+    .dim-desc-val{font-size:.73rem;line-height:1.4}
+    .val-L1{color:#166534}.val-L2{color:#92400e}.val-L3{color:#991b1b}
+
+    /* Histórico */
+    .hist-card{background:#fff;border-radius:14px;padding:14px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.07)}
+    .hist-title{font-size:.65rem;font-weight:800;color:#94a3b8;text-transform:uppercase;margin-bottom:10px}
+    .hist-row{display:flex;gap:6px;padding:8px 0;border-bottom:1px solid #f8fafc;font-size:.78rem;align-items:center}
+    .hist-row:last-child{border:none}
+    .ref-box{background:#ecfdf5;border:1.5px solid #a7f3d0;border-radius:10px;padding:10px 12px;font-size:.73rem;color:#065f46;line-height:1.8;margin-top:10px}
+    @media print{.topbar,.pac-sel,.btn-top,nav,.dim-seg{display:none!important}body{background:#fff}main{padding:0;max-width:none}}
+  </style>
+</head>
+<body>
+<div class="topbar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <div style="flex:1">
+    <div class="topbar-title">🌿 EQ-5D-3L — Qualidade de Vida</div>
+    <div class="topbar-sub">EuroQol Group · versão em português</div>
+  </div>
+  <button class="btn-top" onclick="salvar()">💾</button>
+  <button class="btn-top" onclick="window.print()">🖨️</button>
+</div>
+<main>
+  <select class="pac-sel" id="sel-pac" onchange="init()"><option value="">Selecione o paciente...</option></select>
+  <div id="conteudo"></div>
+</main>
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+<script src="js/db.js"></script>
+<script src="js/utils.js"></script>
+<script>
+const DIMS = [
+  { id:'MO', icon:'🚶', lbl:'Mobilidade',
+    L1:'Não tenho problemas em andar',
+    L2:'Tenho alguns problemas em andar',
+    L3:'Estou confinado(a) à cama' },
+  { id:'AC', icon:'🛁', lbl:'Cuidados Pessoais',
+    L1:'Não tenho problemas com meus cuidados pessoais',
+    L2:'Tenho alguns problemas para me lavar ou vestir',
+    L3:'Sou incapaz de me lavar ou vestir' },
+  { id:'AH', icon:'🏠', lbl:'Atividades Habituais',
+    L1:'Não tenho problemas em realizar minhas atividades habituais',
+    L2:'Tenho alguns problemas em realizar minhas atividades habituais',
+    L3:'Sou incapaz de realizar minhas atividades habituais' },
+  { id:'DD', icon:'😣', lbl:'Dor / Desconforto',
+    L1:'Não tenho dor ou desconforto',
+    L2:'Tenho dor ou desconforto moderado(a)',
+    L3:'Tenho dor ou desconforto extremo(a)' },
+  { id:'AD', icon:'😟', lbl:'Ansiedade / Depressão',
+    L1:'Não estou ansioso(a) ou deprimido(a)',
+    L2:'Estou moderadamente ansioso(a) ou deprimido(a)',
+    L3:'Estou extremamente ansioso(a) ou deprimido(a)' },
+];
+
+// UK Value Set (Kind et al., 1999) — mais usado na literatura brasileira
+const UK_CONST = 0.081;
+const UK_N3    = 0.269;
+const UK_DEC   = {
+  MO:{L2:0.069,L3:0.314},
+  AC:{L2:0.104,L3:0.214},
+  AH:{L2:0.036,L3:0.094},
+  DD:{L2:0.123,L3:0.386},
+  AD:{L2:0.071,L3:0.236},
+};
+
+let _resp={MO:null,AC:null,AH:null,DD:null,AD:null}, _eva=50, _pid=null;
+
+function calcUtil(){
+  const vals=DIMS.map(d=>_resp[d.id]);
+  if(vals.some(v=>v===null)) return null;
+  const anyProblem=vals.some(v=>v>1);
+  const anyExtreme=vals.some(v=>v===3);
+  let u=1;
+  if(anyProblem) u-=UK_CONST;
+  if(anyExtreme) u-=UK_N3;
+  DIMS.forEach(d=>{ const lv=_resp[d.id]; if(lv>1) u-=UK_DEC[d.id]['L'+lv]||0; });
+  return Math.max(-1,Math.min(1,parseFloat(u.toFixed(3))));
+}
+
+function estadoDesc(){
+  return DIMS.map(d=>{
+    const lv=_resp[d.id];
+    if(!lv) return d.lbl+': não respondido';
+    return d.lbl+': Nível '+lv+' — '+d['L'+lv];
+  }).join(' | ');
+}
+
+function render(){
+  const util=calcUtil();
+  const utilDisp=util!==null?util.toFixed(3):'—';
+  const utilCls=util===null?'':util>=0.7?'':util>=0.4?'':'' ;
+  const utilLbl=util===null?'Responda todas as dimensões':util>=0.8?'Boa qualidade de vida':util>=0.5?'Qualidade de vida moderada':'Qualidade de vida comprometida';
+
+  // Estado descritivo (código 5 dígitos)
+  const codigo=DIMS.map(d=>_resp[d.id]||'?').join('');
+
+  let html=`
+    <div class="util-card">
+      <div class="util-n">${utilDisp}</div>
+      <div class="util-lbl">Índice de Utilidade EQ-5D-3L</div>
+      <div class="util-sub">Estado de saúde: ${codigo} &nbsp;·&nbsp; EVA: ${_eva}/100</div>
+      <div class="util-state">${utilLbl}</div>
+    </div>
+
+    <div class="perfil-hero">
+      <div class="perfil-title">📊 Perfil EQ-5D — 5 Dimensões</div>
+      ${DIMS.map(d=>{
+        const lv=_resp[d.id]||0;
+        return `<div class="dim-row">
+          <div class="dim-lbl">${d.icon} ${d.lbl}</div>
+          <div class="dim-bar-wrap">
+            <div class="dim-seg ${lv===1?'L1':''}" onclick="setDim('${d.id}',1)">1<br><span style="font-size:.55rem">Sem</span></div>
+            <div class="dim-seg ${lv===2?'L2':''}" onclick="setDim('${d.id}',2)">2<br><span style="font-size:.55rem">Mod.</span></div>
+            <div class="dim-seg ${lv===3?'L3':''}" onclick="setDim('${d.id}',3)">3<br><span style="font-size:.55rem">Ext.</span></div>
+          </div>
+          <div class="dim-val" style="color:${lv===1?'#166534':lv===2?'#92400e':lv===3?'#991b1b':'#94a3b8'}">${lv||'—'}</div>
+        </div>`;
+      }).join('')}
+    </div>
+
+    <div class="eva-card">
+      <div class="eva-title">EVA — Estado de Saúde Geral</div>
+      <p style="font-size:.74rem;color:#64748b;margin-bottom:8px;line-height:1.5">
+        Nessa escala, 100 representa o <strong>melhor</strong> estado de saúde imaginável e 0 representa o <strong>pior</strong> estado de saúde imaginável. Marque onde você considera que seu estado de saúde se encontra hoje.
+      </p>
+      <div class="eva-n" id="eva-n">${_eva}</div>
+      <div class="eva-wrap">
+        <div class="eva-track"></div>
+        <input type="range" class="eva" id="eva-slider" min="0" max="100" value="${_eva}" oninput="setEva(this.value)">
+      </div>
+      <div class="eva-labels"><span>0 — Pior</span><span>100 — Melhor</span></div>
+    </div>
+
+    <div class="desc-card">
+      <div class="desc-title">Descrição do estado de saúde (${codigo})</div>
+      ${DIMS.map(d=>{
+        const lv=_resp[d.id];
+        const valCls=lv===1?'val-L1':lv===2?'val-L2':lv===3?'val-L3':'';
+        return `<div class="dim-desc-row">
+          <div class="dim-icon">${d.icon}</div>
+          <div>
+            <div class="dim-desc-nm">${d.lbl}</div>
+            <div class="dim-desc-val ${valCls}">${lv?d['L'+lv]:'Não respondido'}</div>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>
+
+    <div id="hist-card"></div>
+
+    <div class="ref-box">
+      <strong>Interpretação:</strong><br>
+      Índice 1,0 = saúde perfeita &nbsp;·&nbsp; 0,0 = equivalente à morte &nbsp;·&nbsp; valores negativos possíveis (pior que a morte)<br>
+      Tabela de valores: UK Value Set (Kind et al., 1999) — amplamente utilizada em estudos brasileiros na ausência de set nacional definitivo<br><br>
+      <strong>Referência:</strong> EuroQol Group. <em>Health Policy</em>. 1990;16(3):199-208.
+      Kind P, et al. <em>Soc Sci Med</em>. 1999;49(10):1655-1666.
+    </div>`;
+
+  document.getElementById('conteudo').innerHTML=html;
+  carregarHistorico();
+}
+
+function setDim(id, lv){
+  _resp[id]=lv;
+  atualizarPerfil();
+}
+
+function setEva(v){
+  _eva=parseInt(v);
+  const el=document.getElementById('eva-n');
+  if(el) el.textContent=_eva;
+}
+
+function atualizarPerfil(){
+  const util=calcUtil();
+  const el=document.querySelector('.util-n');
+  if(el) el.textContent=util!==null?util.toFixed(3):'—';
+  const codigo=DIMS.map(d=>_resp[d.id]||'?').join('');
+  const sub=document.querySelector('.util-sub');
+  if(sub) sub.textContent='Estado de saúde: '+codigo+' · EVA: '+_eva+'/100';
+  const lbl=document.querySelector('.util-lbl');
+  // Atualiza segs
+  DIMS.forEach(d=>{
+    const lv=_resp[d.id]||0;
+    ['L1','L2','L3'].forEach((cls,i)=>{
+      // Não é possível selecionar os segs por DOM fácil, re-render parcial
+    });
+  });
+  render();
+}
+
+async function carregarHistorico(){
+  if(!_pid)return;
+  const hist=(await dbGetConfig('eq5d_hist_'+_pid))||[];
+  if(!hist.length){document.getElementById('hist-card').innerHTML='';return;}
+  const W=300,H=70,px=10,py=8;
+  const ew=(W-2*px)/(Math.max(hist.length-1,1));
+  const pts=hist.map((h,i)=>({x:px+i*ew,y:py+(H-2*py)*(1-(h.util+1)/2)}));
+  const poly=pts.map(p=>`${p.x},${p.y}`).join(' ');
+  const fill=`${pts[0].x},${H-py} ${poly} ${pts[pts.length-1].x},${H-py}`;
+  document.getElementById('hist-card').innerHTML=`
+    <div class="hist-card">
+      <div class="hist-title">Histórico EQ-5D</div>
+      <svg viewBox="0 0 ${W} ${H}" style="width:100%;display:block;margin-bottom:6px">
+        <polygon points="${fill}" fill="#d1fae5" opacity=".7"/>
+        <line x1="${px}" y1="${py+(H-2*py)*0.5}" x2="${W-px}" y2="${py+(H-2*py)*0.5}" stroke="#fde68a" stroke-width="1" stroke-dasharray="4,3"/>
+        <polyline points="${poly}" fill="none" stroke="#065f46" stroke-width="2.5"/>
+        ${pts.map((p,i)=>`<circle cx="${p.x}" cy="${p.y}" r="4" fill="#065f46"/>
+          <text x="${p.x}" y="${p.y-6}" text-anchor="middle" font-size="8" fill="#065f46" font-weight="700">${hist[i].util.toFixed(2)}</text>
+          <text x="${p.x}" y="${H-1}" text-anchor="middle" font-size="7" fill="#94a3b8">${hist[i].data.slice(5).split('-').join('/')}</text>`).join('')}
+      </svg>
+      ${hist.slice().reverse().map(h=>`
+        <div class="hist-row">
+          <div style="flex:1;color:#64748b">${h.data.split('-').reverse().join('/')}</div>
+          <div>Estado: <strong>${h.codigo}</strong></div>
+          <div style="margin-left:8px">Util: <strong>${h.util.toFixed(3)}</strong></div>
+          <div style="margin-left:8px">EVA: <strong>${h.eva}</strong></div>
+        </div>`).join('')}
+    </div>`;
+}
+
+async function salvar(){
+  if(!_pid){showToast('Selecione um paciente');return;}
+  const util=calcUtil();
+  if(util===null){showToast('Responda todas as 5 dimensões');return;}
+  const codigo=DIMS.map(d=>_resp[d.id]).join('');
+  await dbSetConfig('eq5d_'+_pid,{resp:{..._resp},eva:_eva,util,codigo,data:hoje()});
+  const hist=(await dbGetConfig('eq5d_hist_'+_pid))||[];
+  hist.push({data:hoje(),util,eva:_eva,codigo});
+  await dbSetConfig('eq5d_hist_'+_pid,hist);
+  showToast('✅ EQ-5D-3L salvo — Índice: '+util.toFixed(3)+' · EVA: '+_eva);
+  await carregarHistorico();
+}
+
+async function init(){
+  _pid=parseInt(document.getElementById('sel-pac').value)||null;
+  if(!_pid){document.getElementById('conteudo').innerHTML='';return;}
+  const saved=await dbGetConfig('eq5d_'+_pid);
+  if(saved){_resp={...(saved.resp||{MO:null,AC:null,AH:null,DD:null,AD:null})};_eva=saved.eva||50;}
+  else{_resp={MO:null,AC:null,AH:null,DD:null,AD:null};_eva=50;}
+  render();
+}
+
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+
+document.addEventListener('DOMContentLoaded',async()=>{
+  const pacs=await dbGetAll('pacientes');
+  const sel=document.getElementById('sel-pac');
+  sel.innerHTML='<option value="">Selecione o paciente...</option>'+pacs.map(p=>`<option value="${p.id}">${esc(p.nome||'Paciente '+p.id)}</option>`).join('');
+  const pid=getActivePacienteId();
+  if(pid){sel.value=pid;await init();}
+});
+</script>
+</body>
+</html>
