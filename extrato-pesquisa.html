@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>Extrato de Pesquisa — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .topbar { display:flex;align-items:center;gap:10px;padding:12px 16px;background:#1e3a5f;position:sticky;top:0;z-index:100 }
+    .back-btn { background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:8px;padding:6px 11px;cursor:pointer;font-size:1rem }
+    .topbar-title { font-size:.93rem;font-weight:800;color:#fff;flex:1 }
+    .btn-top { background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:8px;padding:7px 11px;font-size:.72rem;font-weight:700;cursor:pointer;margin-left:4px }
+
+    main { max-width:620px;margin:0 auto;padding:14px 14px 90px }
+
+    /* Cards */
+    .card { background:#fff;border-radius:14px;padding:16px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.07) }
+    .card-title { font-size:.65rem;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center }
+
+    /* KPI big */
+    .kpi-row { display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px }
+    .kpi { background:#f8fafc;border-radius:12px;padding:14px 10px;text-align:center }
+    .kpi-n { font-size:2rem;font-weight:900;color:#1e3a5f;line-height:1 }
+    .kpi-l { font-size:.65rem;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-top:4px;line-height:1.3 }
+
+    /* Tabela */
+    table.et { width:100%;border-collapse:collapse;font-size:.79rem }
+    table.et th { background:#f1f5f9;padding:7px 9px;text-align:left;font-size:.63rem;color:#64748b;border-bottom:1.5px solid #e2e8f0 }
+    table.et td { padding:7px 9px;border-bottom:1px solid #f8fafc;vertical-align:top }
+    table.et tr:last-child td { border:none }
+
+    /* Barra horizontal */
+    .hbar-row { display:flex;align-items:center;gap:8px;margin-bottom:6px }
+    .hbar-lbl { font-size:.75rem;color:#374151;width:140px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis }
+    .hbar-wrap { flex:1;background:#f1f5f9;border-radius:999px;height:10px }
+    .hbar-fill { border-radius:999px;height:10px;background:#1e3a5f;transition:width .5s }
+    .hbar-val { font-size:.72rem;color:#64748b;width:36px;text-align:right;flex-shrink:0 }
+
+    /* Badges */
+    .badge { display:inline-block;padding:2px 9px;border-radius:999px;font-size:.65rem;font-weight:700 }
+    .b-ok  { background:#dcfce7;color:#16a34a }
+    .b-warn{ background:#fef3c7;color:#92400e }
+    .b-bad { background:#fee2e2;color:#dc2626 }
+    .b-info{ background:#dbeafe;color:#1e40af }
+
+    /* Distribuição aderência */
+    .adh-dist { display:flex;gap:0;border-radius:10px;overflow:hidden;height:24px;margin:6px 0 }
+    .adh-seg  { display:flex;align-items:center;justify-content:center;font-size:.65rem;font-weight:700;color:#fff;transition:width .5s }
+
+    /* Rodapé acadêmico */
+    .rodape-ac { border-top:1.5px solid #e2e8f0;padding-top:12px;font-size:.72rem;color:#94a3b8;line-height:1.7;margin-top:4px }
+
+    /* Loading */
+    .loading { text-align:center;padding:40px 0;color:#94a3b8;font-size:.85rem }
+
+    @media print {
+      .topbar,.btn-top,nav,.no-print { display:none!important }
+      .card { box-shadow:none;border:1px solid #e2e8f0;page-break-inside:avoid }
+      body { background:#fff }
+      main { padding:0;max-width:none }
+      .rodape-ac { border-color:#000 }
+    }
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <div style="flex:1">
+    <div class="topbar-title">🔬 Extrato de Pesquisa</div>
+  </div>
+  <button class="btn-top no-print" onclick="window.print()">🖨️ PDF</button>
+  <button class="btn-top no-print" onclick="exportarCSV()">📊 CSV</button>
+</div>
+
+<main>
+  <div id="content"><p class="loading">⏳ Analisando dados clínicos...</p></div>
+</main>
+
+<nav class="bottom-nav no-print">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+
+<script src="js/db.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/beers.js"></script>
+<script src="js/interacoes.js"></script>
+<script>
+
+let _dadosBrutos = null;
+
+async function init() {
+  const [pacs, allMeds, allDoses, allLabs] = await Promise.all([
+    dbGetAll('pacientes'),
+    dbGetAll('medicamentos'),
+    dbGetAll('doses'),
+    dbGetAll('laboratorio'),
+  ]);
+
+  if (!pacs.length) {
+    document.getElementById('content').innerHTML = '<p class="loading">Nenhum paciente cadastrado.</p>';
+    return;
+  }
+
+  const farmCfg = await dbGetConfig('farmaceutico_cfg') || {};
+  const hj = hoje();
+
+  // Carrega dados por paciente em paralelo
+  const dadosPac = await Promise.all(pacs.map(async p => {
+    const [soaps, ints, plano, rams, planoSeg] = await Promise.all([
+      dbGetConfig('soap_' + p.id),
+      dbGetConfig('sft_int_' + p.id),
+      dbGetConfig('plano_cuidados_' + p.id),
+      dbGetConfig('ram_' + p.id),
+      dbGetConfig('plano_seg_' + p.id),
+    ]);
+    const meds = allMeds.filter(m => m.pacienteId === p.id && m.ativo !== false && (!m.dataFim||m.dataFim>=hj));
+    const doses = allDoses.filter(d => {
+      const m = allMeds.find(x => x.id === d.medicamentoId);
+      return m?.pacienteId === p.id;
+    });
+    const labs = allLabs.filter(l => l.pacienteId === p.id);
+    return { p, meds, doses, labs, soaps: soaps||[], ints: ints||[], plano: plano||{}, rams: rams||[], planoSeg: planoSeg||{} };
+  }));
+
+  _dadosBrutos = dadosPac;
+  renderRelatorio(dadosPac, farmCfg, pacs);
+}
+
+function renderRelatorio(dadosPac, farmCfg, pacs) {
+  const N = pacs.length;
+  const dtHoje = new Date().toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'});
+
+  // === Idades ===
+  const idades = pacs.map(p=>parseInt(p.idadePac)||0).filter(i=>i>0);
+  const idadeMean = idades.length ? Math.round(idades.reduce((a,b)=>a+b,0)/idades.length) : '—';
+  const idadeMin  = idades.length ? Math.min(...idades) : '—';
+  const idadeMax  = idades.length ? Math.max(...idades) : '—';
+  const nFem = pacs.filter(p=>p.sexoPac==='F').length;
+  const nIdosos = pacs.filter(p=>(parseInt(p.idadePac)||0)>=65).length;
+  const nPoli = dadosPac.filter(d=>d.meds.length>=5).length;
+
+  // === SOAPs ===
+  const totSoaps = dadosPac.reduce((s,d)=>s+d.soaps.length,0);
+
+  // === Intervenções ===
+  const todasInts = dadosPac.flatMap(d=>d.ints);
+  const totInts   = todasInts.length;
+  const nAceitas  = todasInts.filter(i=>i.aceita==='sim'||i.aceita===true).length;
+  const nNaoAc    = todasInts.filter(i=>i.aceita==='nao'||i.aceita===false).length;
+  const nPend     = totInts - nAceitas - nNaoAc;
+  const taxaAc    = totInts ? Math.round(nAceitas/totInts*100) : 0;
+
+  // Tipos de intervenção
+  const tiposInt = {};
+  todasInts.forEach(i => {
+    const t = i.tipo || 'Não especificado';
+    tiposInt[t] = (tiposInt[t]||0)+1;
+  });
+  const tiposIntSort = Object.entries(tiposInt).sort((a,b)=>b[1]-a[1]).slice(0,6);
+
+  // === PRMs ===
+  const todosProbs = dadosPac.flatMap(d=>(d.plano.problemas||[]));
+  const totPRMs    = todosProbs.length;
+  const nResolvidos= todosProbs.filter(p=>p.status==='resolvido').length;
+  const nAbertos   = todosProbs.filter(p=>p.status!=='resolvido').length;
+  const taxaRes    = totPRMs ? Math.round(nResolvidos/totPRMs*100) : 0;
+
+  // PRMs por categoria
+  const catPRM = {};
+  todosProbs.forEach(p => {
+    const c = p.categoria || p.tipo || 'Não classificado';
+    catPRM[c] = (catPRM[c]||0)+1;
+  });
+  const catPRMSort = Object.entries(catPRM).sort((a,b)=>b[1]-a[1]).slice(0,8);
+
+  // === RAMs ===
+  const todasRAMs = dadosPac.flatMap(d=>d.rams);
+  const totRAMs   = todasRAMs.length;
+  const ramsPorMed = {};
+  todasRAMs.forEach(r=>{
+    const m = r.med||r.medicamento||'?';
+    ramsPorMed[m] = (ramsPorMed[m]||0)+1;
+  });
+  const ramsSort = Object.entries(ramsPorMed).sort((a,b)=>b[1]-a[1]).slice(0,5);
+
+  // === Aderência ===
+  const adhs = dadosPac.map(d=>{
+    const tot = d.doses.length;
+    const tom = d.doses.filter(x=>x.status==='tomado').length;
+    return tot ? tom/tot : null;
+  }).filter(x=>x!==null);
+  const adhMean = adhs.length ? Math.round(adhs.reduce((a,b)=>a+b,0)/adhs.length*100) : null;
+  const nBoa     = adhs.filter(a=>a>=0.8).length;
+  const nParc    = adhs.filter(a=>a>=0.6&&a<0.8).length;
+  const nBaixa   = adhs.filter(a=>a<0.6).length;
+
+  // === Medicamentos ===
+  const medsPorNome = {};
+  dadosPac.forEach(d => d.meds.forEach(m=>{
+    const n = m.nome||m.generico||'?';
+    medsPorNome[n] = (medsPorNome[n]||0)+1;
+  }));
+  const medsSort = Object.entries(medsPorNome).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  const totalMeds = dadosPac.reduce((s,d)=>s+d.meds.length,0);
+  const medsMean  = N ? (totalMeds/N).toFixed(1) : '—';
+
+  // Beers
+  let nBeers = 0;
+  if (typeof buscarBeers==='function') {
+    nBeers = dadosPac.filter(d=>{
+      const idoso = (parseInt(d.p.idadePac)||0)>=65;
+      if (!idoso) return false;
+      return d.meds.some(m=>buscarBeers(m.nome));
+    }).length;
+  }
+
+  // === Condições mais frequentes ===
+  const condCount = {};
+  pacs.forEach(p=>(p.condicoes||[]).forEach(c=>{ condCount[c]=(condCount[c]||0)+1; }));
+  const condsSort = Object.entries(condCount).sort((a,b)=>b[1]-a[1]).slice(0,8);
+
+  // === Render ===
+  const farm = farmCfg.nome ? `${farmCfg.nome}${farmCfg.crf?' — '+farmCfg.crf:''}` : 'Farmacêutico não identificado';
+
+  document.getElementById('content').innerHTML = `
+
+  <!-- Cabeçalho acadêmico -->
+  <div class="card" style="border-left:4px solid #1e3a5f">
+    <div style="font-size:.65rem;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">Relatório de Pesquisa — Farmácia Clínica</div>
+    <div style="font-size:1.05rem;font-weight:900;color:#1e3a5f;margin-bottom:4px">Seguimento Farmacoterapêutico — Série de Casos</div>
+    <div style="font-size:.78rem;color:#475569;line-height:1.6">
+      <strong>Farmacêutico responsável:</strong> ${esc(farm)}<br>
+      <strong>Data de extração:</strong> ${dtHoje}<br>
+      <strong>Total de pacientes acompanhados:</strong> ${N}
+    </div>
+  </div>
+
+  <!-- KPIs principais -->
+  <div class="kpi-row">
+    <div class="kpi"><div class="kpi-n">${N}</div><div class="kpi-l">Pacientes</div></div>
+    <div class="kpi"><div class="kpi-n">${totSoaps}</div><div class="kpi-l">Consultas SOAP</div></div>
+    <div class="kpi"><div class="kpi-n">${totInts}</div><div class="kpi-l">Intervenções</div></div>
+  </div>
+  <div class="kpi-row">
+    <div class="kpi"><div class="kpi-n">${totPRMs}</div><div class="kpi-l">PRMs identificados</div></div>
+    <div class="kpi"><div class="kpi-n">${totRAMs}</div><div class="kpi-l">RAMs documentadas</div></div>
+    <div class="kpi"><div class="kpi-n" style="color:${taxaAc>=70?'#16a34a':taxaAc>=50?'#d97706':'#dc2626'}">${taxaAc}%</div><div class="kpi-l">Taxa de aceitação</div></div>
+  </div>
+
+  <!-- Caracterização da amostra -->
+  <div class="card">
+    <div class="card-title">👥 Caracterização da Amostra (n = ${N})</div>
+    <table class="et">
+      <tr><td style="color:#64748b;font-weight:600;width:52%">Idade — média (variação)</td><td>${idadeMean} anos (${idadeMin}–${idadeMax})</td></tr>
+      <tr><td style="color:#64748b;font-weight:600">Sexo feminino</td><td>${nFem} (${N?Math.round(nFem/N*100):0}%)</td></tr>
+      <tr><td style="color:#64748b;font-weight:600">Idosos (≥65 anos)</td><td>${nIdosos} (${N?Math.round(nIdosos/N*100):0}%)</td></tr>
+      <tr><td style="color:#64748b;font-weight:600">Polifarmácia (≥5 medicamentos)</td><td>${nPoli} (${N?Math.round(nPoli/N*100):0}%)</td></tr>
+      <tr><td style="color:#64748b;font-weight:600">Média de medicamentos/paciente</td><td>${medsMean}</td></tr>
+      <tr><td style="color:#64748b;font-weight:600">Critérios de Beers identificados</td><td>${nBeers} (${N?Math.round(nBeers/N*100):0}%)</td></tr>
+      <tr><td style="color:#64748b;font-weight:600">Com exames laboratoriais registrados</td><td>${dadosPac.filter(d=>d.labs.length>0).length} (${N?Math.round(dadosPac.filter(d=>d.labs.length>0).length/N*100):0}%)</td></tr>
+    </table>
+  </div>
+
+  <!-- Condições clínicas -->
+  ${condsSort.length ? `<div class="card">
+    <div class="card-title">🏥 Condições Clínicas mais Frequentes</div>
+    ${condsSort.map(([c,n])=>`
+      <div class="hbar-row">
+        <div class="hbar-lbl">${esc(c)}</div>
+        <div class="hbar-wrap"><div class="hbar-fill" style="width:${Math.round(n/N*100)}%"></div></div>
+        <div class="hbar-val">${n} (${Math.round(n/N*100)}%)</div>
+      </div>`).join('')}
+  </div>` : ''}
+
+  <!-- Aderência terapêutica -->
+  ${adhMean !== null ? `<div class="card">
+    <div class="card-title">📊 Aderência Terapêutica</div>
+    <div style="display:flex;align-items:center;gap:16px;margin-bottom:10px">
+      <div style="font-size:2.4rem;font-weight:900;color:${adhMean>=80?'#16a34a':adhMean>=60?'#d97706':'#dc2626'}">${adhMean}%</div>
+      <div>
+        <div style="font-size:.78rem;color:#374151"><strong>Aderência média geral</strong></div>
+        <div style="font-size:.7rem;color:#64748b;margin-top:2px">${adhs.length} pacientes com registro de doses</div>
+      </div>
+    </div>
+    <div class="adh-dist">
+      ${nBoa   ? `<div class="adh-seg" style="width:${Math.round(nBoa/adhs.length*100)}%;background:#16a34a">${Math.round(nBoa/adhs.length*100)}%</div>` : ''}
+      ${nParc  ? `<div class="adh-seg" style="width:${Math.round(nParc/adhs.length*100)}%;background:#d97706">${Math.round(nParc/adhs.length*100)}%</div>` : ''}
+      ${nBaixa ? `<div class="adh-seg" style="width:${Math.round(nBaixa/adhs.length*100)}%;background:#dc2626">${Math.round(nBaixa/adhs.length*100)}%</div>` : ''}
+    </div>
+    <div style="display:flex;gap:12px;margin-top:6px;font-size:.65rem;color:#64748b">
+      <span style="color:#16a34a">●</span> Boa ≥80%: ${nBoa} (${Math.round(nBoa/adhs.length*100)}%)
+      <span style="color:#d97706">●</span> Parcial 60–79%: ${nParc} (${Math.round(nParc/adhs.length*100)}%)
+      <span style="color:#dc2626">●</span> Baixa &lt;60%: ${nBaixa} (${Math.round(nBaixa/adhs.length*100)}%)
+    </div>
+  </div>` : ''}
+
+  <!-- Intervenções -->
+  <div class="card">
+    <div class="card-title">🩺 Intervenções Farmacêuticas</div>
+    <table class="et" style="margin-bottom:10px">
+      <tr><td style="color:#64748b;font-weight:600;width:52%">Total de intervenções</td><td><strong>${totInts}</strong></td></tr>
+      <tr><td style="color:#64748b;font-weight:600">Aceitas pelo prescritor</td><td>${nAceitas} <span class="badge b-ok">${taxaAc}%</span></td></tr>
+      <tr><td style="color:#64748b;font-weight:600">Não aceitas</td><td>${nNaoAc} (${totInts?Math.round(nNaoAc/totInts*100):0}%)</td></tr>
+      <tr><td style="color:#64748b;font-weight:600">Pendentes</td><td>${nPend}</td></tr>
+      <tr><td style="color:#64748b;font-weight:600">Média por paciente</td><td>${N?(totInts/N).toFixed(1):'—'}</td></tr>
+    </table>
+    ${tiposIntSort.length ? `
+      <div style="font-size:.65rem;font-weight:800;color:#94a3b8;text-transform:uppercase;margin-bottom:8px">Tipos de intervenção</div>
+      ${tiposIntSort.map(([t,n])=>`
+        <div class="hbar-row">
+          <div class="hbar-lbl">${esc(t)}</div>
+          <div class="hbar-wrap"><div class="hbar-fill" style="width:${totInts?Math.round(n/totInts*100):0}%"></div></div>
+          <div class="hbar-val">${n}</div>
+        </div>`).join('')}` : ''}
+  </div>
+
+  <!-- PRMs -->
+  <div class="card">
+    <div class="card-title">🎯 Problemas Relacionados a Medicamentos (PRMs)</div>
+    <table class="et" style="margin-bottom:10px">
+      <tr><td style="color:#64748b;font-weight:600;width:52%">Total de PRMs identificados</td><td><strong>${totPRMs}</strong></td></tr>
+      <tr><td style="color:#64748b;font-weight:600">PRMs resolvidos</td><td>${nResolvidos} <span class="badge b-ok">${taxaRes}%</span></td></tr>
+      <tr><td style="color:#64748b;font-weight:600">PRMs em aberto</td><td>${nAbertos} <span class="badge b-bad">${totPRMs?Math.round(nAbertos/totPRMs*100):0}%</span></td></tr>
+      <tr><td style="color:#64748b;font-weight:600">Média de PRMs/paciente</td><td>${N?(totPRMs/N).toFixed(1):'—'}</td></tr>
+    </table>
+    ${catPRMSort.length ? `
+      <div style="font-size:.65rem;font-weight:800;color:#94a3b8;text-transform:uppercase;margin-bottom:8px">PRMs por categoria</div>
+      ${catPRMSort.map(([c,n])=>`
+        <div class="hbar-row">
+          <div class="hbar-lbl">${esc(c)}</div>
+          <div class="hbar-wrap"><div class="hbar-fill" style="width:${totPRMs?Math.round(n/totPRMs*100):0}%;background:#7c3aed"></div></div>
+          <div class="hbar-val">${n}</div>
+        </div>`).join('')}` : ''}
+  </div>
+
+  <!-- RAMs -->
+  ${totRAMs ? `<div class="card">
+    <div class="card-title">⚠️ Reações Adversas a Medicamentos (RAMs) — ${totRAMs} documentadas</div>
+    <table class="et">
+      <thead><tr><th>Medicamento</th><th>Ocorrências</th><th>% do total</th></tr></thead>
+      <tbody>${ramsSort.map(([m,n])=>`<tr>
+        <td>${esc(m)}</td><td><strong>${n}</strong></td>
+        <td><span class="badge b-warn">${Math.round(n/totRAMs*100)}%</span></td>
+      </tr>`).join('')}</tbody>
+    </table>
+  </div>` : ''}
+
+  <!-- Medicamentos mais prescritos -->
+  ${medsSort.length ? `<div class="card">
+    <div class="card-title">💊 Medicamentos mais Prescritos (top 10)</div>
+    ${medsSort.map(([m,n],i)=>`
+      <div class="hbar-row">
+        <div class="hbar-lbl">${i+1}. ${esc(m)}</div>
+        <div class="hbar-wrap"><div class="hbar-fill" style="width:${N?Math.round(n/N*100):0}%;background:#0891b2"></div></div>
+        <div class="hbar-val">${n} (${N?Math.round(n/N*100):0}%)</div>
+      </div>`).join('')}
+  </div>` : ''}
+
+  <!-- Tabela por paciente -->
+  <div class="card">
+    <div class="card-title">📋 Síntese por Paciente</div>
+    <div style="overflow-x:auto">
+    <table class="et">
+      <thead><tr><th>#</th><th>Paciente</th><th>Idade</th><th>Meds</th><th>Consultas</th><th>PRMs</th><th>Interv.</th><th>Aderência</th></tr></thead>
+      <tbody>${dadosPac.map((d,i)=>{
+        const tot = d.doses.length;
+        const tom = d.doses.filter(x=>x.status==='tomado').length;
+        const adh = tot ? Math.round(tom/tot*100) : null;
+        const adhCls = adh===null?'':adh>=80?'b-ok':adh>=60?'b-warn':'b-bad';
+        return `<tr>
+          <td style="color:#94a3b8">${i+1}</td>
+          <td><strong>${esc(d.p.nome?.split(' ')[0]||'—')}</strong></td>
+          <td>${d.p.idadePac||'—'}</td>
+          <td>${d.meds.length}</td>
+          <td>${d.soaps.length}</td>
+          <td>${(d.plano.problemas||[]).length}</td>
+          <td>${d.ints.length}</td>
+          <td>${adh!==null?`<span class="badge ${adhCls}">${adh}%</span>`:'—'}</td>
+        </tr>`;
+      }).join('')}</tbody>
+    </table>
+    </div>
+  </div>
+
+  <!-- Rodapé acadêmico -->
+  <div class="card">
+    <div class="rodape-ac">
+      <strong>Nota metodológica:</strong> Dados extraídos do sistema VitaDose — PWA de Farmácia Clínica desenvolvido com tecnologia offline-first (IndexedDB/PWA).
+      Os dados representam o período de acompanhamento registrado no sistema, sem delimitação de datas fixas.
+      As intervenções farmacêuticas foram classificadas por tipo conforme inserção clínica.
+      A aderência foi calculada com base nos registros de confirmação de dose realizados pelos próprios pacientes.
+      PRMs classificados conforme nomenclatura PCNE v9.1 quando disponível.<br><br>
+      <strong>Gerado em:</strong> ${dtHoje} · <strong>Farmacêutico:</strong> ${esc(farm)} · VitaDose PWA
+    </div>
+  </div>`;
+}
+
+function exportarCSV() {
+  if (!_dadosBrutos) return;
+  const rows = [['Paciente','Idade','Sexo','Peso (kg)','Medicamentos','Consultas SOAP','PRMs','PRMs Resolvidos','Intervenções','Interv. Aceitas','Aderência (%)','RAMs','Condições']];
+  _dadosBrutos.forEach(d => {
+    const tot = d.doses.length;
+    const tom = d.doses.filter(x=>x.status==='tomado').length;
+    const adh = tot ? Math.round(tom/tot*100) : '';
+    const nAc = d.ints.filter(i=>i.aceita==='sim'||i.aceita===true).length;
+    const prms = d.plano.problemas || [];
+    rows.push([
+      d.p.nome||'', d.p.idadePac||'', d.p.sexoPac||'', d.p.pesoPac||'',
+      d.meds.length, d.soaps.length, prms.length,
+      prms.filter(p=>p.status==='resolvido').length,
+      d.ints.length, nAc, adh, d.rams.length,
+      (d.p.condicoes||[]).join('; '),
+    ]);
+  });
+  const csv = rows.map(r=>r.map(c=>'"'+String(c||'').replace(/"/g,'""')+'"').join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,﻿' + encodeURIComponent(csv);
+  a.download = 'vitadose-pesquisa-' + hoje() + '.csv';
+  a.click();
+}
+
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') }
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>

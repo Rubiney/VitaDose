@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>Agenda de Retornos — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .topbar { display:flex;align-items:center;gap:10px;padding:12px 16px;background:#1e3a5f;position:sticky;top:0;z-index:100 }
+    .back-btn { background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:8px;padding:6px 11px;cursor:pointer;font-size:1rem }
+    .topbar-title { font-size:.93rem;font-weight:800;color:#fff;flex:1 }
+    .topbar-sub { font-size:.62rem;color:rgba(255,255,255,.7);margin-top:1px }
+
+    main { max-width:560px;margin:0 auto;padding:12px 14px 90px }
+
+    /* Summary strip */
+    .strip { display:flex;gap:8px;margin-bottom:12px }
+    .strip-item { flex:1;background:#fff;border-radius:12px;padding:12px 10px;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,.07) }
+    .strip-n { font-size:1.6rem;font-weight:900;line-height:1 }
+    .strip-l { font-size:.63rem;color:#64748b;font-weight:700;text-transform:uppercase;margin-top:3px }
+
+    /* Filtros */
+    .filter-tabs { display:flex;gap:6px;margin-bottom:10px;overflow-x:auto;padding-bottom:2px }
+    .filter-tab { padding:7px 14px;border-radius:999px;border:1.5px solid #e2e8f0;background:#f8fafc;font-size:.76rem;font-weight:700;color:#64748b;cursor:pointer;white-space:nowrap;flex-shrink:0 }
+    .filter-tab.active { background:#1e3a5f;color:#fff;border-color:#1e3a5f }
+
+    /* Cards de retorno */
+    .ret-card { background:#fff;border-radius:14px;padding:14px;margin-bottom:8px;box-shadow:0 1px 4px rgba(0,0,0,.07);border-left:4px solid #e2e8f0;position:relative }
+    .ret-card.hoje    { border-left-color:#16a34a }
+    .ret-card.atrasado{ border-left-color:#dc2626 }
+    .ret-card.proximo { border-left-color:#d97706 }
+    .ret-card.futuro  { border-left-color:#0891b2 }
+    .ret-card.feito   { border-left-color:#94a3b8;opacity:.6 }
+
+    .ret-status-bar { display:flex;align-items:center;gap:6px;margin-bottom:6px }
+    .ret-badge { font-size:.63rem;font-weight:800;border-radius:999px;padding:2px 9px }
+    .rb-hoje    { background:#dcfce7;color:#15803d }
+    .rb-atras   { background:#fee2e2;color:#dc2626 }
+    .rb-proximo { background:#fef3c7;color:#92400e }
+    .rb-futuro  { background:#e0f2fe;color:#0369a1 }
+    .rb-feito   { background:#f1f5f9;color:#64748b }
+
+    .ret-pac   { font-size:.95rem;font-weight:800;color:#1e293b }
+    .ret-data  { font-size:.8rem;color:#475569;margin-top:2px }
+    .ret-fonte { font-size:.7rem;color:#94a3b8;margin-top:2px }
+    .ret-plano { font-size:.78rem;color:#374151;background:#f8fafc;border-radius:8px;padding:8px 10px;margin-top:8px;line-height:1.5 }
+
+    .ret-actions { display:flex;gap:6px;margin-top:10px;flex-wrap:wrap }
+    .btn-action { border-radius:9px;padding:7px 12px;font-size:.75rem;font-weight:700;cursor:pointer;border:none }
+    .btn-consulta { background:#1e3a5f;color:#fff }
+    .btn-consulta:hover { background:#16305a }
+    .btn-feito    { background:#16a34a;color:#fff }
+    .btn-adiar    { background:#f1f5f9;color:#475569;border:1.5px solid #e2e8f0 }
+    .btn-del      { background:none;color:#dc2626;border:1.5px solid #fca5a5;padding:6px 10px;font-size:.72rem;cursor:pointer;border-radius:8px }
+
+    /* Modal */
+    .modal-bg { position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;display:flex;align-items:center;justify-content:center;padding:20px }
+    .modal { background:#fff;border-radius:16px;padding:20px;max-width:340px;width:100% }
+    .modal h3 { font-size:.95rem;font-weight:800;color:#1e293b;margin-bottom:12px }
+    .modal-label { font-size:.72rem;font-weight:700;color:#475569;display:block;margin-bottom:4px;margin-top:10px }
+    .modal-inp { width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:9px;padding:8px 11px;font-size:.82rem }
+    .modal-btns { display:flex;gap:8px;margin-top:14px }
+    .modal-btns button { flex:1;padding:11px;border-radius:10px;font-weight:700;font-size:.84rem;cursor:pointer;border:none }
+    .btn-cancel  { background:#f1f5f9;color:#475569 }
+    .btn-confirm { background:#1e3a5f;color:#fff }
+
+    /* Novo retorno */
+    .btn-novo { width:100%;background:#1e3a5f;color:#fff;border:none;border-radius:12px;padding:13px;font-size:.88rem;font-weight:700;cursor:pointer;margin-bottom:10px }
+
+    .empty { text-align:center;color:#94a3b8;font-size:.82rem;padding:30px 0;line-height:1.7 }
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <div style="flex:1">
+    <div class="topbar-title">📅 Agenda de Retornos</div>
+    <div class="topbar-sub" id="dataHoje"></div>
+  </div>
+</div>
+
+<main>
+  <div id="strip" class="strip"></div>
+
+  <div class="filter-tabs">
+    <button class="filter-tab active" onclick="setFiltro('todos',this)">Todos</button>
+    <button class="filter-tab" onclick="setFiltro('hoje',this)">Hoje</button>
+    <button class="filter-tab" onclick="setFiltro('atrasado',this)">Atrasados</button>
+    <button class="filter-tab" onclick="setFiltro('proximo',this)">Próximos 7d</button>
+    <button class="filter-tab" onclick="setFiltro('feito',this)">Realizados</button>
+  </div>
+
+  <button class="btn-novo" onclick="abrirModalNovo()">+ Agendar Novo Retorno</button>
+
+  <div id="lista"></div>
+</main>
+
+<!-- Modal novo retorno -->
+<div id="modal-bg" class="modal-bg" style="display:none" onclick="e=>e.target===this&&fecharModal()">
+  <div class="modal">
+    <h3 id="modal-title">Novo Retorno</h3>
+    <label class="modal-label">Paciente</label>
+    <select id="m-pac" class="modal-inp"><option value="">Selecione...</option></select>
+    <label class="modal-label">Data do retorno *</label>
+    <input type="date" id="m-data" class="modal-inp">
+    <label class="modal-label">Condutas / objetivo</label>
+    <textarea id="m-obs" class="modal-inp" rows="2" style="resize:vertical;margin-top:0" placeholder="Ex: Avaliar controle pressórico, verificar aderência..."></textarea>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="fecharModal()">Cancelar</button>
+      <button class="btn-confirm" onclick="salvarNovoRetorno()">Agendar</button>
+    </div>
+  </div>
+</div>
+
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+
+<script src="js/db.js"></script>
+<script src="js/utils.js"></script>
+<script>
+
+let _retornos = [];    // { pid, pacNome, data, plano, fonte, feito, id }
+let _pacs     = [];
+let _filtro   = 'todos';
+
+const HJ = hoje();
+
+document.getElementById('dataHoje').textContent = new Date().toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'long'});
+
+function statusRet(data, feito) {
+  if (feito) return 'feito';
+  if (data < HJ)  return 'atrasado';
+  if (data === HJ) return 'hoje';
+  const diff = diffDias(HJ, data);
+  return diff <= 7 ? 'proximo' : 'futuro';
+}
+
+function diffDias(a, b) {
+  return Math.round((new Date(b) - new Date(a)) / 86400000);
+}
+
+async function init() {
+  _pacs = await dbGetAll('pacientes');
+  await carregarRetornos();
+  renderPage();
+}
+
+async function carregarRetornos() {
+  _retornos = [];
+
+  // Retornos salvos manualmente (agenda-retornos)
+  for (const p of _pacs) {
+    const lista = (await dbGetConfig('agenda_ret_' + p.id)) || [];
+    lista.forEach(r => {
+      _retornos.push({ pid: p.id, pacNome: p.nome||'?', data: r.data, plano: r.obs||'', fonte:'Manual', feito: r.feito||false, id: r.id });
+    });
+    // Plano de Seguimento do SFT
+    const planoSeg = await dbGetConfig('plano_seg_' + p.id);
+    if (planoSeg?.retorno && !_retornos.some(r=>r.pid===p.id&&r.data===planoSeg.retorno&&r.fonte==='SFT')) {
+      _retornos.push({ pid: p.id, pacNome: p.nome||'?', data: planoSeg.retorno, plano: planoSeg.plano||'', fonte:'Relatório SFT', feito: false, id: 'sft_'+p.id });
+    }
+    // Intervenções com data de retorno
+    const ints = (await dbGetConfig('sft_int_' + p.id)) || [];
+    const intComRetorno = [...ints].reverse().find(i => i.retorno);
+    if (intComRetorno?.retorno && !_retornos.some(r=>r.pid===p.id&&r.data===intComRetorno.retorno&&r.fonte==='Intervenção')) {
+      _retornos.push({ pid: p.id, pacNome: p.nome||'?', data: intComRetorno.retorno, plano: intComRetorno.conduta||intComRetorno.acao||'', fonte:'Intervenção SFT', feito: false, id: 'int_'+p.id });
+    }
+  }
+
+  // Ordena por data
+  _retornos.sort((a,b) => {
+    if (a.feito !== b.feito) return a.feito ? 1 : -1;
+    return a.data < b.data ? -1 : 1;
+  });
+}
+
+function renderPage() {
+  // Strip
+  const nHoje    = _retornos.filter(r=>!r.feito&&r.data===HJ).length;
+  const nAtras   = _retornos.filter(r=>!r.feito&&r.data<HJ).length;
+  const nProx    = _retornos.filter(r=>!r.feito&&r.data>HJ&&diffDias(HJ,r.data)<=7).length;
+  const nFeitos  = _retornos.filter(r=>r.feito).length;
+  document.getElementById('strip').innerHTML = `
+    <div class="strip-item"><div class="strip-n" style="color:${nAtras?'#dc2626':'#94a3b8'}">${nAtras}</div><div class="strip-l">Atrasados</div></div>
+    <div class="strip-item"><div class="strip-n" style="color:${nHoje?'#16a34a':'#94a3b8'}">${nHoje}</div><div class="strip-l">Hoje</div></div>
+    <div class="strip-item"><div class="strip-n" style="color:${nProx?'#d97706':'#94a3b8'}">${nProx}</div><div class="strip-l">Próx. 7d</div></div>
+    <div class="strip-item"><div class="strip-n" style="color:#94a3b8">${nFeitos}</div><div class="strip-l">Realizados</div></div>`;
+
+  // Lista filtrada
+  let lista = _retornos;
+  if (_filtro === 'hoje')     lista = _retornos.filter(r=>!r.feito&&r.data===HJ);
+  if (_filtro === 'atrasado') lista = _retornos.filter(r=>!r.feito&&r.data<HJ);
+  if (_filtro === 'proximo')  lista = _retornos.filter(r=>!r.feito&&r.data>HJ&&diffDias(HJ,r.data)<=7);
+  if (_filtro === 'feito')    lista = _retornos.filter(r=>r.feito);
+
+  const el = document.getElementById('lista');
+  if (!lista.length) {
+    el.innerHTML = `<div class="empty">Nenhum retorno ${_filtro==='todos'?'agendado':_filtro==='feito'?'realizado ainda':_filtro==='atrasado'?'atrasado':'para este período'}.<br>
+      ${_filtro==='todos'?'Use "+ Agendar Novo Retorno" ou registre a data de retorno no Relatório SFT.':''}</div>`;
+    return;
+  }
+
+  const LABEL = { hoje:'Hoje', atrasado:'Atrasado', proximo:'Em breve', futuro:'Agendado', feito:'Realizado' };
+  const BCLS  = { hoje:'rb-hoje', atrasado:'rb-atras', proximo:'rb-proximo', futuro:'rb-futuro', feito:'rb-feito' };
+
+  el.innerHTML = lista.map(r => {
+    const st    = statusRet(r.data, r.feito);
+    const dtFmt = r.data ? new Date(r.data+'T12:00').toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'short',year:'numeric'}) : '—';
+    const diasDiff = r.data ? diffDias(HJ, r.data) : null;
+    const diffTxt = diasDiff===0?'':diasDiff>0?`em ${diasDiff} dia${diasDiff>1?'s':''}`:`${Math.abs(diasDiff)} dia${Math.abs(diasDiff)>1?'s':''} atrás`;
+
+    return `<div class="ret-card ${st}">
+      <div class="ret-status-bar">
+        <span class="ret-badge ${BCLS[st]}">${LABEL[st]}</span>
+        <span style="font-size:.65rem;color:#94a3b8">${esc(r.fonte)}</span>
+        ${diffTxt?`<span style="font-size:.65rem;color:#94a3b8;margin-left:auto">${diffTxt}</span>`:''}
+      </div>
+      <div class="ret-pac">${esc(r.pacNome)}</div>
+      <div class="ret-data">📅 ${dtFmt}</div>
+      ${r.plano?`<div class="ret-plano">📋 ${esc(r.plano.slice(0,120))}</div>`:''}
+      <div class="ret-actions">
+        ${!r.feito?`
+          <button class="btn-action btn-consulta" onclick="abrirConsulta(${r.pid})">📋 Realizar consulta</button>
+          <button class="btn-action btn-feito" onclick="marcarFeito('${r.id}',${r.pid})">✓ Realizado</button>
+          <button class="btn-action btn-adiar" onclick="adiarRetorno('${r.id}',${r.pid})">⏰ Adiar</button>
+        ` : `
+          <span style="font-size:.78rem;color:#16a34a;font-weight:700">✅ Consulta realizada</span>
+          <button class="btn-del" onclick="excluirRetorno('${r.id}',${r.pid})">🗑</button>
+        `}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function setFiltro(f, btn) {
+  _filtro = f;
+  document.querySelectorAll('.filter-tab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderPage();
+}
+
+function abrirConsulta(pid) {
+  localStorage.setItem('vd_active', pid);
+  window.location.href = 'relatorio-sft.html';
+}
+
+async function marcarFeito(id, pid) {
+  if (id.startsWith('sft_') || id.startsWith('int_')) {
+    // Retornos vindos de outras fontes: adicionar como realizado na agenda manual
+    const lista = (await dbGetConfig('agenda_ret_' + pid)) || [];
+    lista.push({ id: Date.now()+'_f', data: HJ, obs: 'Retorno realizado', feito: true });
+    await dbSetConfig('agenda_ret_' + pid, lista);
+  } else {
+    const lista = (await dbGetConfig('agenda_ret_' + pid)) || [];
+    const idx = lista.findIndex(r => String(r.id) === String(id));
+    if (idx >= 0) { lista[idx].feito = true; await dbSetConfig('agenda_ret_' + pid, lista); }
+  }
+  await carregarRetornos();
+  renderPage();
+  showToast('✅ Retorno marcado como realizado');
+}
+
+async function excluirRetorno(id, pid) {
+  if (!confirm('Excluir este retorno do histórico?')) return;
+  const lista = (await dbGetConfig('agenda_ret_' + pid)) || [];
+  const nova = lista.filter(r => String(r.id) !== String(id));
+  await dbSetConfig('agenda_ret_' + pid, nova);
+  await carregarRetornos();
+  renderPage();
+}
+
+async function adiarRetorno(id, pid) {
+  const dias = prompt('Adiar por quantos dias?', '7');
+  if (!dias || isNaN(parseInt(dias))) return;
+  const ret = _retornos.find(r=>r.id===id&&r.pid===pid);
+  if (!ret) return;
+  const d = new Date(ret.data+'T12:00');
+  d.setDate(d.getDate() + parseInt(dias));
+  const novaData = d.toISOString().slice(0,10);
+
+  if (String(id).startsWith('sft_') || String(id).startsWith('int_')) {
+    // Cria na agenda manual
+    const lista = (await dbGetConfig('agenda_ret_' + pid)) || [];
+    lista.push({ id: Date.now(), data: novaData, obs: ret.plano || '', feito: false });
+    await dbSetConfig('agenda_ret_' + pid, lista);
+  } else {
+    const lista = (await dbGetConfig('agenda_ret_' + pid)) || [];
+    const idx = lista.findIndex(r => String(r.id) === String(id));
+    if (idx >= 0) { lista[idx].data = novaData; await dbSetConfig('agenda_ret_' + pid, lista); }
+  }
+  await carregarRetornos();
+  renderPage();
+  showToast('⏰ Retorno adiado para ' + new Date(novaData+'T12:00').toLocaleDateString('pt-BR'));
+}
+
+async function abrirModalNovo() {
+  const sel = document.getElementById('m-pac');
+  sel.innerHTML = '<option value="">Selecione...</option>' +
+    _pacs.map(p=>`<option value="${p.id}">${esc(p.nome||'Paciente '+p.id)}</option>`).join('');
+  document.getElementById('m-data').value = '';
+  document.getElementById('m-obs').value = '';
+  document.getElementById('modal-bg').style.display = 'flex';
+}
+
+async function salvarNovoRetorno() {
+  const pid  = parseInt(document.getElementById('m-pac').value);
+  const data = document.getElementById('m-data').value;
+  const obs  = document.getElementById('m-obs').value.trim();
+  if (!pid || !data) { alert('Selecione o paciente e a data.'); return; }
+
+  const lista = (await dbGetConfig('agenda_ret_' + pid)) || [];
+  lista.push({ id: Date.now(), data, obs, feito: false });
+  await dbSetConfig('agenda_ret_' + pid, lista);
+  fecharModal();
+  await carregarRetornos();
+  renderPage();
+  showToast('✅ Retorno agendado');
+}
+
+function fecharModal() { document.getElementById('modal-bg').style.display = 'none'; }
+
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') }
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
