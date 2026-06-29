@@ -99,6 +99,45 @@
     <div id="secMeds">Carregando…</div>
   </div>
 
+  <!-- PRMs automáticos -->
+  <div class="card">
+    <p class="sec-lbl">Problemas Relacionados a Medicamentos — Identificação Automática</p>
+    <div id="secPRMs">Analisando…</div>
+  </div>
+
+  <!-- Intervenções farmacêuticas -->
+  <div class="card no-print">
+    <p class="sec-lbl">Intervenções Farmacêuticas</p>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <div>
+        <label style="font-size:.7rem;font-weight:600;color:#64748b;display:block;margin-bottom:4px">Intervenção realizada</label>
+        <textarea id="int-acao" rows="3" placeholder="Descreva a intervenção (ex: substituição de medicamento, orientação de dose, encaminhamento…)" class="inp-rpt" style="resize:vertical"></textarea>
+      </div>
+      <div>
+        <label style="font-size:.7rem;font-weight:600;color:#64748b;display:block;margin-bottom:4px">Resultado esperado</label>
+        <textarea id="int-result" rows="2" placeholder="Ex: melhora da adesão, redução do risco de hipoglicemia, controle pressórico em 30 dias…" class="inp-rpt" style="resize:vertical"></textarea>
+      </div>
+      <div style="display:flex;gap:8px">
+        <div style="flex:1">
+          <label style="font-size:.7rem;font-weight:600;color:#64748b;display:block;margin-bottom:4px">Data do retorno</label>
+          <input id="int-retorno" type="date" class="inp-rpt">
+        </div>
+        <div style="flex:1">
+          <label style="font-size:.7rem;font-weight:600;color:#64748b;display:block;margin-bottom:4px">Aceita pelo prescritor?</label>
+          <select id="int-aceita" class="inp-rpt">
+            <option value="">—</option>
+            <option value="sim">✅ Sim</option>
+            <option value="parcial">🟡 Parcialmente</option>
+            <option value="nao">❌ Não</option>
+            <option value="pendente">⏳ Pendente</option>
+          </select>
+        </div>
+      </div>
+      <button class="btn" style="align-self:flex-start;padding:7px 16px;font-size:.78rem" onclick="salvarIntervencao()">💾 Salvar Intervenção</button>
+    </div>
+    <div id="int-hist" style="margin-top:10px"></div>
+  </div>
+
   <!-- Aderência -->
   <div class="card">
     <p class="sec-lbl">Aderência Terapêutica — últimos 30 dias</p>
@@ -161,6 +200,13 @@
 </nav>
 
 <script src="js/db.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/interacoes.js"></script>
+<script src="js/duplicidade.js"></script>
+<script src="js/anticolin.js"></script>
+<script src="js/beers.js"></script>
+<script src="js/contraindicacoes.js"></script>
+<script src="js/stopp_start.js"></script>
 <script>
 const pid = localStorage.getItem('vd_active');
 
@@ -195,7 +241,10 @@ async function init() {
   ]);
 
   renderPac(pac);
+  const medsAtivos = allMeds.filter(m => (!m.pacienteId || String(m.pacienteId) === String(pid)) && m.ativo !== false && m.status !== 'inativo');
   renderMeds(allMeds);
+  renderPRMs(medsAtivos, pac);
+  renderIntHist();
   renderAdesao(allDoses);
   renderSOAP(soapHist);
   renderVitais(allDiario);
@@ -350,6 +399,104 @@ function renderLabs(all) {
       <td>${x(String(l.valor||l.resultado||'—'))}</td>
       <td>${x(l.unidade||'')}</td>
       <td>${l.data ? new Date(l.data+'T12:00').toLocaleDateString('pt-BR') : '—'}</td>
+    </tr>`).join('')}</tbody>
+  </table>`;
+}
+
+function renderPRMs(meds, pac) {
+  const el = document.getElementById('secPRMs');
+  if (!meds.length) { el.innerHTML = '<p style="color:#94a3b8;font-size:.8rem">Nenhum medicamento ativo para análise.</p>'; return; }
+
+  const prms = [];
+  const addPRM = (tipo, nivel, med, desc) => prms.push({ tipo, nivel, med, desc });
+
+  // Interações
+  if (typeof gerarAlertas === 'function') {
+    gerarAlertas(meds).forEach(a => addPRM('Interação', a.nivel, a.titulo, a.desc || ''));
+  }
+  // Critérios de Beers
+  if (typeof buscarBeers === 'function' && typeof pacienteIdoso === 'function' && pacienteIdoso(pac)) {
+    meds.forEach(m => {
+      const b = buscarBeers(m.nome);
+      if (b) addPRM('Critério de Beers', 'moderado', m.nome, b.motivo || b.obs || '');
+    });
+  }
+  // STOPP/START
+  if (typeof verificarSTOPP === 'function') {
+    verificarSTOPP(meds, pac).forEach(a => addPRM('STOPP ' + (a.codigo||''), a.risco || 'moderado', a.titulo || '', a.motivo || ''));
+  }
+  // Contraindicações
+  if (typeof verificarContraindicacoes === 'function' && pac.condicoes?.length) {
+    verificarContraindicacoes(meds, pac.condicoes).forEach(a => addPRM('Contraindicação', a.risco || 'grave', a.med || '', a.motivo || ''));
+  }
+  // Duplicidade
+  if (typeof verificarDuplicidade === 'function') {
+    verificarDuplicidade(meds).forEach(d => addPRM('Duplicidade terapêutica', d.nivel || 'moderado', d.classe || '', (d.meds||[]).join(' + ')));
+  }
+  // Carga anticolinérgica
+  if (typeof calcularCargaAnticolin === 'function') {
+    const acb = calcularCargaAnticolin(meds);
+    if (acb.total >= 3) {
+      addPRM('Carga anticolinérgica', acb.nivel === 'alto' ? 'grave' : 'moderado',
+        'ACB total: ' + acb.total + ' pts',
+        'Fármacos: ' + acb.itens.map(i => i.nome + '(' + i.score + ')').join(', '));
+    }
+  }
+
+  if (!prms.length) {
+    el.innerHTML = '<div style="display:flex;align-items:center;gap:8px;padding:8px 0;color:#16a34a"><span style="font-size:1.2rem">✅</span><span style="font-size:.82rem;font-weight:600">Nenhum problema identificado automaticamente.</span></div>';
+    return;
+  }
+
+  const corNivel = { grave:'#dc2626', moderado:'#d97706', leve:'#2563eb' };
+  const bgNivel  = { grave:'#fee2e2', moderado:'#fef9c3', leve:'#dbeafe' };
+
+  el.innerHTML = `
+  <p style="font-size:.72rem;color:#64748b;margin-bottom:10px">${prms.length} problema(s) identificado(s) — ${prms.filter(p=>p.nivel==='grave').length} grave(s)</p>
+  <table class="rt">
+    <thead><tr><th>Tipo de PRM</th><th>Medicamento / Classe</th><th>Descrição</th><th>Gravidade</th></tr></thead>
+    <tbody>
+    ${prms.map(p => `<tr>
+      <td style="font-weight:600;font-size:.75rem">${x(p.tipo)}</td>
+      <td style="font-size:.75rem">${x(p.med)}</td>
+      <td style="font-size:.74rem;color:#475569">${x(p.desc.slice(0,120))}</td>
+      <td><span class="badge" style="background:${bgNivel[p.nivel]||'#f1f5f9'};color:${corNivel[p.nivel]||'#475569'}">${p.nivel}</span></td>
+    </tr>`).join('')}
+    </tbody>
+  </table>`;
+}
+
+async function salvarIntervencao() {
+  const acao    = document.getElementById('int-acao').value.trim();
+  const result  = document.getElementById('int-result').value.trim();
+  const retorno = document.getElementById('int-retorno').value;
+  const aceita  = document.getElementById('int-aceita').value;
+  if (!acao) { alert('Descreva a intervenção.'); return; }
+
+  const hist = (await dbGetConfig('sft_int_' + pid)) || [];
+  hist.push({ data: new Date().toISOString().slice(0,10), acao, result, retorno, aceita });
+  await dbSetConfig('sft_int_' + pid, hist);
+  document.getElementById('int-acao').value   = '';
+  document.getElementById('int-result').value = '';
+  document.getElementById('int-retorno').value = '';
+  document.getElementById('int-aceita').value  = '';
+  renderIntHist();
+}
+
+async function renderIntHist() {
+  const hist = (await dbGetConfig('sft_int_' + pid)) || [];
+  const el   = document.getElementById('int-hist');
+  if (!hist.length) { el.innerHTML = ''; return; }
+  const acIcon = { sim:'✅', parcial:'🟡', nao:'❌', pendente:'⏳' };
+  el.innerHTML = `<p style="font-size:.7rem;font-weight:700;color:#64748b;margin:8px 0 6px">Histórico de intervenções</p>
+  <table class="rt">
+    <thead><tr><th>Data</th><th>Intervenção</th><th>Resultado esperado</th><th>Retorno</th><th>Aceita</th></tr></thead>
+    <tbody>${hist.slice().reverse().map(h=>`<tr>
+      <td style="white-space:nowrap">${h.data ? new Date(h.data+'T12:00').toLocaleDateString('pt-BR') : '—'}</td>
+      <td>${x(h.acao||'—')}</td>
+      <td style="font-size:.72rem;color:#475569">${x(h.result||'—')}</td>
+      <td style="white-space:nowrap">${h.retorno ? new Date(h.retorno+'T12:00').toLocaleDateString('pt-BR') : '—'}</td>
+      <td>${(acIcon[h.aceita]||'—')}</td>
     </tr>`).join('')}</tbody>
   </table>`;
 }

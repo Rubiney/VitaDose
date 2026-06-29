@@ -153,10 +153,12 @@ async function init() {
     }
   } catch(e) {}
 
-  /* Adesão 30 dias */
+  /* Adesão 30 dias + doses hoje */
   let adesaoData = [];
+  let dosesHoje  = [];
   try {
     const todasDoses = await dbGetAll('doses');
+    dosesHoje = todasDoses.filter(d => d.data === hj);
     if (typeof calcularAdesao === 'function') {
       adesaoData = meds
         .filter(m => m.horarios && m.horarios.length)
@@ -177,7 +179,7 @@ async function init() {
   const condicoes = (pac.condicoes || []).map(c => c.toLowerCase());
   const metasRes  = avaliarMetas(condicoes, ultimosLab, ultPA, pac.tfg);
 
-  renderDashboard(pac, meds, risco, alertas, adesaoData, metasRes, ultimosLab, diasSemDiario);
+  renderDashboard(pac, meds, risco, alertas, adesaoData, metasRes, ultimosLab, diasSemDiario, dosesHoje);
 }
 
 /* ─── Coleta alertas de todos os módulos ─────────────── */
@@ -206,7 +208,29 @@ function coletarAlertas(meds, pac, ultimosLab) {
       lista.push({ dot: '#6366f1', titulo: 'Duplicidade: ' + d.classe, sub: d.meds.join(' + ') }));
   }
 
-  return lista.slice(0, 6);
+  // Interações medicamentosas graves
+  if (typeof gerarAlertas === 'function') {
+    gerarAlertas(meds).filter(a => a.nivel === 'grave').slice(0, 4).forEach(a =>
+      lista.push({ dot: '#dc2626', titulo: '⚠ Interação: ' + a.titulo, sub: a.desc?.slice(0, 90) }));
+  }
+
+  // Critérios de Beers (idosos)
+  if (typeof buscarBeers === 'function' && pacienteIdoso(pac)) {
+    meds.forEach(m => {
+      const b = buscarBeers(m.nome);
+      if (b) lista.push({ dot: '#f59e0b', titulo: '🟡 Beers: ' + m.nome, sub: (b.motivo || b.obs || '').slice(0, 90) });
+    });
+  }
+
+  // Carga anticolinérgica elevada
+  if (typeof calcularCargaAnticolin === 'function') {
+    const acb = calcularCargaAnticolin(meds);
+    if (acb.total >= 3) {
+      lista.push({ dot: '#8b5cf6', titulo: '🧠 Carga anticolinérgica: ' + acb.total + ' pts (' + acb.nivel + ')', sub: acb.itens.map(i => i.nome + '(' + i.score + ')').join(', ').slice(0, 90) });
+    }
+  }
+
+  return lista.slice(0, 12);
 }
 
 /* ─── Avalia metas rápidas ────────────────────────────── */
@@ -232,8 +256,42 @@ function avaliarMetas(condicoes, ultimosLab, ultPA, tfg) {
 }
 
 /* ─── Render ──────────────────────────────────────────── */
-function renderDashboard(pac, meds, risco, alertas, adesaoData, metasRes, ultimosLab, diasSemDiario) {
+function renderDashboard(pac, meds, risco, alertas, adesaoData, metasRes, ultimosLab, diasSemDiario, dosesHoje = []) {
   const fmtData = d => { if(!d) return ''; const [y,m,di]=d.split('-'); return `${di}/${m}/${y}`; };
+
+  /* ─── Doses de Hoje ─────────────────────────────────── */
+  const agora    = new Date();
+  const agoraMins = agora.getHours() * 60 + agora.getMinutes();
+  const medsComHorario = meds.filter(m => m.horarios && m.horarios.length);
+
+  // Monta lista de (medicamento, horário, confirmado)
+  const schedule = [];
+  medsComHorario.forEach(m => {
+    m.horarios.forEach(h => {
+      const [hh, mm] = h.split(':').map(Number);
+      const totalMin = hh * 60 + mm;
+      const conf = dosesHoje.some(d => d.medicamentoId === m.id && d.horario === h);
+      schedule.push({ nome: m.nome, dose: m.dose || '', horario: h, totalMin, conf, cor: m.cor || '#6366f1' });
+    });
+  });
+  schedule.sort((a, b) => a.totalMin - b.totalMin);
+
+  const renderSchedule = schedule.length ? schedule.map(s => {
+    const passado = s.totalMin < agoraMins - 5;
+    const status  = s.conf ? 'done' : passado ? 'missed' : 'pend';
+    const icon    = s.conf ? '✅' : passado ? '❌' : '⏳';
+    const cor     = s.conf ? '#16a34a' : passado ? '#dc2626' : '#64748b';
+    return `
+    <div style="display:flex;align-items:center;gap:9px;padding:8px 14px;border-bottom:1px solid #f1f5f9">
+      <div style="width:44px;text-align:center;font-size:.78rem;font-weight:700;color:#475569;flex-shrink:0">${s.horario}</div>
+      <div style="width:8px;height:8px;border-radius:50%;background:${s.cor};flex-shrink:0"></div>
+      <div style="flex:1">
+        <p style="font-size:.82rem;font-weight:600;color:#1e293b;margin:0">${s.nome}</p>
+        ${s.dose ? `<p style="font-size:.7rem;color:#64748b;margin:0">${s.dose}</p>` : ''}
+      </div>
+      <span style="font-size:.9rem">${icon}</span>
+    </div>`;
+  }).join('') : '<p class="empty-sec">Nenhum medicamento com horário cadastrado.</p>';
 
   /* Adesão média */
   const adMedia = adesaoData.length
@@ -260,6 +318,19 @@ function renderDashboard(pac, meds, risco, alertas, adesaoData, metasRes, ultimo
         <p style="font-size:.95rem;font-weight:800;color:#1e293b;margin:0">${pac.nome||'Paciente'}</p>
         <p style="font-size:.72rem;color:#64748b;margin:0">${meds.length} med${meds.length!==1?'s':''} ativo${meds.length!==1?'s':''} · ${new Date().toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long'})}</p>
       </div>
+    </div>
+
+    <!-- Doses de Hoje -->
+    <p class="sec-title">Doses de Hoje — ${agora.toLocaleDateString('pt-BR',{weekday:'short',day:'numeric',month:'short'})}</p>
+    <div class="card" style="overflow:hidden">
+      ${renderSchedule}
+      ${schedule.length ? `
+      <div style="padding:8px 14px;display:flex;gap:8px;font-size:.7rem;color:#94a3b8">
+        <span>✅ Tomado: ${schedule.filter(s=>s.conf).length}</span>
+        <span>❌ Perdido: ${schedule.filter(s=>!s.conf&&s.totalMin<agoraMins-5).length}</span>
+        <span>⏳ Pendente: ${schedule.filter(s=>!s.conf&&s.totalMin>=agoraMins-5).length}</span>
+        <a href="diario.html" style="margin-left:auto;color:#6366f1;font-weight:700;text-decoration:none">Registrar →</a>
+      </div>` : ''}
     </div>
 
     <!-- Score de Risco -->
