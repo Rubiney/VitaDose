@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>VitaDose — Curso Profissional</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:#0f172a;color:#e2e8f0;min-height:100vh}
+.hero{background:linear-gradient(135deg,#0f172a,#1e3a5f,#2563eb);padding:48px 20px 36px;text-align:center}
+.badge{display:inline-block;background:rgba(96,165,250,.15);border:1px solid rgba(96,165,250,.3);color:#93c5fd;font-size:.72rem;font-weight:700;letter-spacing:.1em;padding:4px 14px;border-radius:999px;margin-bottom:14px}
+.hero h1{font-size:clamp(1.6rem,5vw,2.5rem);font-weight:800;color:#fff;line-height:1.2;margin-bottom:8px}
+.hero p{color:#94a3b8;font-size:.95rem;max-width:620px;margin:0 auto 24px}
+.stats{display:flex;gap:16px;justify-content:center;flex-wrap:wrap}
+.stat{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:12px 20px;text-align:center}
+.stat-n{font-size:1.5rem;font-weight:800;color:#60a5fa}
+.stat-l{font-size:.72rem;color:#94a3b8;margin-top:2px}
+.prog-wrap{background:#1e293b;border-bottom:1px solid #334155;padding:14px 20px}
+.prog-inner{max-width:860px;margin:0 auto}
+.prog-hd{display:flex;justify-content:space-between;font-size:.82rem;color:#94a3b8;margin-bottom:7px}
+.prog-bar{height:7px;background:#334155;border-radius:999px;overflow:hidden}
+.prog-fill{height:100%;background:linear-gradient(90deg,#2563eb,#7c3aed);border-radius:999px;transition:width .5s;width:0}
+main{max-width:860px;margin:0 auto;padding:24px 14px 60px}
+.mod{background:#1e293b;border:1px solid #334155;border-radius:14px;margin-bottom:16px;overflow:hidden}
+.mod-hd{display:flex;align-items:center;gap:12px;padding:18px 20px;cursor:pointer;user-select:none;transition:background .2s}
+.mod-hd:hover{background:#263347}
+.mod-ico{width:42px;height:42px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0}
+.mod-info{flex:1}
+.mod-title{font-size:1rem;font-weight:700;color:#f1f5f9}
+.mod-sub{font-size:.75rem;color:#64748b;margin-top:2px}
+.mod-ct{background:#0f172a;color:#60a5fa;font-size:.7rem;font-weight:700;padding:3px 9px;border-radius:6px;white-space:nowrap}
+.chv{color:#475569;font-size:1rem;transition:transform .3s}
+.mod.open .chv{transform:rotate(180deg)}
+.mod-body{display:none;padding:0 20px 20px}
+.mod.open .mod-body{display:block}
+.obj{background:rgba(37,99,235,.1);border:1px solid rgba(37,99,235,.25);border-radius:9px;padding:13px 15px;margin-bottom:16px}
+.obj h4{color:#93c5fd;font-size:.75rem;font-weight:700;letter-spacing:.06em;margin-bottom:7px}
+.obj li{font-size:.8rem;color:#cbd5e1;padding:2px 0 2px 15px;position:relative;list-style:none}
+.obj li::before{content:'→';position:absolute;left:0;color:#3b82f6}
+.lessons{display:flex;flex-direction:column;gap:7px;margin-bottom:18px}
+.les{display:flex;align-items:center;gap:11px;padding:11px 13px;background:#0f172a;border:1px solid #334155;border-radius:9px;cursor:pointer;transition:all .2s}
+.les:hover{border-color:#3b82f6;background:#1a2744}
+.les.done{border-color:#16a34a;background:rgba(22,163,74,.07)}
+.les.active{border-color:#f59e0b}
+.les-num{width:26px;height:26px;border-radius:50%;border:2px solid #475569;display:flex;align-items:center;justify-content:center;font-size:.78rem;flex-shrink:0;transition:all .2s;color:#94a3b8}
+.les.done .les-num{background:#16a34a;border-color:#16a34a;color:#fff}
+.les.active .les-num{border-color:#f59e0b;color:#f59e0b}
+.les-info{flex:1}
+.les-t{font-size:.86rem;font-weight:600;color:#e2e8f0}
+.les.done .les-t{color:#86efac}
+.les-d{font-size:.73rem;color:#64748b;margin-top:2px;line-height:1.4}
+.tags{display:flex;gap:4px;flex-wrap:wrap;margin-top:4px}
+.tag{font-size:.63rem;font-weight:700;padding:2px 7px;border-radius:4px;letter-spacing:.04em}
+.t1{background:rgba(37,99,235,.2);color:#93c5fd}
+.t2{background:rgba(5,150,105,.2);color:#6ee7b7}
+.t3{background:rgba(124,58,237,.2);color:#c4b5fd}
+.t4{background:rgba(245,158,11,.2);color:#fde68a}
+.t5{background:rgba(6,182,212,.2);color:#67e8f9}
+.t6{background:rgba(239,68,68,.2);color:#fca5a5}
+.t7{background:rgba(249,115,22,.2);color:#fdba74}
+.case{background:#0f172a;border:1px solid #7c3aed;border-radius:11px;padding:16px;margin-bottom:10px}
+.case-hd{display:flex;align-items:center;gap:10px;margin-bottom:11px}
+.av{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0}
+.cn{font-size:.92rem;font-weight:700;color:#e2e8f0}
+.cd{font-size:.72rem;color:#94a3b8}
+.cs h5{font-size:.69rem;font-weight:700;color:#7c3aed;letter-spacing:.08em;margin-bottom:5px;text-transform:uppercase}
+.cs p,.cs li{font-size:.78rem;color:#cbd5e1;line-height:1.5}
+.cs ul{list-style:none;padding:0}
+.cs li{padding:2px 0 2px 13px;position:relative}
+.cs li::before{content:'•';position:absolute;left:0;color:#7c3aed}
+.cs{margin-bottom:9px}
+.labs{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:5px;margin:7px 0}
+.lab{background:#1e293b;border-radius:6px;padding:6px 9px}
+.lab-n{font-size:.65rem;color:#64748b}
+.lab-v{font-size:.82rem;font-weight:700}
+.lab-v.r{color:#f87171}
+.lab-v.y{color:#fbbf24}
+.lab-v.g{color:#4ade80}
+.cq{background:rgba(124,58,237,.08);border-left:3px solid #7c3aed;padding:9px 11px;border-radius:0 7px 7px 0;margin-top:9px}
+.cq p{font-size:.78rem;color:#c4b5fd;font-weight:600;margin-bottom:4px}
+.cq ol{padding-left:15px}
+.cq li{font-size:.76rem;color:#a78bfa;margin-top:3px}
+.ans{background:rgba(22,163,74,.07);border-left:3px solid #16a34a;padding:9px 11px;border-radius:0 7px 7px 0;margin-top:7px;display:none}
+.ans.show{display:block}
+.ans li{font-size:.76rem;color:#86efac;line-height:1.5;list-style:none;padding:2px 0 2px 13px;position:relative}
+.ans li::before{content:'✓';position:absolute;left:0;color:#16a34a}
+.btn-g{background:none;border:1px solid #16a34a;color:#4ade80;font-size:.7rem;font-weight:700;padding:5px 11px;border-radius:6px;cursor:pointer;margin-top:7px}
+.btn-g:hover{background:rgba(22,163,74,.15)}
+/* study module */
+.study-h{font-size:.8rem;font-weight:700;color:#f59e0b;margin:14px 0 8px;display:flex;align-items:center;gap:6px}
+.study-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:7px}
+.si{background:#1e293b;border:1px solid #334155;border-radius:8px;padding:10px 12px}
+.si-t{font-size:.78rem;font-weight:700;color:#f1f5f9;margin-bottom:3px}
+.si-d{font-size:.7rem;color:#64748b;line-height:1.4}
+.si-tag{font-size:.63rem;color:#f59e0b;font-weight:700;margin-top:4px}
+.ecr-t{width:100%;border-collapse:collapse;font-size:.74rem;margin-top:7px}
+.ecr-t th{background:#263347;color:#94a3b8;padding:6px 9px;text-align:left;font-size:.68rem;font-weight:700;letter-spacing:.05em}
+.ecr-t td{padding:6px 9px;border-bottom:1px solid #1e293b;color:#cbd5e1;vertical-align:top}
+.ecr-t tr:hover td{background:rgba(255,255,255,.02)}
+.ref-l{list-style:none;padding:0}
+.ref-l li{font-size:.78rem;color:#cbd5e1;padding:5px 0 5px 18px;position:relative;border-bottom:1px solid #1e293b}
+.ref-l li::before{content:'📌';position:absolute;left:0;top:5px;font-size:.68rem}
+.glossary{margin-top:36px}
+.glossary h2{font-size:1rem;font-weight:700;color:#f1f5f9;margin-bottom:14px}
+.gl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px}
+.gl-i{background:#1e293b;border:1px solid #334155;border-radius:9px;padding:12px 14px}
+.gl-t{font-size:.8rem;font-weight:700;color:#60a5fa;margin-bottom:3px}
+.gl-d{font-size:.73rem;color:#94a3b8;line-height:1.4}
+footer{text-align:center;padding:22px;color:#475569;font-size:.75rem;border-top:1px solid #1e293b;margin-top:16px}
+@media(max-width:500px){main{padding:14px 10px 50px}.stats{gap:8px}.stat{padding:10px 12px}}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="badge">FORMAÇÃO PROFISSIONAL</div>
+  <h1>VitaDose · Curso Completo</h1>
+  <p>Domine cada ferramenta clínica, aprofunde o raciocínio farmacoterapêutico e construa sua biblioteca de referências.</p>
+  <div class="stats">
+    <div class="stat"><div class="stat-n">7</div><div class="stat-l">Módulos</div></div>
+    <div class="stat"><div class="stat-n">54</div><div class="stat-l">Lições</div></div>
+    <div class="stat"><div class="stat-n">18</div><div class="stat-l">Casos Clínicos</div></div>
+    <div class="stat"><div class="stat-n" id="doneN">0</div><div class="stat-l">Concluídas</div></div>
+  </div>
+</div>
+
+<div class="prog-wrap">
+  <div class="prog-inner">
+    <div class="prog-hd"><span>Progresso Geral</span><span id="progPct">0% concluído</span></div>
+    <div class="prog-bar"><div class="prog-fill" id="progFill"></div></div>
+  </div>
+</div>
+
+<main>
+
+<!-- ── MOD 1 ── -->
+<div class="mod open" id="m1">
+  <div class="mod-hd" onclick="tog('m1')">
+    <div class="mod-ico" style="background:linear-gradient(135deg,#1d4ed8,#3b82f6)">📱</div>
+    <div class="mod-info"><div class="mod-title">Módulo 1 — Fundamentos do VitaDose</div><div class="mod-sub">Navegação · Cadastro · Backup · Service Worker</div></div>
+    <div class="mod-ct">8 lições</div><div class="chv">▼</div>
+  </div>
+  <div class="mod-body">
+    <div class="obj"><h4>🎯 OBJETIVOS</h4><ul>
+      <li>Instalar o PWA e compreender cache offline vs. online</li>
+      <li>Cadastrar pacientes com histórico clínico completo e alergias</li>
+      <li>Configurar agenda de doses com notificações via Service Worker</li>
+      <li>Realizar backup JSON e restauração em novo dispositivo</li>
+      <li>Navegar pela busca global e acessar as 100+ ferramentas do perfil</li>
+    </ul></div>
+    <div class="lessons">
+      <div class="les active" onclick="done(this)"><div class="les-num">1</div><div class="les-info"><div class="les-t">Instalação e Primeiro Acesso</div><div class="les-d">PWA via "Adicionar à tela inicial"; diferença online/offline; ícones de status do cache</div><div class="tags"><span class="tag t1">Teoria</span><span class="tag t2">Prática</span></div></div></div>
+      <div class="les" onclick="done(this)"><div class="les-num">2</div><div class="les-info"><div class="les-t">Navegação e Interface</div><div class="les-d">Bottom-nav 4 itens (Início/Histórico/Diário/Perfil); busca global com data-nome; 100+ ferramentas clínicas</div><div class="tags"><span class="tag t2">Prática</span><span class="tag t5">Ferramenta</span></div></div></div>
+      <div class="les" onclick="done(this)"><div class="les-num">3</div><div class="les-info"><div class="les-t">Cadastro de Pacientes</div><div class="les-d">Campos: nome, nascimento, sexo, peso, Cr sérica, alergias, doenças, contato de emergência; IndexedDB store "pacientes"</div><div class="tags"><span class="tag t2">Prática</span><span class="tag t5">Ferramenta</span></div></div></div>
+      <div class="les" onclick="done(this)"><div class="les-num">4</div><div class="les-info"><div class="les-t">Cadastro de Medicamentos e Agenda</div><div class="les-d">Via/dose/frequência/horários; cor do ícone; associar ao paciente; verificar duplicidade automática ao salvar</div><div class="tags"><span class="tag t2">Prática</span><span class="tag t5">Ferramenta</span></div></div></div>
+      <div class="les" onclick="done(this)"><div class="les-num">5</div><div class="les-info"><div class="les-t">Diário Farmacêutico</div><div class="les-d">Registrar intervenções, evolução clínica e anotações por data; exportar PDF; store "diario" no IndexedDB</div><div class="tags"><span class="tag t2">Prática</span><span class="tag t5">Ferramenta</span></div></div></div>
+      <div class="les" onclick="done(this)"><div class="les-num">6</div><div class="les-info"><div class="les-t">Notificações e Service Worker</div><div class="les-d">Como o SW dispara alertas via periodicSync (Android); permissão; fallback offline; vitadose-v86</div><div class="tags"><span class="tag t1">Teoria</span></div></div></div>
+      <div class="les" onclick="done(this)"><div class="les-num">7</div><div class="les-info"><div class="les-t">Backup, Restauração e QR Code</div><div class="les-d">Exportar JSON com todos os stores; importar em novo dispositivo; QR Code para compartilhar configuração</div><div class="tags"><span class="tag t2">Prática</span><span class="tag t5">Ferramenta</span></div></div></div>
+      <div class="les" onclick="done(this)"><div class="les-num">8</div><div class="les-info"><div class="les-t">Quiz — Fundamentos</div><div class="les-d">10 perguntas sobre navegação, IndexedDB, cache offline e fluxo completo do paciente</div><div class="tags"><span class="tag t4">Quiz</span></div></div></div>
+    </div>
+
+    <div class="case">
+      <div class="case-hd"><div class="av" style="background:#1d4ed8">👩</div><div><div class="cn">Dona Maria — Primeiro Cadastro</div><div class="cd">68a · F · 72 kg · HAS + DM2 · Sacola com 11 caixas · Não-alfabetizada</div></div></div>
+      <div class="cs"><h5>Cenário</h5><p>Filha traz Dona Maria ao ambulatório. Creatinina: 1,4 mg/dL. HbA1c: 9,2%. Medicamentos: Losartana 50mg, HCT 25mg, Metformina 500mg 2×, Glibenclamida 5mg, AAS 100mg, Sinvastatina 40mg, Omeprazol 20mg, Alprazolam 0,5mg SOS (caixa quase vazia, sem prescrição recente).</p></div>
+      <div class="labs">
+        <div class="lab"><div class="lab-n">Creatinina</div><div class="lab-v y">1,4 mg/dL</div></div>
+        <div class="lab"><div class="lab-n">TFG CKD-EPI</div><div class="lab-v y">~44 mL/min</div></div>
+        <div class="lab"><div class="lab-n">HbA1c</div><div class="lab-v r">9,2%</div></div>
+        <div class="lab"><div class="lab-n">PA</div><div class="lab-v y">158/96 mmHg</div></div>
+      </div>
+      <div class="cq"><p>Questões:</p><ol>
+        <li>Cadastre todos os medicamentos — qual ferramenta do VitaDose verifica TFG e ajuste da metformina?</li>
+        <li>O alprazolam sem prescrição — qual critério o app sinaliza? Por quê é de alto risco em idosas?</li>
+        <li>Glibenclamida com TFG 44 — o que o módulo Beers indica?</li>
+      </ol></div>
+      <button class="btn-g" onclick="showAns(this)">Ver gabarito</button>
+      <div class="ans"><ul>
+        <li>TFG ~44 (G3b): ajusterenal.html → metformina usar com cautela, máximo 1000 mg/dia (KDIGO); suspender se TFG cair abaixo de 30</li>
+        <li>Beers 2023: benzodiazepínicos em idosas → risco cumulativo de quedas, fraturas de quadril, sedação, dependência — categoria "evitar em qualquer dose"</li>
+        <li>Glibenclamida: Beers → "evitar em idosos com DRC" — risco de hipoglicemia grave prolongada. Substituir por gliclazida MR 30mg ou sitagliptina 50mg (ajustada para TFG 30-50)</li>
+      </ul></div>
+    </div>
+
+    <div class="case">
+      <div class="case-hd"><div class="av" style="background:#7c3aed">👨</div><div><div class="cn">Sr. Carlos — Conciliação Medicamentosa</div><div class="cd">55a · M · 88 kg · DRC G3a + HAS + Gota · 6 medicamentos prescritos, 4 relatados</div></div></div>
+      <div class="cs"><h5>Discordância</h5><ul>
+        <li>✅ Amlodipina 10mg / Furosemida 40mg — confirmados</li>
+        <li>❓ Alopurinol 300mg — "médico disse para parar" mas ainda na prescrição</li>
+        <li>❓ Colchicina 0,5mg — "só tomo quando dói"</li>
+        <li>❌ Losartana 50mg — prescrita, não comprou</li>
+        <li>❌ Bicarbonato de sódio — prescrito, desconhece</li>
+      </ul></div>
+      <div class="cq"><p>Questões:</p><ol>
+        <li>Qual ferramenta do VitaDose é específica para mapear esta discordância?</li>
+        <li>Alopurinol 300mg com TFG 52 mL/min — há risco? Qual a dose máxima segura?</li>
+      </ol></div>
+      <button class="btn-g" onclick="showAns(this)">Ver gabarito</button>
+      <div class="ans"><ul>
+        <li>Ferramenta: conciliacao.html — compara prescrição vs. uso real, identifica omissões, discordâncias e medicamentos não prescritos</li>
+        <li>Alopurinol TFG 30–59: máximo 200 mg/dia. 300 mg pode acumular oxipurinol → risco de reação cutânea grave (SSJ/NET, DRESS). Reduzir para 100–150 mg/dia e titular</li>
+      </ul></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── MOD 2 ── -->
+<div class="mod" id="m2">
+  <div class="mod-hd" onclick="tog('m2')">
+    <div class="mod-ico" style="background:linear-gradient(135deg,#dc2626,#f97316)">⚕️</div>
+    <div class="mod-info"><div class="mod-title">Módulo 2 — Análise Farmacoterapêutica</div><div class="mod-sub">Interações · Beers 2023 · STOPP/START v3 · Anticolin · Contraindicações</div></div>
+    <div class="mod-ct">8 lições</div><div class="chv">▼</div>
+  </div>
+  <div class="mod-body">
+    <div class="obj"><h4>🎯 OBJETIVOS</h4><ul>
+      <li>Classificar interações DDI por mecanismo (CYP, P-gp, farmacodinâmicas) e severidade</li>
+      <li>Aplicar Critérios de Beers 2023 e STOPP/START v3 em prescrições de idosos</li>
+      <li>Calcular carga anticolinérgica (ACB Scale 0-3) e identificar riscos cognitivos</li>
+      <li>Verificar contraindicações absolutas cruzando diagnósticos com fármacos</li>
+      <li>Gerar relatório de análise farmacoterapêutica pelo VitaDose</li>
+    </ul></div>
+    <div class="lessons">
+      <div class="les" onclick="done(this)"><div class="les-num">9</div><div class="les-info"><div class="les-t">Interações — Mecanismos CYP e P-gp</div><div class="les-d">Inibição/indução CYP3A4, CYP2C9, CYP2D6, CYP1A2; P-glicoproteína; graus contraindicado/grave/moderado/leve</div><div class="tags"><span class="tag t1">Teoria</span><span class="tag t6">Diretrizes</span></div></div></div>
+      <div class="les" onclick="done(this)"><div class="les-num">10</div><div class="les-info"><div class="les-t">Interações no VitaDose — Prática</div><div class="les-d">Usar interacoes.js; interpretar alertas; exportar relatório de interações; pares mais frequentes na clínica</div><div class="tags"><span class="tag t2">Prática</span><span class="tag t5">Ferramenta</span></div></div></div>
+      <div class="les" onclick="done(this)"><div class="les-num">11</div><div class="les-info"><div class="les-t">Critérios de Beers 2023 — 5 Categorias</div><div class="les-d">Evitar sempre; evitar com cautela; evitar com doenças específicas; reduzir dose; evitar combinações</div><div class="tags"><span class="tag t1">Teoria</span><span class="tag t6">Diretrizes</span></div></div></div>
+      <div class="les" onclick="done(this)"><div class="les-num">12</div><div class="les-info"><div class="les-t">STOPP/START Versão 3 (2023)</div><div class="les-d">133 critérios STOPP (desprescrição); 34 START (prescrição omitida); diferenças v2→v3; aplicação em polifarmácia</div><div class="tags"><span class="tag t1">Teoria</span><span class="tag t6">Diretrizes</span></div></div></div>
+      <div class="les" onclick="done(this)"><div class="les-num">13</div><div class="les-info"><div class="les-t">Carga Anticolinérgica (ACB Scale)</div><div class="les-d">Score 0-3 por fármaco; ACB ≥3 → risco cognitivo aumentado; alternativas de menor risco</div><div class="tags"><span class="tag t1">Teoria</span><span class="tag t3">Caso</span></div></div></div>
+      <div class="les" onclick="done(this)"><div class="les-num">14</div><div class="les-info"><div class="les-t">Duplicidade Terapêutica</div><div class="les-d">Mesma classe farmacológica; quando é erro vs. aceitável; BB+IECA na IC; dupla antiagregação pós-SCA</div><div class="tags"><span class="tag t2">Prática</span><span class="tag t5">Ferramenta</span></div></div></div>
+      <div class="les" onclick="done(this)"><div class="les-num">15</div><div class="les-info"><div class="les-t">Contraindicações por Patologia</div><div class="les-d">BB absoluto em asma grave; IECA e angioedema; fluoroquinolonas e aneurisma aórtico; AINE e DRC; contraindicacoes.js</div><div class="tags"><span class="tag t2">Prática</span><span class="tag t5">Ferramenta</span></div></div></div>
+      <div class="les" onclick="done(this)"><div class="les-num">16</div><div class="les-info"><div class="les-t">Quiz — Análise Farmacoterapêutica</div><div class="les-d">12 casos-problema: identificar Beers, STOPP, interações DDI e contraindicações em prescrições reais</div><div class="tags"><span class="tag t4">Quiz</span><span class="tag t3">Caso</span></div></div></div>
+    </div>
+
+    <div class="case">
+      <div class="case-hd"><div class="av" style="background:#dc2626">👴</div><div><div class="cn">Sr. Benedito — Polifarmácia de Alto Risco</div><div class="cd">78a · M · 65 kg · FA + HAS + DM2 + HBP + Insônia — 13 medicamentos</div></div></div>
+      <div class="cs"><h5>Prescrição atual</h5><ul>
+        <li>Warfarina 5mg — INR 3,8 (há 45 dias)</li>
+        <li>Amiodarona 200mg/dia — 3 anos</li>
+        <li>Metformina 1g 2×/dia · Glibenclamida 5mg</li>
+        <li>Captopril 25mg 3×/dia · Atenolol 50mg</li>
+        <li>Tansulosina 0,4mg · Oxibutinina 5mg 2×</li>
+        <li>Diazepam 10mg/noite · Amitriptilina 25mg/noite</li>
+        <li>Ibuprofeno 400mg SOS · Omeprazol 20mg</li>
+      </ul></div>
+      <div class="labs">
+        <div class="lab"><div class="lab-n">INR</div><div class="lab-v r">3,8</div></div>
+        <div class="lab"><div class="lab-n">TFG</div><div class="lab-v y">38 mL/min</div></div>
+        <div class="lab"><div class="lab-n">K⁺</div><div class="lab-v y">5,4 mEq/L</div></div>
+        <div class="lab"><div class="lab-n">TSH</div><div class="lab-v r">0,08 mUI/L</div></div>
+        <div class="lab"><div class="lab-n">ACB Score</div><div class="lab-v r">8 pts</div></div>
+        <div class="lab"><div class="lab-n">Creatinina</div><div class="lab-v y">1,6 mg/dL</div></div>
+      </div>
+      <div class="cq"><p>Questões (alta complexidade):</p><ol>
+        <li>Liste todos os critérios de Beers violados (mínimo 5)</li>
+        <li>Qual interação explica INR 3,8 e TSH suprimido?</li>
+        <li>ACB=8: quais medicamentos contribuem e qual o risco clínico?</li>
+        <li>Ibuprofeno: liste 3 contraindicações neste paciente</li>
+        <li>Proponha plano de desprescrição priorizado</li>
+      </ol></div>
+      <button class="btn-g" onclick="showAns(this)">Ver gabarito</button>
+      <div class="ans"><ul>
+        <li><strong>Beers:</strong> Glibenclamida (hipoglicemia grave em idoso+DRC), Diazepam (BZD→quedas/fraturas), Amitriptilina (alta carga anticolin+sedação), Oxibutinina (ACB=3→delirium), Ibuprofeno (AINE+anticoag+DRC), Captopril 3×/dia (prefira losartana 1×)</li>
+        <li>Amiodarona inibe CYP2C9 → ↑INR warfarina; inibe DIO1/DIO2 → ↓conversão T4→T3 + excesso de iodeto → TSH suprimido</li>
+        <li>Amitriptilina (ACB=3) + Oxibutinina (ACB=3) + outros (ACB≥1 cada) = risco de delirium, demência, retenção urinária, constipação, confusão</li>
+        <li>Ibuprofeno: (1) AINE+anticoagulante→sangramento GI; (2) AINE+DRC TFG38→nefrotoxicidade aguda; (3) AINE+IECA→hiperpotassemia+redução efeito anti-hipertensivo</li>
+        <li>Desprescrição: 1°) Ibuprofeno→paracetamol; 2°) Diazepam: desmame gradual (10%/semana); 3°) Amitriptilina→gabapentina ou duloxetina; 4°) Oxibutinina→mirabegrona; 5°) Glibenclamida→gliclazida MR; 6°) Ajustar warfarina e dosar INR em 7 dias</li>
+      </ul></div>
+    </div>
+
+    <div class="case">
+      <div class="case-hd"><div class="av" style="background:#f97316">👩</div><div><div class="cn">Sra. Lúcia — Interações por CYP450</div><div class="cd">52a · F · Epilepsia + Depressão + Contraceptivo oral</div></div></div>
+      <div class="cs"><h5>Prescrição</h5><ul>
+        <li>Carbamazepina 400mg 2×/dia</li>
+        <li>Citalopram 20mg/dia · Quetiapina 25mg SOS (psiquiatra)</li>
+        <li>ACO: etinilestradiol 30mcg + levonorgestrel 150mcg</li>
+      </ul></div>
+      <div class="cq"><p>Questões:</p><ol>
+        <li>Carbamazepina + ACO: qual risco real? Qual solução?</li>
+        <li>Citalopram + quetiapina: avaliar prolongamento QTc</li>
+        <li>Carbamazepina + citalopram: interação via qual CYP?</li>
+      </ol></div>
+      <button class="btn-g" onclick="showAns(this)">Ver gabarito</button>
+      <div class="ans"><ul>
+        <li>CBZ é potente indutor CYP3A4 → reduz etinilestradiol e levonorgestrel em até 60% → falha contraceptiva. Solução: DIU-Cu (não-hormonal) ou DMPA injetável; orientar uso de preservativo durante transição</li>
+        <li>Citalopram + quetiapina: ambos prolongam QTc → risco aditivo de Torsades de Pointes. Exige ECG basal; QTc &lt;450ms (H) / &lt;470ms (F). Prefira escitalopram em menor dose ou mirtazapina</li>
+        <li>CBZ induz CYP2C19 e CYP3A4 → reduz nível de citalopram → falha antidepressiva. Monitorar resposta e considerar venlafaxina (menos dependente de CYP2C19)</li>
+      </ul></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── MOD 3 ── -->
+<div class="mod" id="m3">
+  <div class="mod-hd" onclick="tog('m3')">
+    <div class="mod-ico" style="background:linear-gradient(135deg,#059669,#10b981)">🧪</div>
+    <div class="mod-info"><div class="mod-title">Módulo 3 — Ajuste de Dose e Monitoramento</div><div class="mod-sub">TFG · Ajuste Renal/Hepático · TDM · Farmacocinética Clínica</div></div>
+    <div class="mod-ct">8 lições</div><div class="chv">▼</div>
+  </div>
+  <div class="mod-body">
+    <div class="obj"><h4>🎯 OBJETIVOS</h4><ul>
+      <li>Calcular TFG por CKD-EPI e Cockcroft-Gault; saber quando usar cada fórmula</li>
+      <li>Ajustar dose de antimicrobianos, anticoagulantes e antidiabéticos em DRC</li>
+      <li>Interpretar Child-Pugh A/B/C e MELD e seus impactos farmacocinéticos</li>
+      <li>Monitorar TDM: vancomicina (AUC/MIC), fenitoína, lítio, digoxina</li>
+      <li>Calcular osmolaridade, ânion gap e clearance estimado em casos reais</li>
+    </ul></div>
+    <div class="lessons">
+      <div class="les" onclick="done(this)"><div class="les-num">17</div><div class="les-info"><div class="les-t">TFG: CKD-EPI vs. Cockcroft-Gault</div><div class="les-d">CKD-EPI para estadiamento DRC G1-G5; C-G para ajuste de dose em bula; quando usar peso ideal vs. real</div><div class="tags"><span class="tag t1">Teoria</span><span class="tag t5">Ferramenta</span></div></div></div>
+      <div class="les" onclick="done(this)"><div class="les-num">18</div><div class="les-info"><div class="les-t">Ajuste Renal na Prática</div><div class="les-d">Vancomicina, gentamicina, meropeném, metformina, digoxina, DOACs em DRC; ajusterenal.js passo a passo</div><div class="tags"><span class="tag t2">Prática</span><span class="tag t5">Ferramenta</span></div></div></div>
+      <div class="les" onclick="done(this)"><div class="les-num">19</div><div class="les-info"><div class="les-t">Função Hepática — Child-Pugh e MELD</div><div class="les-d">Child-Pugh A(5-6)/B(7-9)/C(≥10); MELD e risco cirúrgico; alta extração hepática vs. baixa; ajuste-hepatico.html</div><div class="tags"><span class="tag t1">Teoria</span><span class="tag t3">Caso</span></div></div></div>
+      <div class="les" onclick="done(this)"><div class="les-num">20</div><div class="les-info"><div class="les-t">TDM — Monitoramento de Nível Sérico</div><div class="les-d">Vancomicina AUC/MIC 400-600; fenitoína (Michaelis-Menten não-linear); lítio 0,6-1,2 mEq/L; digoxina 0,5-0,9 ng/mL</div><div class="tags"><span class="tag t1">Teoria</span><span class="tag t3">Caso</span></div></div></div>
+      <div class="les" onclick="done(this)"><div class="les-num">21</div><div class="les-info"><div class="les-t">Parâmetros Laboratoriais no VitaDose</div><div class="les-d">Interpretar Cr/TFG, hemograma, eletrólitos, TSH, INR, BNP, albumina; alertas automáticos; laboratorio.html</div><div class="tags"><span class="tag t2">Prática</span><span class="tag t5">Ferramenta</span></div></div></div>
+      <div class="les" onclick="done(this)"><div class="les-num">22</div><div class="les-info"><div class="les-t">Farmacocinética Clínica</div><div class="les-d">Vd, Cl, t½, biodisponibilidade; impacto de obesidade, edema e hemodiálise; farmacinetica.html</div><div class="tags"><span class="tag t1">Teoria</span></div></div></div>
+      <div class="les" onclick="done(this)"><div class="les-num">23</div><div class="les-info"><div class="les-t">Cálculos Clínicos Essenciais</div><div class="les-d">Osmolaridade sérica, ânion gap, dose IBW/ABW em obesos, clearance de creatinina; calc-clinico.html</div><div class="tags"><span class="tag t2">Prática</span><span class="tag t5">Ferramenta</span></div></div></div>
+      <div class="les" onclick="done(this)"><div class="les-num">24</div><div class="les-info"><div class="les-t">Quiz — Ajuste e Monitoramento</div><div class="les-d">8 casos: calcular doses corretas para pacientes com DRC ou hepatopatia e interpretar TDM</div><div class="tags"><span class="tag t4">Quiz</span></div></div></div>
+    </div>
+
+    <div class="case">
+      <div class="case-hd"><div class="av" style="background:#059669">👨</div><div><div class="cn">Sr. Antônio — Vancomicina + DRC em UTI</div><div class="cd">64a · M · 78 kg · Sepse MRSA + DRC G4 · Creatinina 2,1 mg/dL</div></div></div>
+      <div class="cs"><h5>Situação</h5><p>Vancomicina 1g IV 12/12h empírica. Nível sérico após 3ª dose: Cpico 42 μg/mL / Cvale 18 μg/mL. MIC MRSA: 1,0 μg/mL. AUC estimada: ~720 mg·h/L.</p></div>
+      <div class="labs">
+        <div class="lab"><div class="lab-n">Creatinina</div><div class="lab-v r">2,1 mg/dL</div></div>
+        <div class="lab"><div class="lab-n">TFG (C-G)</div><div class="lab-v r">~28 mL/min</div></div>
+        <div class="lab"><div class="lab-n">AUC0-24</div><div class="lab-v r">~720 mg·h/L</div></div>
+        <div class="lab"><div class="lab-n">MIC MRSA</div><div class="lab-v g">1 μg/mL</div></div>
+      </div>
+      <div class="cq"><p>Questões:</p><ol>
+        <li>Meta AUC/MIC pela diretriz ASHP/IDSA 2020? O esquema está adequado?</li>
+        <li>Com TFG 28, qual risco de acúmulo? Como monitorar?</li>
+        <li>Qual ajuste de dose propor?</li>
+      </ol></div>
+      <button class="btn-g" onclick="showAns(this)">Ver gabarito</button>
+      <div class="ans"><ul>
+        <li>Meta AUC/MIC: 400–600 mg·h/L (ASHP/IDSA/SIDP 2020 — substituiu Cvale 15-20). AUC 720 está ACIMA da meta → alto risco de nefrotoxicidade</li>
+        <li>TFG 28: clearance de vancomicina muito reduzido → acúmulo progressivo → nefrotoxicidade sobre DRC pré-existente. Monitorar Cr diariamente; dosar nova AUC em 48h</li>
+        <li>Reduzir para 750mg q12h ou espaçar para q18h com reavaliação de níveis após 3 doses do novo esquema</li>
+      </ul></div>
+    </div>
+
+    <div class="case">
+      <div class="case-hd"><div class="av" style="background:#7c3aed">👩</div><div><div class="cn">Sra. Fernanda — Fenitoína + Hipoalbuminemia</div><div class="cd">48a · F · 62 kg · Epilepsia + Cirrose Child-Pugh B</div></div></div>
+      <div class="cs"><h5>Situação</h5><p>Fenitoína 300mg/dia. Nível total: 8 μg/mL (meta 10-20). Albumina: 2,1 g/dL. Médico quer aumentar a dose. INR: 1,9.</p></div>
+      <div class="labs">
+        <div class="lab"><div class="lab-n">Fenitoína total</div><div class="lab-v y">8 μg/mL</div></div>
+        <div class="lab"><div class="lab-n">Albumina</div><div class="lab-v r">2,1 g/dL</div></div>
+        <div class="lab"><div class="lab-n">Fenitoína ajust.</div><div class="lab-v g">~15,4 μg/mL</div></div>
+        <div class="lab"><div class="lab-n">Child-Pugh</div><div class="lab-v r">B (8 pts)</div></div>
+      </div>
+      <div class="cq"><p>Questões:</p><ol>
+        <li>Por que nível total subestima a fenitoína ativa? Use a fórmula de Sheiner-Tozer</li>
+        <li>Aumentar a dose é seguro? Explique a farmacocinética não-linear</li>
+      </ol></div>
+      <button class="btn-g" onclick="showAns(this)">Ver gabarito</button>
+      <div class="ans"><ul>
+        <li>Fenitoína 90% ligada à albumina. Sheiner-Tozer: Adj = 8/(0,2×2,1+0,1) = 8/0,52 ≈ 15,4 μg/mL → já dentro da meta terapêutica. NÃO aumentar dose</li>
+        <li>Cinética Michaelis-Menten: quando as enzimas estão saturadas, pequeno aumento de dose → grande aumento de concentração (zero-order). Risco de nistagmo, ataxia, encefalopatia súbita. Solicitar nível livre (não total) antes de qualquer ajuste</li>
+      </ul></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── MOD 4 ── -->
+<div class="mod" id="m4">
+  <div class="mod-hd" onclick="tog('m4')">
+    <div class="mod-ico" style="background:linear-gradient(135deg,#b91c1c,#ef4444)">❤️</div>
+    <div class="mod-info"><div class="mod-title">Módulo 4 — Farmacoterapia das Patologias Crônicas</div><div class="mod-sub">DM2 · HAS · IC · DRC · Dislipidemia · Anticoagulação · DPOC/Asma</div></div>
+    <div class="mod-ct">8 lições</div><div class="chv">▼</div>
+  </div>
+  <div class="mod-body">
+    <div class="obj"><h4>🎯 OBJETIVOS</h4><ul>
+      <li>Dominar algoritmos farmacoterapêuticos ADA 2025, SBC 2024 e GOLD 2024</li>
+      <li>Implementar os 4 pilares da ICFEr e identificar doses-alvo</li>
+      <li>Selecionar anticoagulante correto pelo CHA₂DS₂-VASc e HAS-BLED</li>
+      <li>Estabelecer metas de LDL por risco cardiovascular (SBC/ESC)</li>
+      <li>Navegar pelas 10+ ferramentas de patologias crônicas do VitaDose</li>
+    </ul></div>
+    <div class="lessons">
+      <div class="les" onclick="done(this)"><div class="les-num">25</div><div class="les-info"><div class="les-t">DM2 — Algoritmo ADA 2025</div><div class="les-d">1ª linha metformina; escalonamento por comorbidade: DCV→GLP-1Ra/SGLT2i; IC/DRC→SGLT2i prioritário; dm-algoritmo.html</div><div class="tags"><span class="tag t1">Teoria</span><span class="tag t6">Diretrizes</span></div></div></div>
+      <div class="les" onclick="done(this)"><div class="les-num">26</div><div class="les-info"><div class="les-t">HAS — Metas e Escalonamento SBC 2024</div><div class="les-d">Meta &lt;130/80 em alto risco; combinações preferidas (IECA/BRA+CCB/tiazídico); hipertensao.html</div><div class="tags"><span class="tag t1">Teoria</span><span class="tag t6">Diretrizes</span></div></div></div>
+      <div class="les" onclick="done(this)"><div class="les-num">27</div><div class="les-info"><div class="les-t">ICFEr — 4 Pilares da Terapia</div><div class="les-d">IECA/ARNI + betabloqueador + ARM + SGLT2i; doses-alvo; titulação; insuficiencia-cardiaca.html</div><div class="tags"><span class="tag t1">Teoria</span><span class="tag t3">Caso</span></div></div></div>
+      <div class="les" onclick="done(this)"><div class="les-num">28</div><div class="les-info"><div class="les-t">Anticoagulação — FA e TEV</div><div class="les-d">CHA₂DS₂-VASc ≥2H/≥3M; DOACs vs. warfarina; HAS-BLED; reversão de emergência; anticoagulacao.html</div><div class="tags"><span class="tag t2">Prática</span><span class="tag t5">Ferramenta</span></div></div></div>
+      <div class="les" onclick="done(this)"><div class="les-num">29</div><div class="les-info"><div class="les-t">Dislipidemia — Metas por Risco CV</div><div class="les-d">LDL &lt;50 risco muito alto; &lt;70 alto; &lt;100 moderado; estatinas alta intensidade; ezetimiba; iPCSK9; dislipidemia.html</div><div class="tags"><span class="tag t1">Teoria</span><span class="tag t6">Diretrizes</span></div></div></div>
+      <div class="les" onclick="done(this)"><div class="les-num">30</div><div class="les-info"><div class="les-t">DRC — Manejo Progressivo (KDIGO 2024)</div><div class="les-d">SGLT2i G2-G4; finerenona; bicarbonato; quelantes de fósforo; EPO; quelantes de potássio; drc-manejo.html</div><div class="tags"><span class="tag t1">Teoria</span><span class="tag t5">Ferramenta</span></div></div></div>
+      <div class="les" onclick="done(this)"><div class="les-num">31</div><div class="les-info"><div class="les-t">DPOC (GOLD 2024) e Asma (GINA 2024)</div><div class="les-d">DPOC grupos A/B/E; LAMA+LABA+ICS; Asma step-up/step-down; biológicos; asma-dpoc.html</div><div class="tags"><span class="tag t1">Teoria</span><span class="tag t3">Caso</span></div></div></div>
+      <div class="les" onclick="done(this)"><div class="les-num">32</div><div class="les-info"><div class="les-t">Quiz — Patologias Crônicas</div><div class="les-d">10 casos: selecionar fármaco correto, ajustar dose, identificar contraindicação e justificar pela diretriz</div><div class="tags"><span class="tag t4">Quiz</span></div></div></div>
+    </div>
+
+    <div class="case">
+      <div class="case-hd"><div class="av" style="background:#b91c1c">👴</div><div><div class="cn">Sr. Osvaldo — IC + DM2 + FA + DRC</div><div class="cd">72a · M · 80 kg · FEVE 32% · FA permanente · DRC G3a · DM2 mal controlado</div></div></div>
+      <div class="cs"><h5>Terapia atual (sub-ótima)</h5><ul>
+        <li>Enalapril 5mg 2×/dia · Carvedilol 3,125mg 2×/dia · Furosemida 40mg</li>
+        <li>Warfarina 5mg (INR 1,8) · Insulina NPH 20UI noite</li>
+        <li>Digoxina 0,25mg/dia · Sinvastatina 20mg/dia</li>
+      </ul></div>
+      <div class="labs">
+        <div class="lab"><div class="lab-n">FEVE</div><div class="lab-v r">32%</div></div>
+        <div class="lab"><div class="lab-n">BNP</div><div class="lab-v r">820 pg/mL</div></div>
+        <div class="lab"><div class="lab-n">INR</div><div class="lab-v r">1,8</div></div>
+        <div class="lab"><div class="lab-n">HbA1c</div><div class="lab-v y">8,4%</div></div>
+        <div class="lab"><div class="lab-n">LDL</div><div class="lab-v r">132 mg/dL</div></div>
+        <div class="lab"><div class="lab-n">TFG</div><div class="lab-v y">52 mL/min</div></div>
+        <div class="lab"><div class="lab-n">CHA₂DS₂-VASc</div><div class="lab-v r">5</div></div>
+        <div class="lab"><div class="lab-n">K⁺</div><div class="lab-v y">4,8 mEq/L</div></div>
+      </div>
+      <div class="cq"><p>Questões de otimização:</p><ol>
+        <li>Qual 4º pilar falta na ICFEr? Cite o estudo de suporte</li>
+        <li>Por que trocar warfarina por apixabana? (cite estudo ARISTOTLE)</li>
+        <li>Digoxina 0,25mg em idoso com TFG 52 — qual o problema?</li>
+        <li>Sinvastatina 20mg com LDL 132 e IC+DM2 — por que inadequada?</li>
+        <li>Qual antidiabético adicionar à insulina considerando IC+DRC?</li>
+      </ol></div>
+      <button class="btn-g" onclick="showAns(this)">Ver gabarito</button>
+      <div class="ans"><ul>
+        <li>4º pilar: SGLT2i — dapagliflozina 10mg (DAPA-HF) ou empagliflozina 10mg (EMPEROR-Reduced): reduz hospitalização por IC e morte CV com FEVE reduzida</li>
+        <li>ARISTOTLE (NEJM 2011): apixabana superior à warfarina na redução de AVC/embolia (RR 0,79), sangramento maior (RR 0,69) e mortalidade. INR 1,8 é subterapêutico → risco real com CHA₂DS₂-VASc=5</li>
+        <li>Digoxina com TFG 52 e 72 anos: redução do clearance renal → acúmulo → toxicidade digitálica (náusea, bloqueios). Dose máxima 0,125mg/dia; nível alvo 0,5–0,9 ng/mL</li>
+        <li>Sinvastatina 20mg = baixa intensidade. Meta LDL &lt;50 mg/dL (DCV+DM2+IC = risco muito alto). Trocar para atorvastatina 40-80mg ou rosuvastatina 20-40mg (alta intensidade)</li>
+        <li>Dapagliflozina 10mg/dia: aprovada para DM2+IC+DRC (TFG ≥25 para efeito renocardioprotetor). Reduz hospitalização por IC, progressão da DRC; risco de hipoglicemia mínimo</li>
+      </ul></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── MOD 5 ── -->
+<div class="mod" id="m5">
+  <div class="mod-hd" onclick="tog('m5')">
+    <div class="mod-ico" style="background:linear-gradient(135deg,#7c3aed,#a855f7)">🤰</div>
+    <div class="mod-info"><div class="mod-title">Módulo 5 — Populações Especiais</div><div class="mod-sub">Gestação · Pediatria · Geriatria · Bariatrica · Oncologia · Cuidados Paliativos</div></div>
+    <div class="mod-ct">7 lições</div><div class="chv">▼</div>
+  </div>
+  <div class="mod-body">
+    <div class="obj"><h4>🎯 OBJETIVOS</h4><ul>
+      <li>Aplicar categorias de risco em gestação e identificar fármacos seguros por trimestre</li>
+      <li>Calcular doses pediátricas por peso e superfície corporal; ajustar para prematuros</li>
+      <li>Otimizar terapia em idosos frágeis usando Índice de Fragilidade de Rockwood</li>
+      <li>Ajustar formulações e rotas em pacientes pós-cirurgia bariátrica</li>
+      <li>Manejar sintomas em cuidados paliativos com escada analgésica OMS</li>
+    </ul></div>
+    <div class="lessons">
+      <div class="les" onclick="done(this)"><div class="les-num">33</div><div class="les-info"><div class="les-t">Gestação e Lactação</div><div class="les-d">Categorias FDA A/B/C/D/X; análogo ADEC australiano; LactMed; insulina na DMG; gestacao-lactacao.html</div><div class="tags"><span class="tag t1">Teoria</span><span class="tag t6">Diretrizes</span></div></div></div>
+      <div class="les" onclick="done(this)"><div class="les-num">34</div><div class="les-info"><div class="les-t">Pediatria — Doses e Seleção</div><div class="les-d">mg/kg vs. mg/m²; ajuste para neonatos (GIG/PIG); off-label pediátrico; pediatria-algoritmo.html</div><div class="tags"><span class="tag t2">Prática</span><span class="tag t5">Ferramenta</span></div></div></div>
+      <div class="les" onclick="done(this)"><div class="les-num">35</div><div class="les-info"><div class="les-t">Geriatria — Fragilidade e Polifarmácia</div><div class="les-d">Fenótipo de Fried; Índice de Rockwood; desprescrição baseada em evidências; escala-fragilidade.html</div><div class="tags"><span class="tag t1">Teoria</span><span class="tag t3">Caso</span></div></div></div>
+      <div class="les" onclick="done(this)"><div class="les-num">36</div><div class="les-info"><div class="les-t">Cirurgia Bariátrica — Ajuste Pós-Op</div><div class="les-d">Formulações proibidas (XR/CR/EC pós-BGYR); substituições; deficiências nutricionais; cirurgia-bariatrica.html</div><div class="tags"><span class="tag t2">Prática</span><span class="tag t3">Caso</span></div></div></div>
+      <div class="les" onclick="done(this)"><div class="les-num">37</div><div class="les-info"><div class="les-t">Oncologia de Suporte</div><div class="les-d">Antieméticos (MASCC); G-CSF; mucosite; dor oncológica; oncologia-suporte.html</div><div class="tags"><span class="tag t1">Teoria</span><span class="tag t5">Ferramenta</span></div></div></div>
+      <div class="les" onclick="done(this)"><div class="les-num">38</div><div class="les-info"><div class="les-t">Cuidados Paliativos e Dor Crônica</div><div class="les-d">Escada OMS; rotação de opioides (conversor); sedação paliativa; dor-cronica.html; cuidados-paliativos.html</div><div class="tags"><span class="tag t1">Teoria</span><span class="tag t3">Caso</span></div></div></div>
+      <div class="les" onclick="done(this)"><div class="les-num">39</div><div class="les-info"><div class="les-t">Quiz — Populações Especiais</div><div class="les-d">8 cenários: grávida, idoso frágil, pós-bariátrico, criança com insuficiência renal</div><div class="tags"><span class="tag t4">Quiz</span></div></div></div>
+    </div>
+
+    <div class="case">
+      <div class="case-hd"><div class="av" style="background:#7c3aed">👩</div><div><div class="cn">Ana Paula — Grávida de 14 semanas + Epilepsia + HAS</div><div class="cd">32a · F · 68 kg · 2º trimestre · Epilepsia focal + HAS crônica</div></div></div>
+      <div class="cs"><h5>Medicamentos em uso</h5><ul>
+        <li>Ácido valproico 500mg 2×/dia (epilepsia — em uso antes da gestação)</li>
+        <li>Enalapril 10mg/dia (HAS)</li>
+        <li>Metildopa 250mg 2×/dia (prescrita no pré-natal)</li>
+      </ul></div>
+      <div class="cq"><p>Questões:</p><ol>
+        <li>Ácido valproico na gestação — qual o risco e qual a alternativa de menor teratogenicidade?</li>
+        <li>Enalapril no 2º e 3º trimestres — qual o risco fetal? O que usar no lugar?</li>
+        <li>Metildopa: é segura? Qual a dose máxima em gestantes?</li>
+      </ol></div>
+      <button class="btn-g" onclick="showAns(this)">Ver gabarito</button>
+      <div class="ans"><ul>
+        <li>Valproato: risco de spina bifida (1-2%), malformações cardíacas, atraso cognitivo. Categoria D/X. Alternativas: lamotrigina (mais segura) ou levetiracetam. Suplementar folato 4-5mg/dia mesmo em uso de lamotrigina</li>
+        <li>IECA no 2º/3º trimestre: oligoidrâmnio, hipoplasia pulmonar, insuficiência renal neonatal — Categoria D. Substituir por nifedipina de liberação lenta 30mg/dia ou metildopa</li>
+        <li>Metildopa: fármaco de primeira escolha histórico na gestação (décadas de segurança). Dose até 3g/dia. Pode causar sedação e depressão pós-parto; monitorar humor no puerpério</li>
+      </ul></div>
+    </div>
+
+    <div class="case">
+      <div class="case-hd"><div class="av" style="background:#a855f7">👨</div><div><div class="cn">Tobias — 7 anos · Pós-BGYR (mãe) → Criança com Epilepsia</div><div class="cd">Cenário paralelo: Mãe 38a pós-BGYR há 6 meses + Sr. Tobias 7a (caso pediátrico)</div></div></div>
+      <div class="cs"><h5>Caso A — Mãe pós-BGYR</h5><p>Retorna ao ambulatório com prescrição de: Metformina XR 850mg, Omeprazol revestido entérico, Carbonato de cálcio 500mg e Venlafaxina XR 150mg. Alega que "a farmácia entregou os mesmos de antes".</p></div>
+      <div class="cq"><p>Questões:</p><ol>
+        <li>Quais formulações são absorvidas de forma inadequada pós-BGYR? Por quê?</li>
+        <li>Qual a alternativa para cada medicamento problemático?</li>
+        <li>Deficiência mais urgente a suplementar nos primeiros 6 meses pós-BGYR?</li>
+      </ol></div>
+      <button class="btn-g" onclick="showAns(this)">Ver gabarito</button>
+      <div class="ans"><ul>
+        <li>Pós-BGYR: XR/CR/SR/ER/LA (liberação prolongada) e revestimento entérico NÃO são absorvidos adequadamente — bypass do estômago e duodeno altera pH e tempo de trânsito</li>
+        <li>Metformina XR→IR 500mg 2×; Omeprazol EC→grânulos sem revestimento ou cápsulas abertas em água ácida; CaCO₃→citrato de cálcio (não precisa de pH ácido); Venlafaxina XR→IR 2×/dia</li>
+        <li>Tiamina (B1) é a mais urgente: risco de síndrome de Wernicke. NUNCA infundir glicose sem tiamina prévia em pós-bariátrico com vômitos. 100mg IV/IM antes de qualquer SG</li>
+      </ul></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── MOD 6 ── -->
+<div class="mod" id="m6">
+  <div class="mod-hd" onclick="tog('m6')">
+    <div class="mod-ico" style="background:linear-gradient(135deg,#0e7490,#06b6d4)">🏥</div>
+    <div class="mod-info"><div class="mod-title">Módulo 6 — Farmácia Hospitalar e UTI</div><div class="mod-sub">Sepse · Antibióticos · Nutrição · Diluição · Perioperatório · Reconciliação</div></div>
+    <div class="mod-ct">7 lições</div><div class="chv">▼</div>
+  </div>
+  <div class="mod-body">
+    <div class="obj"><h4>🎯 OBJETIVOS</h4><ul>
+      <li>Aplicar bundles de sepse SSC 2021 e calcular dose de antibióticos em UTI</li>
+      <li>Prescrever profilaxia antibiótica e VTE no perioperatório</li>
+      <li>Calcular necessidades calórico-proteicas e vias de nutrição (enteral vs. parenteral)</li>
+      <li>Diluir corretamente medicamentos IV críticos (insulina, heparina, nitroprussiato)</li>
+      <li>Realizar reconciliação medicamentosa completa na alta hospitalar</li>
+    </ul></div>
+    <div class="lessons">
+      <div class="les" onclick="done(this)"><div class="les-num">40</div><div class="les-info"><div class="les-t">Sepse e Choque Séptico (SSC 2021)</div><div class="les-d">Bundle 1h: hemoculturas, ATB em 1h, cristaloide 30 mL/kg, vasopressores; sepse-choque.html</div><div class="tags"><span class="tag t1">Teoria</span><span class="tag t6">Diretrizes</span></div></div></div>
+      <div class="les" onclick="done(this)"><div class="les-num">41</div><div class="les-info"><div class="les-t">Guia de Antibióticos Hospitalares</div><div class="les-d">Meropeném, piperacilina-tazobactam, vancomicina, colistina; escalonamento/desescalonamento; guia-antibioticos.html</div><div class="tags"><span class="tag t2">Prática</span><span class="tag t5">Ferramenta</span></div></div></div>
+      <div class="les" onclick="done(this)"><div class="les-num">42</div><div class="les-info"><div class="les-t">Perioperatório — Profilaxia e Ajustes</div><div class="les-d">ATB profilático por cirurgia; VTE (Caprini); bridge anticoagulação; SGLT2i 3-4d antes; perioperatorio.html</div><div class="tags"><span class="tag t2">Prática</span><span class="tag t3">Caso</span></div></div></div>
+      <div class="les" onclick="done(this)"><div class="les-num">43</div><div class="les-info"><div class="les-t">Nutrição Enteral e Parenteral</div><div class="les-d">Harris-Benedict; meta calórica 25-30 kcal/kg; proteína 1,2-2g/kg; via sonda; sindromes de realimentação; nutricao-hospitalar.html</div><div class="tags"><span class="tag t1">Teoria</span><span class="tag t5">Ferramenta</span></div></div></div>
+      <div class="les" onclick="done(this)"><div class="les-num">44</div><div class="les-info"><div class="les-t">Diluição de Medicamentos IV Críticos</div><div class="les-d">Insulina regular (1 UI/mL em SF 0,9%); noradrenalina; heparina; nitroprussiato (proteger da luz); diluicao.html</div><div class="tags"><span class="tag t2">Prática</span><span class="tag t5">Ferramenta</span></div></div></div>
+      <div class="les" onclick="done(this)"><div class="les-num">45</div><div class="les-info"><div class="les-t">Administração por Sonda Enteral</div><div class="les-d">Medicamentos compatíveis com sonda; trituração: proibidos (OROS, revestido, cápsulas XR); sondas-enteral.html</div><div class="tags"><span class="tag t2">Prática</span><span class="tag t5">Ferramenta</span></div></div></div>
+      <div class="les" onclick="done(this)"><div class="les-num">46</div><div class="les-info"><div class="les-t">Reconciliação na Alta + Carta ao Paciente</div><div class="les-d">Comparar prescrição hospitalar vs. pré-admissão; gerar carta ao paciente; carta-paciente.html; relatorio-sft.html</div><div class="tags"><span class="tag t2">Prática</span><span class="tag t5">Ferramenta</span></div></div></div>
+    </div>
+
+    <div class="case">
+      <div class="case-hd"><div class="av" style="background:#0e7490">👨</div><div><div class="cn">Sr. João — Sepse por Klebsiella KPC em UTI</div><div class="cd">61a · M · 82 kg · Sepse grave · DM2 · DRC G3b · Ventilação mecânica</div></div></div>
+      <div class="cs"><h5>Dados</h5><p>Klebsiella pneumoniae KPC isolada em hemocultura (resistente a carbapenêmicos). CIM da colistina: 2 μg/mL. TFG: 35 mL/min. Vasopressor em uso. PA: 82/54 mmHg.</p></div>
+      <div class="labs">
+        <div class="lab"><div class="lab-n">TFG</div><div class="lab-v r">35 mL/min</div></div>
+        <div class="lab"><div class="lab-n">Lactato</div><div class="lab-v r">4,2 mmol/L</div></div>
+        <div class="lab"><div class="lab-n">PCR</div><div class="lab-v r">248 mg/L</div></div>
+        <div class="lab"><div class="lab-n">Procalcitonina</div><div class="lab-v r">38 ng/mL</div></div>
+      </div>
+      <div class="cq"><p>Questões:</p><ol>
+        <li>Qual antibiótico para KPC? Colistina em combinação com qual outro?</li>
+        <li>Dose de colistina com TFG 35 — usar o módulo ajuste renal do VitaDose</li>
+        <li>Qual o bundle SSC 2021 que deveria ter sido iniciado em até 1 hora?</li>
+      </ol></div>
+      <button class="btn-g" onclick="showAns(this)">Ver gabarito</button>
+      <div class="ans"><ul>
+        <li>KPC: colistina (base: 5 mg/kg/dia, dividido q8-12h) em combinação com meropeném em altas doses (2g q8h em infusão estendida 3-4h) ou aztreonam + ceftazidima-avibactam se disponível</li>
+        <li>Colistina TFG 35: ajustar dose de manutenção (reduzir intervalo ou dose); guia EUCAST recomenda dose de ataque 9 MUI independente de função renal para atingir nível rapidamente</li>
+        <li>Bundle 1h SSC: (1) hemoculturas antes do ATB; (2) ATB de amplo espectro em até 1h do reconhecimento; (3) cristaloide 30 mL/kg se hipoperfusão; (4) lactato; (5) vasopressor se PA mantida baixa</li>
+      </ul></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── MOD 7 — ESTUDOS EXTRA ── -->
+<div class="mod" id="m7">
+  <div class="mod-hd" onclick="tog('m7')">
+    <div class="mod-ico" style="background:linear-gradient(135deg,#b45309,#f59e0b)">📚</div>
+    <div class="mod-info"><div class="mod-title">Módulo 7 — Estudos Extra: Referências e Aprofundamento</div><div class="mod-sub">Diretrizes · Ensaios Clínicos · Livros · ANVISA/RENAME · Periódicos · Plataformas</div></div>
+    <div class="mod-ct">7 lições</div><div class="chv">▼</div>
+  </div>
+  <div class="mod-body">
+    <div class="obj"><h4>🎯 OBJETIVOS</h4><ul>
+      <li>Localizar e interpretar as diretrizes que embasam cada ferramenta do VitaDose</li>
+      <li>Conhecer os ensaios clínicos-chave citados nas páginas do app</li>
+      <li>Construir uma biblioteca mínima de farmácia clínica (livros + bases de dados)</li>
+      <li>Usar recursos brasileiros oficiais: ANVISA, RENAME, Farmácias Populares, CFF</li>
+      <li>Definir uma rotina de educação continuada e metodologia de estudo</li>
+    </ul></div>
+    <div class="lessons">
+      <div class="les" onclick="done(this)"><div class="les-num">47</div><div class="les-info"><div class="les-t">Diretrizes Internacionais por Área</div><div class="les-d">ESC, AHA/ACC, ADA, GOLD, GINA, KDIGO, SSC, ASHP — onde baixar, como citar, como navegar</div><div class="tags"><span class="tag t6">Diretrizes</span><span class="tag t1">Teoria</span></div></div></div>
+      <div class="les" onclick="done(this)"><div class="les-num">48</div><div class="les-info"><div class="les-t">Diretrizes Brasileiras (SBC, SBPT, SBD, CFaR)</div><div class="les-d">SBC HAS 2024, IC 2023; SBD DM 2024; SBPT DPOC; CFaR Farmácia Clínica — onde acessar no site das sociedades</div><div class="tags"><span class="tag t6">Diretrizes</span><span class="tag t1">Teoria</span></div></div></div>
+      <div class="les" onclick="done(this)"><div class="les-num">49</div><div class="les-info"><div class="les-t">Ensaios Clínicos-Chave do VitaDose</div><div class="les-d">Todos os ECRs citados nas ferramentas do app: ARISTOTLE, DAPA-HF, BRIDGE, AMBITION, GRIPHON, SERAPHIN, BENEFIT, POISE, PIONEER e mais</div><div class="tags"><span class="tag t7">ECR</span><span class="tag t3">Caso</span></div></div></div>
+      <div class="les" onclick="done(this)"><div class="les-num">50</div><div class="les-info"><div class="les-t">Livros Essenciais de Farmácia Clínica</div><div class="les-d">Dipiro Pharmacotherapy; DiPiro Applied Therapeutics; Koda-Kimble; Rang & Dale; Goodman & Gilman; Micromedex; UpToDate</div><div class="tags"><span class="tag t1">Teoria</span></div></div></div>
+      <div class="les" onclick="done(this)"><div class="les-num">51</div><div class="les-info"><div class="les-t">Recursos Brasileiros Oficiais</div><div class="les-d">ANVISA (bulário, Farmacovigilância, e-SUS); RENAME 2022; Farmácia Popular; CFF (Resolução 585/2013); OPAS/OMS</div><div class="tags"><span class="tag t1">Teoria</span><span class="tag t5">Ferramenta</span></div></div></div>
+      <div class="les" onclick="done(this)"><div class="les-num">52</div><div class="les-info"><div class="les-t">Periódicos e Bases de Dados</div><div class="les-d">JAPHA, Annals of Pharmacotherapy, BJCP; PubMed, Cochrane, LILACS; Micromedex, Lexicomp, Clinical Pharmacology</div><div class="tags"><span class="tag t1">Teoria</span></div></div></div>
+      <div class="les" onclick="done(this)"><div class="les-num">53</div><div class="les-info"><div class="les-t">Plataformas de Educação Continuada</div><div class="les-d">ASHP eLearning; ACCP Clinical Pharmacy; CFaR cursos; Coursera (farmacoepidemiologia); CAPES periódicos gratuitos</div><div class="tags"><span class="tag t2">Prática</span></div></div></div>
+      <div class="les" onclick="done(this)"><div class="les-num">54</div><div class="les-info"><div class="les-t">Metodologia de Estudo para Farmacêutico Clínico</div><div class="les-d">Estudo baseado em casos; journal club; revisão espaçada (Anki); construção de flashcards por ferramenta do VitaDose</div><div class="tags"><span class="tag t2">Prática</span><span class="tag t4">Quiz</span></div></div></div>
+    </div>
+
+    <!-- Diretrizes por área -->
+    <div class="study-h">📋 Diretrizes Internacionais por Área</div>
+    <div class="study-grid">
+      <div class="si"><div class="si-t">Cardiologia</div><div class="si-d">ESC 2023 (IC, FA, dislipidemia, HAS); AHA/ACC 2022 (IC, coronariopatia)</div><div class="si-tag">ESC · AHA · ACC</div></div>
+      <div class="si"><div class="si-t">Diabetes</div><div class="si-d">ADA Standards of Care 2025; EASD/ADA Consensus 2022; SBD Diretriz 2024</div><div class="si-tag">ADA · EASD · SBD</div></div>
+      <div class="si"><div class="si-t">Nefrologia</div><div class="si-d">KDIGO DRC 2024; KDIGO Diabetes+DRC 2022; KDOQI nutrição 2020</div><div class="si-tag">KDIGO · KDOQI</div></div>
+      <div class="si"><div class="si-t">Pneumologia</div><div class="si-d">GOLD 2024 (DPOC); GINA 2024 (Asma); ATS/ERS (fibrose pulmonar)</div><div class="si-tag">GOLD · GINA · ATS</div></div>
+      <div class="si"><div class="si-t">Infectologia</div><div class="si-d">IDSA/SSC 2021 (sepse); ASHP/IDSA 2020 (vancomicina); CDC 2023 (STIs)</div><div class="si-tag">IDSA · SSC · ASHP</div></div>
+      <div class="si"><div class="si-t">Geriatria</div><div class="si-d">AGS Beers Criteria 2023; STOPP/START v3 2023; Cochrane Deprescribing Network</div><div class="si-tag">AGS · STOPP/START</div></div>
+      <div class="si"><div class="si-t">Anticoagulação</div><div class="si-d">ASH VTE 2023; ESC FA 2023; CHEST Antithrombotic 2022</div><div class="si-tag">ASH · ESC · CHEST</div></div>
+      <div class="si"><div class="si-t">Hipertensão Pulmonar</div><div class="si-d">ESC/ERS HP 2022 (nova definição PAPm>20mmHg); WSPH 2023</div><div class="si-tag">ESC · ERS</div></div>
+    </div>
+
+    <!-- ECRs-chave -->
+    <div class="study-h">🔬 Ensaios Clínicos-Chave Citados no VitaDose</div>
+    <table class="ecr-t">
+      <thead><tr><th>Estudo</th><th>Área / Ferramenta</th><th>Resultado principal</th></tr></thead>
+      <tbody>
+        <tr><td><strong>ARISTOTLE</strong> (2011)</td><td>Anticoagulação / FA</td><td>Apixabana &gt; warfarina: ↓AVC 21%, ↓sangramento 31%, ↓mortalidade 11%</td></tr>
+        <tr><td><strong>DAPA-HF</strong> (2019)</td><td>IC / SGLT2i</td><td>Dapagliflozina ↓morte CV + hosp IC 26% em ICFEr (com ou sem DM2)</td></tr>
+        <tr><td><strong>EMPEROR-Reduced</strong> (2020)</td><td>IC / SGLT2i</td><td>Empagliflozina ↓hosp IC 30% em ICFEr; benefício renal adicional</td></tr>
+        <tr><td><strong>BRIDGE</strong> (2015)</td><td>Perioperatório</td><td>Bridge com HBPM não superior ao não-bridge em FA + warfarina; ↑sangramento</td></tr>
+        <tr><td><strong>PAUSE</strong> (2019)</td><td>Perioperatório / DOACs</td><td>Interrupção padronizada de DOACs 1-2 dias pré-op: segura sem necessidade de bridge</td></tr>
+        <tr><td><strong>AMBITION</strong> (2015)</td><td>Hipertensão Pulmonar</td><td>Dupla terapia inicial (ambrisentana+tadalafila) ↓falha clínica 50% vs. monoterapia</td></tr>
+        <tr><td><strong>GRIPHON</strong> (2015)</td><td>Hipertensão Pulmonar</td><td>Selexipague ↓eventos morbidade/mortalidade 40% vs. placebo em HAP</td></tr>
+        <tr><td><strong>SERAPHIN</strong> (2013)</td><td>Hipertensão Pulmonar</td><td>Macitentana ↓morbidade/mortalidade 45% vs. placebo em HAP</td></tr>
+        <tr><td><strong>BENEFIT</strong> (2015)</td><td>Chagas</td><td>Benznidazol ↓carga parasitária mas não ↓eventos CV na doença de Chagas crônica</td></tr>
+        <tr><td><strong>POISE</strong> (2008)</td><td>Perioperatório / BB</td><td>Metoprolol perioperatório: ↓IA mas ↑AVC e ↑morte por hipotensão/bradicardia</td></tr>
+        <tr><td><strong>ALFREDSON</strong> (1998)</td><td>Medicina Esportiva</td><td>Exercício excêntrico de Alfredson: 100% de retorno ao esporte em tendinopatia do Aquiles</td></tr>
+        <tr><td><strong>NEJM Letrozol</strong> (2014)</td><td>Saúde Feminina / SOP</td><td>Letrozol superior ao clomifeno para indução da ovulação em SOP (taxa nascidos vivos 27% vs 19%)</td></tr>
+        <tr><td><strong>PIONEER-6 / SUSTAIN-6</strong> (2016-2019)</td><td>DM2 / GLP-1</td><td>Semaglutida ↓MACE 26% vs placebo em DM2 com alto risco CV</td></tr>
+        <tr><td><strong>CREDENCE</strong> (2019)</td><td>DM2+DRC / SGLT2i</td><td>Canagliflozina ↓progressão DRC e MACE em DM2+DRC G2-3+macroalbuminúria 30%</td></tr>
+        <tr><td><strong>DAPA-CKD</strong> (2020)</td><td>DRC / SGLT2i</td><td>Dapagliflozina ↓progressão DRC 44% independente de DM2</td></tr>
+      </tbody>
+    </table>
+
+    <!-- Livros -->
+    <div class="study-h">📖 Biblioteca Mínima do Farmacêutico Clínico</div>
+    <ul class="ref-l">
+      <li><strong>Pharmacotherapy: A Pathophysiologic Approach</strong> — DiPiro et al. (McGraw-Hill, 12ª ed.) — referência de casos clínicos por sistema</li>
+      <li><strong>Applied Therapeutics: The Clinical Use of Drugs</strong> — Koda-Kimble, Young (Lippincott) — abordagem orientada ao problema clínico</li>
+      <li><strong>Goodman &amp; Gilman's Pharmacological Basis of Therapeutics</strong> (McGraw-Hill, 14ª ed.) — farmacologia de referência aprofundada</li>
+      <li><strong>Rang &amp; Dale's Pharmacology</strong> (Elsevier, 10ª ed.) — base farmacológica com aplicação clínica</li>
+      <li><strong>Clinical Pharmacokinetics and Pharmacodynamics</strong> — Rowland &amp; Tozer — TDM e farmacocinética clínica</li>
+      <li><strong>The Pharmacist's Guide to Evidence-Based Medicine</strong> — Malone et al. — método para avaliar literatura científica</li>
+      <li><strong>Farmácia Clínica e Atenção Farmacêutica</strong> — Zanini, Moraes — referência brasileira clínica</li>
+      <li><strong>Micromedex / Lexicomp / Clinical Pharmacology</strong> — bases de dados de interações, TDM e ajuste de dose (acesso institucional)</li>
+      <li><strong>UpToDate</strong> — revisão clínica contínua atualizada; excelente para casos complexos</li>
+      <li><strong>Bulário Eletrônico ANVISA</strong> — bulario.anvisa.gov.br — bulas de referência oficiais BR</li>
+    </ul>
+
+    <!-- Plataformas -->
+    <div class="study-h">💻 Plataformas de Estudo e Educação Continuada</div>
+    <div class="study-grid">
+      <div class="si"><div class="si-t">ASHP eLearning</div><div class="si-d">Módulos certificados de farmácia clínica hospitalar; anticoagulação; farmacoterapia</div><div class="si-tag">ashp.org/education</div></div>
+      <div class="si"><div class="si-t">ACCP Courses</div><div class="si-d">American College of Clinical Pharmacy; cursos de terapêutica por especialidade</div><div class="si-tag">accp.com</div></div>
+      <div class="si"><div class="si-t">CFaR / CFF</div><div class="si-d">Conselho Federal de Farmácia; Farmácia Clínica; Res. 585/2013; cursos online</div><div class="si-tag">cff.org.br</div></div>
+      <div class="si"><div class="si-t">CAPES Periódicos</div><div class="si-d">Acesso gratuito a todas as revistas via IP de universidade federal ou VPN CAFE</div><div class="si-tag">periodicos.capes.gov.br</div></div>
+      <div class="si"><div class="si-t">PubMed / MEDLINE</div><div class="si-d">Base de dados bibliográfica NLM; usar filtros: Clinical Trial, Systematic Review, Free Full Text</div><div class="si-tag">pubmed.ncbi.nlm.nih.gov</div></div>
+      <div class="si"><div class="si-t">Cochrane Library</div><div class="si-d">Revisões sistemáticas e meta-análises; máxima evidência para decisão clínica</div><div class="si-tag">cochranelibrary.com</div></div>
+      <div class="si"><div class="si-t">SBD / SBC / SBPT</div><div class="si-d">Diretrizes e cursos das sociedades brasileiras de Diabetes, Cardiologia e Pneumologia</div><div class="si-tag">diabetes.org.br · cardiol.br</div></div>
+      <div class="si"><div class="si-t">Anki (Flashcards)</div><div class="si-d">Criar baralhos por ferramenta do VitaDose; revisão espaçada comprovada por meta-análise</div><div class="si-tag">apps.ankiweb.net</div></div>
+    </div>
+
+    <!-- Metodologia -->
+    <div class="study-h">🧠 Metodologia de Estudo para o Farmacêutico Clínico</div>
+    <div class="study-grid">
+      <div class="si"><div class="si-t">Estudo por Caso Clínico</div><div class="si-d">Para cada paciente real, abra a ferramenta VitaDose correspondente. Relacione o alerta do app com a diretriz subjacente.</div><div class="si-tag">Técnica principal</div></div>
+      <div class="si"><div class="si-t">Journal Club</div><div class="si-d">1×/semana: ler um ECR relevante (ver lista acima), resumir em PICO e apresentar para equipe</div><div class="si-tag">Evidência aplicada</div></div>
+      <div class="si"><div class="si-t">Revisão Espaçada</div><div class="si-d">Anki: criar 5 flashcards por ferramenta do VitaDose estudada. Meta: 20 revisões por dia em 15min</div><div class="si-tag">Retenção de longo prazo</div></div>
+      <div class="si"><div class="si-t">Mapa de Interações</div><div class="si-d">Construir tabela CYP450 própria: inibidores fortes, moderados, fracos e indutores por CYP3A4/2C9/2D6</div><div class="si-tag">Farmacologia clínica</div></div>
+      <div class="si"><div class="si-t">Checklist por Alta</div><div class="si-d">Criar protocolo pessoal de análise: Beers → STOPP → interações → ajuste renal → contraindicações → educação</div><div class="si-tag">Processo clínico</div></div>
+      <div class="si"><div class="si-t">Notificação ANVISA</div><div class="si-d">Notificar reações adversas graves no VigiMed (ANVISA); contribuir com farmacovigilância nacional</div><div class="si-tag">Segurança do paciente</div></div>
+    </div>
+
+    <div class="case">
+      <div class="case-hd"><div class="av" style="background:#b45309">📖</div><div><div class="cn">Caso Integrador — Uso Completo do VitaDose</div><div class="cd">Sra. Aparecida · 71a · F · 8 diagnósticos · 14 medicamentos · Alta hospitalar</div></div></div>
+      <div class="cs"><h5>Cenário</h5><p>Alta após 12 dias de internação por descompensação de IC. Prescrição de alta inclui novos medicamentos somados aos crônicos. Filha pergunta: "minha mãe vai tomar tudo isso?". Você tem 15 minutos.</p></div>
+      <div class="cs"><h5>Medicamentos na alta (14 no total)</h5><ul>
+        <li>Sacubitril/valsartana 24/26mg 2× · Carvedilol 12,5mg 2× · Espironolactona 25mg · Dapagliflozina 10mg</li>
+        <li>Furosemida 40mg 2× · Digoxina 0,125mg · Varfarina 4mg · Amiodarona 200mg</li>
+        <li>Metformina 500mg 2× · Insulina glargina 14UI noite</li>
+        <li>Atorvastatina 40mg · Omeprazol 20mg · Clonazepam 0,5mg SOS · AAS 100mg</li>
+      </ul></div>
+      <div class="cq"><p>Desafio integrador — use cada ferramenta citada:</p><ol>
+        <li>[interacoes.js] Amiodarona + varfarina: qual o risco e como monitorar?</li>
+        <li>[beers.js] Identifique pelo menos 2 critérios de Beers nesta alta</li>
+        <li>[ajusterenal.js] Creatinina de alta: 1,3 mg/dL — digoxina está na dose correta?</li>
+        <li>[anticoagulacao.html] Calcule o CHA₂DS₂-VASc. DOACs seriam melhores que varfarina aqui?</li>
+        <li>[carta-paciente.html] Quais os 3 principais alertas para ensinar à filha?</li>
+      </ol></div>
+      <button class="btn-g" onclick="showAns(this)">Ver gabarito</button>
+      <div class="ans"><ul>
+        <li>Amiodarona + varfarina: amiodarona inibe CYP2C9 → ↑INR em até 50%. Reduzir dose de varfarina em 30-50% ao iniciar amiodarona; dosar INR 2× na semana por 4 semanas, depois semanalmente até estabilizar</li>
+        <li>Beers: Clonazepam (BZD em idosa → quedas/fraturas/sedação — "evitar"); Digoxina &gt;0,125mg (Beers recomenda ≤0,125mg em idosos); AAS sem DCV estabelecida em &gt;70 anos tem risco &gt; benefício</li>
+        <li>TFG pela C-G (71a/62kg): ~38 mL/min → digoxina 0,125mg correto (máximo em DRC moderada). Monitorar nível sérico (meta 0,5-0,9 ng/mL) e sinais de toxicidade (náusea, bradicardia, visão amarelada)</li>
+        <li>CHA₂DS₂-VASc: IC(1) + Sexo F(1) + Idade ≥75(2) + HAS(1) + DM(1) = 6. DOAC (apixabana) seria preferível pela superiodidade ao warfarin (ARISTOTLE) — mas amiodarona + DOAC também requer atenção a interação via P-gp</li>
+        <li>Carta ao paciente: (1) Não faltar à dosagem da varfarina / sinal de sangramento → pronto-socorro; (2) Pesar todo dia de manhã em jejum — ganho &gt;2 kg em 2 dias → ligar para médico; (3) Não usar ibuprofeno, naproxeno ou qualquer anti-inflamatório — risco de descompensar rim e coração</li>
+      </ul></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── GLOSSÁRIO ── -->
+<div class="glossary">
+  <h2>📖 Glossário Farmacoterapêutico</h2>
+  <div class="gl-grid">
+    <div class="gl-i"><div class="gl-t">TFG (Taxa de Filtração Glomerular)</div><div class="gl-d">Estimativa da função renal em mL/min/1,73m². CKD-EPI para estadiamento; Cockcroft-Gault para ajuste de dose em bulas.</div></div>
+    <div class="gl-i"><div class="gl-t">TDM (Monitoramento Terapêutico)</div><div class="gl-d">Medição de concentrações séricas de fármacos de janela estreita para individualizar a dose (vancomicina, fenitoína, lítio).</div></div>
+    <div class="gl-i"><div class="gl-t">Critérios de Beers</div><div class="gl-d">Lista da AGS de medicamentos potencialmente inapropriados em idosos ≥65 anos. Atualização 2023.</div></div>
+    <div class="gl-i"><div class="gl-t">STOPP/START v3</div><div class="gl-d">133 critérios para suspender (STOPP) e 34 para prescrever (START) medicamentos em idosos. Versão 3 de 2023.</div></div>
+    <div class="gl-i"><div class="gl-t">CHA₂DS₂-VASc</div><div class="gl-d">Escore de risco tromboembólico em FA: IC, HAS, idade≥75, DM, AVC, DCV, idade65-74, sexo feminino. Anticoagular se ≥2(H) / ≥3(M).</div></div>
+    <div class="gl-i"><div class="gl-t">ACB Scale</div><div class="gl-d">Escala de carga anticolinérgica (0-3 por fármaco). Score total ≥3 associado a deterioração cognitiva.</div></div>
+    <div class="gl-i"><div class="gl-t">AUC/MIC</div><div class="gl-d">Razão entre área sob a curva de concentração e CIM do patógeno. Meta vancomicina: 400-600 mg·h/L para MRSA.</div></div>
+    <div class="gl-i"><div class="gl-t">BGYR (Bypass Gástrico)</div><div class="gl-d">Cirurgia que exclui o estômago e duodeno — impede absorção de formulações XR/CR/EC; exige substituições farmacológicas.</div></div>
+    <div class="gl-i"><div class="gl-t">Child-Pugh</div><div class="gl-d">Escore de gravidade da cirrose (bilirrubina, albumina, INR, ascite, encefalopatia). A: 5-6; B: 7-9; C: ≥10 pts.</div></div>
+    <div class="gl-i"><div class="gl-t">KPC (Klebsiella Produtora de Carbapenemase)</div><div class="gl-d">Resistência a carbapenêmicos. Tratamento: colistina + meropeném em alta dose infusão estendida ou ceftazidima-avibactam.</div></div>
+    <div class="gl-i"><div class="gl-t">FEVE (Fração de Ejeção do VE)</div><div class="gl-d">ICFEr: FEVE &lt;40%; ICFEm: 40-49%; ICFEp: ≥50%. Impacta drasticamente a escolha terapêutica.</div></div>
+    <div class="gl-i"><div class="gl-t">PWA (Progressive Web App)</div><div class="gl-d">Aplicação web com capacidade de funcionar offline via Service Worker, instalável na tela inicial sem loja de aplicativos.</div></div>
+  </div>
+</div>
+
+</main>
+
+<footer>Rubiney Ramires · Farmacêutico Clínico · VitaDose Curso Profissional · 2026</footer>
+
+<script>
+const TOTAL = 54;
+let done = 0;
+
+function tog(id) {
+  document.getElementById(id).classList.toggle('open');
+}
+
+function done_les(el) {
+  if (el.classList.contains('done')) return;
+  el.classList.remove('active');
+  el.classList.add('done');
+  el.querySelector('.les-num').textContent = '✓';
+  done++;
+  const nx = el.nextElementSibling;
+  if (nx && nx.classList.contains('les') && !nx.classList.contains('done')) {
+    nx.classList.add('active');
+  }
+  updateProg();
+}
+
+function updateProg() {
+  const p = Math.round((done / TOTAL) * 100);
+  document.getElementById('progFill').style.width = p + '%';
+  document.getElementById('progPct').textContent = p + '% concluído';
+  document.getElementById('doneN').textContent = done;
+}
+
+function showAns(btn) {
+  const a = btn.nextElementSibling;
+  if (!a) return;
+  a.classList.toggle('show');
+  btn.textContent = a.classList.contains('show') ? 'Ocultar gabarito' : 'Ver gabarito';
+}
+
+// Bind lesson clicks
+document.querySelectorAll('.les').forEach(el => {
+  el.onclick = () => done_les(el);
+});
+</script>
+</body>
+</html>
