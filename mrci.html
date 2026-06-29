@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>MRCI — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .topbar { display:flex;align-items:center;gap:10px;padding:12px 16px;background:#1e3a5f;position:sticky;top:0;z-index:100 }
+    .back-btn { background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:8px;padding:6px 11px;cursor:pointer;font-size:1rem }
+    .topbar-title { font-size:.93rem;font-weight:800;color:#fff;flex:1 }
+    .topbar-sub { font-size:.62rem;color:rgba(255,255,255,.7);margin-top:1px }
+    .btn-top { background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:8px;padding:7px 11px;font-size:.72rem;font-weight:700;cursor:pointer;margin-left:4px }
+
+    main { max-width:600px;margin:0 auto;padding:12px 14px 90px }
+    .pac-sel { width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:12px;padding:11px 14px;font-size:.88rem;margin-bottom:10px;background:#fff }
+
+    /* Score display */
+    .score-hero { background:linear-gradient(135deg,#1e3a5f,#0f172a);border-radius:16px;padding:20px;text-align:center;margin-bottom:12px;color:#fff }
+    .score-n { font-size:4rem;font-weight:900;line-height:1 }
+    .score-lbl { font-size:1rem;font-weight:800;margin-top:4px }
+    .score-sub { font-size:.75rem;opacity:.7;margin-top:4px }
+    .score-bar-wrap { display:flex;gap:0;border-radius:8px;overflow:hidden;height:10px;margin-top:12px }
+    .score-bar-seg { height:10px;transition:width .5s }
+
+    /* Seções */
+    .card { background:#fff;border-radius:14px;padding:14px 16px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.07) }
+    .card-title { font-size:.65rem;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center }
+    .sec-score { font-size:.72rem;font-weight:800;color:#1e3a5f;background:#dbeafe;border-radius:8px;padding:2px 8px }
+
+    /* Linha de medicamento */
+    .med-row { padding:10px 0;border-bottom:1px solid #f8fafc }
+    .med-row:last-child { border:none }
+    .med-nome { font-size:.88rem;font-weight:700;color:#1e293b;margin-bottom:6px }
+    .med-info { font-size:.72rem;color:#94a3b8;margin-bottom:6px }
+    .sel-group { display:flex;gap:8px;flex-wrap:wrap }
+    .sel-lbl { font-size:.68rem;font-weight:700;color:#475569;display:block;margin-bottom:3px }
+    select.sm { border:1.5px solid #e2e8f0;border-radius:8px;padding:5px 8px;font-size:.76rem;color:#1e293b;background:#fff;cursor:pointer }
+    select.sm:focus { outline:none;border-color:#1e3a5f }
+
+    /* Instrução C */
+    .inst-grid { display:flex;gap:6px;flex-wrap:wrap;margin-top:8px }
+    .inst-chip { display:flex;align-items:center;gap:5px;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:8px;padding:4px 9px;font-size:.7rem;color:#475569;cursor:pointer;user-select:none }
+    .inst-chip input[type=checkbox] { margin:0;cursor:pointer;accent-color:#1e3a5f }
+    .inst-chip.marcado { background:#dbeafe;border-color:#1e3a5f;color:#1e3a5f }
+
+    /* Comparação com aderência */
+    .adh-compare { display:flex;gap:10px;margin-top:10px }
+    .adh-bloco { flex:1;background:#f8fafc;border-radius:10px;padding:10px;text-align:center }
+    .adh-n { font-size:1.5rem;font-weight:900 }
+    .adh-l { font-size:.65rem;color:#64748b;font-weight:700;text-transform:uppercase;margin-top:2px }
+
+    .ref-box { background:#f0f9ff;border:1.5px solid #bae6fd;border-radius:10px;padding:10px 12px;font-size:.76rem;color:#0369a1;line-height:1.8;margin-top:10px }
+
+    @media print {
+      .topbar,.pac-sel,.btn-top,nav,select.sm,.inst-chip input { display:none!important }
+      body { background:#fff }
+      main { padding:0;max-width:none }
+    }
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <div style="flex:1">
+    <div class="topbar-title">📐 MRCI — Complexidade Terapêutica</div>
+    <div class="topbar-sub">Medication Regimen Complexity Index</div>
+  </div>
+  <button class="btn-top" onclick="window.print()">🖨️</button>
+  <button class="btn-top" onclick="salvarMRCI()">💾</button>
+</div>
+
+<main>
+  <select class="pac-sel" id="sel-pac" onchange="init()"><option value="">Selecione o paciente...</option></select>
+  <div id="conteudo"></div>
+</main>
+
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+
+<script src="js/db.js"></script>
+<script src="js/utils.js"></script>
+<script>
+
+/* ── Tabelas de pontuação MRCI (George et al., 2004) ─── */
+const FORMAS = [
+  { id:'solido_oral',   lbl:'Sólido oral (comp./cáps.)',   pts:1  },
+  { id:'liquido_oral',  lbl:'Líquido oral (xarope/sol.)',  pts:2  },
+  { id:'topico',        lbl:'Tópico (creme/pomada/gel)',   pts:2  },
+  { id:'ocular',        lbl:'Colírio / oftálmico',         pts:3  },
+  { id:'nasal',         lbl:'Nasal (spray/gotas)',         pts:3  },
+  { id:'inalacao',      lbl:'Inalatório (MDI/DPI)',        pts:3  },
+  { id:'transdermico',  lbl:'Transdérmico (adesivo)',      pts:2  },
+  { id:'injetavel',     lbl:'Injetável (SC/IM/IV)',        pts:3  },
+  { id:'sublingual',    lbl:'Sublingual/bucal',            pts:2  },
+  { id:'retal',         lbl:'Retal (supositório)',         pts:3  },
+];
+const FREQS = [
+  { id:'mensal',   lbl:'Mensal / quinzenal',       pts:0.5 },
+  { id:'semanal',  lbl:'Semanal',                  pts:0.5 },
+  { id:'sos',      lbl:'Se necessário (SOS/PRN)',  pts:0.5 },
+  { id:'1x',       lbl:'1× ao dia',                pts:1   },
+  { id:'2x',       lbl:'2× ao dia (12/12h)',       pts:2   },
+  { id:'3x',       lbl:'3× ao dia (8/8h)',         pts:3   },
+  { id:'4x',       lbl:'4× ao dia (6/6h)',         pts:4   },
+  { id:'gt4x',     lbl:'Mais de 4× ao dia',        pts:4.5 },
+  { id:'variavel', lbl:'Dose variável (escala)',    pts:1   },
+];
+const INSTRUCOES = [
+  'Tomar com alimento / após as refeições',
+  'Tomar em jejum (30–60 min antes das refeições)',
+  'Tomar ao deitar',
+  'Tomar de manhã (em horário específico)',
+  'Partir / triturar comprimido',
+  'Evitar determinados alimentos (ex: toranja/grapefruit)',
+  'Monitorar antes de tomar (glicemia, PA, pulso)',
+  'Conservar sob refrigeração',
+  'Tomar com bastante água (≥200 mL)',
+  'Dose variável conforme condição clínica',
+  'Múltiplas vias de administração',
+];
+
+let _meds = [], _dados = {};
+
+function detectarForma(m) {
+  const v = (m.via||m.formaFarma||m.dosagem||'').toLowerCase();
+  if (['inalat','inalação','nebul','mdi','dpi','spray bronq','aerossol'].some(k=>v.includes(k))) return 'inalacao';
+  if (['colírio','colirio','oftalm','ocular'].some(k=>v.includes(k))) return 'ocular';
+  if (['nasal','gotas nasais','spray nasal'].some(k=>v.includes(k))) return 'nasal';
+  if (['sc','subcutân','subcutaneo','im','intramuscular','iv','intravenosa','injetável','injetavel','ampola','frasco-ampola'].some(k=>v.includes(k))) return 'injetavel';
+  if (['adesivo','transdérm','patch'].some(k=>v.includes(k))) return 'transdermico';
+  if (['sublingual','sl ','bucal'].some(k=>v.includes(k))) return 'sublingual';
+  if (['supositório','supositorio','retal'].some(k=>v.includes(k))) return 'retal';
+  if (['creme','pomada','gel','loção','solução tópica','tópic'].some(k=>v.includes(k))) return 'topico';
+  if (['xarope','solução oral','suspensão','elixir','gotas orais'].some(k=>v.includes(k))) return 'liquido_oral';
+  return 'solido_oral';
+}
+
+function detectarFreq(m) {
+  const f = (m.frequencia||'').toLowerCase();
+  if (f.includes('mensal')||f.includes('mês')||f.includes('quinzen')||f.includes('15 dia')) return 'mensal';
+  if (f.includes('semana')||f.includes('semanal')) return 'semanal';
+  if (f.includes('se nec')||f.includes('sos')||f.includes('prn')||f.includes('conforme')) return 'sos';
+  if (f.match(/[4-9]x|[4-9] vez|6\/6|qid/)) return '4x';
+  if (f.match(/3x|3 vez|8\/8|tid/)) return '3x';
+  if (f.match(/2x|2 vez|12\/12|bid/)) return '2x';
+  if (f.match(/1x|1 vez|24\/24|24h|diár|diario|uma vez/)) return '1x';
+  if (f.includes('vari')||f.includes('escal')) return 'variavel';
+  return '1x';
+}
+
+async function init() {
+  const pid = parseInt(document.getElementById('sel-pac').value);
+  if (!pid) { document.getElementById('conteudo').innerHTML=''; return; }
+  const hj = hoje();
+  const allMeds = await dbGetByIndex('medicamentos','pacienteId',pid);
+  _meds = allMeds.filter(m=>m.ativo!==false&&(!m.dataFim||m.dataFim>=hj));
+  _dados = (await dbGetConfig('mrci_'+pid)) || {};
+
+  // Pré-preenche com detecção automática
+  _meds.forEach(m=>{
+    if (!_dados[m.id]) _dados[m.id] = { forma: detectarForma(m), freq: detectarFreq(m), inst:[] };
+  });
+
+  // Aderência
+  const allDoses = await dbGetAll('doses');
+  const medIds = new Set(_meds.map(x=>x.id));
+  const doses  = allDoses.filter(d=>medIds.has(d.medicamentoId));
+  const adh    = doses.length ? Math.round(doses.filter(d=>d.status==='tomado').length/doses.length*100) : null;
+
+  renderForm(adh);
+}
+
+function renderForm(adh) {
+  const { total, secA, secB, secC } = calcMRCI();
+  const nivel = total>16?'Alta':total>=9?'Moderada':'Baixa';
+  const corN  = total>16?'#dc2626':total>=9?'#d97706':'#16a34a';
+  const pctBar = Math.min(total/30*100, 100);
+
+  document.getElementById('conteudo').innerHTML = `
+    <div class="score-hero">
+      <div class="score-n" style="color:${corN}">${total.toFixed(1)}</div>
+      <div class="score-lbl">Complexidade ${nivel}</div>
+      <div class="score-sub">MRCI total · ${_meds.length} medicamento${_meds.length!==1?'s':''}</div>
+      <div class="score-bar-wrap" style="margin-top:12px">
+        <div class="score-bar-seg" style="width:${Math.min(secA/30*100,100)}%;background:#3b82f6"></div>
+        <div class="score-bar-seg" style="width:${Math.min(secB/30*100,100)}%;background:#8b5cf6"></div>
+        <div class="score-bar-seg" style="width:${Math.min(secC/30*100,100)}%;background:#f59e0b"></div>
+        <div style="flex:1;background:rgba(255,255,255,.15)"></div>
+      </div>
+      <div style="display:flex;gap:10px;justify-content:center;margin-top:6px;font-size:.65rem;opacity:.8">
+        <span>🔵 A: ${secA.toFixed(1)}</span><span>🟣 B: ${secB.toFixed(1)}</span><span>🟡 C: ${secC.toFixed(0)}</span>
+      </div>
+    </div>
+
+    ${adh!==null?`
+    <div class="adh-compare">
+      <div class="adh-bloco"><div class="adh-n" style="color:${total>16?'#dc2626':'#1e3a5f'}">${total.toFixed(1)}</div><div class="adh-l">MRCI</div></div>
+      <div style="display:flex;align-items:center;font-size:1.5rem;color:#94a3b8">↔</div>
+      <div class="adh-bloco"><div class="adh-n" style="color:${adh>=80?'#16a34a':adh>=60?'#d97706':'#dc2626'}">${adh}%</div><div class="adh-l">Aderência</div></div>
+      <div style="display:flex;align-items:center;font-size:.75rem;color:#94a3b8;max-width:100px;line-height:1.4">${total>16&&adh<80?'⚠️ Alta complexidade + baixa aderência: risco crítico':total>16?'Alta complexidade — monitorar aderência':'Complexidade sob controle'}</div>
+    </div>`:''}
+
+    <div class="card">
+      <div class="card-title">Seção A — Forma Farmacêutica <span class="sec-score">Subtotal: ${secA.toFixed(1)} pts</span></div>
+      ${_meds.map(m=>`
+        <div class="med-row">
+          <div class="med-nome">${esc(m.nome||'?')}</div>
+          <div class="med-info">${m.dosagem||''} ${m.via?'· Via: '+m.via:''}</div>
+          <div class="sel-group">
+            <div>
+              <div class="sel-lbl">Forma farmacêutica</div>
+              <select class="sm" data-mid="${m.id}" data-sec="forma" onchange="setVal(this)">
+                ${FORMAS.map(f=>`<option value="${f.id}" ${(_dados[m.id]?.forma||'solido_oral')===f.id?'selected':''}>${f.lbl} (${f.pts} pt${f.pts!==1?'s':''})</option>`).join('')}
+              </select>
+            </div>
+          </div>
+        </div>`).join('')}
+    </div>
+
+    <div class="card">
+      <div class="card-title">Seção B — Frequência de Dose <span class="sec-score">Subtotal: ${secB.toFixed(1)} pts</span></div>
+      ${_meds.map(m=>`
+        <div class="med-row">
+          <div class="med-nome">${esc(m.nome||'?')}</div>
+          <div class="med-info">${m.frequencia||'Frequência não informada'}</div>
+          <div>
+            <div class="sel-lbl">Frequência</div>
+            <select class="sm" data-mid="${m.id}" data-sec="freq" onchange="setVal(this)">
+              ${FREQS.map(f=>`<option value="${f.id}" ${(_dados[m.id]?.freq||'1x')===f.id?'selected':''}>${f.lbl} (${f.pts} pt${f.pts!==1?'s':''})</option>`).join('')}
+            </select>
+          </div>
+        </div>`).join('')}
+    </div>
+
+    <div class="card">
+      <div class="card-title">Seção C — Instruções Especiais <span class="sec-score">Subtotal: ${secC} pts</span></div>
+      <p style="font-size:.75rem;color:#64748b;margin-bottom:12px">Cada instrução marcada para qualquer medicamento = +1 ponto</p>
+      <div class="inst-grid">
+        ${INSTRUCOES.map((inst,i)=>{
+          const marcado = _dados.__inst && _dados.__inst.includes(i);
+          return `<label class="inst-chip ${marcado?'marcado':''}" id="ichip-${i}">
+            <input type="checkbox" ${marcado?'checked':''} onchange="toggleInst(${i},this)">
+            ${esc(inst)}
+          </label>`;
+        }).join('')}
+      </div>
+    </div>
+
+    <div class="ref-box">
+      <strong>Referência (George et al., 2004):</strong><br>
+      MRCI ≤8 = Baixa complexidade · 9–16 = Moderada · >16 = Alta complexidade<br>
+      Scores elevados correlacionam-se com menor aderência, mais RAMs e maior risco de hospitalização.<br>
+      <em>George J, et al. Development and validation of the Medication Regimen Complexity Index. Ann Pharmacother. 2004;38(9):1369-76.</em>
+    </div>`;
+}
+
+function setVal(sel) {
+  const mid = parseInt(sel.dataset.mid);
+  const sec = sel.dataset.sec;
+  if (!_dados[mid]) _dados[mid]={};
+  _dados[mid][sec] = sel.value;
+  atualizarScore();
+}
+
+function toggleInst(idx, cb) {
+  if (!_dados.__inst) _dados.__inst=[];
+  if (cb.checked) { if(!_dados.__inst.includes(idx)) _dados.__inst.push(idx); }
+  else _dados.__inst = _dados.__inst.filter(i=>i!==idx);
+  const chip = document.getElementById('ichip-'+idx);
+  if (chip) chip.className = 'inst-chip ' + (cb.checked?'marcado':'');
+  atualizarScore();
+}
+
+function calcMRCI() {
+  let secA=0, secB=0, secC=0;
+  _meds.forEach(m=>{
+    const d = _dados[m.id]||{};
+    const fA = FORMAS.find(f=>f.id===(d.forma||'solido_oral'));
+    const fB = FREQS.find(f=>f.id===(d.freq||'1x'));
+    secA += fA?.pts||1;
+    secB += fB?.pts||1;
+  });
+  secC = (_dados.__inst||[]).length;
+  return { secA, secB, secC, total: secA+secB+secC };
+}
+
+function atualizarScore() {
+  const { total, secA, secB, secC } = calcMRCI();
+  const nivel = total>16?'Alta':total>=9?'Moderada':'Baixa';
+  const corN  = total>16?'#dc2626':total>=9?'#d97706':'#16a34a';
+  document.querySelector('.score-n').textContent = total.toFixed(1);
+  document.querySelector('.score-n').style.color = corN;
+  document.querySelector('.score-lbl').textContent = 'Complexidade '+nivel;
+  document.querySelector('.score-sub').textContent = `MRCI total · ${_meds.length} medicamento${_meds.length!==1?'s':''}`;
+  document.querySelectorAll('.sec-score').forEach((el,i)=>{
+    const vals = [secA.toFixed(1), secB.toFixed(1), secC.toString()];
+    const secs = ['A','B','C'];
+    el.textContent = `Subtotal: ${vals[i]} pts`;
+  });
+  // Atualiza barra
+  const barSegs = document.querySelectorAll('.score-bar-seg');
+  if (barSegs[0]) { barSegs[0].style.width=Math.min(secA/30*100,100)+'%'; }
+  if (barSegs[1]) { barSegs[1].style.width=Math.min(secB/30*100,100)+'%'; }
+  if (barSegs[2]) { barSegs[2].style.width=Math.min(secC/30*100,100)+'%'; }
+}
+
+async function salvarMRCI() {
+  const pid = parseInt(document.getElementById('sel-pac').value);
+  if (!pid) return;
+  const { total, secA, secB, secC } = calcMRCI();
+  _dados.__score   = total;
+  _dados.__secA    = secA;
+  _dados.__secB    = secB;
+  _dados.__secC    = secC;
+  _dados.__data    = hoje();
+  _dados.__nivel   = total>16?'Alta':total>=9?'Moderada':'Baixa';
+  await dbSetConfig('mrci_'+pid, _dados);
+  // Salva também no config geral para ser lido por outros módulos
+  const hist = (await dbGetConfig('mrci_hist_'+pid)) || [];
+  hist.push({ data:hoje(), score:total, nivel:_dados.__nivel, nMeds:_meds.length });
+  await dbSetConfig('mrci_hist_'+pid, hist);
+  showToast('✅ MRCI salvo — Score: '+total.toFixed(1)+' ('+_dados.__nivel+' complexidade)');
+}
+
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') }
+
+document.addEventListener('DOMContentLoaded', async ()=>{
+  const pacs = await dbGetAll('pacientes');
+  const sel  = document.getElementById('sel-pac');
+  sel.innerHTML='<option value="">Selecione o paciente...</option>'+pacs.map(p=>`<option value="${p.id}">${esc(p.nome||'Paciente '+p.id)}</option>`).join('');
+  const pid = getActivePacienteId();
+  if (pid) { sel.value=pid; await init(); }
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>Antes × Depois — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .topbar { display:flex;align-items:center;gap:10px;padding:12px 16px;background:#4c1d95;position:sticky;top:0;z-index:100 }
+    .back-btn { background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:8px;padding:6px 11px;cursor:pointer;font-size:1rem }
+    .topbar-title { font-size:.93rem;font-weight:800;color:#fff;flex:1 }
+    .topbar-sub { font-size:.62rem;color:rgba(255,255,255,.7);margin-top:1px }
+    .btn-top { background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:8px;padding:7px 11px;font-size:.72rem;font-weight:700;cursor:pointer;margin-left:4px }
+
+    main { max-width:680px;margin:0 auto;padding:12px 14px 90px }
+    .pac-sel { width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:12px;padding:11px 14px;font-size:.88rem;margin-bottom:10px;background:#fff }
+
+    /* Seletor de período */
+    .periodo-card { background:#fff;border-radius:14px;padding:14px 16px;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,.07) }
+    .periodo-title { font-size:.65rem;font-weight:800;color:#94a3b8;text-transform:uppercase;margin-bottom:10px }
+    .periodo-grid { display:grid;grid-template-columns:1fr 1fr;gap:10px }
+    .periodo-col { background:#f8fafc;border-radius:10px;padding:10px }
+    .periodo-lbl { font-size:.7rem;font-weight:800;margin-bottom:6px }
+    .lbl-antes { color:#6366f1 }
+    .lbl-depois { color:#0ea5e9 }
+    input[type=date] { width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:8px;padding:7px 8px;font-size:.8rem;background:#fff }
+    .btn-gerar { width:100%;background:#4c1d95;color:#fff;border:none;border-radius:10px;padding:11px;font-size:.85rem;font-weight:800;cursor:pointer;margin-top:10px }
+    .btn-gerar:hover { background:#5b21b6 }
+
+    /* Tabela de desfechos */
+    .tabela-card { background:#fff;border-radius:14px;padding:14px 16px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.07) }
+    .tabela-title { font-size:.7rem;font-weight:800;color:#94a3b8;text-transform:uppercase;margin-bottom:12px }
+
+    table.comp { width:100%;border-collapse:collapse;font-size:.78rem }
+    table.comp th { background:#f8fafc;padding:8px 10px;text-align:left;font-size:.65rem;font-weight:800;color:#64748b;text-transform:uppercase;border-bottom:2px solid #f1f5f9 }
+    table.comp th.c { text-align:center }
+    table.comp td { padding:9px 10px;border-bottom:1px solid #f8fafc;color:#1e293b }
+    table.comp td.c { text-align:center }
+    table.comp tr:last-child td { border:none }
+    .param-nm { font-weight:700;color:#1e293b }
+    .param-un { font-size:.65rem;color:#94a3b8 }
+
+    /* Delta */
+    .delta { font-size:.85rem;font-weight:900;border-radius:8px;padding:3px 8px;display:inline-block }
+    .delta.melhor  { background:#dcfce7;color:#166534 }
+    .delta.pior    { background:#fee2e2;color:#991b1b }
+    .delta.neutro  { background:#f1f5f9;color:#64748b }
+    .delta.nd      { background:#f1f5f9;color:#94a3b8;font-weight:400;font-size:.7rem }
+
+    /* KPI strip */
+    .kpi-strip { display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px }
+    .kpi-item { flex:1;min-width:80px;background:#fff;border-radius:10px;padding:10px 8px;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,.07) }
+    .kpi-n { font-size:1.35rem;font-weight:900 }
+    .kpi-l { font-size:.58rem;color:#64748b;font-weight:700;text-transform:uppercase;margin-top:2px }
+
+    /* Rodapé TCC */
+    .tcc-footer { background:#f8fafc;border-radius:12px;padding:14px;font-size:.73rem;color:#475569;line-height:1.8;margin-top:10px }
+    .tcc-footer strong { color:#4c1d95 }
+
+    .empty { text-align:center;padding:40px 20px;color:#94a3b8 }
+    .empty-icon { font-size:2.5rem }
+
+    @media print {
+      .topbar,.pac-sel,.btn-top,.btn-gerar,nav { display:none!important }
+      body { background:#fff }
+      main { padding:0;max-width:none }
+      .periodo-card { display:none }
+    }
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <div style="flex:1">
+    <div class="topbar-title">📊 Comparador Antes × Depois</div>
+    <div class="topbar-sub">Evolução dos desfechos clínicos — TCC</div>
+  </div>
+  <button class="btn-top" onclick="window.print()">🖨️</button>
+</div>
+
+<main>
+  <select class="pac-sel" id="sel-pac" onchange="onPacChange()"><option value="">Selecione o paciente...</option></select>
+
+  <div class="periodo-card" id="card-periodo" style="display:none">
+    <div class="periodo-title">⏱ Definir os períodos de comparação</div>
+    <div class="periodo-grid">
+      <div class="periodo-col">
+        <div class="periodo-lbl lbl-antes">🟣 Avaliação Inicial (T0)</div>
+        <div style="font-size:.68rem;color:#94a3b8;margin-bottom:6px">Primeira consulta / admissão</div>
+        <label style="font-size:.7rem;color:#64748b;display:block;margin-bottom:3px">Data</label>
+        <input type="date" id="dt-antes">
+      </div>
+      <div class="periodo-col">
+        <div class="periodo-lbl lbl-depois">🔵 Avaliação Final (T1)</div>
+        <div style="font-size:.68rem;color:#94a3b8;margin-bottom:6px">Consulta de retorno / alta</div>
+        <label style="font-size:.7rem;color:#64748b;display:block;margin-bottom:3px">Data</label>
+        <input type="date" id="dt-depois">
+      </div>
+    </div>
+    <button class="btn-gerar" onclick="gerar()">🔬 Gerar Tabela de Evolução</button>
+  </div>
+
+  <div id="conteudo"></div>
+</main>
+
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+
+<script src="js/db.js"></script>
+<script src="js/utils.js"></script>
+<script>
+let _pid=null;
+
+async function onPacChange() {
+  _pid = parseInt(document.getElementById('sel-pac').value)||null;
+  document.getElementById('conteudo').innerHTML='';
+  document.getElementById('card-periodo').style.display = _pid?'block':'none';
+  if (!_pid) return;
+
+  // Pré-preenche com datas extremas dos diários/labs
+  const allDiarios = await dbGetByIndex('diario','pacienteId',_pid);
+  const allLabs    = await dbGetAll('laboratorio');
+  const labsDoPac  = allLabs.filter(l=>l.pacienteId===_pid||l.pid===_pid);
+  const allDatas   = [...allDiarios.map(d=>d.data||d.date||''), ...labsDoPac.map(l=>l.data||l.date||'')].filter(Boolean).sort();
+
+  if (allDatas.length>=2) {
+    document.getElementById('dt-antes').value  = allDatas[0];
+    document.getElementById('dt-depois').value = allDatas[allDatas.length-1];
+  } else {
+    document.getElementById('dt-antes').value  = '';
+    document.getElementById('dt-depois').value = hoje();
+  }
+}
+
+// Retorna o valor numérico de um campo vital numa janela de ±15 dias ao redor de uma data
+function vitalProximo(registros, campo, dataRef, chave) {
+  const ref   = new Date(dataRef);
+  const janela = registros
+    .filter(r => {
+      const d = new Date(r.data||r.date||'');
+      return !isNaN(d) && Math.abs(d-ref) <= 20*864e5;
+    })
+    .sort((a,b)=>Math.abs(new Date(a.data||a.date||'')-ref)-Math.abs(new Date(b.data||b.date||'')-ref));
+  for (const r of janela) {
+    const v = r[chave||campo];
+    if (v!==undefined && v!==null && v!=='') return parseFloat(v)||null;
+  }
+  return null;
+}
+
+function labProximo(labs, tipo, dataRef) {
+  const ref   = new Date(dataRef);
+  const candidatos = labs
+    .filter(l=>(l.tipo||l.exame||'').toLowerCase().includes(tipo.toLowerCase()))
+    .filter(l=>{ const d=new Date(l.data||l.date||''); return !isNaN(d)&&Math.abs(d-ref)<=30*864e5; })
+    .sort((a,b)=>Math.abs(new Date(a.data||a.date||'')-ref)-Math.abs(new Date(b.data||b.date||'')-ref));
+  if (!candidatos.length) return null;
+  const v = candidatos[0].resultado||candidatos[0].valor||candidatos[0].value;
+  return v!==undefined&&v!==''?parseFloat(v)||null:null;
+}
+
+function fmtN(v, dec=1) { return v!==null&&v!==undefined?v.toFixed(dec):'—'; }
+
+function deltaHTML(antes, depois, unidade, inversao=false) {
+  if (antes===null||depois===null) return '<span class="delta nd">N/D</span>';
+  const diff = depois - antes;
+  const pct  = antes!==0 ? Math.round(Math.abs(diff)/Math.abs(antes)*100) : 0;
+  const melhora = inversao ? diff > 0 : diff < 0;
+  const piora   = inversao ? diff < 0 : diff > 0;
+  const cls  = melhora?'melhor':piora?'pior':'neutro';
+  const seta = melhora?'↓':piora?'↑':'═';
+  const sinal= diff>=0?'+':'';
+  return `<span class="delta ${cls}">${seta} ${sinal}${diff.toFixed(1)} ${unidade||''} (${pct}%)</span>`;
+}
+
+async function gerar() {
+  const dtA = document.getElementById('dt-antes').value;
+  const dtD = document.getElementById('dt-depois').value;
+  if (!dtA||!dtD) { showToast('Preencha as duas datas'); return; }
+  if (dtA>=dtD) { showToast('A data T0 deve ser anterior a T1'); return; }
+
+  const pac       = await dbGet('pacientes', _pid);
+  const allDiarios = await dbGetByIndex('diario','pacienteId',_pid);
+  const allLabs    = await dbGetAll('laboratorio');
+  const labs       = allLabs.filter(l=>l.pacienteId===_pid||l.pid===_pid);
+  const allDoses   = await dbGetAll('doses');
+  const allMeds    = await dbGetByIndex('medicamentos','pacienteId',_pid);
+  const soaps      = (await dbGetConfig('soap_'+_pid)) || [];
+  const sftInts    = (await dbGetConfig('sft_int_'+_pid)) || [];
+  const plano      = (await dbGetConfig('plano_cuidados_'+_pid)) || {};
+  const probs      = plano.problemas || [];
+  const letA       = (await dbGetConfig('letramento_hist_'+_pid)) || [];
+  const mrciHist   = (await dbGetConfig('mrci_hist_'+_pid)) || [];
+
+  // Meds em cada período
+  const medsA = allMeds.filter(m=>{ const inicio=m.dataInicio||m.criadoEm||''; return inicio<=dtA; });
+  const medsD = allMeds.filter(m=>{ const inicio=m.dataInicio||m.criadoEm||''; return inicio<=dtD; }).filter(m=>m.ativo!==false&&(!m.dataFim||m.dataFim>=dtD));
+
+  // Aderência nos dois períodos
+  function aderPeriodo(dtIni, dtFim) {
+    const medIds = new Set(allMeds.filter(m=>{ const i=m.dataInicio||''; return i<=dtFim; }).map(m=>m.id));
+    const doses  = allDoses.filter(d=>medIds.has(d.medicamentoId)&&d.data>=dtIni&&d.data<=dtFim);
+    if (!doses.length) return null;
+    return Math.round(doses.filter(d=>d.status==='tomado').length/doses.length*100);
+  }
+  const dtAIni = new Date(dtA); dtAIni.setDate(dtAIni.getDate()-30);
+  const adhA = aderPeriodo(dtAIni.toISOString().slice(0,10), dtA);
+  const adhD = aderPeriodo(dtA, dtD);
+
+  // PRMs
+  const prmsA = probs.filter(p=>{ const d=p.data||p.criadoEm||''; return d<=dtA; });
+  const prmsD = probs.filter(p=>{ const d=p.data||p.criadoEm||''; return d<=dtD; });
+  const prmsResA = prmsA.filter(p=>p.desfecho==='Resolvido').length;
+  const prmsResD = prmsD.filter(p=>p.desfecho==='Resolvido').length;
+
+  // Intervenções
+  const intsA = sftInts.filter(i=>(i.data||'')<=dtA);
+  const intsD = sftInts.filter(i=>(i.data||'')<=dtD);
+  const intsAcA = intsA.filter(i=>i.resultado==='aceita'||i.result==='aceita').length;
+  const intsAcD = intsD.filter(i=>i.resultado==='aceita'||i.result==='aceita').length;
+
+  // SOAPs
+  const soapsA = soaps.filter(s=>(s.data||'')<=dtA).length;
+  const soapsD = soaps.filter(s=>(s.data||'')<=dtD).length;
+
+  // MRCI
+  const mrciA = mrciHist.find(m=>m.data<=dtA) ? mrciHist.filter(m=>m.data<=dtA).at(-1)?.score : null;
+  const mrciD = mrciHist.length ? mrciHist.at(-1)?.score : null;
+
+  // Letramento
+  const letFA = letA.find(l=>l.data<=dtA) ? letA.filter(l=>l.data<=dtA).at(-1)?.pct : null;
+  const letFD = letA.length ? letA.at(-1)?.pct : null;
+
+  // Sinais vitais
+  const pasSA = vitalProximo(allDiarios,'pas','pas',dtA,'pas')||vitalProximo(allDiarios,'pressao',dtA,'pas');
+  const pasSD = vitalProximo(allDiarios,'pas','pas',dtD,'pas')||vitalProximo(allDiarios,'pressao',dtD,'pas');
+  const padA  = vitalProximo(allDiarios,'pad',dtA,'pad')||vitalProximo(allDiarios,'pressao',dtA,'pad');
+  const padD  = vitalProximo(allDiarios,'pad',dtD,'pad')||vitalProximo(allDiarios,'pressao',dtD,'pad');
+  const glicA = vitalProximo(allDiarios,'glicemia',dtA,'glicemia');
+  const glicD = vitalProximo(allDiarios,'glicemia',dtD,'glicemia');
+  const pesoA = vitalProximo(allDiarios,'peso',dtA,'peso');
+  const pesoD = vitalProximo(allDiarios,'peso',dtD,'peso');
+  const fcA   = vitalProximo(allDiarios,'fc',dtA,'fc')||vitalProximo(allDiarios,'pulso',dtA,'fc');
+  const fcD   = vitalProximo(allDiarios,'fc',dtD,'fc')||vitalProximo(allDiarios,'pulso',dtD,'fc');
+
+  // Laboratório
+  const hba1cA = labProximo(labs,'hba1c',dtA)||labProximo(labs,'hemoglobina glicada',dtA);
+  const hba1cD = labProximo(labs,'hba1c',dtD)||labProximo(labs,'hemoglobina glicada',dtD);
+  const ldlA   = labProximo(labs,'ldl',dtA);
+  const ldlD   = labProximo(labs,'ldl',dtD);
+  const creatA = labProximo(labs,'creat',dtA);
+  const creatD = labProximo(labs,'creat',dtD);
+
+  // ── Calcula intervalo em dias
+  const diasFollow = Math.round((new Date(dtD)-new Date(dtA))/864e5);
+
+  // ── Monta tabela de desfechos
+  function linha(param, unid, vA, vD, inversao=false, notaMelhor='') {
+    const dA = vA!==null&&vA!==undefined?fmtN(vA):'—';
+    const dD = vD!==null&&vD!==undefined?fmtN(vD):'—';
+    return `<tr>
+      <td><div class="param-nm">${param}</div>${unid?`<div class="param-un">${unid}</div>`:''}</td>
+      <td class="c" style="color:#6366f1">${dA}</td>
+      <td class="c" style="color:#0ea5e9">${dD}</td>
+      <td class="c">${deltaHTML(vA,vD,unid,inversao)}</td>
+    </tr>`;
+  }
+
+  function linhaTxt(param, vA, vD, inversao=false) {
+    const dA = vA!==null&&vA!==undefined?vA:'—';
+    const dD = vD!==null&&vD!==undefined?vD:'—';
+    const diff = (typeof vA==='number'&&typeof vD==='number') ? vD-vA : null;
+    const cls  = diff===null?'nd':diff===0?'neutro':inversao?(diff>0?'melhor':'pior'):(diff<0?'melhor':'pior');
+    const seta = diff===null?'':diff===0?'═':diff>0?(inversao?'↓':'↑'):(inversao?'↑':'↓');
+    const delta = diff===null?'<span class="delta nd">N/D</span>':`<span class="delta ${cls}">${seta} ${Math.abs(diff)}</span>`;
+    return `<tr>
+      <td><div class="param-nm">${param}</div></td>
+      <td class="c" style="color:#6366f1">${dA}</td>
+      <td class="c" style="color:#0ea5e9">${dD}</td>
+      <td class="c">${delta}</td>
+    </tr>`;
+  }
+
+  const fmtDt = d => d.split('-').reverse().join('/');
+
+  document.getElementById('conteudo').innerHTML = `
+
+    <div class="kpi-strip">
+      <div class="kpi-item"><div class="kpi-n" style="color:#4c1d95">${diasFollow}</div><div class="kpi-l">Dias de follow-up</div></div>
+      <div class="kpi-item"><div class="kpi-n" style="color:#4c1d95">${soapsD-soapsA}</div><div class="kpi-l">Consultas realizadas</div></div>
+      <div class="kpi-item"><div class="kpi-n" style="color:#4c1d95">${intsD.length-intsA.length}</div><div class="kpi-l">Intervenções</div></div>
+      <div class="kpi-item"><div class="kpi-n" style="color:#4c1d95">${prmsResD-prmsResA}</div><div class="kpi-l">PRMs resolvidos</div></div>
+    </div>
+
+    <!-- Tabela 1: Desfechos Farmacoterapêuticos -->
+    <div class="tabela-card">
+      <div class="tabela-title">Tabela 1 — Desfechos Farmacoterapêuticos</div>
+      <table class="comp">
+        <thead><tr>
+          <th>Parâmetro</th>
+          <th class="c">🟣 T0<br><span style="font-weight:400;font-size:.68rem">${fmtDt(dtA)}</span></th>
+          <th class="c">🔵 T1<br><span style="font-weight:400;font-size:.68rem">${fmtDt(dtD)}</span></th>
+          <th class="c">Δ Delta</th>
+        </tr></thead>
+        <tbody>
+          ${linhaTxt('Medicamentos ativos', medsA.length, medsD.length, true)}
+          ${linhaTxt('PRMs identificados', prmsA.length, prmsD.length, true)}
+          ${linhaTxt('PRMs resolvidos', prmsResA, prmsResD, false)}
+          ${linhaTxt('Intervenções totais', intsA.length, intsD.length, false)}
+          ${linhaTxt('Intervenções aceitas', intsAcA, intsAcD, false)}
+          ${linhaTxt('Consultas farmacêuticas', soapsA, soapsD, false)}
+          ${adhA!==null||adhD!==null?linha('Aderência ao tratamento','%',adhA,adhD,false):''}
+          ${mrciA!==null||mrciD!==null?linha('MRCI (complexidade)','pts',mrciA,mrciD,true):''}
+          ${letFA!==null||letFD!==null?linha('Letramento em saúde','%',letFA,letFD,false):''}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Tabela 2: Sinais Vitais -->
+    <div class="tabela-card">
+      <div class="tabela-title">Tabela 2 — Sinais Vitais e Parâmetros Clínicos</div>
+      <table class="comp">
+        <thead><tr>
+          <th>Parâmetro</th>
+          <th class="c">🟣 T0<br><span style="font-weight:400;font-size:.68rem">${fmtDt(dtA)}</span></th>
+          <th class="c">🔵 T1<br><span style="font-weight:400;font-size:.68rem">${fmtDt(dtD)}</span></th>
+          <th class="c">Δ Delta</th>
+        </tr></thead>
+        <tbody>
+          ${linha('PA Sistólica','mmHg',pasSA,pasSD,true)}
+          ${linha('PA Diastólica','mmHg',padA,padD,true)}
+          ${linha('Frequência Cardíaca','bpm',fcA,fcD,true)}
+          ${linha('Glicemia capilar','mg/dL',glicA,glicD,true)}
+          ${linha('Peso corporal','kg',pesoA,pesoD,true)}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Tabela 3: Laboratorial -->
+    <div class="tabela-card">
+      <div class="tabela-title">Tabela 3 — Parâmetros Laboratoriais</div>
+      <table class="comp">
+        <thead><tr>
+          <th>Exame</th>
+          <th class="c">🟣 T0</th>
+          <th class="c">🔵 T1</th>
+          <th class="c">Δ Delta</th>
+        </tr></thead>
+        <tbody>
+          ${linha('HbA1c','%',hba1cA,hba1cD,true)}
+          ${linha('LDL-c','mg/dL',ldlA,ldlD,true)}
+          ${linha('Creatinina','mg/dL',creatA,creatD,true)}
+          <tr><td colspan="4" style="font-size:.68rem;color:#94a3b8;padding:8px 10px">* Valores ±30 dias do período de referência · N/D = dado não disponível</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Rodapé TCC -->
+    <div class="tcc-footer">
+      <strong>Legenda:</strong> T0 = avaliação inicial (${fmtDt(dtA)}) · T1 = avaliação final (${fmtDt(dtD)}) ·
+      Δ Delta = variação entre períodos · ↓ redução · ↑ aumento ·
+      <span style="color:#166534">verde = melhora clínica</span> · <span style="color:#991b1b">vermelho = piora</span><br><br>
+      <strong>Paciente:</strong> ${esc(pac?.nome||'—')} &nbsp;|&nbsp;
+      <strong>Follow-up:</strong> ${diasFollow} dias &nbsp;|&nbsp;
+      <strong>Farmacêutico:</strong> _____________________________ &nbsp;|&nbsp;
+      <strong>CRF:</strong> ___________<br><br>
+      <em>Tabela gerada pelo VitaDose — Sistema de Acompanhamento Farmacoterapêutico.
+      Metodologia: Dáder / SFT. Causalidade RAM: Escala de Naranjo. PRMs: PCNE v9.1.</em>
+    </div>`;
+}
+
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') }
+
+// Corrige o vitalProximo para aceitar parâmetros certos
+function vitalProximo(registros, campo, dataRef, chave) {
+  const ref = new Date(dataRef);
+  const janela = registros
+    .filter(r=>{ const d=new Date(r.data||r.date||''); return !isNaN(d)&&Math.abs(d-ref)<=20*864e5; })
+    .sort((a,b)=>Math.abs(new Date(a.data||a.date||'')-ref)-Math.abs(new Date(b.data||b.date||'')-ref));
+  for (const r of janela) {
+    const v = r[chave]!==undefined ? r[chave] : r[campo];
+    if (v!==undefined&&v!==null&&v!=='') return parseFloat(v)||null;
+  }
+  return null;
+}
+
+document.addEventListener('DOMContentLoaded', async ()=>{
+  const pacs = await dbGetAll('pacientes');
+  const sel  = document.getElementById('sel-pac');
+  sel.innerHTML='<option value="">Selecione o paciente...</option>'+pacs.map(p=>`<option value="${p.id}">${esc(p.nome||'Paciente '+p.id)}</option>`).join('');
+  const pid = getActivePacienteId();
+  if (pid) { sel.value=pid; await onPacChange(); }
+});
+</script>
+</body>
+</html>
