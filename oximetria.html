@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>Oximetria e Função Respiratória — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .topbar{display:flex;align-items:center;gap:10px;padding:12px 16px;background:#1e3a5f;position:sticky;top:0;z-index:100}
+    .back-btn{background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:8px;padding:6px 11px;cursor:pointer;font-size:1rem}
+    .topbar-title{font-size:.93rem;font-weight:800;color:#fff;flex:1}
+    .topbar-sub{font-size:.62rem;color:rgba(255,255,255,.7);margin-top:1px}
+    main{max-width:680px;margin:0 auto;padding:12px 14px 90px}
+    .pac-sel{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:12px;padding:11px 14px;font-size:.88rem;margin-bottom:10px;background:#fff}
+
+    .alert-banner{border-radius:12px;padding:12px 14px;margin-bottom:10px;font-size:.78rem;font-weight:700;line-height:1.5;display:none}
+    .alert-banner.crit{background:#fee2e2;border:1.5px solid #fca5a5;color:#991b1b;display:block}
+    .alert-banner.warn{background:#fff7ed;border:1.5px solid #fed7aa;color:#9a3412;display:block}
+
+    .resp-strip{background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:8px 12px;font-size:.68rem;color:#1e40af;margin-bottom:10px;display:none}
+
+    /* KPIs */
+    .kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-bottom:12px}
+    .kpi{background:#fff;border-radius:12px;padding:10px 8px;text-align:center;border:1.5px solid #e2e8f0}
+    .kpi-val{font-size:1.1rem;font-weight:900}
+    .kpi-lbl{font-size:.55rem;color:#94a3b8;font-weight:700;margin-top:2px}
+    .kpi-sub{font-size:.52rem;color:#cbd5e1}
+
+    /* Preview grande */
+    .preview-big{border-radius:14px;padding:14px;text-align:center;margin-bottom:12px;display:none}
+    .preview-big .pb-val{font-size:2.8rem;font-weight:900}
+    .preview-big .pb-cls{font-size:.82rem;font-weight:800;margin-top:4px}
+    .preview-big .pb-sub{font-size:.68rem;margin-top:4px;opacity:.8}
+
+    /* Form */
+    .form-card{background:#fff;border-radius:14px;border:1.5px solid #e2e8f0;padding:14px;margin-bottom:12px}
+    .form-title{font-size:.78rem;font-weight:800;color:#1e3a5f;margin-bottom:10px}
+    .form-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .form-row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+    label{font-size:.66rem;font-weight:700;color:#64748b;display:block;margin-bottom:3px;margin-top:8px}
+    input,select{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:9px;padding:9px 11px;font-size:.83rem;background:#fff}
+    .save-btn{width:100%;padding:13px;background:#1e3a5f;color:#fff;border:none;border-radius:10px;font-size:.85rem;font-weight:800;cursor:pointer;margin-top:10px}
+
+    /* Gráfico */
+    .chart-card{background:#fff;border-radius:14px;border:1.5px solid #e2e8f0;padding:14px;margin-bottom:12px}
+    .chart-title{font-size:.75rem;font-weight:800;color:#1e3a5f;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center}
+    .chart-legend{display:flex;gap:12px;font-size:.62rem;font-weight:700}
+    .legend-dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:4px}
+
+    /* Lista */
+    .rec-item{background:#fff;border-radius:11px;margin-bottom:7px;padding:11px 13px;border:1.5px solid #e2e8f0;display:flex;gap:10px;align-items:flex-start}
+    .rec-item.spo2-crit{border-left:4px solid #dc2626}
+    .rec-item.spo2-warn{border-left:4px solid #f59e0b}
+    .rec-item.spo2-ok{border-left:4px solid #22c55e}
+    .spo2-badge{min-width:44px;padding:5px 8px;border-radius:8px;font-size:.9rem;font-weight:900;text-align:center;flex-shrink:0}
+    .rec-info{flex:1}
+    .rec-cls{font-size:.72rem;font-weight:800}
+    .rec-det{font-size:.63rem;color:#94a3b8;margin-top:2px;line-height:1.5}
+    .rec-del{background:#fee2e2;border:none;color:#dc2626;border-radius:7px;padding:4px 9px;font-size:.65rem;cursor:pointer;flex-shrink:0}
+    .empty{text-align:center;padding:30px;color:#94a3b8;font-size:.78rem}
+
+    /* Tabela classificação */
+    .cls-table{width:100%;border-collapse:collapse;font-size:.68rem;margin-bottom:10px;background:#fff;border-radius:10px;overflow:hidden;border:1px solid #e2e8f0}
+    .cls-table th{background:#1e3a5f;color:#fff;padding:7px;font-size:.62rem}
+    .cls-table td{padding:6px 8px;border-bottom:1px solid #f1f5f9}
+    .cls-table tr:last-child td{border:none}
+  </style>
+</head>
+<body>
+<div class="topbar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <div style="flex:1">
+    <div class="topbar-title">🫁 Oximetria e Função Respiratória</div>
+    <div class="topbar-sub">SpO₂ · FC · FR · DPOC · IC · Asma</div>
+  </div>
+</div>
+<main>
+  <select class="pac-sel" id="sel-pac" onchange="init()"><option value="">Selecione o paciente...</option></select>
+
+  <div class="alert-banner" id="alert-banner"></div>
+  <div class="resp-strip" id="resp-strip"></div>
+
+  <div class="kpi-row" id="kpi-row" style="display:none"></div>
+
+  <!-- Preview em tempo real -->
+  <div class="preview-big" id="preview-big"></div>
+
+  <!-- Form -->
+  <div class="form-card" id="form-card" style="display:none">
+    <div class="form-title">📝 Registrar Oximetria</div>
+    <div class="form-row">
+      <div><label>Data *</label><input type="date" id="inp-data"></div>
+      <div><label>Hora</label><input type="time" id="inp-hora"></div>
+    </div>
+    <div class="form-row3">
+      <div><label>SpO₂ (%) *</label><input type="number" id="inp-spo2" min="50" max="100" step="1" placeholder="Ex: 97" oninput="preview()"></div>
+      <div><label>FC (bpm)</label><input type="number" id="inp-fc" min="30" max="250" step="1" placeholder="Ex: 78" oninput="preview()"></div>
+      <div><label>FR (irpm)</label><input type="number" id="inp-fr" min="4" max="60" step="1" placeholder="Ex: 16"></div>
+    </div>
+    <div class="form-row">
+      <div><label>Contexto</label>
+        <select id="inp-ctx">
+          <option>Repouso</option>
+          <option>Atividade física leve</option>
+          <option>Pós-broncodilatador</option>
+          <option>Durante esforço</option>
+          <option>Noturno / ao acordar</option>
+          <option>Pós-exercício</option>
+          <option>Em uso de O₂</option>
+        </select>
+      </div>
+      <div><label>Observações</label><input type="text" id="inp-obs" placeholder="Opcional"></div>
+    </div>
+    <button class="save-btn" onclick="salvar()">💾 Registrar</button>
+  </div>
+
+  <!-- Tabela de classificação -->
+  <table class="cls-table" id="cls-table" style="display:none">
+    <thead><tr><th>SpO₂</th><th>Classificação</th><th>Conduta</th></tr></thead>
+    <tbody>
+      <tr><td>≥ 95%</td><td style="color:#22c55e;font-weight:700">Normal</td><td>Manter monitoramento</td></tr>
+      <tr><td>90 – 94%</td><td style="color:#f59e0b;font-weight:700">Atenção</td><td>Verificar causa, monitorar frequência</td></tr>
+      <tr><td>< 90%</td><td style="color:#dc2626;font-weight:700">Crítico</td><td>Acionar emergência / O₂ suplementar</td></tr>
+    </tbody>
+  </table>
+
+  <!-- Gráfico -->
+  <div class="chart-card" id="chart-card" style="display:none">
+    <div class="chart-title">
+      <span>📈 Evolução</span>
+      <div class="chart-legend">
+        <span><span class="legend-dot" style="background:#1e3a5f"></span>SpO₂ (%)</span>
+        <span><span class="legend-dot" style="background:#dc2626"></span>FC (bpm/10)</span>
+      </div>
+    </div>
+    <svg id="oxy-svg" style="width:100%;display:block" height="140" viewBox="0 0 380 140"></svg>
+  </div>
+
+  <div id="lista-div"></div>
+</main>
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+<script src="js/db.js"></script>
+<script src="js/utils.js"></script>
+<script>
+let _pid=null, _hist=[];
+
+const RESP_MEDS=/salbutamol|albuterol|formoterol|salmeterol|budesonida|fluticasona|beclometasona|ipratrópio|ipratropio|tiotrópio|tiotropio|teofilina|montelucaste|roflumilaste|azitromicina|doxiciclina|amoxicilina|ceftriaxona|sildenafila|riociguate|macitentan|bosentan|furosemida|espironolactona|carvedilol|metoprolol|bisoprolol/i;
+
+function clsSpo2(v){
+  if(v>=95) return{cls:'Normal',cor:'#22c55e',bg:'#dcfce7',emoji:'✅',lvl:'ok'};
+  if(v>=90) return{cls:'Atenção',cor:'#f59e0b',bg:'#fef3c7',emoji:'⚠️',lvl:'warn'};
+  return    {cls:'Crítico — hipoxemia',cor:'#dc2626',bg:'#fee2e2',emoji:'🚨',lvl:'crit'};
+}
+function clsFC(v){
+  if(v<50) return{cls:'Bradicardia grave',cor:'#dc2626'};
+  if(v<60) return{cls:'Bradicardia',cor:'#f59e0b'};
+  if(v<=100) return{cls:'Normal',cor:'#22c55e'};
+  if(v<=120) return{cls:'Taquicardia leve',cor:'#f59e0b'};
+  return{cls:'Taquicardia',cor:'#dc2626'};
+}
+function clsFR(v){
+  if(v<12) return{cls:'Bradipneia',cor:'#f59e0b'};
+  if(v<=20) return{cls:'Normal',cor:'#22c55e'};
+  if(v<=24) return{cls:'Taquipneia leve',cor:'#f59e0b'};
+  return{cls:'Taquipneia',cor:'#dc2626'};
+}
+
+function preview(){
+  const s=parseInt(document.getElementById('inp-spo2').value);
+  const f=parseInt(document.getElementById('inp-fc').value);
+  const el=document.getElementById('preview-big');
+  if(!s||s<50){el.style.display='none';return;}
+  const c=clsSpo2(s),cfc=f?clsFC(f):null;
+  el.style.display='block';el.style.background=c.bg;
+  el.innerHTML=`<div class="pb-val" style="color:${c.cor}">${s}%<span style="font-size:1rem"> SpO₂</span></div>
+    <div class="pb-cls" style="color:${c.cor}">${c.emoji} ${c.cls}</div>
+    ${f?`<div class="pb-sub" style="color:${cfc.cor}">FC: ${f} bpm — ${cfc.cls}</div>`:''}`;
+}
+
+async function salvar(){
+  const s=parseInt(document.getElementById('inp-spo2').value);
+  if(!s||s<50||s>100){showToast('SpO₂ inválido');return;}
+  const obj={data:document.getElementById('inp-data').value||hoje(),hora:document.getElementById('inp-hora').value||horaAtual(),spo2:s,fc:parseInt(document.getElementById('inp-fc').value)||null,fr:parseInt(document.getElementById('inp-fr').value)||null,ctx:document.getElementById('inp-ctx').value,obs:document.getElementById('inp-obs').value.trim(),ts:Date.now()};
+  _hist.unshift(obj);
+  await dbSetConfig('spo2_hist_'+_pid,_hist);
+  document.getElementById('inp-spo2').value='';document.getElementById('inp-fc').value='';document.getElementById('inp-fr').value='';document.getElementById('inp-obs').value='';document.getElementById('preview-big').style.display='none';
+  renderAll();showToast('Registro salvo!');
+}
+
+async function deletar(idx){
+  if(!confirm('Remover?')) return;
+  _hist.splice(idx,1);
+  await dbSetConfig('spo2_hist_'+_pid,_hist);renderAll();
+}
+
+function renderAll(){
+  const sorted=[..._hist].sort((a,b)=>new Date(b.data+' '+(b.hora||'00:00'))-new Date(a.data+' '+(a.hora||'00:00')));
+  renderAlert(sorted);renderKpi(sorted);renderChart(sorted);renderLista(sorted);
+}
+
+function renderAlert(sorted){
+  const banner=document.getElementById('alert-banner');
+  if(!sorted.length){banner.className='alert-banner';return;}
+  const v=sorted[0].spo2,c=clsSpo2(v);
+  if(c.lvl==='crit'){banner.className='alert-banner crit';banner.innerHTML=`🚨 SpO₂ ${v}% — Hipoxemia crítica! Acionar emergência médica imediatamente. Posicionar paciente sentado, oferecer O₂ se disponível.`;}
+  else if(c.lvl==='warn'){banner.className='alert-banner warn';banner.innerHTML=`⚠️ SpO₂ ${v}% — Atenção: saturação abaixo do normal. Verificar causa, monitorar com maior frequência.`;}
+  else banner.className='alert-banner';
+}
+
+function renderKpi(sorted){
+  if(!sorted.length){document.getElementById('kpi-row').style.display='none';return;}
+  document.getElementById('kpi-row').style.display='grid';
+  const ult=sorted[0];
+  const s7=sorted.filter(r=>(new Date(sorted[0].data)-new Date(r.data))/86400000<=7);
+  const media=s7.length?Math.round(s7.reduce((a,b)=>a+b.spo2,0)/s7.length):null;
+  const min=sorted.reduce((a,b)=>a.spo2<b.spo2?a:b).spo2;
+  const fcArr=sorted.filter(r=>r.fc).map(r=>r.fc);
+  const mediaFc=fcArr.length?Math.round(fcArr.reduce((a,b)=>a+b,0)/fcArr.length):null;
+  const c=clsSpo2(ult.spo2);
+  document.getElementById('kpi-row').innerHTML=`
+    <div class="kpi"><div class="kpi-val" style="color:${c.cor}">${ult.spo2}%</div><div class="kpi-lbl">Última SpO₂</div><div class="kpi-sub">${ult.data.split('-').reverse().join('/')}</div></div>
+    <div class="kpi"><div class="kpi-val" style="color:${media==null?'#94a3b8':clsSpo2(media).cor}">${media!=null?media+'%':'—'}</div><div class="kpi-lbl">Média 7 dias</div></div>
+    <div class="kpi"><div class="kpi-val" style="color:${clsSpo2(min).cor}">${min}%</div><div class="kpi-lbl">Mínima (total)</div></div>
+    <div class="kpi"><div class="kpi-val" style="color:${mediaFc==null?'#94a3b8':clsFC(mediaFc).cor}">${mediaFc!=null?mediaFc:'—'}</div><div class="kpi-lbl">FC média (bpm)</div></div>`;
+}
+
+function renderChart(sorted){
+  const card=document.getElementById('chart-card');
+  if(sorted.length<2){card.style.display='none';return;}
+  card.style.display='block';
+  const W=380,H=140,pad={t:14,b:26,l:30,r:10};
+  const pts=[...sorted].reverse();
+  const spos=pts.map(r=>r.spo2);
+  const fcs=pts.filter(r=>r.fc).map(r=>r.fc);
+  const sMin=Math.max(70,Math.min(...spos)-2),sMax=100;
+  const xS=i=>pad.l+(i/(pts.length-1))*(W-pad.l-pad.r);
+  const yS=v=>pad.t+(sMax-v)/(sMax-sMin)*(H-pad.t-pad.b);
+  // Zonas de referência
+  let zones=`<rect x="${pad.l}" y="${yS(95)}" width="${W-pad.l-pad.r}" height="${yS(sMin)-yS(95)}" fill="#dcfce7" opacity=".3"/>`;
+  zones+=`<rect x="${pad.l}" y="${yS(90)}" width="${W-pad.l-pad.r}" height="${yS(95)-yS(90)}" fill="#fef3c7" opacity=".4"/>`;
+  zones+=`<rect x="${pad.l}" y="${yS(sMin)}" width="${W-pad.l-pad.r}" height="${yS(90)-yS(sMin)}" fill="#fee2e2" opacity=".3"/>`;
+  zones+=`<line x1="${pad.l}" y1="${yS(95)}" x2="${W-pad.r}" y2="${yS(95)}" stroke="#22c55e" stroke-width="1" stroke-dasharray="4,3"/>`;
+  zones+=`<line x1="${pad.l}" y1="${yS(90)}" x2="${W-pad.r}" y2="${yS(90)}" stroke="#dc2626" stroke-width="1" stroke-dasharray="4,3"/>`;
+  let pathSpo='',dotsSpo='';
+  pts.forEach((r,i)=>{
+    const x=xS(i),y=yS(r.spo2),c=clsSpo2(r.spo2);
+    pathSpo+=(i===0?`M${x},${y}`:`L${x},${y}`);
+    dotsSpo+=`<circle cx="${x}" cy="${y}" r="4" fill="${c.cor}" stroke="#fff" stroke-width="1.5"/>`;
+  });
+  // FC (normalizado na mesma escala dividido por 10)
+  let pathFc='';
+  const hasFc=pts.some(r=>r.fc);
+  if(hasFc){
+    pts.forEach((r,i)=>{
+      if(!r.fc) return;
+      const x=xS(i),y=yS(r.fc/10+sMin);
+      pathFc+=(pathFc===''?`M${x},${y}`:`L${x},${y}`);
+    });
+  }
+  const tickY=[sMin,90,95,100].filter(v=>v>=sMin).map(v=>`<text x="${pad.l-4}" y="${yS(v)+4}" font-size="8.5" fill="#94a3b8" text-anchor="end">${v}</text>`).join('');
+  const tickX=pts.filter((_,i)=>i%Math.max(1,Math.ceil(pts.length/5))===0).map(r=>{const i=pts.indexOf(r);return `<text x="${xS(i)}" y="${H-4}" font-size="8" fill="#94a3b8" text-anchor="middle">${r.data.slice(5).replace('-','/')}</text>`;}).join('');
+  document.getElementById('oxy-svg').innerHTML=zones+tickY+`<path d="${pathSpo}" fill="none" stroke="#1e3a5f" stroke-width="2.5" stroke-linejoin="round"/>${hasFc?`<path d="${pathFc}" fill="none" stroke="#dc2626" stroke-width="1.5" stroke-dasharray="5,3" stroke-linejoin="round"/>`:''}`+dotsSpo+tickX;
+}
+
+function renderLista(sorted){
+  if(!sorted.length){document.getElementById('lista-div').innerHTML='<div class="empty">Nenhum registro ainda.</div>';return;}
+  document.getElementById('lista-div').innerHTML=sorted.map((r,i)=>{
+    const c=clsSpo2(r.spo2);
+    const cfc=r.fc?clsFC(r.fc):null;
+    const cfr=r.fr?clsFR(r.fr):null;
+    return `<div class="rec-item spo2-${c.lvl}">
+      <div class="spo2-badge" style="background:${c.bg};color:${c.cor}">${r.spo2}%</div>
+      <div class="rec-info">
+        <div class="rec-cls" style="color:${c.cor}">${c.emoji} ${c.cls} · ${r.ctx||''}</div>
+        <div class="rec-det">
+          ${r.data.split('-').reverse().join('/')} ${r.hora||''}
+          ${r.fc?` · FC: <span style="color:${cfc?.cor||'inherit'}">${r.fc} bpm (${cfc?.cls||''})</span>`:''}
+          ${r.fr?` · FR: <span style="color:${cfr?.cor||'inherit'}">${r.fr} irpm (${cfr?.cls||''})</span>`:''}
+          ${r.obs?' · '+r.obs:''}
+        </div>
+      </div>
+      <button class="rec-del" onclick="deletar(${_hist.indexOf(r)})">🗑️</button>
+    </div>`;
+  }).join('');
+}
+
+function hoje(){return new Date().toISOString().slice(0,10);}
+function horaAtual(){const d=new Date();return d.getHours().toString().padStart(2,'0')+':'+d.getMinutes().toString().padStart(2,'0');}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+
+async function init(){
+  _pid=parseInt(document.getElementById('sel-pac').value)||null;
+  if(!_pid){document.getElementById('form-card').style.display='none';document.getElementById('cls-table').style.display='none';return;}
+  _hist=await dbGetConfig('spo2_hist_'+_pid)||[];
+  document.getElementById('inp-data').value=hoje();
+  document.getElementById('inp-hora').value=horaAtual();
+  const meds=await dbGetByIndex('medicamentos','pacienteId',_pid);
+  const resp=(meds||[]).filter(m=>m.ativo!==false&&RESP_MEDS.test(m.nome||m.medicamento||''));
+  const strip=document.getElementById('resp-strip');
+  if(resp.length){strip.style.display='block';strip.innerHTML='🫁 Medicamentos respiratórios detectados: '+resp.slice(0,5).map(m=>`<strong>${m.nome||m.medicamento}</strong>`).join(', ')+(resp.length>5?' e mais...':'');}
+  else strip.style.display='none';
+  document.getElementById('form-card').style.display='block';
+  document.getElementById('cls-table').style.display='table';
+  renderAll();
+}
+
+document.addEventListener('DOMContentLoaded',async()=>{
+  const pacs=await dbGetAll('pacientes');
+  const sel=document.getElementById('sel-pac');
+  sel.innerHTML='<option value="">Selecione o paciente...</option>'+pacs.map(p=>`<option value="${p.id}">${esc(p.nome||'Paciente '+p.id)}</option>`).join('');
+  const pid=getActivePacienteId();
+  if(pid){sel.value=pid;await init();}
+});
+</script>
+</body>
+</html>

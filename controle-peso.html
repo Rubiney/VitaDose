@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>Controle de Peso e Edema — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .topbar{display:flex;align-items:center;gap:10px;padding:12px 16px;background:#0369a1;position:sticky;top:0;z-index:100}
+    .back-btn{background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:8px;padding:6px 11px;cursor:pointer;font-size:1rem}
+    .topbar-title{font-size:.93rem;font-weight:800;color:#fff;flex:1}
+    .topbar-sub{font-size:.62rem;color:rgba(255,255,255,.7);margin-top:1px}
+    main{max-width:680px;margin:0 auto;padding:12px 14px 90px}
+    .pac-sel{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:12px;padding:11px 14px;font-size:.88rem;margin-bottom:10px;background:#fff}
+
+    /* Alerta */
+    .alert-banner{border-radius:12px;padding:12px 14px;margin-bottom:10px;font-size:.78rem;font-weight:700;display:none;line-height:1.5}
+    .alert-banner.crit{background:#fee2e2;border:1.5px solid #fca5a5;color:#991b1b;display:block}
+    .alert-banner.warn{background:#fff7ed;border:1.5px solid #fed7aa;color:#9a3412;display:block}
+
+    /* KPIs */
+    .kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-bottom:12px}
+    .kpi{background:#fff;border-radius:12px;padding:10px 8px;text-align:center;border:1.5px solid #e2e8f0}
+    .kpi-val{font-size:1.15rem;font-weight:900;color:#0369a1}
+    .kpi-lbl{font-size:.55rem;color:#94a3b8;font-weight:700;margin-top:2px}
+    .kpi-sub{font-size:.52rem;color:#cbd5e1}
+
+    /* Diuréticos */
+    .diur-strip{background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:8px 12px;font-size:.68rem;color:#1e40af;margin-bottom:10px;display:none}
+
+    /* Formulário */
+    .form-card{background:#fff;border-radius:14px;border:1.5px solid #e2e8f0;padding:14px;margin-bottom:12px}
+    .form-title{font-size:.78rem;font-weight:800;color:#0369a1;margin-bottom:10px}
+    .form-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .form-row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+    label{font-size:.66rem;font-weight:700;color:#64748b;display:block;margin-bottom:3px;margin-top:8px}
+    input,select{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:9px;padding:9px 11px;font-size:.83rem;background:#fff}
+    .preview-cls{border-radius:10px;padding:10px 12px;font-size:.78rem;font-weight:700;text-align:center;margin-top:8px;display:none}
+    .save-btn{width:100%;padding:13px;background:#0369a1;color:#fff;border:none;border-radius:10px;font-size:.85rem;font-weight:800;cursor:pointer;margin-top:10px}
+
+    /* Gráfico */
+    .chart-card{background:#fff;border-radius:14px;border:1.5px solid #e2e8f0;padding:14px;margin-bottom:12px}
+    .chart-title{font-size:.75rem;font-weight:800;color:#0369a1;margin-bottom:8px}
+    svg.peso-chart{width:100%;display:block}
+
+    /* Lista */
+    .rec-item{background:#fff;border-radius:11px;border:1.5px solid #e2e8f0;padding:11px 13px;margin-bottom:7px;display:flex;gap:10px;align-items:flex-start}
+    .rec-item.alert-item{border-left:4px solid #dc2626}
+    .rec-imc-badge{font-size:.65rem;font-weight:800;padding:2px 8px;border-radius:6px;flex-shrink:0;margin-top:2px}
+    .rec-info{flex:1}
+    .rec-peso{font-size:.95rem;font-weight:900;color:#0f172a}
+    .rec-det{font-size:.65rem;color:#94a3b8;margin-top:2px;line-height:1.5}
+    .rec-del{background:#fee2e2;border:none;color:#dc2626;border-radius:7px;padding:4px 9px;font-size:.65rem;cursor:pointer;flex-shrink:0}
+
+    /* Edema chips */
+    .edema-chips{display:flex;gap:5px;flex-wrap:wrap;margin-top:4px}
+    .echip{padding:5px 11px;border-radius:8px;background:#f1f5f9;color:#475569;font-size:.68rem;font-weight:700;cursor:pointer;border:1.5px solid transparent}
+    .echip.sel{background:#dbeafe;color:#1e40af;border-color:#93c5fd}
+
+    .empty{text-align:center;padding:30px;color:#94a3b8;font-size:.78rem}
+    .altura-row{display:flex;gap:8px;align-items:flex-end;margin-bottom:6px}
+    .altura-inp{flex:1}
+    .altura-save{padding:9px 14px;background:#0369a1;color:#fff;border:none;border-radius:9px;font-size:.75rem;font-weight:800;cursor:pointer;flex-shrink:0}
+  </style>
+</head>
+<body>
+<div class="topbar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <div style="flex:1">
+    <div class="topbar-title">⚖️ Controle de Peso e Edema</div>
+    <div class="topbar-sub">IMC · edema · alerta IC descompensada</div>
+  </div>
+</div>
+<main>
+  <select class="pac-sel" id="sel-pac" onchange="init()"><option value="">Selecione o paciente...</option></select>
+
+  <div class="alert-banner" id="alert-banner"></div>
+  <div class="diur-strip" id="diur-strip"></div>
+
+  <div class="kpi-row" id="kpi-row" style="display:none"></div>
+
+  <!-- Formulário -->
+  <div class="form-card" id="form-card" style="display:none">
+    <div class="form-title">📝 Registrar Peso</div>
+
+    <div class="altura-row">
+      <div class="altura-inp">
+        <label>Altura do paciente (cm)</label>
+        <input type="number" id="inp-altura" min="80" max="220" placeholder="Ex: 168" oninput="calcPreview()">
+      </div>
+      <button class="altura-save" onclick="salvarAltura()">💾 Salvar</button>
+    </div>
+
+    <div class="form-row">
+      <div><label>Data *</label><input type="date" id="inp-data"></div>
+      <div><label>Hora</label><input type="time" id="inp-hora"></div>
+    </div>
+    <div class="form-row">
+      <div><label>Peso (kg) *</label><input type="number" id="inp-peso" min="20" max="300" step="0.1" placeholder="Ex: 72.5" oninput="calcPreview()"></div>
+      <div><label>Contexto</label>
+        <select id="inp-ctx">
+          <option>Manhã em jejum</option>
+          <option>Manhã pós-diurético</option>
+          <option>Tarde</option>
+          <option>Noite</option>
+          <option>Aleatório</option>
+        </select>
+      </div>
+    </div>
+
+    <label>Edema</label>
+    <div class="edema-chips" id="edema-chips">
+      <div class="echip sel" onclick="selEdema(this,'0')">Ausente (0)</div>
+      <div class="echip" onclick="selEdema(this,'1+')">Leve (1+)</div>
+      <div class="echip" onclick="selEdema(this,'2+')">Moderado (2+)</div>
+      <div class="echip" onclick="selEdema(this,'3+')">Importante (3+)</div>
+      <div class="echip" onclick="selEdema(this,'4+')">Grave (4+)</div>
+    </div>
+    <input type="hidden" id="inp-edema" value="0">
+
+    <div class="form-row" style="margin-top:8px">
+      <div><label>Localização do edema</label><input type="text" id="inp-edema-loc" placeholder="Ex: tornozelo bilateral"></div>
+      <div><label>Observações</label><input type="text" id="inp-obs" placeholder="Opcional"></div>
+    </div>
+
+    <div class="preview-cls" id="preview-cls"></div>
+    <button class="save-btn" onclick="salvar()">💾 Registrar</button>
+  </div>
+
+  <!-- Gráfico -->
+  <div class="chart-card" id="chart-card" style="display:none">
+    <div class="chart-title">📈 Evolução do Peso</div>
+    <svg class="peso-chart" id="peso-svg" height="140" viewBox="0 0 380 140"></svg>
+  </div>
+
+  <div id="lista-div"></div>
+</main>
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+<script src="js/db.js"></script>
+<script src="js/utils.js"></script>
+<script>
+let _pid=null, _hist=[], _altura=0;
+
+const DIURETICOS=/furosemida|furosemide|torasemida|hidroclorotiazida|indapamida|clortalidona|espironolactona|amilorida/i;
+
+function imc(p,a){return a>0?p/((a/100)**2):null;}
+function clsImc(v,idoso){
+  if(!v) return null;
+  if(idoso){
+    if(v<22) return {cls:'Baixo Peso',cor:'#dc2626',bg:'#fee2e2'};
+    if(v<27) return {cls:'Adequado',cor:'#22c55e',bg:'#dcfce7'};
+    return {cls:'Sobrepeso/Ob.',cor:'#f59e0b',bg:'#fef3c7'};
+  }
+  if(v<18.5) return {cls:'Baixo Peso',cor:'#dc2626',bg:'#fee2e2'};
+  if(v<25)   return {cls:'Normal',cor:'#22c55e',bg:'#dcfce7'};
+  if(v<30)   return {cls:'Sobrepeso',cor:'#f59e0b',bg:'#fef3c7'};
+  if(v<35)   return {cls:'Ob. Grau I',cor:'#f97316',bg:'#fff7ed'};
+  if(v<40)   return {cls:'Ob. Grau II',cor:'#ef4444',bg:'#fee2e2'};
+  return     {cls:'Ob. Grau III',cor:'#dc2626',bg:'#fee2e2'};
+}
+function calcIdade(dn){if(!dn) return 0; const d=new Date(dn),n=new Date(); return n.getFullYear()-d.getFullYear();}
+
+function selEdema(el,val){document.querySelectorAll('.echip').forEach(c=>c.classList.remove('sel'));el.classList.add('sel');document.getElementById('inp-edema').value=val;}
+
+function calcPreview(){
+  const p=parseFloat(document.getElementById('inp-peso').value);
+  const a=parseFloat(document.getElementById('inp-altura').value)||_altura;
+  const el=document.getElementById('preview-cls');
+  if(!p||p<20){el.style.display='none';return;}
+  const v=imc(p,a), c=v?clsImc(v):null;
+  if(c){
+    el.style.display='block';el.style.background=c.bg;el.style.color=c.cor;
+    el.textContent=`IMC: ${v?v.toFixed(1):'—'} kg/m² — ${c.cls}`;
+  } else el.style.display='none';
+}
+
+async function salvarAltura(){
+  const a=parseFloat(document.getElementById('inp-altura').value);
+  if(!a||a<80||a>220){showToast('Altura inválida');return;}
+  _altura=a;
+  await dbSetConfig('altura_'+_pid,a);
+  showToast('Altura salva!');calcPreview();
+}
+
+async function salvar(){
+  const p=parseFloat(document.getElementById('inp-peso').value);
+  if(!p||p<20||p>300){showToast('Peso inválido');return;}
+  const data=document.getElementById('inp-data').value||hoje();
+  const obj={data,hora:document.getElementById('inp-hora').value||horaAtual(),ctx:document.getElementById('inp-ctx').value,peso:p,imc:imc(p,_altura),edema:document.getElementById('inp-edema').value,edemaLoc:document.getElementById('inp-edema-loc').value.trim(),obs:document.getElementById('inp-obs').value.trim(),ts:Date.now()};
+  _hist.unshift(obj);
+  await dbSetConfig('peso_hist_'+_pid,_hist);
+  document.getElementById('inp-peso').value='';
+  document.getElementById('inp-edema-loc').value='';
+  document.getElementById('inp-obs').value='';
+  document.querySelectorAll('.echip').forEach((c,i)=>c.classList.toggle('sel',i===0));
+  document.getElementById('inp-edema').value='0';
+  document.getElementById('preview-cls').style.display='none';
+  renderAll();
+  showToast('Peso registrado!');
+}
+
+async function deletar(idx){
+  if(!confirm('Remover este registro?')) return;
+  _hist.splice(idx,1);
+  await dbSetConfig('peso_hist_'+_pid,_hist);
+  renderAll();
+}
+
+function renderAll(){
+  const sorted=[..._hist].sort((a,b)=>new Date(b.data+' '+(b.hora||'00:00'))-new Date(a.data+' '+(a.hora||'00:00')));
+  renderAlert(sorted);
+  renderKpi(sorted);
+  renderChart(sorted);
+  renderLista(sorted);
+}
+
+function renderAlert(sorted){
+  const banner=document.getElementById('alert-banner');
+  if(sorted.length<2){banner.className='alert-banner';return;}
+  const latest=sorted[0].peso;
+  let alert=null;
+  for(let i=1;i<sorted.length;i++){
+    const diff=(new Date(sorted[0].data)-new Date(sorted[i].data))/86400000;
+    if(diff<=1.5&&!alert){const d=latest-sorted[i].peso;if(Math.abs(d)>=2) alert={type:'24h',d};}
+    if(diff<=7.5&&diff>1.5&&!alert){const d=latest-sorted[i].peso;if(Math.abs(d)>=3) alert={type:'7d',d};}
+    if(alert) break;
+  }
+  if(alert){
+    const sinal=alert.d>0?'+':'';
+    banner.className='alert-banner '+(Math.abs(alert.d)>=3?'crit':'warn');
+    banner.innerHTML=`⚠️ Variação de ${sinal}${alert.d.toFixed(1)} kg ${alert.type==='24h'?'em 24 horas':'em 7 dias'} — ${alert.d>0?'Verificar sinais de retenção hídrica / descompensação cardíaca':'Verificar perda de peso excessiva'}. Comunicar à equipe.`;
+  } else {banner.className='alert-banner';}
+}
+
+function renderKpi(sorted){
+  if(!sorted.length){document.getElementById('kpi-row').style.display='none';return;}
+  document.getElementById('kpi-row').style.display='grid';
+  const ult=sorted[0];
+  const v=imc(ult.peso,_altura);
+  const c=v?clsImc(v):null;
+  const semana=sorted.filter(r=>(new Date(sorted[0].data)-new Date(r.data))/86400000<=7);
+  const varSem=semana.length>1?sorted[0].peso-semana[semana.length-1].peso:null;
+  document.getElementById('kpi-row').innerHTML=`
+    <div class="kpi"><div class="kpi-val">${ult.peso.toFixed(1)}</div><div class="kpi-lbl">Peso Atual (kg)</div><div class="kpi-sub">${ult.data.split('-').reverse().join('/')}</div></div>
+    <div class="kpi"><div class="kpi-val" style="color:${c?c.cor:'#0369a1'}">${v?v.toFixed(1):'—'}</div><div class="kpi-lbl">IMC (kg/m²)</div><div class="kpi-sub">${c?c.cls:'—'}</div></div>
+    <div class="kpi"><div class="kpi-val" style="color:${varSem==null?'#94a3b8':varSem>2||varSem<-3?'#dc2626':'#22c55e'}">${varSem!=null?(varSem>0?'+':'')+varSem.toFixed(1):'—'}</div><div class="kpi-lbl">Var. 7 dias (kg)</div></div>
+    <div class="kpi"><div class="kpi-val" style="color:${ult.edema==='0'?'#22c55e':'#f97316'}">${ult.edema==='0'?'Sem':'Grau '+ult.edema}</div><div class="kpi-lbl">Edema</div></div>`;
+}
+
+function renderChart(sorted){
+  const card=document.getElementById('chart-card');
+  if(sorted.length<2){card.style.display='none';return;}
+  card.style.display='block';
+  const W=380,H=140,pad={t:12,b:28,l:36,r:10};
+  const pts=[...sorted].reverse();
+  const pesos=pts.map(r=>r.peso);
+  const mn=Math.min(...pesos)-1,mx=Math.max(...pesos)+1;
+  const xS=(i)=>pad.l+(i/(pts.length-1))*(W-pad.l-pad.r);
+  const yS=(v)=>pad.t+(mx-v)/(mx-mn)*(H-pad.t-pad.b);
+  let path='',dots='';
+  pts.forEach((r,i)=>{
+    const x=xS(i),y=yS(r.peso);
+    path+=(i===0?`M${x},${y}`:`L${x},${y}`);
+    dots+=`<circle cx="${x}" cy="${y}" r="4" fill="${r.edema!=='0'?'#f97316':'#0369a1'}" stroke="#fff" stroke-width="1.5"/>`;
+  });
+  const tickY=[mn+1,Math.round((mn+mx)/2),mx-1].map(v=>`<line x1="${pad.l-4}" y1="${yS(v)}" x2="${W-pad.r}" y2="${yS(v)}" stroke="#f1f5f9" stroke-width="1"/><text x="${pad.l-6}" y="${yS(v)+4}" font-size="9" fill="#94a3b8" text-anchor="end">${v.toFixed(0)}</text>`).join('');
+  const tickX=pts.filter((_,i)=>i%(Math.ceil(pts.length/5))===0).map((_,i,arr)=>{const idx=i*Math.ceil(pts.length/5);const x=xS(idx);return `<text x="${x}" y="${H-4}" font-size="8" fill="#94a3b8" text-anchor="middle">${(pts[idx]?.data||'').slice(5).replace('-','/')}</text>`;}).join('');
+  document.getElementById('peso-svg').innerHTML=`${tickY}<path d="${path}" fill="none" stroke="#0369a1" stroke-width="2.5" stroke-linejoin="round"/>${dots}${tickX}`;
+}
+
+function renderLista(sorted){
+  if(!sorted.length){document.getElementById('lista-div').innerHTML='<div class="empty">Nenhum registro de peso ainda.</div>';return;}
+  const idoso=_altura>0;
+  document.getElementById('lista-div').innerHTML=sorted.slice(0,30).map((r,i)=>{
+    const v=r.imc||imc(r.peso,_altura);const c=v?clsImc(v,false):null;
+    return `<div class="rec-item ${r.edema!=='0'&&r.edema!=='1+'?'alert-item':''}">
+      ${c?`<div class="rec-imc-badge" style="background:${c.bg};color:${c.cor}">${v?v.toFixed(1):'—'}</div>`:''}
+      <div class="rec-info">
+        <div class="rec-peso">${r.peso.toFixed(1)} kg <span style="font-size:.65rem;color:#94a3b8">${r.ctx||''}</span></div>
+        <div class="rec-det">${r.data.split('-').reverse().join('/')} ${r.hora||''} · Edema: ${r.edema||'0'}${r.edemaLoc?' ('+r.edemaLoc+')':''} ${r.obs?'· '+r.obs:''}</div>
+        ${c?`<div style="font-size:.6rem;font-weight:700;color:${c.cor}">${c.cls}</div>`:''}
+      </div>
+      <button class="rec-del" onclick="deletar(${_hist.indexOf(r)})">🗑️</button>
+    </div>`;
+  }).join('');
+}
+
+function hoje(){return new Date().toISOString().slice(0,10);}
+function horaAtual(){const d=new Date();return d.getHours().toString().padStart(2,'0')+':'+d.getMinutes().toString().padStart(2,'0');}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+
+async function init(){
+  _pid=parseInt(document.getElementById('sel-pac').value)||null;
+  if(!_pid){document.getElementById('form-card').style.display='none';return;}
+  [_hist,_altura]=await Promise.all([
+    dbGetConfig('peso_hist_'+_pid)||Promise.resolve([]),
+    dbGetConfig('altura_'+_pid)||Promise.resolve(0),
+  ]);
+  _hist=_hist||[];_altura=_altura||0;
+  // Altura do perfil do paciente
+  if(!_altura){const pac=await dbGet('pacientes',_pid);if(pac?.altura) _altura=pac.altura;}
+  document.getElementById('inp-altura').value=_altura||'';
+  document.getElementById('inp-data').value=hoje();
+  document.getElementById('inp-hora').value=horaAtual();
+  // Detecta diuréticos
+  const meds=await dbGetByIndex('medicamentos','pacienteId',_pid);
+  const diur=(meds||[]).filter(m=>m.ativo!==false&&DIURETICOS.test(m.nome||m.medicamento||''));
+  const strip=document.getElementById('diur-strip');
+  if(diur.length){strip.style.display='block';strip.innerHTML='💊 Diuréticos em uso: '+diur.map(m=>`<strong>${m.nome||m.medicamento}</strong>`).join(', ')+' · Pesar preferencialmente após o efeito do diurético (≈2h após a dose)';}
+  else strip.style.display='none';
+  document.getElementById('form-card').style.display='block';
+  renderAll();
+}
+
+document.addEventListener('DOMContentLoaded',async()=>{
+  const pacs=await dbGetAll('pacientes');
+  const sel=document.getElementById('sel-pac');
+  sel.innerHTML='<option value="">Selecione o paciente...</option>'+pacs.map(p=>`<option value="${p.id}">${esc(p.nome||'Paciente '+p.id)}</option>`).join('');
+  const pid=getActivePacienteId();
+  if(pid){sel.value=pid;await init();}
+});
+</script>
+</body>
+</html>

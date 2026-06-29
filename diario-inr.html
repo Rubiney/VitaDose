@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>Diário de INR — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .topbar{display:flex;align-items:center;gap:10px;padding:12px 16px;background:#7c2d12;position:sticky;top:0;z-index:100}
+    .back-btn{background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:8px;padding:6px 11px;cursor:pointer;font-size:1rem}
+    .topbar-title{font-size:.93rem;font-weight:800;color:#fff;flex:1}
+    .topbar-sub{font-size:.62rem;color:rgba(255,255,255,.7);margin-top:1px}
+    main{max-width:680px;margin:0 auto;padding:12px 14px 90px}
+    .pac-sel{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:12px;padding:11px 14px;font-size:.88rem;margin-bottom:10px;background:#fff}
+
+    /* Alerta crítico */
+    .alert-banner{border-radius:12px;padding:12px 14px;margin-bottom:10px;font-size:.78rem;font-weight:700;line-height:1.5;display:none}
+    .alert-banner.crit{background:#fee2e2;border:1.5px solid #fca5a5;color:#991b1b;display:block}
+    .alert-banner.warn{background:#fff7ed;border:1.5px solid #fed7aa;color:#9a3412;display:block}
+
+    /* Warfarina strip */
+    .warf-strip{background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:8px 12px;font-size:.68rem;color:#9a3412;margin-bottom:10px;display:none}
+
+    /* Faixa alvo chips */
+    .range-chips{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 10px}
+    .rchip{padding:6px 12px;border-radius:9px;background:#f1f5f9;color:#475569;font-size:.7rem;font-weight:700;cursor:pointer;border:1.5px solid transparent;transition:.15s}
+    .rchip.sel{background:#fef3c7;color:#92400e;border-color:#fcd34d}
+
+    /* KPIs */
+    .kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-bottom:12px}
+    .kpi{background:#fff;border-radius:12px;padding:10px 8px;text-align:center;border:1.5px solid #e2e8f0}
+    .kpi-val{font-size:1.15rem;font-weight:900;color:#7c2d12}
+    .kpi-lbl{font-size:.55rem;color:#94a3b8;font-weight:700;margin-top:2px}
+    .kpi-sub{font-size:.52rem;color:#cbd5e1}
+
+    /* Form */
+    .form-card{background:#fff;border-radius:14px;border:1.5px solid #e2e8f0;padding:14px;margin-bottom:12px}
+    .form-title{font-size:.78rem;font-weight:800;color:#7c2d12;margin-bottom:10px}
+    .form-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    label{font-size:.66rem;font-weight:700;color:#64748b;display:block;margin-bottom:3px;margin-top:8px}
+    input,select{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:9px;padding:9px 11px;font-size:.83rem;background:#fff}
+    .preview-inr{border-radius:10px;padding:11px 13px;font-size:.82rem;font-weight:800;text-align:center;margin-top:10px;display:none}
+    .save-btn{width:100%;padding:13px;background:#7c2d12;color:#fff;border:none;border-radius:10px;font-size:.85rem;font-weight:800;cursor:pointer;margin-top:10px}
+
+    /* Gráfico */
+    .chart-card{background:#fff;border-radius:14px;border:1.5px solid #e2e8f0;padding:14px;margin-bottom:12px}
+    .chart-title{font-size:.75rem;font-weight:800;color:#7c2d12;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between}
+    .ttr-pill{font-size:.65rem;background:#fef3c7;color:#92400e;border-radius:20px;padding:3px 10px;font-weight:800}
+
+    /* Lista */
+    .rec-item{background:#fff;border-radius:11px;margin-bottom:7px;padding:11px 13px;border:1.5px solid #e2e8f0;display:flex;gap:10px;align-items:flex-start}
+    .rec-item.inr-crit{border-left:4px solid #dc2626}
+    .rec-item.inr-warn{border-left:4px solid #f59e0b}
+    .rec-item.inr-ok{border-left:4px solid #22c55e}
+    .inr-badge{min-width:44px;padding:5px 8px;border-radius:8px;font-size:.9rem;font-weight:900;text-align:center;flex-shrink:0}
+    .rec-info{flex:1}
+    .rec-cls{font-size:.72rem;font-weight:800}
+    .rec-det{font-size:.63rem;color:#94a3b8;margin-top:2px;line-height:1.5}
+    .rec-del{background:#fee2e2;border:none;color:#dc2626;border-radius:7px;padding:4px 9px;font-size:.65rem;cursor:pointer;flex-shrink:0}
+    .empty{text-align:center;padding:30px;color:#94a3b8;font-size:.78rem}
+    .info-box{background:#fef3c7;border:1px solid #fde68a;border-radius:10px;padding:10px 12px;font-size:.7rem;color:#92400e;margin-bottom:10px;line-height:1.5}
+  </style>
+</head>
+<body>
+<div class="topbar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <div style="flex:1">
+    <div class="topbar-title">🩸 Diário de INR</div>
+    <div class="topbar-sub">Anticoagulação · TTR (Rosendaal) · Varfarina</div>
+  </div>
+</div>
+<main>
+  <select class="pac-sel" id="sel-pac" onchange="init()"><option value="">Selecione o paciente...</option></select>
+
+  <div class="alert-banner" id="alert-banner"></div>
+  <div class="warf-strip" id="warf-strip"></div>
+
+  <div class="kpi-row" id="kpi-row" style="display:none"></div>
+
+  <!-- Faixa alvo -->
+  <div id="range-sec" style="display:none">
+    <div style="font-size:.67rem;font-weight:800;color:#64748b;margin-bottom:4px">FAIXA TERAPÊUTICA ALVO</div>
+    <div class="range-chips" id="range-chips">
+      <div class="rchip sel" onclick="selRange(this,2.0,3.0,'Padrão (FA, TEP, TVP, prótese biológica)')">2,0 – 3,0 · Padrão</div>
+      <div class="rchip" onclick="selRange(this,2.5,3.5,'Prótese mecânica (válvula aórtica)')">2,5 – 3,5 · Válvula mecânica</div>
+      <div class="rchip" onclick="selRange(this,3.0,4.0,'Prótese mecânica (válvula mitral)')">3,0 – 4,0 · Válvula mitral</div>
+    </div>
+  </div>
+
+  <!-- Form -->
+  <div class="form-card" id="form-card" style="display:none">
+    <div class="form-title">📝 Registrar INR</div>
+    <div class="form-row">
+      <div><label>Data da coleta *</label><input type="date" id="inp-data"></div>
+      <div><label>Valor do INR *</label><input type="number" id="inp-inr" min="0.5" max="10" step="0.1" placeholder="Ex: 2.4" oninput="previewInr()"></div>
+    </div>
+    <div class="form-row">
+      <div><label>Dose de varfarina (mg)</label><input type="number" id="inp-dose" min="1" max="20" step="0.5" placeholder="Ex: 5"></div>
+      <div><label>Próxima coleta</label><input type="date" id="inp-prox"></div>
+    </div>
+    <div><label>Motivo / Observações</label><input type="text" id="inp-obs" placeholder="Ex: INR estável, manteve dose"></div>
+    <div class="preview-inr" id="preview-inr"></div>
+    <button class="save-btn" onclick="salvar()">💾 Registrar</button>
+  </div>
+
+  <div class="chart-card" id="chart-card" style="display:none">
+    <div class="chart-title">
+      <span>📈 Evolução do INR</span>
+      <span class="ttr-pill" id="ttr-pill"></span>
+    </div>
+    <svg id="inr-svg" style="width:100%;display:block" height="150" viewBox="0 0 380 150"></svg>
+  </div>
+
+  <div id="lista-div"></div>
+</main>
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+<script src="js/db.js"></script>
+<script src="js/utils.js"></script>
+<script>
+let _pid=null, _hist=[], _lo=2.0, _hi=3.0, _rangeLabel='Padrão';
+
+const WARFARINA=/varfarin|varfarina|coumadin|marevan/i;
+
+function selRange(el,lo,hi,lbl){
+  document.querySelectorAll('.rchip').forEach(c=>c.classList.remove('sel'));
+  el.classList.add('sel');
+  _lo=lo;_hi=hi;_rangeLabel=lbl;
+  renderAll();
+}
+
+function clsInr(v){
+  if(v>=_lo&&v<=_hi) return {cls:'Terapêutico',cor:'#22c55e',bg:'#dcfce7',emoji:'✅',lvl:'ok'};
+  if(v>_hi&&v<4.0)   return {cls:'Supraterapêutico',cor:'#f59e0b',bg:'#fef3c7',emoji:'⚠️',lvl:'warn'};
+  if(v>=4.0)         return {cls:'Muito elevado — risco de sangramento',cor:'#dc2626',bg:'#fee2e2',emoji:'🚨',lvl:'crit'};
+  if(v<_lo&&v>=1.5)  return {cls:'Subterapêutico',cor:'#f97316',bg:'#fff7ed',emoji:'🔻',lvl:'warn'};
+  return             {cls:'Muito baixo — risco trombótico',cor:'#dc2626',bg:'#fee2e2',emoji:'🚨',lvl:'crit'};
+}
+
+function previewInr(){
+  const v=parseFloat(document.getElementById('inp-inr').value);
+  const el=document.getElementById('preview-inr');
+  if(!v||v<0.5){el.style.display='none';return;}
+  const c=clsInr(v);
+  el.style.display='block';el.style.background=c.bg;el.style.color=c.cor;
+  el.textContent=`${c.emoji} INR ${v.toFixed(1)} — ${c.cls} (faixa alvo: ${_lo}–${_hi})`;
+}
+
+async function salvar(){
+  const v=parseFloat(document.getElementById('inp-inr').value);
+  if(!v||v<0.5){showToast('INR inválido');return;}
+  const data=document.getElementById('inp-data').value||hoje();
+  const obj={data,inr:v,dose:parseFloat(document.getElementById('inp-dose').value)||null,prox:document.getElementById('inp-prox').value||'',obs:document.getElementById('inp-obs').value.trim(),ts:Date.now()};
+  _hist.unshift(obj);
+  await dbSetConfig('inr_hist_'+_pid,_hist);
+  document.getElementById('inp-inr').value='';
+  document.getElementById('inp-dose').value='';
+  document.getElementById('inp-prox').value='';
+  document.getElementById('inp-obs').value='';
+  document.getElementById('preview-inr').style.display='none';
+  renderAll();
+  showToast('INR registrado!');
+}
+
+async function deletar(idx){
+  if(!confirm('Remover este registro?')) return;
+  _hist.splice(idx,1);
+  await dbSetConfig('inr_hist_'+_pid,_hist);
+  renderAll();
+}
+
+/* TTR pelo método de Rosendaal (interpolação linear) */
+function calcTTR(sorted){
+  if(sorted.length<2) return null;
+  const pts=[...sorted].sort((a,b)=>new Date(a.data)-new Date(b.data));
+  let totalMs=0,inMs=0;
+  for(let i=0;i<pts.length-1;i++){
+    const t1=new Date(pts[i].data).getTime(),t2=new Date(pts[i+1].data).getTime();
+    const dur=t2-t1;
+    const v1=pts[i].inr,v2=pts[i+1].inr;
+    totalMs+=dur;
+    // Intercepta faixa dentro do segmento
+    const lo=_lo,hi=_hi;
+    if(v1>=lo&&v1<=hi&&v2>=lo&&v2<=hi){inMs+=dur;continue;}
+    if((v1<lo&&v2<lo)||(v1>hi&&v2>hi)) continue;
+    // Encontra cruzamentos
+    const cross=t=>{const r=v1+(v2-v1)*((t-t1)/dur);return r;};
+    const tLoEnter=(v1<lo&&v2>=lo)?t1+(t2-t1)*(lo-v1)/(v2-v1):null;
+    const tHiEnter=(v1>hi&&v2<=hi)?t1+(t2-t1)*(v1-hi)/(v1-v2):null;
+    const tLoExit=(v1>=lo&&v2<lo)?t1+(t2-t1)*(v1-lo)/(v1-v2):null;
+    const tHiExit=(v1<=hi&&v2>hi)?t1+(t2-t1)*(hi-v1)/(v2-v1):null;
+    const enter=tLoEnter||tHiEnter||t1;
+    const exit=tLoExit||tHiExit||t2;
+    if(exit>enter) inMs+=exit-enter;
+  }
+  return totalMs>0?Math.round(inMs/totalMs*100):null;
+}
+
+function renderAll(){
+  const sorted=[..._hist].sort((a,b)=>new Date(b.data)-new Date(a.data));
+  renderAlert(sorted);
+  renderKpi(sorted);
+  renderChart(sorted);
+  renderLista(sorted);
+}
+
+function renderAlert(sorted){
+  const banner=document.getElementById('alert-banner');
+  if(!sorted.length){banner.className='alert-banner';return;}
+  const v=sorted[0].inr, c=clsInr(v);
+  if(c.lvl==='crit'){
+    banner.className='alert-banner crit';
+    banner.innerHTML=`🚨 INR ${v.toFixed(1)} — ${c.cls}. ${v>=4?'Risco de sangramento grave — suspender dose, comunicar médico imediatamente.':'Risco trombótico elevado — ajuste de dose necessário com urgência.'}`;
+  } else if(c.lvl==='warn'){
+    banner.className='alert-banner warn';
+    banner.innerHTML=`⚠️ INR ${v.toFixed(1)} — ${c.cls}. Verificar adesão, interações e considerar ajuste de dose.`;
+  } else banner.className='alert-banner';
+}
+
+function renderKpi(sorted){
+  if(!sorted.length){document.getElementById('kpi-row').style.display='none';return;}
+  document.getElementById('kpi-row').style.display='grid';
+  const ttr=calcTTR(sorted);
+  const ult=sorted[0];
+  const c=clsInr(ult.inr);
+  const proxDias=ult.prox?Math.ceil((new Date(ult.prox)-new Date())/86400000):null;
+  const foraFaixa=sorted.filter(r=>r.inr<_lo||r.inr>_hi).length;
+  document.getElementById('kpi-row').innerHTML=`
+    <div class="kpi"><div class="kpi-val" style="color:${c.cor}">${ult.inr.toFixed(1)}</div><div class="kpi-lbl">Último INR</div><div class="kpi-sub">${ult.data.split('-').reverse().join('/')}</div></div>
+    <div class="kpi"><div class="kpi-val" style="color:${ttr==null?'#94a3b8':ttr>=65?'#22c55e':ttr>=50?'#f59e0b':'#dc2626'}">${ttr!=null?ttr+'%':'—'}</div><div class="kpi-lbl">TTR (Rosendaal)</div><div class="kpi-sub">${ttr!=null?(ttr>=65?'Adequado':ttr>=50?'Limítrofe':'Inadequado'):'Mínimo 2 reg.'}</div></div>
+    <div class="kpi"><div class="kpi-val" style="color:${proxDias==null?'#94a3b8':proxDias<=3?'#dc2626':proxDias<=7?'#f59e0b':'#22c55e'}">${proxDias!=null?proxDias+'d':'—'}</div><div class="kpi-lbl">Próxima coleta</div></div>
+    <div class="kpi"><div class="kpi-val" style="color:${foraFaixa===0?'#22c55e':foraFaixa<=2?'#f59e0b':'#dc2626'}">${foraFaixa}</div><div class="kpi-lbl">Fora da faixa</div><div class="kpi-sub">de ${sorted.length} total</div></div>`;
+  const ttrPill=document.getElementById('ttr-pill');
+  if(ttr!=null){ttrPill.textContent=`TTR: ${ttr}% ${ttr>=65?'✅':ttr>=50?'⚠️':'❌'}`;ttrPill.style.display='block';}
+  else ttrPill.style.display='none';
+}
+
+function renderChart(sorted){
+  const card=document.getElementById('chart-card');
+  if(sorted.length<2){card.style.display='none';return;}
+  card.style.display='block';
+  const W=380,H=150,pad={t:14,b:28,l:30,r:10};
+  const pts=[...sorted].sort((a,b)=>new Date(a.data)-new Date(b.data));
+  const vals=pts.map(r=>r.inr);
+  const mn=Math.max(0.5,Math.min(...vals)-0.5),mx=Math.max(...vals)+0.5;
+  const xS=i=>pad.l+(i/(pts.length-1))*(W-pad.l-pad.r);
+  const yS=v=>pad.t+(mx-v)/(mx-mn)*(H-pad.t-pad.b);
+  // Zona terapêutica
+  const yLo=yS(_lo),yHi=yS(_hi);
+  let zones=`<rect x="${pad.l}" y="${yHi}" width="${W-pad.l-pad.r}" height="${yLo-yHi}" fill="#dcfce7" opacity=".5"/>`;
+  // Linhas de referência
+  zones+=`<line x1="${pad.l}" y1="${yS(_lo)}" x2="${W-pad.r}" y2="${yS(_lo)}" stroke="#22c55e" stroke-width="1" stroke-dasharray="4,3"/>`;
+  zones+=`<line x1="${pad.l}" y1="${yS(_hi)}" x2="${W-pad.r}" y2="${yS(_hi)}" stroke="#22c55e" stroke-width="1" stroke-dasharray="4,3"/>`;
+  if(4.0>=mn&&4.0<=mx) zones+=`<line x1="${pad.l}" y1="${yS(4.0)}" x2="${W-pad.r}" y2="${yS(4.0)}" stroke="#dc2626" stroke-width="1" stroke-dasharray="4,3"/>`;
+  let path='',dots='';
+  pts.forEach((r,i)=>{
+    const x=xS(i),y=yS(r.inr),c=clsInr(r.inr);
+    path+=(i===0?`M${x},${y}`:`L${x},${y}`);
+    dots+=`<circle cx="${x}" cy="${y}" r="4.5" fill="${c.cor}" stroke="#fff" stroke-width="1.5"/>`;
+  });
+  // Labels eixo Y
+  const yTicks=[mn,_lo,_hi,mx].filter((v,i,a)=>a.indexOf(v)===i).map(v=>`<text x="${pad.l-4}" y="${yS(v)+4}" font-size="8.5" fill="#94a3b8" text-anchor="end">${v.toFixed(1)}</text>`).join('');
+  // Labels eixo X
+  const xTicks=pts.filter((_,i)=>i%Math.max(1,Math.ceil(pts.length/5))===0).map((r,_,arr)=>{const i=pts.indexOf(r);return `<text x="${xS(i)}" y="${H-5}" font-size="8" fill="#94a3b8" text-anchor="middle">${r.data.slice(5).replace('-','/')}</text>`;}).join('');
+  document.getElementById('inr-svg').innerHTML=zones+yTicks+`<path d="${path}" fill="none" stroke="#7c2d12" stroke-width="2.5" stroke-linejoin="round"/>`+dots+xTicks;
+}
+
+function renderLista(sorted){
+  if(!sorted.length){document.getElementById('lista-div').innerHTML='<div class="empty">Nenhum registro de INR ainda.</div>';return;}
+  document.getElementById('lista-div').innerHTML=sorted.map((r,i)=>{
+    const c=clsInr(r.inr);
+    return `<div class="rec-item inr-${c.lvl}">
+      <div class="inr-badge" style="background:${c.bg};color:${c.cor}">${r.inr.toFixed(1)}</div>
+      <div class="rec-info">
+        <div class="rec-cls" style="color:${c.cor}">${c.emoji} ${c.cls}</div>
+        <div class="rec-det">
+          ${r.data.split('-').reverse().join('/')}
+          ${r.dose?' · Varfarina: '+r.dose+'mg':''}
+          ${r.prox?' · Próxima: '+r.prox.split('-').reverse().join('/'):''}
+          ${r.obs?' · '+r.obs:''}
+        </div>
+      </div>
+      <button class="rec-del" onclick="deletar(${_hist.indexOf(r)})">🗑️</button>
+    </div>`;
+  }).join('');
+}
+
+function hoje(){return new Date().toISOString().slice(0,10);}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+
+async function init(){
+  _pid=parseInt(document.getElementById('sel-pac').value)||null;
+  if(!_pid){document.getElementById('form-card').style.display='none';document.getElementById('range-sec').style.display='none';return;}
+  _hist=await dbGetConfig('inr_hist_'+_pid)||[];
+  document.getElementById('inp-data').value=hoje();
+  // Detecta varfarina
+  const meds=await dbGetByIndex('medicamentos','pacienteId',_pid);
+  const warf=(meds||[]).filter(m=>m.ativo!==false&&WARFARINA.test(m.nome||m.medicamento||''));
+  const strip=document.getElementById('warf-strip');
+  if(warf.length){strip.style.display='block';strip.innerHTML='💊 Varfarina detectada: '+warf.map(m=>`<strong>${m.nome||m.medicamento}</strong> ${m.dose||''}`).join(', ');}
+  else strip.style.display='none';
+  document.getElementById('form-card').style.display='block';
+  document.getElementById('range-sec').style.display='block';
+  renderAll();
+}
+
+document.addEventListener('DOMContentLoaded',async()=>{
+  const pacs=await dbGetAll('pacientes');
+  const sel=document.getElementById('sel-pac');
+  sel.innerHTML='<option value="">Selecione o paciente...</option>'+pacs.map(p=>`<option value="${p.id}">${esc(p.nome||'Paciente '+p.id)}</option>`).join('');
+  const pid=getActivePacienteId();
+  if(pid){sel.value=pid;await init();}
+});
+</script>
+</body>
+</html>
