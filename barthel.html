@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>Índice de Barthel — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .topbar{display:flex;align-items:center;gap:10px;padding:12px 16px;background:#065f46;position:sticky;top:0;z-index:100}
+    .back-btn{background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:8px;padding:6px 11px;cursor:pointer;font-size:1rem}
+    .topbar-title{font-size:.93rem;font-weight:800;color:#fff;flex:1}
+    .topbar-sub{font-size:.62rem;color:rgba(255,255,255,.7);margin-top:1px}
+    .btn-top{background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:8px;padding:7px 11px;font-size:.72rem;font-weight:700;cursor:pointer;margin-left:4px}
+    main{max-width:600px;margin:0 auto;padding:12px 14px 90px}
+    .pac-sel{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:12px;padding:11px 14px;font-size:.88rem;margin-bottom:10px;background:#fff}
+
+    /* Score hero */
+    .score-hero{background:linear-gradient(135deg,#065f46,#10b981);border-radius:16px;padding:18px 20px;color:#fff;text-align:center;margin-bottom:12px;position:relative;overflow:hidden}
+    .sh-n{font-size:3.6rem;font-weight:900;line-height:1}
+    .sh-max{font-size:1rem;opacity:.7;margin-left:2px}
+    .sh-nivel{font-size:1rem;font-weight:800;margin-top:4px}
+    .sh-desc{font-size:.72rem;opacity:.8;margin-top:2px}
+    .sh-prog{height:8px;background:rgba(255,255,255,.2);border-radius:6px;margin-top:12px;overflow:hidden}
+    .sh-fill{height:100%;border-radius:6px;background:#fff;transition:width .4s}
+    .sh-dominio{font-size:.68rem;opacity:.7;margin-top:4px}
+
+    /* Perfil geriátrico integrado */
+    .geriat-strip{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:12px}
+    .geriat-mini{background:#fff;border-radius:10px;padding:10px 8px;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,.07);border-top:3px solid}
+    .gm-val{font-size:1.1rem;font-weight:900;color:#1e293b}
+    .gm-lbl{font-size:.6rem;font-weight:700;color:#64748b;text-transform:uppercase;margin-top:2px}
+    .gm-link{font-size:.6rem;color:#0369a1;cursor:pointer;text-decoration:underline}
+
+    /* Items */
+    .sec-card{background:#fff;border-radius:14px;padding:14px 16px;margin-bottom:8px;box-shadow:0 1px 4px rgba(0,0,0,.07)}
+    .item-titulo{font-size:.78rem;font-weight:800;color:#1e293b;margin-bottom:2px}
+    .item-desc{font-size:.67rem;color:#64748b;margin-bottom:8px;line-height:1.5}
+    .opts{display:flex;flex-direction:column;gap:5px}
+    .opt{border:1.5px solid #e2e8f0;border-radius:9px;padding:8px 12px;font-size:.77rem;cursor:pointer;background:#f8fafc;font-weight:500;color:#334155;display:flex;align-items:center;gap:8px;transition:.12s}
+    .opt.sel{background:#ecfdf5;border-color:#34d399;color:#065f46;font-weight:700}
+    .opt .pts{font-size:.65rem;color:#94a3b8;margin-left:auto;font-weight:700;min-width:38px;text-align:right}
+    .opt.sel .pts{color:#065f46}
+
+    /* Domínios */
+    .dom-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin-bottom:10px}
+    .dom-card{background:#fff;border-radius:10px;padding:10px;box-shadow:0 1px 3px rgba(0,0,0,.07);border-left:3px solid}
+    .dom-lbl{font-size:.65rem;font-weight:700;color:#475569;text-transform:uppercase}
+    .dom-pts{font-size:1.1rem;font-weight:900}
+    .dom-max{font-size:.62rem;color:#94a3b8}
+
+    /* Histórico */
+    .hist-card{background:#fff;border-radius:14px;padding:14px;margin-top:10px;box-shadow:0 1px 4px rgba(0,0,0,.07)}
+    .hist-title{font-size:.65rem;font-weight:800;color:#94a3b8;text-transform:uppercase;margin-bottom:10px}
+    svg.grafico{display:block;width:100%;overflow:visible}
+    .ref-box{background:#f0fdf4;border:1.5px solid #86efac;border-radius:10px;padding:10px 12px;font-size:.72rem;color:#14532d;line-height:1.8;margin-top:8px}
+    @media print{.topbar,.pac-sel,.btn-top,nav{display:none!important}body{background:#fff}main{padding:0}}
+  </style>
+</head>
+<body>
+<div class="topbar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <div style="flex:1">
+    <div class="topbar-title">🏃 Índice de Barthel</div>
+    <div class="topbar-sub">Independência nas Atividades de Vida Diária</div>
+  </div>
+  <button class="btn-top" onclick="salvar()">💾</button>
+  <button class="btn-top" onclick="window.print()">🖨️</button>
+</div>
+<main>
+  <select class="pac-sel" id="sel-pac" onchange="init()"><option value="">Selecione o paciente...</option></select>
+  <div id="conteudo"></div>
+</main>
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+<script src="js/db.js"></script>
+<script src="js/utils.js"></script>
+<script>
+const ITEMS = [
+  {
+    id:'alim', lbl:'Alimentação', icone:'🍽️', max:10,
+    desc:'Capacidade de se alimentar de forma independente',
+    opts:[
+      {pts:0, lbl:'Incapaz (totalmente dependente, precisa ser alimentado)'},
+      {pts:5, lbl:'Necessita de ajuda para cortar, passar manteiga etc.'},
+      {pts:10, lbl:'Independente — consegue comer sem ajuda'},
+    ]
+  },
+  {
+    id:'banho', lbl:'Banho', icone:'🚿', max:5,
+    desc:'Capacidade de tomar banho sem assistência',
+    opts:[
+      {pts:0, lbl:'Dependente — precisa de assistência para o banho'},
+      {pts:5, lbl:'Independente — entra/sai do chuveiro, lava e seca sozinho'},
+    ]
+  },
+  {
+    id:'higiene', lbl:'Higiene Pessoal', icone:'🪥', max:5,
+    desc:'Lavar o rosto, pentear os cabelos, barbear-se, escovar os dentes',
+    opts:[
+      {pts:0, lbl:'Necessita de ajuda para higiene pessoal'},
+      {pts:5, lbl:'Independente — realiza higiene facial e bucal sozinho'},
+    ]
+  },
+  {
+    id:'vestuario', lbl:'Vestuário', icone:'👕', max:10,
+    desc:'Capacidade de vestir e despir-se, incluindo abotoar e usar zíper',
+    opts:[
+      {pts:0, lbl:'Dependente — precisa de ajuda para se vestir/despir'},
+      {pts:5, lbl:'Necessita de ajuda, porém realiza metade das tarefas sozinho'},
+      {pts:10, lbl:'Independente — veste e despe sem ajuda'},
+    ]
+  },
+  {
+    id:'intestino', lbl:'Controle Intestinal', icone:'💩', max:10,
+    desc:'Controle da evacuação sem acidentes',
+    opts:[
+      {pts:0, lbl:'Incontinente (ou precisa de enema)'},
+      {pts:5, lbl:'Acidente ocasional (menos de 1×/semana)'},
+      {pts:10, lbl:'Continente — não tem episódios de incontinência'},
+    ]
+  },
+  {
+    id:'vesical', lbl:'Controle Vesical', icone:'💧', max:10,
+    desc:'Controle da micção nas últimas semanas',
+    opts:[
+      {pts:0, lbl:'Incontinente ou sondado sem controle'},
+      {pts:5, lbl:'Acidente ocasional (menos de 1×/dia)'},
+      {pts:10, lbl:'Continente — sem acidentes'},
+    ]
+  },
+  {
+    id:'toilet', lbl:'Uso do Banheiro (Toilet)', icone:'🚽', max:10,
+    desc:'Uso do banheiro ou comadre de forma independente',
+    opts:[
+      {pts:0, lbl:'Dependente — não realiza sem ajuda'},
+      {pts:5, lbl:'Necessita de ajuda, mas realiza algumas etapas'},
+      {pts:10, lbl:'Independente — usa o banheiro sem ajuda'},
+    ]
+  },
+  {
+    id:'transferencia', lbl:'Transferência (Cama/Cadeira)', icone:'🛌', max:15,
+    desc:'Transferir-se da cama para a cadeira e vice-versa',
+    opts:[
+      {pts:0, lbl:'Incapaz — não tem equilíbrio para sentar'},
+      {pts:5, lbl:'Grande ajuda — 2 pessoas, capaz de se sentar'},
+      {pts:10, lbl:'Pequena ajuda — supervisão ou assistência mínima'},
+      {pts:15, lbl:'Independente — faz a transferência sem ajuda'},
+    ]
+  },
+  {
+    id:'deambulacao', lbl:'Deambulação', icone:'🚶', max:15,
+    desc:'Capacidade de caminhar em superfície plana',
+    opts:[
+      {pts:0, lbl:'Imóvel — não se locomove'},
+      {pts:5, lbl:'Independente em cadeira de rodas ≥45m'},
+      {pts:10, lbl:'Caminha com ajuda de 1 pessoa (física ou verbal) ≥45m'},
+      {pts:15, lbl:'Independente — caminha ≥45m, pode usar bengala/andador'},
+    ]
+  },
+  {
+    id:'escadas', lbl:'Subir/Descer Escadas', icone:'🪜', max:10,
+    desc:'Capacidade de subir e descer um lance de escadas',
+    opts:[
+      {pts:0, lbl:'Incapaz — não consegue subir escadas'},
+      {pts:5, lbl:'Necessita de ajuda (física, supervisão ou dispositivo)'},
+      {pts:10, lbl:'Independente — sobe e desce sem auxílio'},
+    ]
+  },
+];
+
+const NIVEL = s => s<=20?['Dependência Total','#991b1b',0]:s<=60?['Dependência Grave','#dc2626',1]:s<=90?['Dependência Moderada','#f97316',2]:s<=99?['Dependência Leve','#eab308',3]:['Independente','#16a34a',4];
+
+let _sel={}, _pid=null;
+
+async function init(){
+  _pid=parseInt(document.getElementById('sel-pac').value)||null;
+  if(!_pid){document.getElementById('conteudo').innerHTML='';return;}
+  const saved=await dbGetConfig('barthel_'+_pid);
+  _sel=saved?.sel||{};
+  render();
+}
+
+function total(){return Object.values(_sel).reduce((a,b)=>a+b,0);}
+function respondidos(){return Object.keys(_sel).length;}
+
+function render(){
+  const T=total(); const [nivel,cor]=NIVEL(T);
+
+  // Domínios por categoria
+  const autCuid=(_sel.alim||0)+(_sel.banho||0)+(_sel.higiene||0)+(_sel.vestuario||0);
+  const controle=(_sel.intestino||0)+(_sel.vesical||0)+(_sel.toilet||0);
+  const mobilidade=(_sel.transferencia||0)+(_sel.deambulacao||0)+(_sel.escadas||0);
+
+  let html=`
+  <div class="score-hero">
+    <div class="sh-n">${T}<span class="sh-max">/100</span></div>
+    <div class="sh-nivel">${nivel}</div>
+    <div class="sh-desc">${respondidos()} / 10 itens respondidos</div>
+    <div class="sh-prog"><div class="sh-fill" style="width:${T}%"></div></div>
+  </div>
+
+  <div class="dom-grid">
+    <div class="dom-card" style="border-left-color:#0ea5e9">
+      <div class="dom-lbl">🧼 Auto-cuidado</div>
+      <div class="dom-pts" style="color:#0ea5e9">${autCuid}<span class="dom-max">/30</span></div>
+    </div>
+    <div class="dom-card" style="border-left-color:#8b5cf6">
+      <div class="dom-lbl">🚽 Controle esfincteriano</div>
+      <div class="dom-pts" style="color:#8b5cf6">${controle}<span class="dom-max">/30</span></div>
+    </div>
+    <div class="dom-card" style="border-left-color:#f97316">
+      <div class="dom-lbl">🚶 Mobilidade</div>
+      <div class="dom-pts" style="color:#f97316">${mobilidade}<span class="dom-max">/40</span></div>
+    </div>
+  </div>`;
+
+  // Perfil geriátrico integrado
+  html+=`<div id="geriat-strip"></div>`;
+
+  // Itens
+  ITEMS.forEach(item=>{
+    const val=_sel[item.id];
+    html+=`<div class="sec-card">
+      <div class="item-titulo">${item.icone} ${esc(item.lbl)} <span style="font-size:.62rem;color:#94a3b8;font-weight:400">— máx ${item.max} pts</span></div>
+      <div class="item-desc">${esc(item.desc)}</div>
+      <div class="opts">
+        ${item.opts.map(o=>`<div class="opt ${val===o.pts?'sel':''}" onclick="setR('${item.id}',${o.pts},this)">
+          <span>${esc(o.lbl)}</span>
+          <span class="pts">${o.pts} pt${o.pts!==1?'s':''}</span>
+        </div>`).join('')}
+      </div>
+    </div>`;
+  });
+
+  html+=`<div id="hist-div"></div>
+  <div class="ref-box">
+    <strong>Interpretação do Índice de Barthel:</strong><br>
+    0–20: Dependência Total &nbsp;·&nbsp; 21–60: Dependência Grave &nbsp;·&nbsp; 61–90: Dependência Moderada<br>
+    91–99: Dependência Leve &nbsp;·&nbsp; 100: Independência Total<br><br>
+    Score &lt;60: indica necessidade de cuidador para administração de medicamentos.<br><br>
+    Mahoney FI, Barthel DW. <em>Md State Med J</em>. 1965;14:61-65 ·
+    Minosso JSM, et al. <em>Acta Paul Enferm</em>. 2010;23(2):218-23 (validação brasileira)
+  </div>`;
+
+  document.getElementById('conteudo').innerHTML=html;
+  carregarGeriatrico();
+  carregarHistorico();
+}
+
+function setR(id,pts,btn){
+  _sel[id]=pts;
+  btn.closest('.opts').querySelectorAll('.opt').forEach(b=>b.classList.remove('sel'));
+  btn.classList.add('sel');
+  // Atualiza score hero
+  const T=total(); const [nivel]=NIVEL(T);
+  document.querySelector('.sh-n').innerHTML=T+'<span class="sh-max">/100</span>';
+  document.querySelector('.sh-nivel').textContent=nivel;
+  document.querySelector('.sh-desc').textContent=respondidos()+' / 10 itens respondidos';
+  document.querySelector('.sh-fill').style.width=T+'%';
+  // Domínios
+  const autCuid=(_sel.alim||0)+(_sel.banho||0)+(_sel.higiene||0)+(_sel.vestuario||0);
+  const controle=(_sel.intestino||0)+(_sel.vesical||0)+(_sel.toilet||0);
+  const mobilidade=(_sel.transferencia||0)+(_sel.deambulacao||0)+(_sel.escadas||0);
+  const [dc1,dc2,dc3]=document.querySelectorAll('.dom-pts');
+  if(dc1)dc1.innerHTML=autCuid+'<span class="dom-max">/30</span>';
+  if(dc2)dc2.innerHTML=controle+'<span class="dom-max">/30</span>';
+  if(dc3)dc3.innerHTML=mobilidade+'<span class="dom-max">/40</span>';
+}
+
+async function carregarGeriatrico(){
+  if(!_pid)return;
+  const strip=document.getElementById('geriat-strip');
+  if(!strip)return;
+  const frail=await dbGetConfig('frail_'+_pid);
+  const morse=await dbGetConfig('morse_'+_pid);
+  const sarc=await dbGetConfig('sarcf_hist_'+_pid);
+  const items=[];
+  if(frail) items.push({cor:'#f97316',val:frail.score,lbl:'FRAIL',max:'5',url:'escala-fragilidade.html'});
+  if(morse) items.push({cor:'#dc2626',val:morse.score,lbl:'Morse Quedas',max:'125',url:'risco-queda.html'});
+  if(sarc&&sarc.length) items.push({cor:'#b45309',val:sarc.at(-1).total,lbl:'SARC-F',max:'10',url:'sarcf.html'});
+  if(!items.length){strip.innerHTML='';return;}
+  strip.innerHTML=`<div class="geriat-strip">${items.map(i=>`
+    <div class="geriat-mini" style="border-top-color:${i.cor}">
+      <div class="gm-val" style="color:${i.cor}">${i.val}/${i.max}</div>
+      <div class="gm-lbl">${i.lbl}</div>
+      <div class="gm-link" onclick="location.href='${i.url}'">> abrir</div>
+    </div>`).join('')}
+  </div>`;
+}
+
+async function carregarHistorico(){
+  if(!_pid)return;
+  const hist=await dbGetConfig('barthel_hist_'+_pid)||[];
+  const el=document.getElementById('hist-div');
+  if(!hist.length){el.innerHTML='';return;}
+  const W=500,H=90,px=30,py=10;
+  const vals=hist.map(h=>h.total);
+  const vMin=0,vMax=100;
+  const sx=i=>px+(W-2*px)*i/(Math.max(hist.length-1,1));
+  const sy=v=>py+(H-2*py)*(1-(v-vMin)/(vMax-vMin));
+  const pts=hist.map((h,i)=>`${sx(i)},${sy(h.total)}`).join(' ');
+  const fill=`${sx(0)},${H-py} ${pts} ${sx(hist.length-1)},${H-py}`;
+  el.innerHTML=`<div class="hist-card">
+    <div class="hist-title">Evolução do Índice de Barthel</div>
+    <svg class="grafico" viewBox="0 0 ${W} ${H}">
+      <polygon points="${fill}" fill="#065f46" opacity=".1"/>
+      <line x1="${px}" y1="${sy(100)}" x2="${W-px}" y2="${sy(100)}" stroke="#dcfce7" stroke-width="1" stroke-dasharray="4,3"/>
+      <polyline points="${pts}" fill="none" stroke="#065f46" stroke-width="2.5" stroke-linejoin="round"/>
+      ${hist.map((h,i)=>{
+        const x=sx(i),y=sy(h.total);
+        const [,cor]=NIVEL(h.total);
+        return `<circle cx="${x}" cy="${y}" r="5" fill="${cor}" stroke="white" stroke-width="1.5"/>
+                <text x="${x}" y="${y-9}" text-anchor="middle" font-size="10" fill="${cor}" font-weight="800">${h.total}</text>
+                <text x="${x}" y="${H-1}" text-anchor="middle" font-size="8" fill="#94a3b8">${h.data.slice(5).split('-').join('/')}</text>`;
+      }).join('')}
+    </svg>
+  </div>`;
+}
+
+async function salvar(){
+  if(!_pid){showToast('Selecione um paciente');return;}
+  if(respondidos()<10){showToast('Responda todos os 10 itens antes de salvar');return;}
+  const T=total(); const [nivel]=NIVEL(T);
+  await dbSetConfig('barthel_'+_pid,{sel:{..._sel},total:T,nivel,data:hoje()});
+  const hist=await dbGetConfig('barthel_hist_'+_pid)||[];
+  hist.push({data:hoje(),total:T,nivel});
+  await dbSetConfig('barthel_hist_'+_pid,hist);
+  showToast('✅ Barthel: '+T+'/100 — '+nivel);
+  await carregarHistorico();
+}
+
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+
+document.addEventListener('DOMContentLoaded',async()=>{
+  const pacs=await dbGetAll('pacientes');
+  const sel=document.getElementById('sel-pac');
+  sel.innerHTML='<option value="">Selecione o paciente...</option>'+pacs.map(p=>`<option value="${p.id}">${esc(p.nome||'Paciente '+p.id)}</option>`).join('');
+  const pid=getActivePacienteId();
+  if(pid){sel.value=pid;await init();}
+});
+</script>
+</body>
+</html>

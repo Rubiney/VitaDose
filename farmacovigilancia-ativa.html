@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>Farmacovigilância Ativa — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .topbar{display:flex;align-items:center;gap:10px;padding:12px 16px;background:#7c2d12;position:sticky;top:0;z-index:100}
+    .back-btn{background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:8px;padding:6px 11px;cursor:pointer;font-size:1rem}
+    .topbar-title{font-size:.93rem;font-weight:800;color:#fff;flex:1}
+    .topbar-sub{font-size:.62rem;color:rgba(255,255,255,.7);margin-top:1px}
+    .btn-top{background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:8px;padding:7px 11px;font-size:.72rem;font-weight:700;cursor:pointer;margin-left:4px}
+    main{max-width:640px;margin:0 auto;padding:12px 14px 90px}
+    .pac-sel{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:12px;padding:11px 14px;font-size:.88rem;margin-bottom:10px;background:#fff}
+
+    /* Sumário */
+    .sum-bar{background:#fff;border-radius:12px;padding:12px 14px;margin-bottom:10px;display:flex;gap:12px;flex-wrap:wrap;box-shadow:0 1px 4px rgba(0,0,0,.07)}
+    .sum-item{text-align:center;flex:1;min-width:70px}
+    .sum-n{font-size:1.8rem;font-weight:900}
+    .sum-lbl{font-size:.62rem;font-weight:700;color:#64748b;text-transform:uppercase}
+
+    /* Med card */
+    .med-card{background:#fff;border-radius:14px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.07);overflow:hidden}
+    .med-header{display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer;border-left:4px solid #e2e8f0}
+    .med-header.tem-ram{border-left-color:#dc2626}
+    .med-header.limpo{border-left-color:#22c55e}
+    .med-header.parcial{border-left-color:#f97316}
+    .med-nome{font-size:.84rem;font-weight:800;color:#1e293b;flex:1}
+    .med-dose{font-size:.67rem;color:#64748b;margin-top:2px}
+    .med-badge{font-size:.62rem;font-weight:700;padding:3px 8px;border-radius:20px;white-space:nowrap}
+    .badge-nd{background:#f1f5f9;color:#64748b}
+    .badge-ok{background:#dcfce7;color:#166534}
+    .badge-ram{background:#fee2e2;color:#991b1b}
+    .badge-pend{background:#fef3c7;color:#92400e}
+    .med-body{padding:0 14px 14px;border-top:1px solid #f1f5f9}
+    .med-body.collapsed{display:none}
+
+    /* RAM items */
+    .ram-intro{font-size:.72rem;color:#64748b;margin:10px 0 8px;line-height:1.5}
+    .ram-item{background:#fafafa;border:1.5px solid #e2e8f0;border-radius:10px;padding:10px 12px;margin-bottom:7px}
+    .ram-item.sim{background:#fee2e2;border-color:#fca5a5}
+    .ram-item.nao{background:#f0fdf4;border-color:#86efac}
+    .ram-nome{font-size:.8rem;font-weight:700;color:#1e293b;margin-bottom:2px}
+    .ram-freq{font-size:.64rem;color:#94a3b8;margin-bottom:8px}
+    .ram-quest{font-size:.75rem;color:#475569;margin-bottom:8px;font-style:italic}
+    .ram-btns{display:flex;gap:6px}
+    .ram-btn{flex:1;padding:7px 6px;border-radius:8px;border:1.5px solid #e2e8f0;font-size:.72rem;font-weight:700;cursor:pointer;background:#fff;transition:.12s;text-align:center}
+    .ram-btn.sel-sim{background:#fee2e2;border-color:#ef4444;color:#991b1b}
+    .ram-btn.sel-nao{background:#dcfce7;border-color:#22c55e;color:#166534}
+    .ram-detail{margin-top:8px;display:none}
+    .ram-detail.show{display:block}
+    .ram-detail textarea{width:100%;box-sizing:border-box;border:1.5px solid #fca5a5;border-radius:8px;padding:8px;font-size:.73rem;resize:vertical;min-height:52px}
+    .ram-detail select{width:100%;border:1.5px solid #e2e8f0;border-radius:8px;padding:7px;font-size:.73rem;background:#fff;margin-bottom:6px}
+    .naranjo-btn{width:100%;padding:8px;background:#7c2d12;color:#fff;border:none;border-radius:8px;font-size:.73rem;font-weight:700;cursor:pointer;margin-top:4px}
+
+    /* Sem medicamento */
+    .sem-med{text-align:center;padding:40px;color:#94a3b8;font-size:.8rem}
+    .ref-box{background:#fff7ed;border:1.5px solid #fed7aa;border-radius:10px;padding:10px 12px;font-size:.72rem;color:#7c2d12;line-height:1.8;margin-top:10px}
+    .expand-icon{font-size:.9rem;transition:.2s;color:#94a3b8}
+    @media print{.topbar,.pac-sel,.btn-top,nav,.ram-btns,.naranjo-btn{display:none!important}body{background:#fff}main{padding:0}}
+  </style>
+</head>
+<body>
+<div class="topbar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <div style="flex:1">
+    <div class="topbar-title">🛡️ Farmacovigilância Ativa</div>
+    <div class="topbar-sub">Detecção sistemática de reações adversas</div>
+  </div>
+  <button class="btn-top" onclick="salvarTudo()">💾</button>
+  <button class="btn-top" onclick="window.print()">🖨️</button>
+</div>
+<main>
+  <select class="pac-sel" id="sel-pac" onchange="init()"><option value="">Selecione o paciente...</option></select>
+  <div id="conteudo"></div>
+</main>
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+<script src="js/db.js"></script>
+<script src="js/utils.js"></script>
+<script>
+// Base de RAMs mais comuns por padrão de medicamento
+// Formato: {pattern (regex), grupo, rams: [{nome, freq, pergunta, gravidade: 'leve'|'moderada'|'grave'}]}
+const RAM_DB = [
+  {
+    pattern: /metformina|metformin/i, grupo:'Biguanida',
+    rams:[
+      {nome:'Náusea/Vômito', freq:'Muito comum (>10%)', grav:'leve',
+       q:'Apresenta náusea, enjôo ou vômitos, especialmente após tomar o medicamento?'},
+      {nome:'Diarreia', freq:'Muito comum (>10%)', grav:'leve',
+       q:'Tem episódios de diarreia ou fezes amolecidas?'},
+      {nome:'Dor abdominal', freq:'Comum (1–10%)', grav:'leve',
+       q:'Sente dor ou desconforto no abdômen (barriga)?'},
+      {nome:'Gosto metálico', freq:'Comum (1–10%)', grav:'leve',
+       q:'Percebe gosto metálico ou amargo na boca?'},
+      {nome:'Deficiência de vitamina B12', freq:'Raro — uso prolongado', grav:'moderada',
+       q:'Apresenta formigamento nas mãos ou pés, fraqueza ou cansaço incomum?'},
+    ]
+  },
+  {
+    pattern: /atorvastatina|sinvastatina|rosuvastatina|lovastatina|pravastatina|estatina/i, grupo:'Estatina',
+    rams:[
+      {nome:'Mialgia / Dor muscular', freq:'Comum (1–10%)', grav:'moderada',
+       q:'Apresenta dor, sensibilidade ou fraqueza nos músculos (braços, pernas, costas)?'},
+      {nome:'Elevação de CPK / Rabdomiólise', freq:'Raro (<1%)', grav:'grave',
+       q:'Tem urina escura (cor de coca-cola) ou fraqueza muscular intensa?'},
+      {nome:'Cefaleia', freq:'Comum (1–10%)', grav:'leve',
+       q:'Apresenta dores de cabeça frequentes desde o início do tratamento?'},
+      {nome:'Elevação de transaminases', freq:'Incomum (1–10%)', grav:'moderada',
+       q:'Tem dor na região do fígado (abdômen superior direito), icterícia (amarelamento) ou fadiga intensa?'},
+      {nome:'Insônia / Pesadelos', freq:'Incomum', grav:'leve',
+       q:'Tem dificuldade para dormir ou pesadelos desde o início da estatina?'},
+    ]
+  },
+  {
+    pattern: /enalapril|captopril|lisinopril|ramipril|perindopril|benazepril|fosinopril/i, grupo:'IECA',
+    rams:[
+      {nome:'Tosse seca persistente', freq:'Muito comum (10–30%)', grav:'moderada',
+       q:'Apresenta tosse seca, persistente, que piora à noite ou em repouso?'},
+      {nome:'Hipotensão na 1ª dose', freq:'Comum', grav:'moderada',
+       q:'Apresentou tontura ou queda de pressão, especialmente após a primeira dose?'},
+      {nome:'Hipercalemia', freq:'Incomum (1–5%)', grav:'grave',
+       q:'Sente fraqueza muscular, palpitações ou cãibras intensas?'},
+      {nome:'Angioedema', freq:'Raro (<1%)', grav:'grave',
+       q:'Já teve inchaço na face, lábios, língua ou garganta?'},
+      {nome:'Deterioração renal aguda', freq:'Raro', grav:'grave',
+       q:'Notou redução no volume de urina, inchaço nas pernas ou piora laboratorial da creatinina?'},
+    ]
+  },
+  {
+    pattern: /losartana|valsartana|irbesartana|candesartana|olmesartana|telmisartana|sar(tan)/i, grupo:'BRA (Sartana)',
+    rams:[
+      {nome:'Tontura / Hipotensão', freq:'Comum (1–10%)', grav:'leve',
+       q:'Sente tontura, especialmente ao se levantar (hipotensão ortostática)?'},
+      {nome:'Hipercalemia', freq:'Incomum', grav:'grave',
+       q:'Sente fraqueza muscular, palpitações ou fadiga intensa?'},
+      {nome:'Deterioração renal', freq:'Incomum', grav:'moderada',
+       q:'Notou redução de urina ou inchaço nas pernas?'},
+      {nome:'Hipoglicemia (em diabéticos)', freq:'Raro', grav:'moderada',
+       q:'Apresenta episódios de fraqueza, suor frio, tremores ou confusão mental?'},
+    ]
+  },
+  {
+    pattern: /amlodipina|anlodipino|nifedipina|anlodipina|felodipina|diltiazem|verapamil/i, grupo:'Bloqueador de Canal de Cálcio',
+    rams:[
+      {nome:'Edema periférico', freq:'Muito comum (>10% — amlodipina)', grav:'leve',
+       q:'Apresenta inchaço nos tornozelos ou pernas, especialmente ao final do dia?'},
+      {nome:'Cefaleia', freq:'Comum (1–10%)', grav:'leve',
+       q:'Tem dores de cabeça frequentes?'},
+      {nome:'Rubor facial', freq:'Comum (1–10%)', grav:'leve',
+       q:'Apresenta vermelhidão no rosto, especialmente após tomar o medicamento?'},
+      {nome:'Taquicardia reflexa', freq:'Incomum (diidropiridinas)', grav:'moderada',
+       q:'Sente batimentos cardíacos acelerados ou palpitações?'},
+      {nome:'Constipação intestinal', freq:'Comum (diltiazem/verapamil)', grav:'leve',
+       q:'Apresenta prisão de ventre desde o início do tratamento?'},
+    ]
+  },
+  {
+    pattern: /omeprazol|pantoprazol|lansoprazol|esomeprazol|rabeprazol|IBP/i, grupo:'IBP (Inibidor de Bomba de Prótons)',
+    rams:[
+      {nome:'Cefaleia', freq:'Comum (1–10%)', grav:'leve',
+       q:'Apresenta dores de cabeça frequentes?'},
+      {nome:'Diarreia', freq:'Comum (1–10%)', grav:'leve',
+       q:'Tem episódios de diarreia ou fezes amolecidas?'},
+      {nome:'Deficiência de Mg²⁺ / Hipomagnesemia', freq:'Raro — uso prolongado ≥1 ano', grav:'moderada',
+       q:'Apresenta cãibras musculares, arritmias, fraqueza ou tremores?'},
+      {nome:'Deficiência de B12 / Ferro', freq:'Raro — uso prolongado', grav:'moderada',
+       q:'Tem cansaço, fraqueza ou palidez incomuns?'},
+      {nome:'C. difficile / Pneumonia aspirativa', freq:'Raro', grav:'grave',
+       q:'Apresenta diarreia aquosa e fétida persistente ou infecções respiratórias frequentes?'},
+    ]
+  },
+  {
+    pattern: /levotiroxina|tiroxina|T4/i, grupo:'Hormônio Tireoidiano',
+    rams:[
+      {nome:'Taquicardia / Palpitações', freq:'Dose-dependente', grav:'moderada',
+       q:'Apresenta batimentos cardíacos acelerados ou sensação de coração disparado?'},
+      {nome:'Ansiedade / Insônia', freq:'Dose-dependente', grav:'leve',
+       q:'Apresenta nervosismo, agitação ou dificuldade para dormir?'},
+      {nome:'Sudorese excessiva / Intolerância ao calor', freq:'Dose-dependente', grav:'leve',
+       q:'Sente muito calor, suda excessivamente ou tem intolerância ao ambiente quente?'},
+      {nome:'Perda de peso involuntária', freq:'Dose-dependente', grav:'moderada',
+       q:'Perdeu peso sem explicação aparente?'},
+      {nome:'Tremor', freq:'Dose-dependente', grav:'moderada',
+       q:'Apresenta tremor nas mãos ou corpo?'},
+    ]
+  },
+  {
+    pattern: /furosemida|lasix|bumetanida/i, grupo:'Diurético de Alça',
+    rams:[
+      {nome:'Hipocalemia', freq:'Muito comum (>10%)', grav:'grave',
+       q:'Apresenta fraqueza muscular intensa, cãibras, palpitações ou fadiga?'},
+      {nome:'Desidratação / Hipotensão', freq:'Comum (1–10%)', grav:'moderada',
+       q:'Sente tontura, boca seca, sede intensa ou pressão baixa?'},
+      {nome:'Hiperuricemia / Gota', freq:'Comum (1–10%)', grav:'moderada',
+       q:'Tem episódios de dor articular intensa, especialmente no dedão do pé?'},
+      {nome:'Hiperglicemia', freq:'Incomum', grav:'moderada',
+       q:'Em caso de diabetes: percebeu piora do controle glicêmico?'},
+      {nome:'Ototoxicidade', freq:'Raro — altas doses/IV', grav:'grave',
+       q:'Apresenta zumbido no ouvido ou piora da audição?'},
+    ]
+  },
+  {
+    pattern: /espironolactona|aldactone/i, grupo:'Antagonista da Aldosterona',
+    rams:[
+      {nome:'Hipercalemia', freq:'Comum (1–10%)', grav:'grave',
+       q:'Sente fraqueza muscular, palpitações ou dormência nos membros?'},
+      {nome:'Ginecomastia', freq:'Comum em homens', grav:'moderada',
+       q:'(Homens) Apresenta crescimento ou dor nas mamas?'},
+      {nome:'Irregularidade menstrual', freq:'Comum em mulheres', grav:'moderada',
+       q:'(Mulheres) Tem alterações no ciclo menstrual desde o início do medicamento?'},
+      {nome:'Tontura / Hipotensão', freq:'Comum (1–10%)', grav:'leve',
+       q:'Apresenta tontura, especialmente ao se levantar?'},
+    ]
+  },
+  {
+    pattern: /varfarina|warfarina|coumadin/i, grupo:'Anticoagulante Vitamina K',
+    rams:[
+      {nome:'Sangramento (qualquer sítio)', freq:'Comum — dose-dependente', grav:'grave',
+       q:'Apresenta sangramento incomum: urina com sangue, fezes escuras/avermelhadas, sangramento gengival, nascer, hematomas fáceis?'},
+      {nome:'Hemorragia intracraniana', freq:'Raro — emergência', grav:'grave',
+       q:'Já teve cefaleia súbita e intensa, confusão mental ou fraqueza em um lado do corpo?'},
+      {nome:'Necrose cutânea', freq:'Raro — primeiros dias', grav:'grave',
+       q:'No início do tratamento: apresentou área de pele com escurecimento, dor ou necrose?'},
+      {nome:'Interação alimentar (vitamina K)', freq:'Muito comum', grav:'moderada',
+       q:'Variou o consumo de alimentos verdes (couve, brócolis, espinafre) recentemente?'},
+    ]
+  },
+  {
+    pattern: /rivaroxabana|apixabana|dabigatrana|edoxabana|xarelto|eliquis/i, grupo:'Anticoagulante Oral Direto (AOD)',
+    rams:[
+      {nome:'Sangramento gastrointestinal', freq:'Comum (1–10%)', grav:'grave',
+       q:'Apresenta fezes escuras, avermelhadas, dor abdominal ou vômito com sangue?'},
+      {nome:'Sangramento geniturinário', freq:'Comum (1–10%)', grav:'moderada',
+       q:'Percebeu sangue na urina?'},
+      {nome:'Hematomas ou equimoses', freq:'Comum (1–10%)', grav:'leve',
+       q:'Apresenta hematomas (manchas roxas) com facilidade?'},
+      {nome:'Náusea (dabigatrana)', freq:'Comum — dabigatrana', grav:'leve',
+       q:'(Dabigatrana) Apresenta náusea ou dispepsia após tomar o medicamento?'},
+    ]
+  },
+  {
+    pattern: /prednisona|prednisolona|dexametasona|betametasona|hidrocortisona|corticoide|corticosteroid/i, grupo:'Corticosteroide',
+    rams:[
+      {nome:'Hiperglicemia', freq:'Muito comum (>10%)', grav:'grave',
+       q:'Percebeu aumento da sede, volume de urina ou nível de glicemia?'},
+      {nome:'Ganho de peso / Síndrome Cushing', freq:'Comum — uso prolongado', grav:'moderada',
+       q:'Apresenta ganho de peso, acúmulo de gordura na barriga/face (face de lua)?'},
+      {nome:'Hipertensão arterial', freq:'Comum (1–10%)', grav:'moderada',
+       q:'Apresentou elevação da pressão arterial desde o início do corticoide?'},
+      {nome:'Osteoporose', freq:'Comum — uso prolongado', grav:'moderada',
+       q:'(Uso prolongado >3 meses) Já fez densitometria óssea? Tem dor óssea ou histórico de fraturas?'},
+      {nome:'Supressão adrenal', freq:'Com desmame abrupto', grav:'grave',
+       q:'Está desmamando o corticoide? Apresenta fraqueza intensa, tontura, náusea ou pressão muito baixa?'},
+      {nome:'Infecções oportunistas', freq:'Comum — imunossupressão', grav:'grave',
+       q:'Apresenta infecções frequentes, febre recorrente ou infecção por fungo?'},
+    ]
+  },
+  {
+    pattern: /diazepam|alprazolam|clonazepam|lorazepam|bromazepam|midazolam|benzo/i, grupo:'Benzodiazepínico',
+    rams:[
+      {nome:'Sedação excessiva', freq:'Muito comum (>10%)', grav:'moderada',
+       q:'Apresenta sonolência excessiva durante o dia ou dificuldade para se concentrar?'},
+      {nome:'Comprometimento cognitivo', freq:'Comum — uso crônico/idosos', grav:'grave',
+       q:'Apresenta lapsos de memória, confusão mental ou dificuldade de raciocínio?'},
+      {nome:'Dependência / Síndrome de abstinência', freq:'Muito comum — uso >4 semanas', grav:'grave',
+       q:'Tentou reduzir ou parar o medicamento? Apresenta ansiedade intensa, tremores ou insônia rebote?'},
+      {nome:'Quedas em idosos', freq:'Comum (≥60 anos)', grav:'grave',
+       q:'(Idosos) Apresenta tontura, instabilidade ao caminhar ou já caiu?'},
+      {nome:'Depressão respiratória', freq:'Raro — doses altas/álcool', grav:'grave',
+       q:'Alguém relatou que você para de respirar durante o sono ou ronca muito?'},
+    ]
+  },
+  {
+    pattern: /amitriptilina|imipramina|clomipramina|nortriptilina|tricíclico|TCA/i, grupo:'Antidepressivo Tricíclico',
+    rams:[
+      {nome:'Boca seca', freq:'Muito comum (>10%)', grav:'leve',
+       q:'Apresenta boca seca ou sede constante?'},
+      {nome:'Constipação intestinal', freq:'Muito comum (>10%)', grav:'leve',
+       q:'Tem prisão de ventre, evacuação difícil ou redução do trânsito intestinal?'},
+      {nome:'Sonolência', freq:'Muito comum (>10%)', grav:'leve',
+       q:'Apresenta sonolência excessiva ou dificuldade de concentração?'},
+      {nome:'Retenção urinária', freq:'Comum (1–5%) — homens idosos', grav:'moderada',
+       q:'Tem dificuldade para urinar, jato fraco ou sensação de esvaziamento incompleto?'},
+      {nome:'Hipotensão ortostática', freq:'Comum (1–10%)', grav:'grave',
+       q:'Apresenta tontura ao se levantar rapidamente?'},
+      {nome:'Prolongamento QT / Arritmia', freq:'Raro', grav:'grave',
+       q:'Apresenta palpitações, síncope ou sensação de coração irregular?'},
+    ]
+  },
+  {
+    pattern: /haloperidol|risperidona|olanzapina|quetiapina|ziprasidona|clozapina|antipsicótico/i, grupo:'Antipsicótico',
+    rams:[
+      {nome:'Efeitos extrapiramidais', freq:'Comum — haloperidol', grav:'moderada',
+       q:'Apresenta tremores, rigidez muscular, movimentos lentos ou inquietação (acatisia)?'},
+      {nome:'Discinesia tardia', freq:'Uso prolongado', grav:'grave',
+       q:'Apresenta movimentos involuntários da boca, língua ou extremidades?'},
+      {nome:'Síndrome metabólica', freq:'Comum — olanzapina/quetiapina', grav:'moderada',
+       q:'Apresenta ganho de peso, aumento de triglicerídeos ou piora glicêmica?'},
+      {nome:'Hipotensão ortostática', freq:'Comum (1–10%)', grav:'moderada',
+       q:'Apresenta tontura ao se levantar?'},
+      {nome:'Sedação excessiva', freq:'Muito comum (>10%)', grav:'moderada',
+       q:'Tem sonolência diurna excessiva que interfere nas atividades?'},
+    ]
+  },
+  {
+    pattern: /ibuprofeno|naproxeno|diclofenaco|meloxicam|celecoxibe|piroxicam|AINE|anti.inflamat/i, grupo:'AINE',
+    rams:[
+      {nome:'Gastrite / Úlcera péptica', freq:'Muito comum (>10%)', grav:'grave',
+       q:'Apresenta dor ou queimação no estômago, azia ou náusea?'},
+      {nome:'Sangramento gastrointestinal', freq:'Comum (1–10%)', grav:'grave',
+       q:'Tem fezes escuras ou avermelhadas ou vômito com sangue?'},
+      {nome:'Retenção de sódio / Hipertensão', freq:'Comum (1–10%)', grav:'moderada',
+       q:'Apresentou aumento da pressão arterial ou inchaço nos pés e tornozelos?'},
+      {nome:'Deterioração renal', freq:'Comum — idosos/DRC', grav:'grave',
+       q:'(Idosos ou DRC) Apresenta piora da creatinina, redução de urina ou inchaço?'},
+      {nome:'Hipersensibilidade / Broncoespasmo', freq:'Incomum', grav:'grave',
+       q:'Tem asma ou apresentou falta de ar ou urticária ao usar o medicamento?'},
+    ]
+  },
+  {
+    pattern: /glibenclamida|gliclazida|glimepirida|glipizida|sulfonilureia/i, grupo:'Sulfonilureia',
+    rams:[
+      {nome:'Hipoglicemia', freq:'Muito comum (>10%)', grav:'grave',
+       q:'Apresenta episódios de fraqueza, suor frio, tremores, fome súbita ou confusão mental?'},
+      {nome:'Ganho de peso', freq:'Comum (1–10%)', grav:'leve',
+       q:'Apresentou ganho de peso desde o início do medicamento?'},
+      {nome:'Hipoglicemia noturna', freq:'Comum — idosos', grav:'grave',
+       q:'Acorda à noite com suor, tremores ou confusão? Tem medo de hipoglicemia noturna?'},
+    ]
+  },
+  {
+    pattern: /insulina|insulin/i, grupo:'Insulina',
+    rams:[
+      {nome:'Hipoglicemia', freq:'Muito comum (>10%)', grav:'grave',
+       q:'Apresenta episódios de tremor, suor frio, fraqueza, confusão ou desmaio?'},
+      {nome:'Lipodistrofia no sítio de aplicação', freq:'Comum — mesmos locais', grav:'leve',
+       q:'Apresenta nódulos, engrossamento ou afundamento na pele no local das aplicações?'},
+      {nome:'Edema insulínico', freq:'Início de tratamento', grav:'leve',
+       q:'Apresentou inchaço nos pés ou pernas no início do tratamento com insulina?'},
+      {nome:'Ganho de peso', freq:'Muito comum', grav:'leve',
+       q:'Apresentou ganho de peso desde o início da insulina?'},
+    ]
+  },
+  {
+    pattern: /digoxina|digoxin/i, grupo:'Glicosídeo Cardíaco',
+    rams:[
+      {nome:'Náusea / Vômito / Anorexia', freq:'Comum — intoxicação', grav:'grave',
+       q:'Apresenta náusea, vômito, falta de apetite ou dor abdominal?'},
+      {nome:'Distúrbios visuais (xantopsia)', freq:'Intoxicação', grav:'grave',
+       q:'Apresenta visão amarelada/esverdeada, halos ao redor de luz ou visão turva?'},
+      {nome:'Bradiarritmia', freq:'Dose-dependente', grav:'grave',
+       q:'Sente batimentos cardíacos lentos, irregular ou palpitações?'},
+      {nome:'Confusão mental', freq:'Idosos com intoxicação', grav:'grave',
+       q:'(Idosos) Apresenta confusão mental, sonolência excessiva ou alteração de comportamento?'},
+    ]
+  },
+  {
+    pattern: /amiodarona/i, grupo:'Antiarrítmico (Amiodarona)',
+    rams:[
+      {nome:'Hipotiroidismo / Hipertiroidismo', freq:'Comum (5–20%)', grav:'grave',
+       q:'Apresenta cansaço incomum, ganho/perda de peso, frio/calor excessivo ou alteração de TSH?'},
+      {nome:'Toxicidade pulmonar', freq:'Incomum (1–5%)', grav:'grave',
+       q:'Apresenta tosse seca progressiva, falta de ar ou febre de baixo grau?'},
+      {nome:'Fotossensibilidade / Pigmentação cutânea', freq:'Comum — uso prolongado', grav:'leve',
+       q:'Apresenta queimação solar com exposição mínima ou coloração azul-acinzentada da pele?'},
+      {nome:'Toxicidade hepática', freq:'Incomum', grav:'grave',
+       q:'Tem icterícia, urina escura, fadiga intensa ou dor no hipocôndrio direito?'},
+      {nome:'Neurotoxicidade', freq:'Uso prolongado', grav:'moderada',
+       q:'Apresenta tremores, ataxia (dificuldade de caminhar) ou neuropatia periférica?'},
+    ]
+  },
+  {
+    pattern: /metotrexato|methotrexate/i, grupo:'Metotrexato',
+    rams:[
+      {nome:'Mucosite / Úlcera oral', freq:'Comum (1–10%)', grav:'moderada',
+       q:'Apresenta aftas, feridas na boca ou dor ao engolir?'},
+      {nome:'Toxicidade hepática', freq:'Uso prolongado', grav:'grave',
+       q:'Apresenta elevação de transaminases, fadiga ou icterícia?'},
+      {nome:'Mielossupressão', freq:'Incomum — mas grave', grav:'grave',
+       q:'Apresenta infecções frequentes, febre, palidez intensa ou sangramento incomum?'},
+      {nome:'Náusea / Vômito', freq:'Muito comum (>10%)', grav:'leve',
+       q:'Apresenta náusea ou vômito após a dose semanal?'},
+      {nome:'Toxicidade pulmonar', freq:'Raro', grav:'grave',
+       q:'Apresenta tosse seca ou falta de ar progressiva?'},
+    ]
+  },
+];
+
+let _meds=[], _resps={}, _pid=null;
+
+function matchRAM(med){
+  const nome=(med.nome||med.medicamento||'').toLowerCase();
+  const princ=(med.principioAtivo||'').toLowerCase();
+  const str=nome+' '+princ;
+  const matches=[];
+  RAM_DB.forEach(db=>{
+    if(db.pattern.test(str)) matches.push({...db});
+  });
+  return matches;
+}
+
+async function init(){
+  _pid=parseInt(document.getElementById('sel-pac').value)||null;
+  if(!_pid){document.getElementById('conteudo').innerHTML='';return;}
+  _meds=(await dbGetByIndex('medicamentos','pacienteId',_pid)||[]).filter(m=>m.ativo!==false&&m.ativo!==0);
+  const saved=await dbGetConfig('fvig_ativa_'+_pid)||{};
+  _resps=saved.resps||{};
+  render();
+}
+
+function render(){
+  if(!_meds.length){
+    document.getElementById('conteudo').innerHTML=`<div class="sem-med">Nenhum medicamento ativo cadastrado para este paciente.<br>Cadastre medicamentos em <a href="cadastro.html">Cadastro de Medicamentos</a>.</div>`;
+    return;
+  }
+
+  // Calcula stats
+  let totalRAM=0,detectadas=0,avaliados=0;
+  const medRams=_meds.map(m=>{
+    const matches=matchRAM(m);
+    const allRams=matches.flatMap(db=>db.rams);
+    const mResps=_resps[m.id]||{};
+    const positivos=allRams.filter((_,i)=>mResps[i]==='sim').length;
+    const respondidos=allRams.filter((_,i)=>mResps[i]!=null).length;
+    if(allRams.length) avaliados++;
+    totalRAM+=allRams.length;
+    detectadas+=positivos;
+    return {med:m,matches,allRams,positivos,respondidos};
+  });
+
+  const status=mr=>{
+    if(!mr.allRams.length) return {lbl:'Sem DB',cls:'badge-nd'};
+    if(!mr.respondidos) return {lbl:'Pendente',cls:'badge-pend'};
+    if(mr.positivos>0) return {lbl:mr.positivos+' RAM(s)',cls:'badge-ram'};
+    return {lbl:'Sem RAMs',cls:'badge-ok'};
+  };
+  const headerCls=mr=>{
+    if(!mr.respondidos) return '';
+    if(mr.positivos>0) return 'tem-ram';
+    if(mr.respondidos===mr.allRams.length&&!mr.positivos) return 'limpo';
+    return 'parcial';
+  };
+
+  let html=`<div class="sum-bar">
+    <div class="sum-item"><div class="sum-n" style="color:#1e3a5f">${_meds.length}</div><div class="sum-lbl">Medicamentos</div></div>
+    <div class="sum-item"><div class="sum-n" style="color:#7c2d12">${detectadas}</div><div class="sum-lbl">RAMs detectadas</div></div>
+    <div class="sum-item"><div class="sum-n" style="color:#0369a1">${avaliados}</div><div class="sum-lbl">Com base de dados</div></div>
+    <div class="sum-item"><div class="sum-n" style="color:#64748b">${totalRAM}</div><div class="sum-lbl">Perguntas</div></div>
+  </div>`;
+
+  medRams.forEach((mr,mi)=>{
+    const s=status(mr); const hCls=headerCls(mr);
+    html+=`<div class="med-card">
+      <div class="med-header ${hCls}" onclick="toggle(${mi})">
+        <div>
+          <div class="med-nome">${esc(mr.med.nome||mr.med.medicamento||'Medicamento '+mr.med.id)}</div>
+          <div class="med-dose">${esc(mr.med.dose||'')} ${esc(mr.med.frequencia||'')}</div>
+        </div>
+        <span class="med-badge ${s.cls}">${s.lbl}</span>
+        <span class="expand-icon" id="ico-${mi}">▼</span>
+      </div>
+      <div class="med-body collapsed" id="body-${mi}">`;
+
+    if(!mr.allRams.length){
+      html+=`<div style="padding:10px 0;font-size:.74rem;color:#94a3b8">Medicamento não encontrado na base de dados de RAMs. Realize investigação manual.</div>`;
+    } else {
+      html+=`<div class="ram-intro">
+        🔍 Pergunte ao paciente sobre os efeitos adversos mais comuns de <strong>${esc(mr.matches.map(m=>m.grupo).join(', '))}</strong>:
+      </div>`;
+      let idx=0;
+      mr.matches.forEach(db=>{
+        db.rams.forEach(ram=>{
+          const gIdx=idx; idx++;
+          const rspKey=gIdx;
+          const rsp=(_resps[mr.med.id]||{})[rspKey];
+          const gravCor=ram.grav==='grave'?'#dc2626':ram.grav==='moderada'?'#f97316':'#64748b';
+          html+=`<div class="ram-item ${rsp||''}" id="ri-${mi}-${gIdx}">
+            <div class="ram-nome">${esc(ram.nome)} <span style="font-size:.62rem;color:${gravCor};font-weight:700;border:1px solid ${gravCor};padding:1px 5px;border-radius:4px">${ram.grav}</span></div>
+            <div class="ram-freq">${esc(ram.freq)}</div>
+            <div class="ram-quest">"${esc(ram.q)}"</div>
+            <div class="ram-btns">
+              <div class="ram-btn ${rsp==='sim'?'sel-sim':''}" onclick="setRAM(${mi},'${mr.med.id}',${gIdx},'sim',this,'${esc(ram.nome)}')">✅ Não apresenta</div>
+              <div class="ram-btn ${rsp==='nao'?'sel-nao':''}" onclick="setRAM(${mi},'${mr.med.id}',${gIdx},'nao',this,'${esc(ram.nome)}')">❌ Sim, apresenta</div>
+            </div>
+            <div class="ram-detail ${rsp==='sim'?'show':''}" id="det-${mi}-${gIdx}">
+              <select id="grav-${mi}-${gIdx}">
+                <option value="">Gravidade da RAM observada...</option>
+                <option value="Leve" ${(_resps[mr.med.id]||{})[gIdx+'_grav']==='Leve'?'selected':''}>Leve — não interfere nas atividades</option>
+                <option value="Moderada" ${(_resps[mr.med.id]||{})[gIdx+'_grav']==='Moderada'?'selected':''}>Moderada — interfere parcialmente</option>
+                <option value="Grave" ${(_resps[mr.med.id]||{})[gIdx+'_grav']==='Grave'?'selected':''}>Grave — impede atividades / requer intervenção</option>
+              </select>
+              <textarea id="obs-${mi}-${gIdx}" placeholder="Descreva o que o paciente relatou...">${(_resps[mr.med.id]||{})[gIdx+'_obs']||''}</textarea>
+              <button class="naranjo-btn" onclick="irNaranjo('${esc(mr.med.nome||mr.med.medicamento||'')}','${esc(ram.nome)}')">⚖️ Calcular Naranjo para esta RAM</button>
+            </div>
+          </div>`;
+        });
+      });
+    }
+    html+=`</div></div>`;
+  });
+
+  html+=`<div class="ref-box">
+    <strong>Sobre a Farmacovigilância Ativa:</strong><br>
+    A busca ativa de RAMs por questionamento sistemático detecta 5–10× mais reações do que a notificação espontânea.<br>
+    RAMs detectadas devem ser avaliadas pelo algoritmo de Naranjo para causalidade e notificadas via NOTIVISA (ANVISA).<br><br>
+    World Health Organization. <em>The importance of pharmacovigilance</em>. WHO, 2002.<br>
+    ANVISA. Nota Técnica GFARM/DIRE4/ANVISA nº 01/2019 — Farmacovigilância ativa em farmácias.
+  </div>`;
+
+  document.getElementById('conteudo').innerHTML=html;
+}
+
+function toggle(mi){
+  const body=document.getElementById('body-'+mi);
+  const ico=document.getElementById('ico-'+mi);
+  body.classList.toggle('collapsed');
+  ico.textContent=body.classList.contains('collapsed')?'▼':'▲';
+}
+
+function setRAM(mi,medId,idx,val,btn,nomeRAM){
+  if(!_resps[medId]) _resps[medId]={};
+  _resps[medId][idx]=val==='nao'?'sim':'nao'; // sim=apresenta, nao=não apresenta
+  // Nota: botão "Sim apresenta" = RAM = 'sim'; "Não apresenta" = 'nao'
+  // Invertemos para botão visual correto
+  // Recarrega elemento
+  const riEl=document.getElementById('ri-'+mi+'-'+idx);
+  const detEl=document.getElementById('det-'+mi+'-'+idx);
+  const ramVal=_resps[medId][idx];
+  riEl.className='ram-item '+(ramVal==='sim'?'sim':ramVal==='nao'?'nao':'');
+  btn.closest('.ram-btns').querySelectorAll('.ram-btn').forEach(b=>{b.className='ram-btn';});
+  if(val==='nao'){// Usuário clicou "sim apresenta"
+    _resps[medId][idx]='sim';
+    btn.className='ram-btn sel-sim';
+    riEl.className='ram-item sim';
+    if(detEl) detEl.className='ram-detail show';
+  } else {// Usuário clicou "não apresenta"
+    _resps[medId][idx]='nao';
+    btn.className='ram-btn sel-nao';
+    riEl.className='ram-item nao';
+    if(detEl) detEl.className='ram-detail';
+  }
+  // Atualiza badge no header
+  renderBadge(mi);
+}
+
+function renderBadge(mi){
+  // Recalcula a badge do med card
+  // (simplificado — full re-render seria ideal mas mantemos perf)
+  const header=document.querySelector(`#body-${mi}`).previousElementSibling;
+  const medId=_meds[mi]?.id;
+  if(!medId||!header)return;
+  const mr_resps=_resps[medId]||{};
+  const positivos=Object.values(mr_resps).filter(v=>v==='sim').length;
+  const badge=header.querySelector('.med-badge');
+  if(!badge)return;
+  if(positivos>0){badge.className='med-badge badge-ram';badge.textContent=positivos+' RAM(s)';header.className='med-header tem-ram';}
+  else{badge.className='med-badge badge-ok';badge.textContent='Sem RAMs';header.className='med-header limpo';}
+}
+
+function irNaranjo(med,ram){
+  const url='naranjo.html?med='+encodeURIComponent(med)+'&ram='+encodeURIComponent(ram);
+  setActivePacienteId(_pid);
+  location.href=url;
+}
+
+function setActivePacienteId(pid){if(pid)localStorage.setItem('vd_active',pid);}
+
+async function salvarTudo(){
+  if(!_pid){showToast('Selecione um paciente');return;}
+  // Coleta obs e grav dos textareas/selects
+  document.querySelectorAll('[id^="obs-"]').forEach(el=>{
+    const [,mi,gi]=el.id.split('-');
+    const medId=_meds[parseInt(mi)]?.id;
+    if(medId){if(!_resps[medId])_resps[medId]={};_resps[medId][gi+'_obs']=el.value;}
+  });
+  document.querySelectorAll('[id^="grav-"]').forEach(el=>{
+    const [,mi,gi]=el.id.split('-');
+    const medId=_meds[parseInt(mi)]?.id;
+    if(medId){if(!_resps[medId])_resps[medId]={};_resps[medId][gi+'_grav']=el.value;}
+  });
+  const totalPos=Object.values(_resps).flatMap(r=>Object.entries(r).filter(([k,v])=>!k.includes('_')&&v==='sim')).length;
+  await dbSetConfig('fvig_ativa_'+_pid,{resps:{..._resps},data:hoje(),totalPositivos:totalPos});
+  showToast(`✅ Salvo — ${totalPos} RAM(s) detectada(s)`);
+}
+
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/'/g,'&#39;')}
+
+document.addEventListener('DOMContentLoaded',async()=>{
+  const pacs=await dbGetAll('pacientes');
+  const sel=document.getElementById('sel-pac');
+  sel.innerHTML='<option value="">Selecione o paciente...</option>'+pacs.map(p=>`<option value="${p.id}">${esc(p.nome||'Paciente '+p.id)}</option>`).join('');
+  const pid=getActivePacienteId();
+  if(pid){sel.value=pid;await init();}
+});
+</script>
+</body>
+</html>
