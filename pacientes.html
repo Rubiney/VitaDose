@@ -36,8 +36,8 @@
     .stat-lbl  { font-size:.6rem;font-weight:700;color:#94a3b8;text-transform:uppercase }
 
     /* Ações */
-    .pac-actions { display:flex;gap:0;border-top:1px solid #f1f5f9 }
-    .pac-btn { flex:1;background:none;border:none;border-right:1px solid #f1f5f9;padding:10px;font-size:.7rem;font-weight:700;color:#6366f1;cursor:pointer }
+    .pac-actions { display:flex;gap:0;border-top:1px solid #f1f5f9;overflow-x:auto }
+    .pac-btn { flex:1;background:none;border:none;border-right:1px solid #f1f5f9;padding:9px 6px;font-size:.68rem;font-weight:700;color:#6366f1;cursor:pointer;white-space:nowrap;min-width:60px }
     .pac-btn:last-child { border-right:none }
     .pac-btn.danger { color:#ef4444 }
     .pac-btn:hover { background:#f8fafc }
@@ -222,8 +222,9 @@ function cardHTML(p) {
       <button class="pac-btn" onclick="ativar(${p.id})">
         ${isAtivo ? '✓ Ativo' : '⟳ Selecionar'}
       </button>
-      <button class="pac-btn" onclick="abrirPerfil(${p.id})">👤 Perfil</button>
-      <button class="pac-btn" onclick="abrirMeds(${p.id})">💊 Meds</button>
+      <button class="pac-btn" onclick="abrirDashboard(${p.id})">📊 Dashboard</button>
+      <button class="pac-btn" onclick="abrirSFT(${p.id})">📋 SFT</button>
+      <button class="pac-btn" onclick="abrirCarta(${p.id})">✉️ Carta</button>
       <button class="pac-btn danger" onclick="confirmarExcluir(${p.id})">🗑</button>
     </div>
   </div>`;
@@ -236,14 +237,19 @@ function ativar(pid) {
   renderList();
 }
 
-function abrirPerfil(pid) {
-  if (pid !== _activePid) { ativar(pid); }
-  window.location.href = 'perfil.html';
+function abrirDashboard(pid) {
+  if (pid !== _activePid) { setActivePacienteId(pid); _activePid = pid; }
+  window.location.href = 'dashboard.html';
 }
 
-function abrirMeds(pid) {
-  if (pid !== _activePid) { ativar(pid); }
-  window.location.href = 'index.html';
+function abrirSFT(pid) {
+  if (pid !== _activePid) { setActivePacienteId(pid); _activePid = pid; }
+  window.location.href = 'relatorio-sft.html';
+}
+
+function abrirCarta(pid) {
+  if (pid !== _activePid) { setActivePacienteId(pid); _activePid = pid; }
+  window.location.href = 'carta-paciente.html';
 }
 
 function novoPaciente() {

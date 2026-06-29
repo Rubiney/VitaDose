@@ -75,6 +75,7 @@
 <script src="js/marcas.js"></script>
 <script src="js/alimento.js"></script>
 <script src="js/interacoes.js"></script>
+<script src="js/beers.js"></script>
 
 <script>
 
@@ -173,6 +174,34 @@ const _INDICACOES = {
   'montelucaste':   'Para controlar a asma e rinite alérgica',
 };
 
+/* ─── Sinais de alerta por medicamento ───────────────── */
+const _SINAIS = {
+  'varfarina':      ['Sangramento incomum (gengiva, nariz, urina escura)', 'Fezes escuras ou com sangue', 'Hematomas grandes sem causa'],
+  'warfarina':      ['Sangramento incomum (gengiva, nariz, urina escura)', 'Fezes escuras ou com sangue', 'Hematomas grandes sem causa'],
+  'rivaroxabana':   ['Sangramento incomum', 'Hematomas grandes', 'Tosse ou vômito com sangue'],
+  'apixabana':      ['Sangramento incomum', 'Hematomas grandes', 'Tosse ou vômito com sangue'],
+  'metformina':     ['Náusea intensa, vômito, fraqueza extrema (pode indicar acidose láctica — urgência)'],
+  'insulina':       ['Tremor, suor frio, confusão, tontura (hipoglicemia — coma açúcar)', 'Sede intensa, urinação frequente, cansaço (hiperglicemia)'],
+  'glibenclamida':  ['Tremor, suor frio, confusão (hipoglicemia — coma açúcar imediatamente)'],
+  'gliclazida':     ['Tremor, suor frio, tontura (hipoglicemia — coma açúcar imediatamente)'],
+  'digoxina':       ['Tontura, visão amarelada ou dupla', 'Náusea, vômito, batimentos lentos ou irregulares'],
+  'amiodarona':     ['Falta de ar progressiva', 'Visão turva, sensibilidade à luz', 'Inchaço nas pernas'],
+  'enalapril':      ['Tosse seca persistente (pode ser efeito do remédio)', 'Inchaço no rosto, lábios ou língua (angioedema — urgência)'],
+  'losartana':      ['Tontura forte ao levantar', 'Inchaço no rosto ou lábios (angioedema — urgência)'],
+  'captopril':      ['Tosse seca persistente', 'Inchaço no rosto ou lábios (angioedema — urgência)'],
+  'espironolactona':['Fraqueza muscular, coração acelerado (potássio alto)', 'Dor no peito'],
+  'furosemida':     ['Cãibras, fraqueza, batimentos irregulares (potássio baixo)', 'Tontura ao levantar'],
+  'carvedilol':     ['Tontura, pressão muito baixa', 'Cansaço extremo, falta de ar piorando'],
+  'atenolol':       ['Batimentos muito lentos (<50 bpm)', 'Tontura forte, desmaio'],
+  'clonazepam':     ['Confusão, desorientação excessiva', 'Dificuldade para respirar'],
+  'alprazolam':     ['Confusão, desorientação excessiva', 'Dificuldade para respirar'],
+  'quetiapina':     ['Rigidez muscular, febre alta (síndrome neuroléptica — urgência)', 'Batimentos muito rápidos'],
+  'levotiroxina':   ['Palpitações, sudorese excessiva, mãos trêmulas (dose alta)', 'Inchaço, cansaço piora (dose baixa)'],
+  'tramadol':       ['Confusão, respiração lenta (overdose — urgência)', 'Convulsão'],
+  'morfina':        ['Respiração muito lenta ou superficial (urgência)', 'Confusão extrema, lábios arroxeados'],
+  'alendronato':    ['Dor intensa ao engolir', 'Dor no peito, azia grave (não deitou após tomar)'],
+};
+
 /* ─── Avisos de uso em linguagem simples ──────────────── */
 const _AVISOS = {
   'varfarina':    ['🍏 Mantenha a mesma quantidade de verduras verdes na dieta', '🚫 Evite álcool', '⚠️ Qualquer sangramento incomum: procure o médico'],
@@ -219,13 +248,30 @@ async function init() {
     ? verificarAlimentoFarma(meds).filter(a => a.risco === 'grave')
     : [];
 
-  renderCarta(pac, meds, alimentoAlertas);
+  /* Interações DDI graves */
+  const ddiAlertas = (typeof gerarAlertas === 'function' && meds.length)
+    ? gerarAlertas(meds).filter(a => a.nivel === 'grave')
+    : [];
+
+  /* Critério de Beers (paciente idoso) */
+  const beersFlags = [];
+  if (typeof buscarBeers === 'function' && typeof pacienteIdoso === 'function' && pacienteIdoso(pac)) {
+    meds.forEach(m => {
+      const b = buscarBeers(m.nome);
+      if (b) beersFlags.push({ med: m.nome, obs: b.motivo || b.obs || '' });
+    });
+  }
+
+  /* Farmacêutico salvo */
+  const farmCfg = (await dbGetConfig('farmaceutico_cfg')) || {};
+
+  renderCarta(pac, meds, alimentoAlertas, ddiAlertas, beersFlags, farmCfg);
 
   if (navigator.share) document.getElementById('btn-share').style.display = '';
 }
 
 /* ─── Render ──────────────────────────────────────────── */
-function renderCarta(pac, meds, alimentoAlertas) {
+function renderCarta(pac, meds, alimentoAlertas, ddiAlertas = [], beersFlags = [], farmCfg = {}) {
   const norm = s => (s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
   const dataEmissao = new Date().toLocaleDateString('pt-BR', { day:'2-digit', month:'long', year:'numeric' });
 
@@ -243,6 +289,13 @@ function renderCarta(pac, meds, alimentoAlertas) {
     }
     return [];
   };
+  const getSinais = nome => {
+    const n = norm(nome);
+    for (const [k,v] of Object.entries(_SINAIS)) {
+      if (n.includes(k)) return v;
+    }
+    return [];
+  };
 
   const app = document.getElementById('app');
 
@@ -255,6 +308,7 @@ function renderCarta(pac, meds, alimentoAlertas) {
     const marcas    = (typeof buscarMarcas === 'function') ? buscarMarcas(m.nome) : [];
     const indicacao = getIndicacao(m.nome) || m.indicacao || null;
     const avisos    = getAvisos(m.nome);
+    const sinais    = getSinais(m.nome);
     const horarios  = m.horarios || [];
 
     return `
@@ -282,6 +336,12 @@ function renderCarta(pac, meds, alimentoAlertas) {
         ${avisos.map(a => `<div class="aviso"><span class="aviso-icon">${a[0]}</span><span class="aviso-txt">${a.slice(2)}</span></div>`).join('')}
         ${m.observacao ? `<div class="aviso"><span class="aviso-icon">📝</span><span class="aviso-txt">${m.observacao}</span></div>` : ''}
       </div>` : ''}
+
+      ${sinais.length ? `
+      <div style="padding:10px 16px 12px;background:#fff5f5;border-top:1px solid #fee2e2">
+        <p style="font-size:.7rem;font-weight:800;color:#dc2626;margin-bottom:6px;letter-spacing:.04em">🚨 PROCURE O MÉDICO SE APRESENTAR:</p>
+        ${sinais.map(s => `<div class="aviso"><span class="aviso-icon">⚠️</span><span class="aviso-txt" style="color:#991b1b">${s}</span></div>`).join('')}
+      </div>` : ''}
     </div>`;
   }).join('');
 
@@ -303,11 +363,24 @@ function renderCarta(pac, meds, alimentoAlertas) {
       ${alimentoAlertas.map(a => `<br>• <strong>${a.alimento}</strong>: ${a.conduta}`).join('')}
     </div>` : ''}
 
+    ${ddiAlertas.length ? `
+    <div class="alert-geral" style="background:#fee2e2;border-color:#dc2626;color:#7f1d1d">
+      ⚠️ <strong>Combinações a observar:</strong>
+      ${ddiAlertas.map(a => `<br>• <strong>${a.titulo}</strong>: ${(a.desc||'').slice(0,100)}`).join('')}
+    </div>` : ''}
+
+    ${beersFlags.length ? `
+    <div class="alert-geral" style="background:#fefce8;border-color:#ca8a04;color:#78350f">
+      🟡 <strong>Atenção especial (paciente idoso):</strong>
+      ${beersFlags.map(b => `<br>• <strong>${b.med}</strong>: ${b.obs.slice(0,100)}`).join('')}
+    </div>` : ''}
+
     <p class="sec-title">Seus Medicamentos (${meds.length})</p>
     ${cardsHTML}
 
     <div class="rodape">
       <strong>VitaDose</strong> — Guia de Medicamentos gerado em ${dataEmissao}<br>
+      ${farmCfg.nome ? `<strong>${farmCfg.nome}</strong>${farmCfg.crf ? ' · ' + farmCfg.crf : ''}<br>` : ''}
       Em caso de dúvidas, consulte seu farmacêutico ou médico.<br>
       Este documento <strong>não substitui</strong> a prescrição médica.
     </div>

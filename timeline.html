@@ -48,12 +48,18 @@
     .dot-lab-l { background:#2563eb }
     .dot-diary { background:#047857 }
     .dot-diary-alt{ background:#d97706 }
+    .dot-sft  { background:#0891b2 }
+    .dot-soap { background:#7c3aed }
+    .dot-ram  { background:#dc2626 }
 
     .badge-med    { background:#f5f3ff;color:#7c3aed }
     .badge-medend { background:#f1f5f9;color:#64748b }
     .badge-lab    { background:#e0f2fe;color:#0369a1 }
     .badge-diary  { background:#dcfce7;color:#047857 }
     .badge-alt    { background:#fef3c7;color:#d97706 }
+    .badge-sft    { background:#e0f7fa;color:#0891b2 }
+    .badge-soap   { background:#f3e8ff;color:#7c3aed }
+    .badge-ram    { background:#fee2e2;color:#dc2626 }
 
     .empty-tl { text-align:center;color:#94a3b8;padding:40px 20px;font-size:.85rem;line-height:1.7 }
     .legend { background:#fff;border-radius:12px;padding:10px 14px;margin:0 16px 12px;display:flex;flex-wrap:wrap;gap:10px;box-shadow:0 1px 3px rgba(0,0,0,.05) }
@@ -66,6 +72,7 @@
 <div class="topbar">
   <button class="back-btn" onclick="history.back()">←</button>
   <span class="topbar-title">📅 Linha do Tempo Clínica</span>
+  <button style="background:none;border:1px solid #e2e8f0;border-radius:8px;padding:6px 10px;font-size:.75rem;font-weight:700;color:#475569;cursor:pointer" onclick="window.print()">🖨️</button>
 </div>
 
 <div style="height:12px"></div>
@@ -78,6 +85,9 @@
   <div class="leg-item"><div class="leg-dot" style="background:#dc2626"></div>Exame alterado ▲</div>
   <div class="leg-item"><div class="leg-dot" style="background:#047857"></div>Registro de saúde</div>
   <div class="leg-item"><div class="leg-dot" style="background:#d97706"></div>PA/Glicemia alterada</div>
+  <div class="leg-item"><div class="leg-dot" style="background:#0891b2"></div>Intervenção SFT</div>
+  <div class="leg-item"><div class="leg-dot" style="background:#7c3aed"></div>Anotação SOAP</div>
+  <div class="leg-item"><div class="leg-dot" style="background:#dc2626"></div>Reação adversa</div>
 </div>
 
 <!-- Período -->
@@ -94,6 +104,7 @@
   <button class="tchip t-med ativo"   id="ft-med"   onclick="toggleTipo('med')">💊 Medicamentos</button>
   <button class="tchip t-lab ativo"   id="ft-lab"   onclick="toggleTipo('lab')">🔬 Exames</button>
   <button class="tchip t-diary ativo" id="ft-diary" onclick="toggleTipo('diary')">📋 Saúde</button>
+  <button class="tchip ativo" id="ft-int" style="color:#0891b2" onclick="toggleTipo('int')">💬 Intervenções</button>
 </div>
 
 <!-- Linha do tempo -->
@@ -107,7 +118,7 @@
 <script>
 
 let _periodo = 90;
-let _tipos   = new Set(['med','lab','diary']);
+let _tipos   = new Set(['med','lab','diary','int']);
 let _pid     = null;
 let _allEvts = [];
 
@@ -214,6 +225,52 @@ async function carregarEventos() {
     }
   } catch(e) {}
 
+  /* ── Intervenções SFT ── */
+  try {
+    const ints = (await dbGetConfig('sft_int_' + _pid)) || [];
+    for (const it of ints) {
+      if (!it.data) continue;
+      const acIcon = { sim:'✅', parcial:'🟡', nao:'❌', pendente:'⏳' };
+      const aceite = it.aceita ? ` · Aceita: ${acIcon[it.aceita]||'—'}` : '';
+      _allEvts.push({
+        data: it.data, tipo:'int',
+        titulo: '💬 Intervenção Farmacêutica',
+        sub: (it.acao||'').slice(0,120) + aceite,
+        dot:'dot-sft', badge:'badge-sft', badgeTxt:'SFT',
+      });
+    }
+  } catch(e) {}
+
+  /* ── Anotações SOAP ── */
+  try {
+    const soaps = (await dbGetConfig('soap_' + _pid)) || [];
+    for (const s of soaps) {
+      if (!s.data) continue;
+      const resumo = [s.s, s.a, s.p].filter(Boolean).join(' · ').slice(0,120);
+      _allEvts.push({
+        data: s.data.slice(0,10), tipo:'int',
+        titulo: '📝 Anotação SOAP',
+        sub: resumo || 'Consulta farmacêutica registrada',
+        dot:'dot-soap', badge:'badge-soap', badgeTxt:'SOAP',
+      });
+    }
+  } catch(e) {}
+
+  /* ── Reações Adversas ── */
+  try {
+    const rams = (await dbGetConfig('ram_' + _pid)) || [];
+    for (const r of rams) {
+      if (!r.data) continue;
+      _allEvts.push({
+        data: r.data.slice(0,10), tipo:'int',
+        titulo: `⚠️ RAM: ${r.med || r.medicamento || '—'}`,
+        sub: `${r.reacao||''} ${r.grau ? '· Grau: '+r.grau : ''} ${r.conduta ? '· '+r.conduta : ''}`.trim().slice(0,120),
+        dot:'dot-ram', badge:'badge-ram', badgeTxt:'RAM',
+        destaque: true,
+      });
+    }
+  } catch(e) {}
+
   // Ordena do mais recente ao mais antigo
   _allEvts.sort((a,b) => b.data.localeCompare(a.data));
 }
@@ -230,7 +287,8 @@ function setPeriodo(dias) {
 function toggleTipo(tipo) {
   if (_tipos.has(tipo)) _tipos.delete(tipo);
   else                   _tipos.add(tipo);
-  document.getElementById('ft-'+tipo).classList.toggle('ativo', _tipos.has(tipo));
+  const el = document.getElementById('ft-'+tipo);
+  if (el) el.classList.toggle('ativo', _tipos.has(tipo));
   renderTimeline();
 }
 
