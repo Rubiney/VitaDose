@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>Estoque Inteligente — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .topbar{display:flex;align-items:center;gap:10px;padding:12px 16px;background:#1e3a8a;position:sticky;top:0;z-index:100}
+    .back-btn{background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:8px;padding:6px 11px;cursor:pointer;font-size:1rem}
+    .topbar-title{font-size:.93rem;font-weight:800;color:#fff;flex:1}
+    .topbar-sub{font-size:.62rem;color:rgba(255,255,255,.7);margin-top:1px}
+    .btn-top{background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:8px;padding:7px 11px;font-size:.72rem;font-weight:700;cursor:pointer;margin-left:4px}
+    main{max-width:640px;margin:0 auto;padding:12px 14px 90px}
+    .pac-sel{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:12px;padding:11px 14px;font-size:.88rem;margin-bottom:10px;background:#fff}
+
+    /* Alerta threshold */
+    .alert-config{background:#fff;border-radius:12px;padding:12px 14px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.07);display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+    .alert-config label{font-size:.73rem;font-weight:700;color:#475569}
+    .alert-config select{border:1.5px solid #e2e8f0;border-radius:8px;padding:7px 10px;font-size:.8rem;background:#fff}
+
+    /* Sumário */
+    .sum-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+    .sum-card{background:#fff;border-radius:12px;padding:12px 8px;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,.07);border-top:4px solid}
+    .sum-n{font-size:2rem;font-weight:900;line-height:1}
+    .sum-lbl{font-size:.6rem;font-weight:700;color:#64748b;text-transform:uppercase;margin-top:4px}
+
+    /* Lista de compras */
+    .compras-card{background:#fff;border-radius:14px;padding:14px;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,.07);border:2px solid #fbbf24}
+    .compras-title{font-size:.78rem;font-weight:800;color:#92400e;margin-bottom:8px}
+    .compra-item{font-size:.8rem;padding:6px 0;border-bottom:1px dashed #fde68a;color:#1e293b;display:flex;align-items:center;gap:8px}
+    .compra-item:last-child{border:none}
+    .copy-btn{background:#fef3c7;border:1.5px solid #fbbf24;color:#92400e;border-radius:8px;padding:7px 12px;font-size:.72rem;font-weight:700;cursor:pointer;width:100%;margin-top:8px}
+
+    /* Med cards */
+    .med-estoque{background:#fff;border-radius:14px;margin-bottom:8px;box-shadow:0 1px 4px rgba(0,0,0,.07);overflow:hidden}
+    .me-header{display:flex;align-items:center;gap:12px;padding:13px 14px;cursor:pointer}
+    .me-icone{font-size:1.4rem;width:38px;text-align:center}
+    .me-info{flex:1;min-width:0}
+    .me-nome{font-size:.87rem;font-weight:800;color:#0f172a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .me-dose{font-size:.68rem;color:#64748b;margin-top:1px}
+    .dias-badge{font-size:.72rem;font-weight:800;padding:4px 12px;border-radius:20px;white-space:nowrap;flex-shrink:0}
+    .dias-crit{background:#fee2e2;color:#991b1b}
+    .dias-warn{background:#fef3c7;color:#92400e}
+    .dias-ok{background:#dcfce7;color:#166534}
+    .dias-nd{background:#f1f5f9;color:#64748b}
+
+    /* Barra de progresso de estoque */
+    .stock-bar{height:6px;background:#f1f5f9;border-radius:4px;overflow:hidden;margin-top:6px}
+    .stock-bar-fill{height:100%;border-radius:4px;transition:width .4s}
+
+    /* Detalhes */
+    .me-body{padding:12px 14px;border-top:1px solid #f1f5f9}
+    .me-body.collapsed{display:none}
+    .field-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
+    .field-lbl{font-size:.65rem;font-weight:700;color:#64748b;margin-bottom:3px}
+    .field-inp{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:8px;padding:7px 10px;font-size:.82rem}
+    .field-inp:focus{outline:none;border-color:#3b82f6}
+    .salvar-med-btn{width:100%;padding:10px;background:#1e3a8a;color:#fff;border:none;border-radius:9px;font-size:.78rem;font-weight:700;cursor:pointer;margin-top:4px}
+    .val-venc{font-size:.7rem;font-weight:700;margin-top:6px;padding:5px 10px;border-radius:8px;display:inline-block}
+    .venc-ok{background:#dcfce7;color:#166534}
+    .venc-warn{background:#fef3c7;color:#92400e}
+    .venc-venc{background:#fee2e2;color:#991b1b}
+
+    .empty{text-align:center;padding:40px;color:#94a3b8;font-size:.8rem}
+    @media print{
+      .topbar,.pac-sel,.alert-config,.btn-top,nav,.me-body,.salvar-med-btn,.copy-btn{display:none!important}
+      body{background:#fff}main{padding:0}
+    }
+  </style>
+</head>
+<body>
+<div class="topbar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <div style="flex:1">
+    <div class="topbar-title">📦 Estoque Inteligente</div>
+    <div class="topbar-sub">Controle de estoque · Validades · Lista de compras</div>
+  </div>
+  <button class="btn-top" onclick="window.print()">🖨️</button>
+</div>
+<main>
+  <select class="pac-sel" id="sel-pac" onchange="init()"><option value="">Selecione o paciente...</option></select>
+
+  <div class="alert-config">
+    <label>🔔 Alertar quando restar:</label>
+    <select id="thresh" onchange="render()">
+      <option value="7">7 dias</option>
+      <option value="14" selected>14 dias</option>
+      <option value="30">30 dias</option>
+    </select>
+    <label style="margin-left:8px">⚠️ Vencimento próximo:</label>
+    <select id="threshVenc" onchange="render()">
+      <option value="15">15 dias</option>
+      <option value="30" selected>30 dias</option>
+      <option value="60">60 dias</option>
+    </select>
+  </div>
+
+  <div id="conteudo"></div>
+</main>
+<nav class="bottom-nav">
+  <a href="modo-cuidador.html" class="nav-item">🧡<span>Cuidador</span></a>
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="diario-compartilhado.html" class="nav-item">💬<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+<script src="js/db.js"></script>
+<script src="js/utils.js"></script>
+<script>
+let _pid=null, _meds=[], _estoques={};
+
+function parseFq(f){
+  if(!f) return 1;
+  const s=f.toLowerCase();
+  if(/1\s*x|uma vez|1\s*vez/.test(s)) return 1;
+  if(/2\s*x|duas vezes|2\s*vez/.test(s)) return 2;
+  if(/3\s*x|três|tres|3\s*vez/.test(s)) return 3;
+  if(/4\s*x|quatro|4\s*vez/.test(s)) return 4;
+  if(/6\s*h/.test(s)) return 4;
+  if(/8\s*h/.test(s)) return 3;
+  if(/12\s*h/.test(s)) return 2;
+  if(/24\s*h/.test(s)) return 1;
+  if(/semana|semanal/.test(s)) return 1/7;
+  return 1;
+}
+
+function diasRestantes(med,extData){
+  const qtd=parseFloat(extData?.qtd??med.estoqueAtual??med.estoque??0);
+  if(!qtd) return null;
+  const freq=parseFq(extData?.freq||med.frequencia||med.intervalo||'');
+  const unidPorDose=parseFloat(extData?.unidPorDose||med.unidPorDose||1)||1;
+  const consumoDia=freq*unidPorDose;
+  return Math.floor(qtd/consumoDia);
+}
+
+function diasAteVenc(dataVenc){
+  if(!dataVenc) return null;
+  const diff=new Date(dataVenc)-new Date();
+  return Math.round(diff/864e5);
+}
+
+function statusDias(dias,thresh){
+  if(dias===null) return 'nd';
+  if(dias<=0) return 'crit';
+  if(dias<=Math.floor(thresh/2)) return 'crit';
+  if(dias<=thresh) return 'warn';
+  return 'ok';
+}
+
+async function init(){
+  _pid=parseInt(document.getElementById('sel-pac').value)||null;
+  if(!_pid){document.getElementById('conteudo').innerHTML='';return;}
+  _meds=(await dbGetByIndex('medicamentos','pacienteId',_pid)||[]).filter(m=>m.ativo!==false&&m.ativo!==0);
+  _estoques=await dbGetConfig('estoques_'+_pid)||{};
+  render();
+}
+
+function render(){
+  if(!_meds.length){
+    document.getElementById('conteudo').innerHTML='<div class="empty">Nenhum medicamento ativo cadastrado.</div>';
+    return;
+  }
+  const thresh=parseInt(document.getElementById('thresh').value)||14;
+  const threshVenc=parseInt(document.getElementById('threshVenc').value)||30;
+
+  // Stats
+  let crit=0,warn=0,ok=0;
+  const comprasNecessarias=[];
+
+  const cards=_meds.map((med,mi)=>{
+    const ext=_estoques[med.id]||{};
+    const dias=diasRestantes(med,ext);
+    const vencDias=diasAteVenc(ext.validade);
+    const st=statusDias(dias,thresh);
+    if(st==='crit') crit++;
+    else if(st==='warn') warn++;
+    else if(st==='ok') ok++;
+
+    const needsCompra=st==='crit'||st==='warn'||(vencDias!==null&&vencDias<threshVenc);
+    if(needsCompra){
+      const razao=[];
+      if(st==='crit'||st==='warn') razao.push(dias!==null?`${dias} dias restantes`:'sem quantidade');
+      if(vencDias!==null&&vencDias<threshVenc) razao.push(vencDias<=0?'VENCIDO':'vence em '+vencDias+'d');
+      comprasNecessarias.push({nome:med.nome||med.medicamento,razao:razao.join(', ')});
+    }
+
+    const badgeCls=st==='crit'?'dias-crit':st==='warn'?'dias-warn':st==='ok'?'dias-ok':'dias-nd';
+    const badgeTxt=dias===null?'Qtd. não informada':dias<=0?'⚠️ ACABOU!':dias+' dias';
+    const barPct=dias!==null?Math.min(Math.round(dias/60*100),100):0;
+    const barCor=st==='crit'?'#ef4444':st==='warn'?'#f59e0b':'#22c55e';
+
+    // Validade visual
+    let vencHtml='';
+    if(ext.validade){
+      const vc=vencDias!==null?vencDias:999;
+      const vCls=vc<=0?'venc-venc':vc<=threshVenc?'venc-warn':'venc-ok';
+      const vTxt=vc<=0?'⚠️ VENCIDO':vc<=threshVenc?`⚠️ Vence em ${vc} dias`:`✅ Válido até ${ext.validade.split('-').reverse().join('/')}`;
+      vencHtml=`<div class="val-venc ${vCls}">${vTxt}</div>`;
+    }
+
+    return `<div class="med-estoque">
+      <div class="me-header" onclick="toggle(${mi})">
+        <div class="me-icone">${st==='crit'?'🔴':st==='warn'?'🟡':st==='ok'?'🟢':'⚪'}</div>
+        <div class="me-info">
+          <div class="me-nome">${esc(med.nome||med.medicamento||'Medicamento')}</div>
+          <div class="me-dose">${esc(med.dose||'')} · ${esc(med.frequencia||ext.freq||'—')}</div>
+          <div class="stock-bar"><div class="stock-bar-fill" style="width:${barPct}%;background:${barCor}"></div></div>
+        </div>
+        <div class="dias-badge ${badgeCls}">${badgeTxt}</div>
+      </div>
+      <div class="me-body collapsed" id="body-${mi}">
+        <div class="field-row">
+          <div>
+            <div class="field-lbl">Quantidade atual</div>
+            <input class="field-inp" type="number" id="qtd-${mi}" value="${ext.qtd??med.estoqueAtual??''}" placeholder="Ex: 30" min="0" step="1">
+          </div>
+          <div>
+            <div class="field-lbl">Unidades por dose</div>
+            <input class="field-inp" type="number" id="upd-${mi}" value="${ext.unidPorDose||1}" placeholder="1" min="0.5" step="0.5">
+          </div>
+        </div>
+        <div class="field-row">
+          <div>
+            <div class="field-lbl">Frequência diária (sobrescreve cadastro)</div>
+            <input class="field-inp" id="freq-${mi}" value="${ext.freq||''}" placeholder="Ex: 2x ao dia">
+          </div>
+          <div>
+            <div class="field-lbl">Data de validade</div>
+            <input class="field-inp" type="date" id="val-${mi}" value="${ext.validade||''}">
+          </div>
+        </div>
+        ${vencHtml}
+        <button class="salvar-med-btn" onclick="salvarMed(${mi},'${med.id}')">💾 Atualizar estoque</button>
+      </div>
+    </div>`;
+  });
+
+  // Lista de compras
+  let html='';
+  if(comprasNecessarias.length){
+    html+=`<div class="compras-card">
+      <div class="compras-title">🛒 Lista de Compras (${comprasNecessarias.length} medicamento${comprasNecessarias.length!==1?'s':''})</div>
+      ${comprasNecessarias.map(c=>`<div class="compra-item">
+        <span>💊</span>
+        <span style="flex:1;font-weight:700">${esc(c.nome)}</span>
+        <span style="font-size:.65rem;color:#f97316">${esc(c.razao)}</span>
+      </div>`).join('')}
+      <button class="copy-btn" onclick="copiarLista(${JSON.stringify(comprasNecessarias).replace(/"/g,'&quot;')})">📋 Copiar lista</button>
+    </div>`;
+  }
+
+  html+=`<div class="sum-grid">
+    <div class="sum-card" style="border-top-color:#ef4444">
+      <div class="sum-n" style="color:#ef4444">${crit}</div>
+      <div class="sum-lbl">Crítico<br>(&lt;½ do limite)</div>
+    </div>
+    <div class="sum-card" style="border-top-color:#f59e0b">
+      <div class="sum-n" style="color:#f59e0b">${warn}</div>
+      <div class="sum-lbl">Atenção<br>(&le;${thresh} dias)</div>
+    </div>
+    <div class="sum-card" style="border-top-color:#22c55e">
+      <div class="sum-n" style="color:#22c55e">${ok}</div>
+      <div class="sum-lbl">Em dia</div>
+    </div>
+  </div>`;
+
+  html+=cards.join('');
+  document.getElementById('conteudo').innerHTML=html;
+}
+
+function toggle(mi){
+  const b=document.getElementById('body-'+mi);
+  b.classList.toggle('collapsed');
+}
+
+async function salvarMed(mi,medId){
+  const qtd=document.getElementById('qtd-'+mi)?.value||'';
+  const upd=document.getElementById('upd-'+mi)?.value||'1';
+  const freq=document.getElementById('freq-'+mi)?.value||'';
+  const val=document.getElementById('val-'+mi)?.value||'';
+  _estoques[medId]={qtd:qtd?parseFloat(qtd):null,unidPorDose:parseFloat(upd)||1,freq,validade:val,atualizado:new Date().toISOString().slice(0,10)};
+  await dbSetConfig('estoques_'+_pid,_estoques);
+  render();
+  showToast('✅ Estoque atualizado');
+}
+
+function copiarLista(lista){
+  const txt='Lista de compras — VitaDose\n\n'+lista.map(c=>`• ${c.nome} (${c.razao})`).join('\n');
+  navigator.clipboard?.writeText(txt).then(()=>showToast('✅ Lista copiada!')).catch(()=>{
+    prompt('Copie a lista abaixo:',txt);
+  });
+}
+
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+
+document.addEventListener('DOMContentLoaded',async()=>{
+  const pacs=await dbGetAll('pacientes');
+  const sel=document.getElementById('sel-pac');
+  sel.innerHTML='<option value="">Selecione o paciente...</option>'+pacs.map(p=>`<option value="${p.id}">${esc(p.nome||'Paciente '+p.id)}</option>`).join('');
+  const pid=getActivePacienteId();
+  if(pid){sel.value=pid;await init();}
+});
+</script>
+</body>
+</html>
