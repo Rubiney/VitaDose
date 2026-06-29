@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Métricas do Farmacêutico — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    body { background:#f0f4f8;margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif }
+
+    .topbar { display:flex;align-items:center;gap:10px;padding:14px 16px;background:#1e3a5f;position:sticky;top:0;z-index:100 }
+    .back-btn { background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:8px;padding:6px 11px;font-size:1rem;cursor:pointer }
+    .topbar-title { font-size:1rem;font-weight:800;color:#fff;flex:1 }
+    .topbar-sub { font-size:.7rem;color:rgba(255,255,255,.7) }
+    .btn-export { background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:8px;padding:6px 12px;font-size:.72rem;font-weight:700;cursor:pointer }
+
+    main { padding:14px 16px 90px;max-width:480px;margin:0 auto }
+
+    /* Summary cards */
+    .cards-2x2 { display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px }
+    .metric-card { background:#fff;border-radius:14px;padding:14px 16px;box-shadow:0 1px 4px rgba(0,0,0,.07) }
+    .metric-val { font-size:2rem;font-weight:900;line-height:1 }
+    .metric-lbl { font-size:.68rem;font-weight:700;color:#64748b;margin-top:4px;text-transform:uppercase;letter-spacing:.04em }
+    .metric-sub { font-size:.68rem;color:#94a3b8;margin-top:2px }
+
+    /* Sections */
+    .sec { background:#fff;border-radius:14px;padding:16px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.07) }
+    .sec-title { font-size:.72rem;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.06em;margin-bottom:14px }
+
+    /* Bar chart (CSS) */
+    .bar-row { display:flex;align-items:center;gap:8px;margin-bottom:8px }
+    .bar-lbl  { font-size:.68rem;color:#475569;width:38px;text-align:right;flex-shrink:0 }
+    .bar-track { flex:1;height:22px;background:#f1f5f9;border-radius:6px;overflow:hidden;position:relative }
+    .bar-fill  { height:100%;border-radius:6px;transition:width .5s;display:flex;align-items:center;padding-left:6px }
+    .bar-txt   { font-size:.65rem;font-weight:800;color:#fff;white-space:nowrap }
+
+    /* Horizontal PRMs */
+    .prm-row { display:flex;align-items:center;gap:8px;margin-bottom:7px }
+    .prm-name { font-size:.72rem;color:#374151;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis }
+    .prm-bar  { width:120px;height:14px;background:#f1f5f9;border-radius:4px;overflow:hidden;flex-shrink:0 }
+    .prm-fill { height:100%;border-radius:4px }
+    .prm-n    { font-size:.68rem;font-weight:800;color:#64748b;width:20px;text-align:right;flex-shrink:0 }
+
+    /* Patients table */
+    .pac-row { display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #f1f5f9 }
+    .pac-row:last-child { border-bottom:none }
+    .pac-ini  { width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#a78bfa);display:flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:900;color:#fff;flex-shrink:0 }
+    .pac-nome { font-size:.82rem;font-weight:700;color:#1e293b }
+    .pac-det  { font-size:.68rem;color:#94a3b8;margin-top:1px }
+    .pac-meta { margin-left:auto;text-align:right;flex-shrink:0 }
+    .pac-adesao { font-size:.85rem;font-weight:800 }
+
+    /* Badges */
+    .bdg { display:inline-block;padding:2px 7px;border-radius:5px;font-size:.6rem;font-weight:800 }
+    .bdg-g  { background:#d1fae5;color:#065f46 }
+    .bdg-y  { background:#fef3c7;color:#92400e }
+    .bdg-r  { background:#fee2e2;color:#991b1b }
+
+    /* Aceite donut */
+    .donut-wrap { display:flex;align-items:center;gap:16px;padding:8px 0 }
+    .donut-legend { font-size:.75rem;color:#374151;display:flex;flex-direction:column;gap:6px }
+    .leg-row { display:flex;align-items:center;gap:6px }
+    .leg-dot { width:10px;height:10px;border-radius:50%;flex-shrink:0 }
+
+    .empty-msg { text-align:center;color:#94a3b8;font-size:.82rem;padding:24px 0 }
+
+    @media print {
+      .topbar .btn-export, .topbar .back-btn { display:none }
+      body { background:#fff }
+      main { padding:0 }
+    }
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <div style="flex:1">
+    <div class="topbar-title">📊 Métricas de Impacto</div>
+    <div class="topbar-sub">Farmácia Clínica · VitaDose</div>
+  </div>
+  <button class="btn-export" onclick="window.print()">🖨️</button>
+</div>
+
+<main id="mainContent">
+  <p class="empty-msg">Carregando dados...</p>
+</main>
+
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+
+<script src="js/db.js"></script>
+<script src="js/utils.js"></script>
+<script>
+
+const _COR_TIPO = {
+  'RAM / Evento adverso':'#dc2626',
+  'Interação medicamentosa':'#ea580c',
+  'Superdosagem / evento tóxico':'#b45309',
+  'Subdosagem / efeito insuficiente':'#d97706',
+  'Indicação sem medicamento':'#7c3aed',
+  'Medicamento sem indicação':'#6366f1',
+  'Não adesão ao tratamento':'#0369a1',
+  'Monitoramento terapêutico':'#0891b2',
+  'Duplicidade terapêutica':'#0f766e',
+  'Medicamento inapropriado':'#9f1239',
+  'Outro':'#475569',
+};
+
+async function init() {
+  const pacs = (await dbGetAll('pacientes')) || [];
+  if (!pacs.length) {
+    document.getElementById('mainContent').innerHTML = '<p class="empty-msg">Nenhum paciente cadastrado.</p>';
+    return;
+  }
+
+  const hj   = hoje();
+  const d30  = (() => { const d = new Date(); d.setDate(d.getDate()-30); return d.toISOString().slice(0,10); })();
+  const todosM = (await dbGetAll('medicamentos')) || [];
+  const todasD = (await dbGetAll('doses')) || [];
+
+  /* Agrega dados por paciente em paralelo */
+  const dados = await Promise.allSettled(pacs.map(async p => {
+    const meds = todosM.filter(m => m.pacienteId===p.id && m.ativo!==false && (!m.dataFim||m.dataFim>=hj));
+    const medIds = new Set(meds.map(m=>m.id));
+    const doses30 = todasD.filter(d => d.data >= d30 && medIds.has(d.medicamentoId));
+    const tom = doses30.filter(d=>d.status==='tomado').length;
+    const per = doses30.filter(d=>d.status==='perdido').length;
+    const adesao = (tom+per) > 0 ? Math.round(tom/(tom+per)*100) : null;
+
+    const ints  = (await dbGetConfig('sft_int_'  + p.id)) || [];
+    const soaps = (await dbGetConfig('soap_'      + p.id)) || [];
+    const rams  = (await dbGetConfig('ram_'       + p.id)) || [];
+    const plano = (await dbGetConfig('plano_cuidados_' + p.id)) || { problemas:[], metas:[] };
+
+    return { p, meds: meds.length, adesao, ints, soaps, rams, plano };
+  }));
+
+  const rows = dados.filter(r => r.status==='fulfilled').map(r => r.value);
+
+  /* ── Totalizadores ── */
+  let totInts=0, totAceitas=0, totPRMs=0, totResolvidos=0, totRAMs=0, totSoaps=0;
+  const intsPorMes = {};
+  const prmsPorTipo = {};
+
+  for (const { ints, rams, plano, soaps } of rows) {
+    totInts   += ints.length;
+    totRAMs   += rams.length;
+    totSoaps  += soaps.length;
+    totAceitas += ints.filter(i=>i.aceita==='sim').length;
+
+    for (const it of ints) {
+      const mes = (it.data||'').slice(0,7);
+      if (mes) intsPorMes[mes] = (intsPorMes[mes]||0) + 1;
+    }
+
+    totPRMs      += (plano.problemas||[]).length;
+    totResolvidos += (plano.problemas||[]).filter(p=>p.status==='resolvido').length;
+
+    for (const pr of (plano.problemas||[])) {
+      const t = pr.tipo || 'Outro';
+      prmsPorTipo[t] = (prmsPorTipo[t]||0) + 1;
+    }
+  }
+
+  const taxaAceite = totInts > 0 ? Math.round(totAceitas/totInts*100) : 0;
+  const taxaResolv = totPRMs > 0 ? Math.round(totResolvidos/totPRMs*100) : 0;
+
+  /* ── Meses (últimos 6) ── */
+  const meses6 = [];
+  for (let i=5; i>=0; i--) {
+    const d = new Date(); d.setMonth(d.getMonth()-i);
+    meses6.push(d.toISOString().slice(0,7));
+  }
+  const maxMes = Math.max(1, ...meses6.map(m=>intsPorMes[m]||0));
+
+  const mesLabel = mes => {
+    const [y,m] = mes.split('-');
+    return ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'][parseInt(m)-1]+'/'+y.slice(2);
+  };
+
+  /* ── PRMs por tipo (top 6) ── */
+  const prmsSorted = Object.entries(prmsPorTipo).sort((a,b)=>b[1]-a[1]).slice(0,6);
+  const maxPRM = Math.max(1, ...prmsSorted.map(e=>e[1]));
+
+  /* ── Tabela por paciente ── */
+  const rowsSorted = [...rows].sort((a,b) => {
+    if (a.adesao===null && b.adesao===null) return 0;
+    if (a.adesao===null) return 1;
+    if (b.adesao===null) return -1;
+    return a.adesao - b.adesao;
+  });
+
+  /* ── Render ── */
+  document.getElementById('mainContent').innerHTML = `
+
+    <!-- Summary cards 1 -->
+    <div class="cards-2x2">
+      <div class="metric-card">
+        <div class="metric-val" style="color:#6366f1">${pacs.length}</div>
+        <div class="metric-lbl">Pacientes</div>
+        <div class="metric-sub">Cadastrados</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-val" style="color:#0891b2">${totInts}</div>
+        <div class="metric-lbl">Intervenções</div>
+        <div class="metric-sub">${totSoaps} consultas SOAP</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-val" style="color:#7c3aed">${totPRMs}</div>
+        <div class="metric-lbl">PRMs detectados</div>
+        <div class="metric-sub">${taxaResolv}% resolvidos</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-val" style="color:#dc2626">${totRAMs}</div>
+        <div class="metric-lbl">RAMs registradas</div>
+        <div class="metric-sub">Reações adversas</div>
+      </div>
+    </div>
+
+    <!-- Aceite e resolução -->
+    <div class="cards-2x2">
+      <div class="metric-card">
+        <div class="metric-val" style="color:${taxaAceite>=70?'#16a34a':taxaAceite>=50?'#d97706':'#dc2626'}">${taxaAceite}%</div>
+        <div class="metric-lbl">Taxa de aceite</div>
+        <div class="metric-sub">${totAceitas} aceitas de ${totInts}</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-val" style="color:${taxaResolv>=60?'#16a34a':taxaResolv>=30?'#d97706':'#dc2626'}">${taxaResolv}%</div>
+        <div class="metric-lbl">Resolução PRMs</div>
+        <div class="metric-sub">${totResolvidos} de ${totPRMs}</div>
+      </div>
+    </div>
+
+    <!-- Intervenções por mês -->
+    <div class="sec">
+      <div class="sec-title">📅 Intervenções — Últimos 6 meses</div>
+      ${meses6.map(mes => {
+        const n = intsPorMes[mes]||0;
+        const pct = Math.round(n/maxMes*100);
+        return `<div class="bar-row">
+          <div class="bar-lbl">${mesLabel(mes)}</div>
+          <div class="bar-track">
+            <div class="bar-fill" style="width:${pct}%;background:${n>0?'#6366f1':'#e2e8f0'}">
+              ${n>0?`<span class="bar-txt">${n}</span>`:''}
+            </div>
+          </div>
+        </div>`;
+      }).join('')}
+      ${meses6.every(m=>!(intsPorMes[m])) ? '<p class="empty-msg" style="padding:8px 0">Nenhuma intervenção registrada ainda.</p>' : ''}
+    </div>
+
+    <!-- PRMs por tipo -->
+    ${prmsSorted.length ? `
+    <div class="sec">
+      <div class="sec-title">⚠️ PRMs por Tipo</div>
+      ${prmsSorted.map(([tipo,n]) => `
+        <div class="prm-row">
+          <div class="prm-name">${tipo}</div>
+          <div class="prm-bar"><div class="prm-fill" style="width:${Math.round(n/maxPRM*100)}%;background:${_COR_TIPO[tipo]||'#6366f1'}"></div></div>
+          <div class="prm-n">${n}</div>
+        </div>`).join('')}
+    </div>` : ''}
+
+    <!-- Por paciente -->
+    <div class="sec">
+      <div class="sec-title">👥 Por Paciente</div>
+      ${rowsSorted.map(({ p, meds, adesao, ints, rams, plano }) => {
+        const ini = (p.nome||'?').trim().split(/\s+/).slice(0,2).map(w=>w[0].toUpperCase()).join('');
+        const cor = adesao===null?'#94a3b8':adesao>=75?'#16a34a':adesao>=50?'#d97706':'#dc2626';
+        const prmsAtivos = (plano.problemas||[]).filter(pb=>pb.status==='ativo').length;
+        return `<div class="pac-row">
+          <div class="pac-ini">${ini}</div>
+          <div style="flex:1;min-width:0">
+            <div class="pac-nome">${esc(p.nome)}</div>
+            <div class="pac-det">${meds} meds · ${ints.length} interv · ${rams.length} RAMs · ${prmsAtivos} PRMs ativos</div>
+          </div>
+          <div class="pac-meta">
+            <div class="pac-adesao" style="color:${cor}">${adesao!==null?adesao+'%':'—'}</div>
+            <div style="font-size:.6rem;color:#94a3b8">aderência 30d</div>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>
+
+  `;
+}
+
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>

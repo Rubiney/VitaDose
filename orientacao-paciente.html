@@ -119,6 +119,9 @@
         <div class="gen-row" id="fopConds"></div>
       </div>
 
+      <!-- Orientações por condição (gerado automaticamente) -->
+      <div id="fopCondGuia"></div>
+
       <!-- Assinatura do farmacêutico -->
       <div class="sign-block">
         <label style="font-size:.72rem;font-weight:700;color:#64748b;display:block;margin-bottom:4px">Farmacêutico responsável</label>
@@ -229,6 +232,94 @@ const CONDS_LABEL = {
   miastenia:'Miastenia Gravis',parkinson:'Doença de Parkinson',
 };
 
+/* Guias por condição clínica */
+const CONDS_GUIA = {
+  has: {
+    icon:'❤️', titulo:'Hipertensão Arterial',
+    meta:'PA-alvo: < 130/80 mmHg (ou conforme orientação médica)',
+    sinais:['Dor de cabeça forte na nuca','Visão turva ou pontos brilhantes','Zumbido nos ouvidos','Dificuldade para falar ou fraqueza em um lado do corpo — LIGUE 192'],
+    estilo:['Reduza o sal (menos de 5 g/dia — 1 colher de chá)','Pratique atividade física regular (caminhada 30 min, 5×/semana)','Mantenha peso saudável','Evite bebidas alcoólicas e cigarro','Monitore a pressão em casa regularmente'],
+  },
+  dm: {
+    icon:'🩸', titulo:'Diabetes Mellitus',
+    meta:'Glicemia jejum: 80–130 mg/dL · HbA1c: < 7% (ou conforme orientado)',
+    sinais:['Glicemia muito alta (> 300): boca seca, muita sede, urina frequente, náusea — PROCURE URGÊNCIA','Hipoglicemia (< 70): tremor, suor frio, tontura, confusão — TOME AÇÚCAR IMEDIATAMENTE'],
+    estilo:['Siga a dieta orientada pelo nutricionista','Pratique atividade física regularmente','Monitore a glicemia conforme recomendado','Cuide dos pés: inspecione diariamente, hidrate, evite andar descalço','Não pule refeições'],
+  },
+  asma: {
+    icon:'🫁', titulo:'Asma / DPOC',
+    meta:'Controle dos sintomas: sem crises noturnas, sem limitação às atividades diárias',
+    sinais:['Falta de ar em repouso','Lábios ou unhas roxos (cianose)','Chiado intenso que não melhora com o inalador de resgate','Frequência respiratória muito aumentada — LIGUE 192'],
+    estilo:['Use o inalador de controle TODOS os dias, mesmo sem sintomas','Evite fumaça, poeira, mofo e animais se sensível','Vacine-se contra gripe e pneumococo anualmente','Higiene do espaçador: lave com água e sabão semanalmente'],
+  },
+  ic: {
+    icon:'💓', titulo:'Insuficiência Cardíaca',
+    meta:'Peso estável, sem edema, boa tolerância ao exercício',
+    sinais:['Ganho de peso > 2 kg em 2 dias','Falta de ar ao deitar','Edema (inchaço) nas pernas e tornozelos piorando','Cansaço excessivo com pequenos esforços — CONTATE O MÉDICO'],
+    estilo:['Pese-se todo dia pela manhã, em jejum, e anote','Restrinja sal (< 3 g/dia)','Limite líquidos se orientado (geralmente 1,5–2 L/dia)','Eleve a cabeceira da cama se tiver falta de ar ao deitar','Não abandone os medicamentos — eles protegem o coração'],
+  },
+  osteoporose: {
+    icon:'🦴', titulo:'Osteoporose',
+    meta:'Prevenir fraturas; manter densidade mineral óssea',
+    sinais:['Dor súbita nas costas (pode indicar fratura vertebral)','Altura diminuindo progressivamente','Fratura após trauma mínimo — COMUNIQUE AO MÉDICO'],
+    estilo:['Tome suplemento de cálcio e vitamina D conforme prescrito','Pratique exercícios de resistência (caminhada, musculação leve)','Evite quedas: iluminação adequada, tapetes antiderrapantes','Não fume e limite o álcool','Se usar alendronato: tome em jejum, fique em pé por 30 min'],
+  },
+  gastrite: {
+    icon:'🔥', titulo:'Gastrite / DRGE',
+    meta:'Ausência de queimação, refluxo e dor epigástrica',
+    sinais:['Vômito com sangue ou fezes escuras (melena)','Dor abdominal intensa e contínua','Dificuldade progressiva para engolir — PROCURE URGÊNCIA'],
+    estilo:['Evite café, álcool, frituras, molhos ácidos e cigarro','Faça refeições pequenas e frequentes; não deite após comer','Eleve a cabeceira da cama se houver refluxo noturno','Tome os protetores gástricos (omeprazol/pantoprazol) 30 min antes do café'],
+  },
+  gota: {
+    icon:'🦵', titulo:'Gota',
+    meta:'Ácido úrico < 6 mg/dL; sem crises de artrite',
+    sinais:['Crise aguda: dor intensa, inchaço e vermelhidão numa articulação (geralmente o dedão do pé)','Febre associada à articulação inflamada — CONTATE O MÉDICO'],
+    estilo:['Evite vísceras, frutos do mar e carnes vermelhas em excesso','Evite bebidas alcoólicas (especialmente cerveja)','Beba bastante água (> 2 L/dia)','Não use AAS em dose analgésica (pode elevar o ácido úrico)'],
+  },
+  epilepsia: {
+    icon:'🧠', titulo:'Epilepsia',
+    meta:'Zero convulsões ou redução máxima das crises',
+    sinais:['Convulsão com duração > 5 min (estado de mal epiléptico) — LIGUE 192','Ferimentos durante a crise','Confusão persistente após a crise'],
+    estilo:['NUNCA abandone os medicamentos sem orientação médica','Durma bem e evite privação de sono','Limite o álcool','Avise pessoas próximas sobre sua condição e o que fazer em uma crise','Evite atividades de risco (nadar sozinho, subir em altura) durante o período sem controle'],
+  },
+  glaucoma: {
+    icon:'👁️', titulo:'Glaucoma',
+    meta:'Pressão intraocular dentro do alvo; preservação do campo visual',
+    sinais:['Dor ocular intensa ou súbita','Visão turva com halos ao redor das luzes','Vermelhidão ocular intensa — PROCURE OFTALMOLOGISTA/URGÊNCIA'],
+    estilo:['Use os colírios TODOS os dias nos horários indicados','Não interrompa os colírios por conta própria','Consultas regulares com oftalmologista para monitorar a pressão','Informe outros médicos que você tem glaucoma antes de receber qualquer medicamento novo'],
+  },
+  hpb: {
+    icon:'🚻', titulo:'Hiperplasia Prostática Benigna',
+    meta:'Fluxo urinário adequado, sem retenção',
+    sinais:['Incapacidade de urinar (retenção urinária) — PROCURE URGÊNCIA','Dor ao urinar ou urina com sangue','Febre associada a sintomas urinários'],
+    estilo:['Evite cafeína e álcool à noite','Esvazie a bexiga completamente — não se apresse','Cuidado com anti-histamínicos, descongestionantes e antidepressivos tricíclicos — podem piorar a retenção','Informe o farmacêutico sobre todos os medicamentos que usa'],
+  },
+  parkinson: {
+    icon:'🤝', titulo:'Doença de Parkinson',
+    meta:'Controle dos sintomas motores; qualidade de vida',
+    sinais:['Confusão mental súbita ou alucinações','Queda com lesão','Dificuldade grave para engolir — CONTATE O MÉDICO'],
+    estilo:['Tome a levodopa sempre no mesmo horário — a pontualidade é crítica','Evite tomar levodopa com refeições ricas em proteína (pode reduzir absorção)','Fisioterapia regular ajuda na marcha e equilíbrio','Adapte a casa para prevenir quedas (barras, tapetes, iluminação)'],
+  },
+};
+
+function gerarGuiaCondicoes(condsKeys) {
+  const guias = condsKeys.map(c => CONDS_GUIA[c]).filter(Boolean);
+  if (!guias.length) return '';
+  return guias.map(g => `
+    <div class="fop-sec-hdr">${g.icon} ${g.titulo}</div>
+    <div class="gen-row" style="background:#f0f7ff;border-left:3px solid #3b82f6;padding-left:14px">
+      <strong>Meta terapêutica:</strong> ${g.meta}
+    </div>
+    <div class="gen-row">
+      <strong>⚠️ Sinais de alerta — quando procurar atendimento:</strong><br>
+      ${g.sinais.map(s=>`• ${s}`).join('<br>')}
+    </div>
+    <div class="gen-row">
+      <strong>✅ Cuidados no dia a dia:</strong><br>
+      ${g.estilo.map(e=>`• ${e}`).join('<br>')}
+    </div>`).join('');
+}
+
 async function gerar() {
   if (!pid) { alert('Nenhum paciente ativo.'); return; }
 
@@ -259,11 +350,15 @@ async function gerar() {
   document.getElementById('fopData').textContent    = 'Data: '+new Date().toLocaleDateString('pt-BR');
 
   // Conditions
-  const conds = (pac.condicoes||[]).map(c=>CONDS_LABEL[c]||c).filter(Boolean);
+  const condsKeys = pac.condicoes || [];
+  const conds = condsKeys.map(c=>CONDS_LABEL[c]||c).filter(Boolean);
   if (conds.length || pac.condicoesClinicas) {
     document.getElementById('fopCondsBlock').style.display='block';
     document.getElementById('fopConds').innerHTML = [...conds, pac.condicoesClinicas||''].filter(Boolean).join(' · ');
   }
+
+  // Guias por condição
+  document.getElementById('fopCondGuia').innerHTML = gerarGuiaCondicoes(condsKeys);
 
   // Meds
   document.getElementById('fopMeds').innerHTML = meds.map(m => {

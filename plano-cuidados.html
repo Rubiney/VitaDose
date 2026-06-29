@@ -81,17 +81,24 @@
   <!-- Tabs -->
   <div class="tabs">
     <button class="tab-btn active" onclick="showTab('prob',this)">⚠️ Problemas</button>
-    <button class="tab-btn"        onclick="showTab('meta',this)">🎯 Metas Terapêuticas</button>
+    <button class="tab-btn"        onclick="showTab('meta',this)">🎯 Metas</button>
+    <button class="tab-btn"        onclick="showTab('evol',this)">📈 Evolução</button>
   </div>
 
   <!-- Tab: Problemas -->
   <div id="tab-prob" class="tab-panel active">
+    <button onclick="autoDetectarPRMs()" style="width:100%;background:#f0f9ff;border:1.5px dashed #0891b2;color:#0369a1;border-radius:12px;padding:11px;font-size:.8rem;font-weight:700;cursor:pointer;margin-bottom:12px">🔍 Auto-detectar PRMs dos medicamentos</button>
     <div id="listProb"></div>
   </div>
 
   <!-- Tab: Metas -->
   <div id="tab-meta" class="tab-panel">
     <div id="listMeta"></div>
+  </div>
+
+  <!-- Tab: Evolução -->
+  <div id="tab-evol" class="tab-panel">
+    <div id="listEvol"></div>
   </div>
 
 </main>
@@ -181,6 +188,13 @@
 </nav>
 
 <script src="js/db.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/interacoes.js"></script>
+<script src="js/duplicidade.js"></script>
+<script src="js/anticolin.js"></script>
+<script src="js/beers.js"></script>
+<script src="js/contraindicacoes.js"></script>
+<script src="js/stopp_start.js"></script>
 <script>
 const pid  = localStorage.getItem('vd_active');
 const KEY  = 'plano_cuidados_' + pid;
@@ -401,6 +415,119 @@ function toggleCustomPar() {
   document.getElementById('fParCustom').style.display = sel === 'outro' ? '' : 'none';
 }
 
+// ── Auto-detectar PRMs ─────────────────────────────────────────────────
+async function autoDetectarPRMs() {
+  if (!pid) return;
+  const [pac, allMeds] = await Promise.all([
+    dbGet('pacientes', parseInt(pid)),
+    dbGetAll('medicamentos'),
+  ]);
+  const meds = (allMeds||[]).filter(m => m.pacienteId===parseInt(pid) && m.ativo!==false);
+  if (!meds.length) { alert('Nenhum medicamento ativo para este paciente.'); return; }
+
+  const d = await dbGetConfig(KEY) || { problemas:[], metas:[] };
+  const novos = [];
+
+  /* Interações graves */
+  if (typeof gerarAlertas === 'function') {
+    gerarAlertas(meds).filter(a=>a.nivel==='grave').forEach(a => {
+      const desc = a.titulo + (a.desc ? ': ' + a.desc.slice(0,200) : '');
+      if (!d.problemas.some(p=>p.tipo==='Interação medicamentosa' && p.descricao===desc))
+        novos.push({ tipo:'Interação medicamentosa', medicamento: a.titulo, descricao: desc });
+    });
+  }
+
+  /* Critérios de Beers */
+  if (typeof buscarBeers === 'function' && typeof pacienteIdoso === 'function' && pacienteIdoso(pac)) {
+    meds.forEach(m => {
+      const b = buscarBeers(m.nome);
+      if (b) {
+        const desc = (b.motivo||b.obs||'Medicamento inapropriado em idosos (Critérios de Beers)').slice(0,200);
+        if (!d.problemas.some(p=>p.tipo==='Medicamento inapropriado' && p.medicamento===m.nome))
+          novos.push({ tipo:'Medicamento inapropriado', medicamento: m.nome, descricao: desc });
+      }
+    });
+  }
+
+  /* Carga anticolinérgica */
+  if (typeof calcularCargaAnticolin === 'function') {
+    const acb = calcularCargaAnticolin(meds);
+    if (acb.total >= 3) {
+      const desc = `Carga anticolinérgica total: ${acb.total} pts (${acb.nivel}). Fármacos: ${acb.itens.map(i=>i.nome+'('+i.score+')').join(', ')}`;
+      if (!d.problemas.some(p=>p.descricao&&p.descricao.startsWith('Carga anticolinérgica')))
+        novos.push({ tipo:'Medicamento inapropriado', medicamento:'', descricao: desc });
+    }
+  }
+
+  /* STOPP */
+  if (typeof verificarSTOPP === 'function') {
+    const stopp = verificarSTOPP(meds, pac);
+    (stopp||[]).forEach(s => {
+      const desc = (s.desc||s.titulo||'Critério STOPP').slice(0,200);
+      if (!d.problemas.some(p=>p.descricao===desc))
+        novos.push({ tipo:'Medicamento inapropriado', medicamento: s.med||'', descricao: desc });
+    });
+  }
+
+  /* Duplicidade */
+  if (typeof verificarDuplicidade === 'function') {
+    (verificarDuplicidade(meds)||[]).forEach(s => {
+      const desc = (s.desc||s.titulo||'Duplicidade terapêutica').slice(0,200);
+      if (!d.problemas.some(p=>p.tipo==='Duplicidade terapêutica' && p.descricao===desc))
+        novos.push({ tipo:'Duplicidade terapêutica', medicamento: s.med||'', descricao: desc });
+    });
+  }
+
+  if (!novos.length) { alert('Nenhum PRM novo detectado para os medicamentos atuais.'); return; }
+
+  novos.forEach(n => d.problemas.push({
+    id: Date.now() + Math.random(),
+    data: new Date().toISOString().slice(0,10),
+    medicamento: n.medicamento,
+    tipo: n.tipo,
+    desc: n.descricao, descricao: n.descricao,
+    intervencao: '',
+    status: 'ativo',
+  }));
+
+  await dbSetConfig(KEY, d);
+  renderProb(d.problemas);
+  atualizarStats(d);
+  alert(`✅ ${novos.length} PRM(s) adicionado(s) automaticamente.`);
+}
+
+// ── Evolução ────────────────────────────────────────────────────────────
+async function renderEvol() {
+  if (!pid) return;
+  const ints  = (await dbGetConfig('sft_int_'  + pid)) || [];
+  const soaps = (await dbGetConfig('soap_'      + pid)) || [];
+  const rams  = (await dbGetConfig('ram_'       + pid)) || [];
+  const d     = await dbGetConfig(KEY) || { problemas:[] };
+
+  const evts = [];
+  ints.forEach(i  => evts.push({ data:i.data||'', tipo:'int',  icon:'💬', txt:`Intervenção: ${(i.acao||'').slice(0,80)}`, cor:'#0891b2' }));
+  soaps.forEach(s => evts.push({ data:(s.data||'').slice(0,10), tipo:'soap', icon:'📝', txt:`SOAP: ${[s.s,s.a,s.p].filter(Boolean).join(' · ').slice(0,80)}`, cor:'#7c3aed' }));
+  rams.forEach(r  => evts.push({ data:(r.data||'').slice(0,10), tipo:'ram',  icon:'⚠️', txt:`RAM: ${r.med||r.medicamento||'—'} — ${(r.reacao||'').slice(0,60)}`, cor:'#dc2626' }));
+  d.problemas.forEach(p => evts.push({ data:p.data||'', tipo:'prm', icon:'🔴', txt:`PRM (${p.tipo||''}): ${(p.descricao||'').slice(0,80)}`, cor:_COR[p.tipo]||'#475569', status:p.status }));
+
+  evts.sort((a,b) => b.data.localeCompare(a.data));
+
+  const el = document.getElementById('listEvol');
+  if (!evts.length) { el.innerHTML = '<p class="empty-msg">Nenhum registro de evolução ainda.</p>'; return; }
+
+  el.innerHTML = evts.map(e => {
+    const dt = e.data ? new Date(e.data+'T12:00').toLocaleDateString('pt-BR') : '—';
+    const stBdg = e.status==='resolvido' ? '<span style="background:#d1fae5;color:#065f46;border-radius:4px;padding:1px 5px;font-size:.6rem;font-weight:700;margin-left:6px">Resolvido</span>' : '';
+    return `<div style="display:flex;gap:10px;padding:10px 0;border-bottom:1px solid #f1f5f9">
+      <div style="width:28px;height:28px;border-radius:50%;background:${e.cor}22;display:flex;align-items:center;justify-content:center;font-size:.85rem;flex-shrink:0">${e.icon}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:.78rem;color:#1e293b;font-weight:600">${x(e.txt)}${stBdg}</div>
+        <div style="font-size:.65rem;color:#94a3b8;margin-top:2px">${dt}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
 // ── Tabs ────────────────────────────────────────────────────────────────
 function showTab(id, btn) {
   _tab = id;
@@ -408,6 +535,7 @@ function showTab(id, btn) {
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('tab-' + id).classList.add('active');
   btn.classList.add('active');
+  if (id === 'evol') renderEvol();
 }
 
 function x(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
