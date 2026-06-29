@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>Escala de Zarit — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .topbar{display:flex;align-items:center;gap:10px;padding:12px 16px;background:#7c3aed;position:sticky;top:0;z-index:100}
+    .back-btn{background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:8px;padding:6px 11px;cursor:pointer;font-size:1rem}
+    .topbar-title{font-size:.93rem;font-weight:800;color:#fff;flex:1}
+    .topbar-sub{font-size:.62rem;color:rgba(255,255,255,.7);margin-top:1px}
+    main{max-width:640px;margin:0 auto;padding:12px 14px 90px}
+    .pac-sel{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:12px;padding:11px 14px;font-size:.88rem;margin-bottom:10px;background:#fff}
+
+    /* Intro */
+    .intro{background:#f5f3ff;border:1px solid #ddd6fe;border-radius:12px;padding:12px 14px;font-size:.78rem;color:#4c1d95;margin-bottom:12px;line-height:1.5}
+
+    /* Progresso */
+    .prog-strip{background:#fff;border-radius:12px;padding:10px 14px;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,.07);display:flex;align-items:center;gap:12px}
+    .prog-bar{flex:1;height:8px;background:#ede9fe;border-radius:4px;overflow:hidden}
+    .prog-fill{height:100%;border-radius:4px;background:#7c3aed;transition:width .3s}
+    .prog-txt{font-size:.68rem;font-weight:700;color:#7c3aed;white-space:nowrap}
+
+    /* Questões */
+    .q-card{background:#fff;border-radius:14px;padding:14px;margin-bottom:8px;box-shadow:0 1px 4px rgba(0,0,0,.06);border-left:4px solid #ede9fe;transition:.15s}
+    .q-card.respondida{border-left-color:#7c3aed}
+    .q-num{font-size:.62rem;font-weight:800;color:#a78bfa;text-transform:uppercase;margin-bottom:4px}
+    .q-texto{font-size:.82rem;color:#1e293b;font-weight:600;margin-bottom:12px;line-height:1.4}
+    .resp-row{display:flex;gap:5px;flex-wrap:wrap}
+    .resp-btn{flex:1;min-width:52px;padding:8px 4px;border-radius:10px;border:1.5px solid #e2e8f0;font-size:.62rem;font-weight:700;text-align:center;cursor:pointer;background:#f8fafc;color:#64748b;transition:.12s;line-height:1.3}
+    .resp-btn.sel{background:#7c3aed;border-color:#7c3aed;color:#fff;box-shadow:0 2px 6px rgba(124,58,237,.3)}
+
+    /* Resultado */
+    .result-card{background:#fff;border-radius:16px;padding:18px;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,.08);display:none}
+    .result-card.visivel{display:block}
+    .result-score{font-size:3rem;font-weight:900;text-align:center;line-height:1}
+    .result-label{font-size:1rem;font-weight:800;text-align:center;margin-top:6px}
+    .result-interp{font-size:.78rem;color:#475569;text-align:center;margin-top:8px;line-height:1.5}
+    .cutoff-bar{display:flex;height:12px;border-radius:6px;overflow:hidden;margin:12px 0 6px;position:relative}
+    .cutoff-seg{flex:1;position:relative}
+    .cutoff-pointer{position:absolute;top:-6px;width:3px;height:24px;background:#0f172a;border-radius:2px;transform:translateX(-50%)}
+    .cutoff-labels{display:flex;font-size:.55rem;color:#94a3b8;font-weight:700;justify-content:space-between;padding:0 2px}
+
+    /* Perfil integrado */
+    .perfil-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:10px}
+    .perf-card{background:#f8fafc;border-radius:10px;padding:10px 12px;text-align:center;border:1px solid #e2e8f0}
+    .perf-val{font-size:1.2rem;font-weight:900;color:#0f172a}
+    .perf-lbl{font-size:.6rem;color:#94a3b8;text-transform:uppercase;font-weight:700;margin-top:2px}
+
+    /* Recomendações */
+    .rec-list{background:#faf5ff;border:1px solid #e9d5ff;border-radius:12px;padding:12px 14px;margin-bottom:10px}
+    .rec-item{font-size:.78rem;padding:5px 0;border-bottom:1px solid #f3e8ff;color:#4c1d95;display:flex;gap:8px}
+    .rec-item:last-child{border:none}
+
+    /* Histórico */
+    .hist-section{background:#fff;border-radius:14px;padding:14px;box-shadow:0 1px 4px rgba(0,0,0,.07)}
+    .hist-title{font-size:.73rem;font-weight:800;color:#7c3aed;text-transform:uppercase;margin-bottom:10px}
+    svg text{font-family:system-ui,sans-serif}
+
+    .salvar-btn{width:100%;padding:13px;background:#7c3aed;color:#fff;border:none;border-radius:12px;font-size:.85rem;font-weight:800;cursor:pointer;margin:12px 0}
+    @media print{.topbar,.pac-sel,.prog-strip,.salvar-btn,nav{display:none!important}body{background:#fff}main{padding:0}}
+  </style>
+</head>
+<body>
+<div class="topbar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <div style="flex:1">
+    <div class="topbar-title">💜 Escala de Zarit</div>
+    <div class="topbar-sub">Sobrecarga do Cuidador · Scazufca 2002</div>
+  </div>
+</div>
+<main>
+  <select class="pac-sel" id="sel-pac" onchange="init()"><option value="">Selecione o paciente...</option></select>
+
+  <div class="intro" id="intro" style="display:none">
+    Instrução: as perguntas abaixo referem-se ao cuidador principal deste paciente. Cada item deve ser respondido considerando com que frequência o cuidador se sente assim.
+    <br><strong>Referência:</strong> Scazufca M, 2002 (validação brasileira) | Zarit SH, 1980.
+  </div>
+
+  <div class="prog-strip" id="prog-strip" style="display:none">
+    <div class="prog-bar"><div class="prog-fill" id="prog-fill" style="width:0%"></div></div>
+    <div class="prog-txt" id="prog-txt">0 / 22</div>
+  </div>
+
+  <div id="questoes"></div>
+
+  <button class="salvar-btn" id="btn-salvar" style="display:none" onclick="salvar()">💾 Calcular e Salvar</button>
+
+  <div class="result-card" id="result-card">
+    <div class="result-score" id="res-score"></div>
+    <div class="result-label" id="res-label"></div>
+    <div class="result-interp" id="res-interp"></div>
+    <div class="cutoff-bar" id="cutoff-bar">
+      <div class="cutoff-seg" style="background:#22c55e;flex:20"></div>
+      <div class="cutoff-seg" style="background:#84cc16;flex:20"></div>
+      <div class="cutoff-seg" style="background:#f59e0b;flex:20"></div>
+      <div class="cutoff-seg" style="background:#ef4444;flex:28"></div>
+      <div class="cutoff-pointer" id="cutoff-ptr"></div>
+    </div>
+    <div class="cutoff-labels"><span>0</span><span>20</span><span>40</span><span>60</span><span>88</span></div>
+    <div id="perfil-integrado" style="margin-top:14px"></div>
+    <div id="recomendacoes" style="margin-top:10px"></div>
+  </div>
+
+  <div class="hist-section" id="hist-section" style="display:none">
+    <div class="hist-title">Histórico</div>
+    <svg id="hist-svg" width="100%" height="140" viewBox="0 0 380 140"></svg>
+  </div>
+</main>
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+<script src="js/db.js"></script>
+<script src="js/utils.js"></script>
+<script>
+const QUESTOES=[
+  'Seu familiar solicita mais ajuda do que realmente necessita?',
+  'O(a) senhor(a) não tem tempo suficiente para si mesmo(a) por causa do tempo que dedica ao seu familiar?',
+  'O(a) senhor(a) se sente estressado(a) entre cuidar do seu familiar e suas outras responsabilidades (família e trabalho)?',
+  'O(a) senhor(a) se sente envergonhado(a) com o comportamento do seu familiar?',
+  'O(a) senhor(a) se sente irritado(a) quando está perto do seu familiar?',
+  'O(a) senhor(a) acredita que a situação atual afeta negativamente sua relação com amigos ou outros membros da família?',
+  'O(a) senhor(a) tem receio do que o futuro reserva ao seu familiar?',
+  'O(a) senhor(a) acredita que o seu familiar depende do(a) senhor(a)?',
+  'O(a) senhor(a) se sente tenso(a) quando está perto do seu familiar?',
+  'O(a) senhor(a) sente que a sua saúde foi afetada por ter que cuidar do seu familiar?',
+  'O(a) senhor(a) sente que não tem tanta privacidade quanto gostaria por causa do seu familiar?',
+  'O(a) senhor(a) sente que a sua vida social tem sido prejudicada porque o(a) senhor(a) está cuidando do seu familiar?',
+  'O(a) senhor(a) não se sente à vontade em receber visitas de amigos por causa do seu familiar?',
+  'O(a) senhor(a) sente que seu familiar parece esperar que o(a) senhor(a) cuide dele(a) como se o(a) senhor(a) fosse a única pessoa de quem ele(a) pode depender?',
+  'O(a) senhor(a) sente que não tem recursos financeiros suficientes para cuidar do seu familiar, além do necessário para suas despesas?',
+  'O(a) senhor(a) sente que será incapaz de cuidar do seu familiar por muito mais tempo?',
+  'O(a) senhor(a) sente que perdeu o controle da própria vida desde que o(a) seu familiar ficou doente?',
+  'O(a) senhor(a) desejaria poder deixar o cuidado do seu familiar para outras pessoas?',
+  'O(a) senhor(a) se sente inseguro(a) sobre o que fazer com o seu familiar?',
+  'O(a) senhor(a) sente que deveria fazer mais pelo seu familiar?',
+  'O(a) senhor(a) acredita que poderia cuidar melhor do seu familiar?',
+  'No geral, como o(a) senhor(a) se sente por ter que cuidar do seu familiar?',
+];
+const LABELS_STD=['Nunca','Raramente','Às vezes','Frequentemente','Sempre'];
+const LABELS_22=['Não sobrecarregado','Pouco sobrecarregado','Moderadamente','Muito sobrecarregado','Extremamente'];
+const INTERP=[
+  {max:20,cls:'#22c55e',lbl:'Ausente / Pouca Sobrecarga',txt:'O cuidador não apresenta sobrecarga significativa no momento. Monitorar periodicamente.'},
+  {max:40,cls:'#84cc16',lbl:'Sobrecarga Leve a Moderada',txt:'Nível de sobrecarga que merece atenção. Discutir estratégias de apoio e revezamento no cuidado.'},
+  {max:60,cls:'#f59e0b',lbl:'Sobrecarga Moderada a Severa',txt:'Sobrecarga significativa detectada. Avaliar rede de apoio, grupos de cuidadores e suporte psicológico.'},
+  {max:88,cls:'#ef4444',lbl:'Sobrecarga Severa a Extrema',txt:'Situação crítica. Risco de adoecimento do cuidador. Encaminhar para suporte especializado com urgência.'},
+];
+
+let _pid=null, _respostas=Array(22).fill(null);
+
+async function init(){
+  _pid=parseInt(document.getElementById('sel-pac').value)||null;
+  _respostas=Array(22).fill(null);
+  if(!_pid){
+    document.getElementById('questoes').innerHTML='';
+    document.getElementById('intro').style.display='none';
+    document.getElementById('prog-strip').style.display='none';
+    document.getElementById('btn-salvar').style.display='none';
+    document.getElementById('result-card').classList.remove('visivel');
+    document.getElementById('hist-section').style.display='none';
+    return;
+  }
+  // Carregar resposta anterior
+  const ant=await dbGetConfig('zarit_'+_pid);
+  if(ant?.respostas) _respostas=[...ant.respostas];
+  document.getElementById('intro').style.display='block';
+  document.getElementById('prog-strip').style.display='flex';
+  document.getElementById('btn-salvar').style.display='block';
+  renderQuestoes();
+  await renderHist();
+}
+
+function renderQuestoes(){
+  let html='';
+  QUESTOES.forEach((q,i)=>{
+    const resp=_respostas[i];
+    const lbs=i===21?LABELS_22:LABELS_STD;
+    html+=`<div class="q-card ${resp!==null?'respondida':''}" id="qc-${i}">
+      <div class="q-num">Questão ${i+1} de 22</div>
+      <div class="q-texto">${esc(q)}</div>
+      <div class="resp-row">
+        ${lbs.map((l,v)=>`<div class="resp-btn ${resp===v?'sel':''}" onclick="resp(${i},${v},this)">${v}<br>${esc(l)}</div>`).join('')}
+      </div>
+    </div>`;
+  });
+  document.getElementById('questoes').innerHTML=html;
+  atualizarProg();
+}
+
+function resp(qi,val,btn){
+  _respostas[qi]=val;
+  const card=document.getElementById('qc-'+qi);
+  card.classList.add('respondida');
+  card.querySelectorAll('.resp-btn').forEach(b=>b.classList.remove('sel'));
+  btn.classList.add('sel');
+  atualizarProg();
+}
+
+function atualizarProg(){
+  const n=_respostas.filter(r=>r!==null).length;
+  document.getElementById('prog-fill').style.width=(n/22*100)+'%';
+  document.getElementById('prog-txt').textContent=n+' / 22';
+}
+
+async function salvar(){
+  const incompletas=_respostas.filter(r=>r===null).length;
+  if(incompletas>0){showToast('Responda todas as '+incompletas+' questões restantes');return;}
+  const total=_respostas.reduce((a,b)=>a+b,0);
+  const agora=new Date();
+  const entrada={pid:_pid,total,respostas:[..._respostas],data:agora.toISOString().slice(0,10),ts:Date.now()};
+  await dbSetConfig('zarit_'+_pid,entrada);
+  const hist=await dbGetConfig('zarit_hist_'+_pid)||[];
+  hist.push(entrada);
+  await dbSetConfig('zarit_hist_'+_pid,hist);
+  renderResultado(total);
+  await renderHist();
+  showToast('✅ Zarit salvo');
+}
+
+async function renderResultado(total){
+  const interp=INTERP.find(i=>total<=i.max)||INTERP[INTERP.length-1];
+  document.getElementById('res-score').innerHTML=`<span style="color:${interp.cls}">${total}</span><span style="font-size:1rem;color:#94a3b8"> / 88</span>`;
+  document.getElementById('res-label').style.color=interp.cls;
+  document.getElementById('res-label').textContent=interp.lbl;
+  document.getElementById('res-interp').textContent=interp.txt;
+  // Ponteiro
+  const pct=total/88*100;
+  document.getElementById('cutoff-ptr').style.left=pct+'%';
+
+  // Perfil integrado
+  const [barthel,meem,morse,frail]=await Promise.all([
+    dbGetConfig('barthel_hist_'+_pid),
+    dbGetConfig('meem_hist_'+_pid),
+    dbGetConfig('morse_hist_'+_pid),
+    dbGetConfig('frail_hist_'+_pid),
+  ]);
+  const last=arr=>(arr&&arr.length)?arr[arr.length-1]:null;
+  const bLast=last(barthel),mLast=last(meem),moLast=last(morse),fLast=last(frail);
+  let perfHtml='';
+  if(bLast||mLast||moLast||fLast){
+    perfHtml=`<div style="font-size:.68rem;font-weight:800;color:#94a3b8;text-transform:uppercase;margin-bottom:8px">Contexto clínico do paciente</div>
+    <div class="perfil-grid">`;
+    if(bLast) perfHtml+=`<div class="perf-card"><div class="perf-val">${bLast.total}</div><div class="perf-lbl">Barthel</div></div>`;
+    if(mLast) perfHtml+=`<div class="perf-card"><div class="perf-val">${mLast.total}</div><div class="perf-lbl">MEEM</div></div>`;
+    if(moLast) perfHtml+=`<div class="perf-card"><div class="perf-val">${moLast.total||moLast.score}</div><div class="perf-lbl">Morse</div></div>`;
+    if(fLast) perfHtml+=`<div class="perf-card"><div class="perf-val">${fLast.total}</div><div class="perf-lbl">FRAIL</div></div>`;
+    perfHtml+='</div>';
+  }
+  document.getElementById('perfil-integrado').innerHTML=perfHtml;
+
+  // Recomendações
+  const recs=[];
+  if(total>=21) recs.push('Discutir com o cuidador alternativas de apoio e revezamento no cuidado.');
+  if(total>=41) recs.push('Encaminhar para grupo de apoio a cuidadores ou serviço de psicologia.');
+  if(total>=61) recs.push('⚠️ Risco elevado de adoecimento do cuidador — acionar rede de suporte com urgência.');
+  if(bLast&&bLast.total<40) recs.push('Paciente com alta dependência (Barthel <40): sobrecarga do cuidador tende a ser maior.');
+  if(mLast&&mLast.total<24) recs.push('Comprometimento cognitivo detectado (MEEM): exige mais do cuidador para supervisão de medicamentos.');
+  if(total>=21) recs.push('Revisar se o cuidador está administrando corretamente os medicamentos — sobrecarga reduz aderência ao esquema.');
+  if(!recs.length) recs.push('Manter monitoramento periódico da sobrecarga. Reavaliar em 3-6 meses.');
+  document.getElementById('recomendacoes').innerHTML=`<div class="rec-list">${recs.map(r=>`<div class="rec-item"><span>•</span><span>${r}</span></div>`).join('')}</div>`;
+  document.getElementById('result-card').classList.add('visivel');
+}
+
+async function renderHist(){
+  if(!_pid) return;
+  const hist=await dbGetConfig('zarit_hist_'+_pid)||[];
+  if(hist.length<2){document.getElementById('hist-section').style.display='none';return;}
+  document.getElementById('hist-section').style.display='block';
+  const W=380,H=140,pad={t:16,b:30,l:36,r:16};
+  const pts=hist.slice(-10);
+  const vals=pts.map(p=>p.total);
+  const maxV=88,minV=0;
+  const xS=(W-pad.l-pad.r)/(pts.length-1||1);
+  const yS=h=>pad.t+(1-(h-minV)/(maxV-minV))*(H-pad.t-pad.b);
+  let svgH='';
+  // Zonas
+  [[0,20,'#dcfce7'],[20,40,'#ecfccb'],[40,60,'#fef9c3'],[60,88,'#fee2e2']].forEach(([a,b,c])=>{
+    const y1=yS(b),y2=yS(a);
+    svgH+=`<rect x="${pad.l}" y="${y1}" width="${W-pad.l-pad.r}" height="${y2-y1}" fill="${c}" opacity=".5"/>`;
+  });
+  // Linha
+  const path=pts.map((p,i)=>`${i?'L':'M'}${pad.l+i*xS},${yS(p.total)}`).join(' ');
+  svgH+=`<path d="${path}" fill="none" stroke="#7c3aed" stroke-width="2.5"/>`;
+  pts.forEach((p,i)=>{
+    const x=pad.l+i*xS,y=yS(p.total);
+    svgH+=`<circle cx="${x}" cy="${y}" r="5" fill="#7c3aed" stroke="#fff" stroke-width="2"/>
+    <text x="${x}" y="${y-9}" text-anchor="middle" font-size="10" font-weight="700" fill="#4c1d95">${p.total}</text>
+    <text x="${x}" y="${H-6}" text-anchor="middle" font-size="8" fill="#94a3b8">${(p.data||'').slice(5)}</text>`;
+  });
+  // Eixo Y labels
+  [0,21,41,61,88].forEach(v=>{
+    svgH+=`<text x="${pad.l-4}" y="${yS(v)+4}" text-anchor="end" font-size="8" fill="#94a3b8">${v}</text>`;
+  });
+  document.getElementById('hist-svg').innerHTML=svgH;
+}
+
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+
+document.addEventListener('DOMContentLoaded',async()=>{
+  const pacs=await dbGetAll('pacientes');
+  const sel=document.getElementById('sel-pac');
+  sel.innerHTML='<option value="">Selecione o paciente...</option>'+pacs.map(p=>`<option value="${p.id}">${esc(p.nome||'Paciente '+p.id)}</option>`).join('');
+  const pid=getActivePacienteId();
+  if(pid){sel.value=pid;await init();}
+});
+</script>
+</body>
+</html>

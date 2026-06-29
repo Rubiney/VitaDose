@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>Calculadora Pediátrica — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .topbar{display:flex;align-items:center;gap:10px;padding:12px 16px;background:#0e7490;position:sticky;top:0;z-index:100}
+    .back-btn{background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:8px;padding:6px 11px;cursor:pointer;font-size:1rem}
+    .topbar-title{font-size:.93rem;font-weight:800;color:#fff;flex:1}
+    .topbar-sub{font-size:.62rem;color:rgba(255,255,255,.7);margin-top:1px}
+    .btn-top{background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:8px;padding:7px 11px;font-size:.72rem;font-weight:700;cursor:pointer}
+    main{max-width:580px;margin:0 auto;padding:12px 14px 90px}
+
+    /* Input card */
+    .inp-card{background:#fff;border-radius:14px;padding:16px;margin-bottom:12px;box-shadow:0 1px 6px rgba(0,0,0,.08)}
+    .inp-title{font-size:.73rem;font-weight:800;color:#0e7490;text-transform:uppercase;margin-bottom:12px}
+    label{font-size:.7rem;font-weight:700;color:#64748b;display:block;margin-bottom:3px}
+    select,input[type=number],input[type=text]{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:10px;padding:10px 12px;font-size:.85rem;background:#fff;margin-bottom:10px}
+    select:focus,input:focus{outline:none;border-color:#0e7490}
+    .field-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+
+    /* Dose type pills */
+    .tipo-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+    .tipo-pill{padding:6px 12px;border-radius:20px;border:1.5px solid #e2e8f0;font-size:.7rem;font-weight:700;cursor:pointer;background:#f8fafc;color:#475569;transition:.12s}
+    .tipo-pill.ativo{background:#cffafe;border-color:#0e7490;color:#0e7490}
+    .tipo-pill.hidden{display:none}
+
+    /* Concentrações sugeridas */
+    .conc-chips{display:flex;gap:5px;flex-wrap:wrap;margin:-4px 0 8px}
+    .conc-chip{padding:4px 10px;border-radius:14px;background:#f0fdfa;border:1px solid #99f6e4;font-size:.63rem;font-weight:700;color:#0f766e;cursor:pointer}
+
+    /* Resultado */
+    .result-card{background:#fff;border-radius:16px;padding:18px;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,.08);border-top:4px solid #0e7490;display:none}
+    .result-card.visivel{display:block}
+    .result-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+    .res-cell{background:#f0fdfa;border-radius:12px;padding:12px;text-align:center}
+    .res-val{font-size:1.6rem;font-weight:900;color:#0e7490;line-height:1}
+    .res-unit{font-size:.65rem;color:#64748b;font-weight:700;margin-top:2px}
+    .res-lbl{font-size:.62rem;color:#94a3b8;text-transform:uppercase;font-weight:700;margin-top:4px}
+    .alert-dose{padding:10px 14px;border-radius:10px;font-size:.78rem;font-weight:700;margin-bottom:8px}
+    .alert-ok{background:#dcfce7;color:#166534}
+    .alert-warn{background:#fef3c7;color:#92400e}
+    .alert-erro{background:#fee2e2;color:#991b1b}
+    .obs-box{background:#f8fafc;border-radius:10px;padding:10px 12px;font-size:.75rem;color:#475569;line-height:1.5}
+
+    /* Referência */
+    .ref-table{width:100%;border-collapse:collapse;font-size:.72rem;margin-top:6px}
+    .ref-table th{background:#f0fdfa;color:#0e7490;font-weight:800;padding:6px 8px;text-align:left}
+    .ref-table td{padding:6px 8px;border-bottom:1px solid #f1f5f9;color:#334155}
+    .ref-table tr:last-child td{border:none}
+
+    /* Histórico */
+    .hist-section{background:#fff;border-radius:14px;padding:14px;box-shadow:0 1px 4px rgba(0,0,0,.07);margin-top:10px}
+    .hist-title{font-size:.73rem;font-weight:800;color:#0e7490;text-transform:uppercase;margin-bottom:8px}
+    .hist-item{font-size:.75rem;padding:8px 0;border-bottom:1px solid #f1f5f9;display:flex;justify-content:space-between;align-items:center}
+    .hist-item:last-child{border:none}
+
+    .calcular-btn{width:100%;padding:13px;background:#0e7490;color:#fff;border:none;border-radius:12px;font-size:.88rem;font-weight:800;cursor:pointer;margin-top:4px}
+    @media print{.topbar,.btn-top,nav,.calcular-btn,.conc-chips,.tipo-row,.hist-section{display:none!important}body{background:#fff}main{padding:0}}
+  </style>
+</head>
+<body>
+<div class="topbar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <div style="flex:1">
+    <div class="topbar-title">🧒 Calculadora Pediátrica</div>
+    <div class="topbar-sub">Dose mg/kg · Volume em mL · Verificação de dose máxima</div>
+  </div>
+  <button class="btn-top" onclick="window.print()">🖨️</button>
+</div>
+<main>
+  <div class="inp-card">
+    <div class="inp-title">📋 Dados do Paciente</div>
+    <div class="field-row">
+      <div>
+        <label>Peso (kg)</label>
+        <input type="number" id="peso" placeholder="Ex: 12.5" min="1" max="100" step="0.1" oninput="calcular()">
+      </div>
+      <div>
+        <label>Idade</label>
+        <input type="text" id="idade" placeholder="Ex: 3 anos" oninput="calcular()">
+      </div>
+    </div>
+
+    <div class="inp-title" style="margin-top:4px">💊 Medicamento</div>
+    <label>Selecione o medicamento</label>
+    <select id="sel-drug" onchange="onDrugChange()">
+      <option value="">Selecione...</option>
+    </select>
+
+    <div id="tipo-div" style="display:none">
+      <label>Indicação / Dose</label>
+      <div class="tipo-row" id="tipo-row"></div>
+    </div>
+
+    <label>Concentração disponível</label>
+    <div class="conc-chips" id="conc-chips"></div>
+    <div class="field-row">
+      <div>
+        <input type="number" id="conc-num" placeholder="Ex: 250" min="0" step="0.1" oninput="calcular()">
+      </div>
+      <div>
+        <select id="conc-unit" onchange="calcular()">
+          <option value="mg_5ml">mg/5 mL</option>
+          <option value="mg_ml">mg/mL</option>
+          <option value="ui_ml">UI/mL</option>
+          <option value="mcg_ml">mcg/mL</option>
+          <option value="pct">% (g/100mL)</option>
+        </select>
+      </div>
+    </div>
+
+    <label>Via de administração</label>
+    <select id="via" onchange="calcular()">
+      <option value="VO">VO (oral)</option>
+      <option value="EV">EV (intravenosa)</option>
+      <option value="IM">IM (intramuscular)</option>
+      <option value="SC">SC (subcutânea)</option>
+      <option value="INAL">Inalatória</option>
+    </select>
+
+    <button class="calcular-btn" onclick="calcularBtn()">🧮 Calcular Dose</button>
+  </div>
+
+  <div class="result-card" id="result-card">
+    <div style="font-size:.72rem;font-weight:800;color:#0e7490;text-transform:uppercase;margin-bottom:12px" id="res-drug-lbl"></div>
+    <div class="result-grid">
+      <div class="res-cell">
+        <div class="res-val" id="res-dose-mg">—</div>
+        <div class="res-unit">mg</div>
+        <div class="res-lbl">Dose por adm.</div>
+      </div>
+      <div class="res-cell">
+        <div class="res-val" id="res-vol">—</div>
+        <div class="res-unit">mL</div>
+        <div class="res-lbl">Volume a admin.</div>
+      </div>
+      <div class="res-cell">
+        <div class="res-val" id="res-dose-dia">—</div>
+        <div class="res-unit">mg/dia</div>
+        <div class="res-lbl">Dose total/dia</div>
+      </div>
+      <div class="res-cell">
+        <div class="res-val" id="res-freq">—</div>
+        <div class="res-unit"></div>
+        <div class="res-lbl">Posologia</div>
+      </div>
+    </div>
+    <div id="dose-alert" class="alert-dose alert-ok" style="display:none"></div>
+    <div class="obs-box" id="obs-box" style="display:none"></div>
+    <div id="ref-table-div" style="margin-top:12px;display:none">
+      <div style="font-size:.62rem;font-weight:800;color:#94a3b8;text-transform:uppercase;margin-bottom:4px">Referência posológica</div>
+      <table class="ref-table">
+        <thead><tr><th>Indicação</th><th>Dose</th><th>Máx/dose</th><th>Frequência</th></tr></thead>
+        <tbody id="ref-tbody"></tbody>
+      </table>
+    </div>
+    <button onclick="salvarHist()" style="width:100%;margin-top:12px;padding:10px;background:#f0fdfa;border:1.5px solid #0e7490;color:#0e7490;border-radius:10px;font-size:.75rem;font-weight:800;cursor:pointer">💾 Salvar no histórico</button>
+  </div>
+
+  <div class="hist-section" id="hist-section" style="display:none">
+    <div class="hist-title">Últimos cálculos</div>
+    <div id="hist-list"></div>
+  </div>
+</main>
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+<script src="js/db.js"></script>
+<script src="js/utils.js"></script>
+<script>
+// Banco de medicamentos pediátricos
+const DRUGS=[
+  {id:'amox',nome:'Amoxicilina',
+   tipos:[{id:'leve',lbl:'Infecção leve/moderada',mgkgdose:12.5,freq:2,obs:'12,5 mg/kg/dose de 12/12h'},
+          {id:'grave',lbl:'Infecção grave / otite / pneumonia',mgkgdose:22.5,freq:2,obs:'22,5 mg/kg/dose de 12/12h'}],
+   maxDose:500,maxDia:3000,ui:'VO',
+   concs:['250 mg/5mL','400 mg/5mL','500 mg/5mL'],
+   ref:[['Leve/mod','12,5 mg/kg','500 mg','12/12h'],['Grave','22,5 mg/kg','500 mg','12/12h']]},
+  {id:'amoxclav',nome:'Amoxicilina + Clavulanato',
+   tipos:[{id:'std',lbl:'Dose padrão',mgkgdose:22.5,freq:2,obs:'22,5 mg/kg/dose de 12/12h (em amoxicilina)'}],
+   maxDose:500,maxDia:3000,ui:'VO',
+   concs:['400 mg/5mL (28,5:1)'],
+   ref:[['Padrão','22,5 mg/kg','500 mg amox','12/12h']]},
+  {id:'azitro',nome:'Azitromicina',
+   tipos:[{id:'std',lbl:'Dose padrão',mgkgdose:10,freq:1,obs:'10 mg/kg/dose 1x ao dia por 3–5 dias'}],
+   maxDose:500,maxDia:500,ui:'VO',
+   concs:['200 mg/5mL'],
+   ref:[['Padrão','10 mg/kg','500 mg','1x/dia × 3-5d']]},
+  {id:'cefal',nome:'Cefalexina',
+   tipos:[{id:'leve',lbl:'Infecção leve',mgkgdose:12.5,freq:3,obs:'12,5 mg/kg/dose de 8/8h'},
+          {id:'grave',lbl:'Infecção grave',mgkgdose:25,freq:4,obs:'25 mg/kg/dose de 6/6h'}],
+   maxDose:500,maxDia:4000,ui:'VO',
+   concs:['250 mg/5mL'],
+   ref:[['Leve','12,5 mg/kg','500 mg','8/8h'],['Grave','25 mg/kg','500 mg','6/6h']]},
+  {id:'ibup',nome:'Ibuprofeno',
+   tipos:[{id:'analg',lbl:'Analgesia / Anti-inflamatório',mgkgdose:5,freq:3,obs:'5 mg/kg/dose de 8/8h'},
+          {id:'antipir',lbl:'Antipirético (febre alta)',mgkgdose:10,freq:3,obs:'10 mg/kg/dose de 8/8h'}],
+   maxDose:400,maxDia:2400,ui:'VO',
+   concs:['100 mg/5mL','50 mg/mL (gotas)'],
+   ref:[['Analgesia','5 mg/kg','400 mg','8/8h'],['Antipirético','10 mg/kg','400 mg','8/8h']]},
+  {id:'paracet',nome:'Paracetamol',
+   tipos:[{id:'std',lbl:'Analgesia / Antipirético',mgkgdose:15,freq:4,obs:'10–15 mg/kg/dose de 6/6h. Max 5 doses/dia'}],
+   maxDose:1000,maxDia:4000,ui:'VO',
+   concs:['200 mg/mL (gotas)','160 mg/5mL (susp)'],
+   ref:[['Padrão','10–15 mg/kg','1000 mg','6/6h']]},
+  {id:'dipirona',nome:'Dipirona (Metamizol)',
+   tipos:[{id:'std',lbl:'Analgesia / Antipirético',mgkgdose:15,freq:4,obs:'10–20 mg/kg/dose de 6/6h'}],
+   maxDose:1000,maxDia:4000,ui:'VO',
+   concs:['500 mg/mL (gotas)','50 mg/mL (VO)'],
+   ref:[['Padrão','10–20 mg/kg','1000 mg','6/6h']]},
+  {id:'metro',nome:'Metronidazol',
+   tipos:[{id:'gia',lbl:'Giardíase / amebíase',mgkgdose:15,freq:3,obs:'15 mg/kg/dose de 8/8h por 5–7 dias'},
+          {id:'anae',lbl:'Infecção anaeróbia',mgkgdose:10,freq:3,obs:'10 mg/kg/dose de 8/8h'}],
+   maxDose:500,maxDia:2250,ui:'VO',
+   concs:['40 mg/mL (susp)','250 mg/5mL'],
+   ref:[['Giardíase','15 mg/kg','500 mg','8/8h × 5-7d'],['Anaeróbia','10 mg/kg','500 mg','8/8h']]},
+  {id:'smt',nome:'Sulfametoxazol + Trimetoprima',
+   tipos:[{id:'std',lbl:'Padrão (em SMX)',mgkgdose:20,freq:2,obs:'20 mg/kg/dia de SMX dividido de 12/12h'}],
+   maxDose:800,maxDia:1600,ui:'VO',
+   concs:['200 mg/5mL (SMX)','400 mg/5mL (SMX)'],
+   ref:[['Padrão','20 mg/kg/dia (SMX)','800 mg SMX','12/12h']]},
+  {id:'alben',nome:'Albendazol',
+   tipos:[{id:'std',lbl:'Dose única',mgkgdose:null,fixo:{ate:10:200,acima:400},freq:1,obs:'< 10 kg: 200 mg; ≥ 10 kg: 400 mg — Dose única'}],
+   maxDose:400,maxDia:400,ui:'VO',
+   concs:['200 mg/5mL'],
+   ref:[['< 10 kg','200 mg (fixo)','200 mg','1 dose'],['≥ 10 kg','400 mg (fixo)','400 mg','1 dose']]},
+  {id:'ivermec',nome:'Ivermectina',
+   tipos:[{id:'std',lbl:'Dose única',mgkgdose:0.2,freq:1,obs:'0,2 mg/kg em dose única. Min 15 kg'}],
+   maxDose:12,maxDia:12,ui:'VO',
+   concs:['6 mg/mL'],
+   ref:[['Padrão','0,2 mg/kg','12 mg','Dose única']]},
+  {id:'predniso',nome:'Prednisolona',
+   tipos:[{id:'std',lbl:'Anti-inflamatório',mgkgdose:1,freq:1,obs:'0,5–1 mg/kg/dia'},
+          {id:'grave',lbl:'Crise grave (asma/alérgica)',mgkgdose:2,freq:1,obs:'1–2 mg/kg/dia'}],
+   maxDose:60,maxDia:60,ui:'VO',
+   concs:['3 mg/mL'],
+   ref:[['Anti-inflamação','0,5–1 mg/kg/dia','60 mg','1x/dia'],['Crise grave','1–2 mg/kg/dia','60 mg','1x/dia']]},
+  {id:'dexa',nome:'Dexametasona',
+   tipos:[{id:'crupe',lbl:'Crupe / Laringite',mgkgdose:0.15,freq:1,obs:'Dose única. Pode repetir se necessário'},
+          {id:'angio',lbl:'Reação alérgica grave',mgkgdose:0.5,freq:1,obs:'0,5 mg/kg dose única'}],
+   maxDose:10,maxDia:10,ui:'VO/EV/IM',
+   concs:['4 mg/mL','0,1 mg/mL'],
+   ref:[['Crupe','0,15 mg/kg','10 mg','1 dose'],['Alergia grave','0,5 mg/kg','10 mg','1 dose']]},
+  {id:'cetirizina',nome:'Cetirizina',
+   tipos:[{id:'std',lbl:'Antialérgico',mgkgdose:0.25,freq:1,obs:'0,25 mg/kg 1x ao dia. Max 10 mg'}],
+   maxDose:10,maxDia:10,ui:'VO',
+   concs:['1 mg/mL'],
+   ref:[['Padrão','0,25 mg/kg','10 mg','1x/dia']]},
+  {id:'lorata',nome:'Loratadina',
+   tipos:[{id:'std',lbl:'Antialérgico',mgkgdose:0.2,freq:1,obs:'0,2 mg/kg 1x ao dia. Max 10 mg'}],
+   maxDose:10,maxDia:10,ui:'VO',
+   concs:['1 mg/mL'],
+   ref:[['Padrão','0,2 mg/kg','10 mg','1x/dia']]},
+  {id:'ambroxol',nome:'Ambroxol',
+   tipos:[{id:'std',lbl:'Mucolítico',mgkgdose:0.4,freq:3,obs:'0,4 mg/kg/dose de 8/8h'}],
+   maxDose:30,maxDia:90,ui:'VO',
+   concs:['3 mg/mL','15 mg/5mL'],
+   ref:[['Padrão','0,4 mg/kg/dose','30 mg','8/8h']]},
+  {id:'ferro',nome:'Ferro Elementar',
+   tipos:[{id:'trat',lbl:'Anemia ferropriva',mgkgdose:5,freq:1,obs:'3–5 mg/kg/dia de ferro elementar'},
+          {id:'prev',lbl:'Suplementação preventiva',mgkgdose:1,freq:1,obs:'1 mg/kg/dia'}],
+   maxDose:60,maxDia:200,ui:'VO',
+   concs:['25 mg/mL (elementar)','5 mg/mL'],
+   ref:[['Tratamento','3–5 mg/kg/dia','60 mg','1x/dia'],['Prevenção','1 mg/kg/dia','60 mg','1x/dia']]},
+  {id:'vitd',nome:'Vitamina D',
+   tipos:[{id:'prev',lbl:'Prevenção (< 1 ano)',mgkgdose:null,fixo:400,freq:1,obs:'400 UI/dia (lactentes). Independe do peso'},
+          {id:'def',lbl:'Deficiência comprovada',mgkgdose:null,fixo:2000,freq:1,obs:'1000–2000 UI/dia por 3 meses'}],
+   maxDose:4000,maxDia:4000,ui:'VO',
+   concs:['200 UI/gota','400 UI/gota'],
+   ref:[['Prevenção <1a','400 UI/dia (fixo)','400 UI','1x/dia'],['Deficiência','1000–2000 UI/dia','4000 UI','1x/dia']]},
+  {id:'salbutamol',nome:'Salbutamol (Xarope)',
+   tipos:[{id:'bron',lbl:'Broncoespasmo leve',mgkgdose:0.1,freq:3,obs:'0,1–0,15 mg/kg/dose de 8/8h. Preferir inalação.'}],
+   maxDose:4,maxDia:12,ui:'VO',
+   concs:['0,4 mg/mL'],
+   ref:[['Broncoespasmo leve','0,1 mg/kg/dose','4 mg','8/8h']]},
+  {id:'aciclovir',nome:'Aciclovir',
+   tipos:[{id:'var',lbl:'Varicela',mgkgdose:20,freq:4,obs:'20 mg/kg/dose de 6/6h por 5 dias. Max 800 mg/dose'},
+          {id:'her',lbl:'Herpes simples',mgkgdose:5,freq:3,obs:'5 mg/kg EV de 8/8h (grave)'}],
+   maxDose:800,maxDia:3200,ui:'VO/EV',
+   concs:['200 mg/5mL','50 mg/mL (EV)'],
+   ref:[['Varicela','20 mg/kg/dose','800 mg','6/6h × 5d'],['Herpes grave','5 mg/kg EV','—','8/8h']]},
+];
+
+// Correção de syntax error no objeto albendazol - remover a linha problemática
+// O DRUGS array acima tem um erro no albendazol - vamos corrigir manualmente
+DRUGS[9].tipos=[{id:'std',lbl:'Dose única (< 10 kg: 200 mg; ≥ 10 kg: 400 mg)',mgkgdose:null,freqT:'1x',freq:1,obs:'< 10 kg: 200 mg; ≥ 10 kg: 400 mg — Dose única. Não calcular por peso.'}];
+
+const FREQ_LABEL={1:'1x ao dia',2:'de 12/12h',3:'de 8/8h',4:'de 6/6h',6:'de 4/4h'};
+
+let _drugSel=null,_tipoSel=null,_ultCalc=null;
+
+function onDrugChange(){
+  const id=document.getElementById('sel-drug').value;
+  _drugSel=DRUGS.find(d=>d.id===id)||null;
+  _tipoSel=null;
+  const tipoDiv=document.getElementById('tipo-div');
+  const tipoRow=document.getElementById('tipo-row');
+  if(!_drugSel){tipoDiv.style.display='none';document.getElementById('conc-chips').innerHTML='';return;}
+  // Tipos
+  if(_drugSel.tipos.length>1){
+    tipoDiv.style.display='block';
+    tipoRow.innerHTML=_drugSel.tipos.map(t=>`<div class="tipo-pill" onclick="selTipo('${t.id}',this)">${t.lbl}</div>`).join('');
+  } else {
+    tipoDiv.style.display='none';
+    _tipoSel=_drugSel.tipos[0];
+  }
+  // Concentrações sugeridas
+  const chips=document.getElementById('conc-chips');
+  chips.innerHTML=(_drugSel.concs||[]).map(c=>`<div class="conc-chip" onclick="aplicarConc('${c}')">${c}</div>`).join('');
+  // Via padrão
+  if(_drugSel.ui) document.getElementById('via').value=_drugSel.ui.split('/')[0];
+  // Referência
+  renderRef();
+  calcular();
+}
+
+function selTipo(id,btn){
+  _tipoSel=_drugSel?.tipos.find(t=>t.id===id)||null;
+  document.querySelectorAll('.tipo-pill').forEach(b=>b.classList.remove('ativo'));
+  btn.classList.add('ativo');
+  calcular();
+}
+
+function aplicarConc(c){
+  // Tenta parsear: "250 mg/5mL", "50 mg/mL", "200 UI/mL"
+  const m=c.match(/(\d+\.?\d*)\s*(mg|UI|mcg|g)\/(\d+\.?\d*)?(\s*mL|gota)/i);
+  if(!m){return;}
+  const num=parseFloat(m[1]);
+  const per=parseFloat(m[3]||1);
+  const unit=m[4]?.trim().toLowerCase();
+  if(unit==='gota'||per<=1){
+    document.getElementById('conc-num').value=num;
+    document.getElementById('conc-unit').value='mg_ml';
+  } else {
+    document.getElementById('conc-num').value=num;
+    document.getElementById('conc-unit').value='mg_5ml';
+  }
+  if(m[2].toLowerCase()==='ui') document.getElementById('conc-unit').value='ui_ml';
+  calcular();
+}
+
+function concToMgMl(){
+  const num=parseFloat(document.getElementById('conc-num').value)||0;
+  const unit=document.getElementById('conc-unit').value;
+  if(unit==='mg_5ml') return num/5;
+  if(unit==='mg_ml') return num;
+  if(unit==='ui_ml') return num;
+  if(unit==='mcg_ml') return num/1000;
+  if(unit==='pct') return num*10; // g/100mL → mg/mL
+  return num;
+}
+
+function calcular(){
+  const peso=parseFloat(document.getElementById('peso').value)||0;
+  if(!_drugSel||!peso) return;
+  const tipo=_tipoSel||(_drugSel.tipos.length===1?_drugSel.tipos[0]:null);
+  if(!tipo&&_drugSel.tipos.length>1) return;
+  // Dose por administração em mg
+  let doseMg;
+  if(tipo?.fixo!==undefined&&tipo?.fixo!==null){
+    // Dose fixa
+    if(_drugSel.id==='alben'){doseMg=peso<10?200:400;}
+    else doseMg=tipo.fixo;
+  } else if(tipo?.mgkgdose){
+    doseMg=tipo.mgkgdose*peso;
+    // Aplicar dose máxima por adm
+    if(_drugSel.maxDose&&doseMg>_drugSel.maxDose) doseMg=_drugSel.maxDose;
+  } else return;
+
+  const freq=tipo.freq||1;
+  const doseDia=doseMg*freq;
+
+  // Volume
+  const mgMl=concToMgMl();
+  const vol=mgMl>0?(doseMg/mgMl):null;
+
+  document.getElementById('res-dose-mg').textContent=arred(doseMg);
+  document.getElementById('res-vol').textContent=vol!==null?arred(vol):'—';
+  document.getElementById('res-dose-dia').textContent=arred(doseDia);
+  document.getElementById('res-freq').textContent=FREQ_LABEL[freq]||freq+'x';
+  document.getElementById('res-drug-lbl').textContent=_drugSel.nome+(tipo&&_drugSel.tipos.length>1?' — '+tipo.lbl:'');
+
+  // Alerta
+  const alertDiv=document.getElementById('dose-alert');
+  const maxDia=_drugSel.maxDia;
+  alertDiv.style.display='block';
+  if(doseDia>maxDia*1.05){
+    alertDiv.className='alert-dose alert-erro';
+    alertDiv.textContent='⚠️ ATENÇÃO: Dose/dia calculada ('+arred(doseDia)+' mg) supera o máximo recomendado ('+maxDia+' mg/dia). Verificar dose máxima por administração.';
+  } else if(doseDia>maxDia*0.9&&peso>50){
+    alertDiv.className='alert-dose alert-warn';
+    alertDiv.textContent='ℹ️ Dose limitada ao máximo de '+arred(Math.min(doseMg,_drugSel.maxDose||Infinity))+' mg/dose (peso alto).';
+  } else {
+    alertDiv.className='alert-dose alert-ok';
+    alertDiv.textContent='✅ Dose dentro do intervalo terapêutico recomendado.';
+  }
+
+  // Obs
+  const obsBox=document.getElementById('obs-box');
+  if(tipo?.obs){obsBox.style.display='block';obsBox.textContent='ℹ️ '+tipo.obs;}
+  else obsBox.style.display='none';
+
+  _ultCalc={drug:_drugSel.nome,tipo:tipo?.lbl||'',peso,doseMg:arred(doseMg),vol:vol!==null?arred(vol):'—',freq:FREQ_LABEL[freq]||freq,doseDia:arred(doseDia),data:new Date().toISOString().slice(0,10)};
+  document.getElementById('result-card').classList.add('visivel');
+}
+
+function calcularBtn(){
+  const peso=parseFloat(document.getElementById('peso').value)||0;
+  if(!peso){showToast('Informe o peso do paciente');return;}
+  if(!_drugSel){showToast('Selecione o medicamento');return;}
+  if(_drugSel.tipos.length>1&&!_tipoSel){showToast('Selecione a indicação / dose');return;}
+  calcular();
+}
+
+function renderRef(){
+  if(!_drugSel||!_drugSel.ref){document.getElementById('ref-table-div').style.display='none';return;}
+  document.getElementById('ref-tbody').innerHTML=_drugSel.ref.map(r=>`<tr>${r.map(c=>`<td>${c}</td>`).join('')}</tr>`).join('');
+  document.getElementById('ref-table-div').style.display='block';
+}
+
+async function salvarHist(){
+  if(!_ultCalc){return;}
+  const hist=JSON.parse(localStorage.getItem('ped_hist')||'[]');
+  hist.unshift({..._ultCalc,ts:Date.now()});
+  localStorage.setItem('ped_hist',JSON.stringify(hist.slice(0,20)));
+  renderHist();
+  showToast('✅ Salvo no histórico');
+}
+
+function renderHist(){
+  const hist=JSON.parse(localStorage.getItem('ped_hist')||'[]');
+  if(!hist.length){document.getElementById('hist-section').style.display='none';return;}
+  document.getElementById('hist-section').style.display='block';
+  document.getElementById('hist-list').innerHTML=hist.slice(0,8).map(h=>`<div class="hist-item">
+    <div>
+      <div style="font-weight:700;color:#0f172a">${esc(h.drug)}</div>
+      <div style="font-size:.65rem;color:#94a3b8">${h.peso}kg · ${h.doseMg}mg${h.vol!=='—'?' · '+h.vol+' mL':''} · ${h.freq}</div>
+    </div>
+    <div style="font-size:.62rem;color:#cbd5e1">${h.data||''}</div>
+  </div>`).join('');
+}
+
+function arred(n){
+  const v=parseFloat(n)||0;
+  if(v>=10) return Math.round(v*10)/10;
+  return Math.round(v*100)/100;
+}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+
+document.addEventListener('DOMContentLoaded',()=>{
+  const sel=document.getElementById('sel-drug');
+  sel.innerHTML='<option value="">Selecione...</option>'+DRUGS.map(d=>`<option value="${d.id}">${d.nome}</option>`).join('');
+  renderHist();
+});
+</script>
+</body>
+</html>

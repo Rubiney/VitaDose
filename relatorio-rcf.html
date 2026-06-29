@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>Relatório de Consulta Farmacêutica — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .topbar{display:flex;align-items:center;gap:10px;padding:12px 16px;background:#0f3460;position:sticky;top:0;z-index:100}
+    .back-btn{background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:8px;padding:6px 11px;cursor:pointer;font-size:1rem}
+    .topbar-title{font-size:.93rem;font-weight:800;color:#fff;flex:1}
+    .topbar-sub{font-size:.62rem;color:rgba(255,255,255,.7);margin-top:1px}
+    .btn-top{background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:8px;padding:7px 11px;font-size:.72rem;font-weight:700;cursor:pointer;margin-left:4px}
+    main{max-width:680px;margin:0 auto;padding:12px 14px 90px}
+    .pac-sel{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:12px;padding:11px 14px;font-size:.88rem;margin-bottom:10px;background:#fff}
+
+    /* Seções do relatório */
+    .sec{background:#fff;border-radius:14px;padding:16px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.07)}
+    .sec-title{font-size:.73rem;font-weight:800;color:#0f3460;text-transform:uppercase;letter-spacing:.04em;margin-bottom:12px;display:flex;align-items:center;gap:6px}
+    .sec-title::after{content:'';flex:1;height:1px;background:#e2e8f0}
+
+    /* Dados do paciente */
+    .pac-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+    .pac-field{background:#f8fafc;border-radius:8px;padding:8px 10px}
+    .pf-lbl{font-size:.58rem;color:#94a3b8;font-weight:700;text-transform:uppercase;margin-bottom:2px}
+    .pf-val{font-size:.82rem;color:#0f172a;font-weight:600}
+
+    /* Medicamentos */
+    .med-table{width:100%;border-collapse:collapse;font-size:.72rem}
+    .med-table th{background:#0f3460;color:#fff;padding:7px 8px;text-align:left;font-size:.63rem}
+    .med-table td{padding:7px 8px;border-bottom:1px solid #f1f5f9;vertical-align:top}
+    .med-table tr:last-child td{border:none}
+    .med-alert-badge{font-size:.58rem;font-weight:700;padding:2px 6px;border-radius:4px;margin-left:4px;display:inline-block}
+    .badge-r{background:#fee2e2;color:#991b1b}
+    .badge-y{background:#fef3c7;color:#92400e}
+
+    /* Avaliações */
+    .aval-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+    .aval-card{border-radius:10px;padding:10px 12px;border:1px solid #e2e8f0}
+    .aval-nome{font-size:.65rem;font-weight:800;color:#334155;margin-bottom:4px}
+    .aval-score{font-size:1.4rem;font-weight:900;line-height:1}
+    .aval-interp{font-size:.62rem;font-weight:700;margin-top:2px}
+    .aval-data{font-size:.58rem;color:#94a3b8;margin-top:3px}
+    .aval-nd{background:#f8fafc;border-style:dashed}
+    .aval-nd .aval-score{color:#cbd5e1;font-size:.78rem;font-weight:600}
+
+    /* PRMs e Intervenções */
+    .prm-list,.int-list{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
+    .prm-item,.int-item{display:flex;gap:8px;align-items:flex-start;background:#fef9c3;border-radius:8px;padding:8px 10px;border:1px solid #fde68a}
+    .int-item{background:#eff6ff;border-color:#bfdbfe}
+    .prm-num,.int-num{font-size:.65rem;font-weight:900;color:#92400e;min-width:22px}
+    .int-num{color:#1d4ed8}
+    .prm-txt,.int-txt{font-size:.77rem;color:#1e293b;flex:1;line-height:1.4}
+    .add-prm-row{display:flex;gap:6px;margin-bottom:6px;flex-wrap:wrap}
+    .prm-sel{flex:1;border:1.5px solid #e2e8f0;border-radius:8px;padding:7px 10px;font-size:.75rem;background:#fff;min-width:120px}
+    .add-ta{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:8px;padding:8px 10px;font-size:.78rem;resize:none;height:60px;font-family:inherit}
+    .add-ta:focus{outline:none;border-color:#0f3460}
+    .add-btn{padding:8px 14px;border:none;border-radius:8px;font-size:.72rem;font-weight:800;cursor:pointer;background:#0f3460;color:#fff;white-space:nowrap}
+    .rm-btn{background:none;border:none;color:#fca5a5;cursor:pointer;font-size:.8rem;padding:0 2px;flex-shrink:0}
+    .rm-btn:hover{color:#ef4444}
+
+    /* Plano */
+    .plan-ta{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:10px;padding:11px 12px;font-size:.82rem;resize:none;min-height:90px;font-family:inherit}
+    .plan-ta:focus{outline:none;border-color:#0f3460}
+    .next-apt{display:flex;gap:8px;align-items:center;margin-top:8px}
+    .next-apt label{font-size:.72rem;font-weight:700;color:#64748b;white-space:nowrap}
+    .next-apt input{border:1.5px solid #e2e8f0;border-radius:8px;padding:8px 10px;font-size:.8rem;flex:1}
+
+    /* Farm dados */
+    .farm-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .farm-inp{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:8px;padding:8px 10px;font-size:.8rem;background:#fff}
+    .farm-lbl{font-size:.62rem;font-weight:700;color:#64748b;margin-bottom:3px}
+
+    /* Ações */
+    .action-row{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+    .action-btn{flex:1;padding:12px;border:none;border-radius:10px;font-size:.8rem;font-weight:800;cursor:pointer;min-width:120px}
+    .btn-salvar-rcf{background:#0f3460;color:#fff}
+    .btn-print{background:#f0f9ff;color:#0f3460;border:1.5px solid #0f3460}
+    .btn-novo{background:#f1f5f9;color:#475569}
+
+    /* Histórico */
+    .hist-list{margin-top:8px}
+    .hist-item{padding:10px 12px;border-radius:10px;background:#f8fafc;margin-bottom:6px;cursor:pointer;border:1px solid #e2e8f0}
+    .hist-item:hover{border-color:#0f3460;background:#f0f4ff}
+    .hi-date{font-size:.72rem;font-weight:700;color:#0f3460}
+    .hi-info{font-size:.65rem;color:#94a3b8;margin-top:2px}
+
+    /* PRINT */
+    @media print{
+      .topbar,.pac-sel,nav,.action-row,.add-prm-row,.add-ta,.rm-btn,.add-btn,.hist-section,#hist-section{display:none!important}
+      body{background:#fff;font-size:10pt}
+      main{max-width:100%;padding:0}
+      .sec{box-shadow:none;border:1px solid #e2e8f0;break-inside:avoid;margin-bottom:6px}
+      .med-table th{background:#0f3460!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+      h1{display:block;text-align:center;font-size:13pt;color:#0f3460;margin-bottom:6px}
+    }
+  </style>
+</head>
+<body>
+<div class="topbar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <div style="flex:1">
+    <div class="topbar-title">📄 Relatório de Consulta Farmacêutica</div>
+    <div class="topbar-sub">RCF — Gerado automaticamente pelo VitaDose</div>
+  </div>
+  <button class="btn-top" onclick="imprimir()">🖨️</button>
+  <button class="btn-top" onclick="mostrarHist()">📂</button>
+</div>
+<main>
+  <h1 style="display:none">Relatório de Consulta Farmacêutica — VitaDose</h1>
+  <select class="pac-sel" id="sel-pac" onchange="init()"><option value="">Selecione o paciente...</option></select>
+
+  <div id="rcf-content" style="display:none">
+    <!-- SEÇÃO 1: Dados do Paciente -->
+    <div class="sec">
+      <div class="sec-title">👤 Dados do Paciente</div>
+      <div class="pac-grid" id="pac-grid"></div>
+    </div>
+
+    <!-- SEÇÃO 2: Farmacêutico Responsável -->
+    <div class="sec">
+      <div class="sec-title">👨‍⚕️ Farmacêutico Responsável</div>
+      <div class="farm-grid">
+        <div><div class="farm-lbl">Nome</div><input class="farm-inp" id="farm-nome" placeholder="Dr(a). Nome"></div>
+        <div><div class="farm-lbl">CRF</div><input class="farm-inp" id="farm-crf" placeholder="CRF-UF 00000"></div>
+        <div><div class="farm-lbl">Instituição</div><input class="farm-inp" id="farm-inst" placeholder="Farmácia / Clínica"></div>
+        <div><div class="farm-lbl">Data da Consulta</div><input class="farm-inp" type="date" id="farm-data"></div>
+      </div>
+    </div>
+
+    <!-- SEÇÃO 3: Medicamentos em Uso -->
+    <div class="sec">
+      <div class="sec-title">💊 Medicamentos em Uso</div>
+      <div id="med-lista"></div>
+    </div>
+
+    <!-- SEÇÃO 4: Avaliações Farmacêuticas Realizadas -->
+    <div class="sec">
+      <div class="sec-title">🔬 Avaliações Realizadas</div>
+      <div class="aval-grid" id="aval-grid"></div>
+    </div>
+
+    <!-- SEÇÃO 5: PRMs Identificados -->
+    <div class="sec">
+      <div class="sec-title">⚠️ Problemas Relacionados a Medicamentos (PCNE v9.1)</div>
+      <div class="prm-list" id="prm-list"></div>
+      <div class="add-prm-row">
+        <select class="prm-sel" id="prm-cat">
+          <option value="P1.1">P1.1 — Efeito terapêutico não ótimo (sem causa</option>
+          <option value="P1.2">P1.2 — Efeito terapêutico não ótimo (com causa)</option>
+          <option value="P2.1">P2.1 — Efeito adverso não alérgico</option>
+          <option value="P2.2">P2.2 — Efeito adverso alérgico ou de idiossincrasia</option>
+          <option value="P2.3">P2.3 — Toxicidade detectada</option>
+          <option value="P3.1">P3.1 — Custo desnecessário do tratamento</option>
+          <option value="P3.2">P3.2 — Terapia desnecessária</option>
+        </select>
+        <button class="add-btn" onclick="addPRM()">+ PRM</button>
+      </div>
+      <textarea class="add-ta" id="prm-txt" placeholder="Descreva o problema identificado..."></textarea>
+    </div>
+
+    <!-- SEÇÃO 6: Intervenções Farmacêuticas -->
+    <div class="sec">
+      <div class="sec-title">💡 Intervenções Farmacêuticas</div>
+      <div class="int-list" id="int-list"></div>
+      <div class="add-prm-row">
+        <select class="prm-sel" id="int-cat">
+          <option value="I1.1">I1.1 — Informação ao paciente/cuidador</option>
+          <option value="I1.2">I1.2 — Informação ao médico</option>
+          <option value="I1.3">I1.3 — Informação a outros profissionais</option>
+          <option value="I2.1">I2.1 — Medicamento iniciado</option>
+          <option value="I2.2">I2.2 — Medicamento alterado</option>
+          <option value="I2.3">I2.3 — Medicamento suspenso</option>
+          <option value="I3.1">I3.1 — Dose aumentada</option>
+          <option value="I3.2">I3.2 — Dose reduzida</option>
+          <option value="I3.3">I3.3 — Posologia otimizada</option>
+          <option value="I4.1">I4.1 — Reforço de adesão</option>
+          <option value="I4.2">I4.2 — Educação em saúde</option>
+        </select>
+        <button class="add-btn" onclick="addINT()">+ Intervenção</button>
+      </div>
+      <textarea class="add-ta" id="int-txt" placeholder="Descreva a intervenção proposta..."></textarea>
+    </div>
+
+    <!-- SEÇÃO 7: Plano de Acompanhamento -->
+    <div class="sec">
+      <div class="sec-title">📅 Plano de Acompanhamento</div>
+      <textarea class="plan-ta" id="plan-txt" placeholder="Descreva o plano: objetivos terapêuticos, parâmetros a monitorar, metas, orientações ao cuidador..."></textarea>
+      <div class="next-apt">
+        <label>Próxima consulta:</label>
+        <input type="date" id="prox-data">
+      </div>
+    </div>
+
+    <div class="action-row">
+      <button class="action-btn btn-salvar-rcf" onclick="salvar()">💾 Salvar RCF</button>
+      <button class="action-btn btn-print" onclick="imprimir()">🖨️ Imprimir / PDF</button>
+      <button class="action-btn btn-novo" onclick="novo()">✨ Novo</button>
+    </div>
+  </div>
+
+  <!-- Histórico de RCFs -->
+  <div id="hist-section" style="display:none">
+    <div class="sec">
+      <div class="sec-title">📂 Histórico de RCFs</div>
+      <div class="hist-list" id="hist-list"></div>
+    </div>
+  </div>
+</main>
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+<script src="js/db.js"></script>
+<script src="js/utils.js"></script>
+<script>
+let _pid=null,_pac=null,_meds=[],_prms=[],_ints=[];
+
+// Configuração de avaliações disponíveis
+const AVALS=[
+  {key:'mmas8_hist',nome:'MMAS-8',unit:'pts',max:8,colorFn:v=>v>=6?'#22c55e':v>=4?'#f59e0b':'#ef4444',
+   interpFn:v=>v>=6?'Alta adesão':v>=4?'Adesão moderada':'Baixa adesão',getVal:e=>e.score??e.total},
+  {key:'phq9gad7_hist',nome:'PHQ-9',unit:'pts',max:27,colorFn:v=>v<=4?'#22c55e':v<=9?'#84cc16':v<=14?'#f59e0b':'#ef4444',
+   interpFn:v=>v<=4?'Mínimo':v<=9?'Leve':v<=14?'Moderado':'Grave',getVal:e=>e.phq9??e.phq},
+  {key:'phq9gad7_hist',nome:'GAD-7',unit:'pts',max:21,colorFn:v=>v<=4?'#22c55e':v<=9?'#f59e0b':'#ef4444',
+   interpFn:v=>v<=4?'Mínimo':v<=9?'Moderado':'Grave',getVal:e=>e.gad7??e.gad},
+  {key:'psqi_hist',nome:'PSQI',unit:'pts',max:21,colorFn:v=>v<=5?'#22c55e':'#ef4444',
+   interpFn:v=>v<=5?'Boa qualidade':'Má qualidade',getVal:e=>e.total},
+  {key:'barthel_hist',nome:'Barthel',unit:'pts',max:100,colorFn:v=>v>=85?'#22c55e':v>=60?'#84cc16':v>=40?'#f59e0b':'#ef4444',
+   interpFn:v=>v>=85?'Independente':v>=60?'Dep. leve':v>=40?'Dep. moderada':'Dep. grave',getVal:e=>e.total},
+  {key:'frail_hist',nome:'FRAIL',unit:'pts',max:5,colorFn:v=>v===0?'#22c55e':v<=2?'#f59e0b':'#ef4444',
+   interpFn:v=>v===0?'Robusto':v<=2?'Pré-frágil':'Frágil',getVal:e=>e.total??e.score},
+  {key:'morse_hist',nome:'Morse Quedas',unit:'pts',max:125,colorFn:v=>v<25?'#22c55e':v<=44?'#f59e0b':'#ef4444',
+   interpFn:v=>v<25?'Baixo risco':v<=44?'Risco mod.':'Alto risco',getVal:e=>e.total??e.score},
+  {key:'meem_hist',nome:'MEEM',unit:'pts',max:30,colorFn:v=>v>=25?'#22c55e':v>=20?'#f59e0b':'#ef4444',
+   interpFn:v=>v>=25?'Normal (ajust.)':v>=20?'Sugestivo DCL':'Sugestivo demência',getVal:e=>e.total},
+  {key:'charlson_hist',nome:'Charlson',unit:'pts',max:37,colorFn:v=>v<=1?'#22c55e':v<=2?'#f59e0b':v<=3?'#ef4444':'#991b1b',
+   interpFn:v=>v<=1?'Baixa comorb.':v<=2?'Mod. comorb.':v<=3?'Alta comorb.':'Muito alta',getVal:e=>e.total??e.score},
+  {key:'sarcf_hist',nome:'SARC-F',unit:'pts',max:10,colorFn:v=>v<4?'#22c55e':'#ef4444',
+   interpFn:v=>v<4?'Baixo risco':'Risco sarcopenia',getVal:e=>e.total??e.score},
+  {key:'zarit_hist',nome:'Zarit',unit:'pts',max:88,colorFn:v=>v<=20?'#22c55e':v<=40?'#84cc16':v<=60?'#f59e0b':'#ef4444',
+   interpFn:v=>v<=20?'Ausente':v<=40?'Leve-mod.':v<=60?'Mod.-severa':'Severa',getVal:e=>e.total},
+];
+
+async function init(){
+  _pid=parseInt(document.getElementById('sel-pac').value)||null;
+  _prms=[];_ints=[];
+  if(!_pid){document.getElementById('rcf-content').style.display='none';return;}
+  [_pac,_meds]=await Promise.all([
+    dbGet('pacientes',_pid),
+    dbGetByIndex('medicamentos','pacienteId',_pid),
+  ]);
+  _meds=(_meds||[]).filter(m=>m.ativo!==false&&m.ativo!==0);
+  // Carregar dados do farmacêutico
+  const farmCfg=await dbGetConfig('farm_cfg')||{};
+  document.getElementById('farm-nome').value=farmCfg.nome||'';
+  document.getElementById('farm-crf').value=farmCfg.crf||'';
+  document.getElementById('farm-inst').value=farmCfg.inst||'';
+  document.getElementById('farm-data').value=new Date().toISOString().slice(0,10);
+  document.getElementById('rcf-content').style.display='block';
+  document.getElementById('hist-section').style.display='none';
+  renderPaciente();
+  await renderMeds();
+  await renderAvals();
+  renderPRMs();renderINTs();
+}
+
+function renderPaciente(){
+  const p=_pac||{};
+  const idade=p.dataNascimento?calcIdade(p.dataNascimento):'—';
+  const campos=[
+    ['Nome completo',p.nome||'—'],
+    ['Idade / Nascimento',idade+(p.dataNascimento?' / '+fmtData(p.dataNascimento):'')],
+    ['Convênio / SUS',p.convenio||'SUS'],
+    ['Contato',p.telefone||p.contato||'—'],
+    ['Condições de saúde',(p.condicoes||p.doencas||[]).join(', ')||'—'],
+    ['Alergias',p.alergias||'—'],
+  ];
+  document.getElementById('pac-grid').innerHTML=campos.map(([l,v])=>`<div class="pac-field"><div class="pf-lbl">${l}</div><div class="pf-val">${esc(v)}</div></div>`).join('');
+}
+
+async function renderMeds(){
+  if(!_meds.length){document.getElementById('med-lista').innerHTML='<div style="color:#94a3b8;font-size:.78rem">Nenhum medicamento ativo cadastrado.</div>';return;}
+  // Tentar carregar alertas se disponível
+  let alertMap={};
+  try{
+    if(typeof gerarAlertas==='function'){const al=await gerarAlertas(_meds);alertMap=al||{};}
+  }catch(e){}
+  let html=`<table class="med-table">
+    <thead><tr><th>Medicamento</th><th>Dose</th><th>Frequência</th><th>Uso</th></tr></thead><tbody>`;
+  _meds.forEach((m,i)=>{
+    const alerts=alertMap[m.id]||[];
+    const badge=alerts.some(a=>a.nivel==='grave')?`<span class="med-alert-badge badge-r">⚠️ Alerta</span>`:
+                alerts.length?`<span class="med-alert-badge badge-y">ℹ️</span>`:'';
+    html+=`<tr>
+      <td style="font-weight:700">${esc(m.nome||m.medicamento||'—')}${badge}</td>
+      <td>${esc(m.dose||'—')} ${esc(m.forma||m.formaFarma||'')}</td>
+      <td>${esc(m.frequencia||m.intervalo||'—')}</td>
+      <td>${esc(m.indicacao||m.uso||'—')}</td>
+    </tr>`;
+  });
+  html+='</tbody></table>';
+  document.getElementById('med-lista').innerHTML=html;
+}
+
+async function renderAvals(){
+  const resultados=await Promise.all(AVALS.map(async a=>{
+    const hist=await dbGetConfig(a.key+'_'+_pid)||[];
+    if(!hist.length) return {aval:a,entry:null};
+    return {aval:a,entry:hist[hist.length-1]};
+  }));
+  const html=resultados.map(({aval,entry})=>{
+    if(!entry){
+      return `<div class="aval-card aval-nd">
+        <div class="aval-nome">${aval.nome}</div>
+        <div class="aval-score">—</div>
+        <div class="aval-interp" style="color:#cbd5e1">Não realizado</div>
+      </div>`;
+    }
+    const val=aval.getVal(entry);
+    if(val==null) return '';
+    const cor=aval.colorFn(val);
+    const interp=aval.interpFn(val);
+    return `<div class="aval-card" style="border-color:${cor}40;background:${cor}10">
+      <div class="aval-nome">${aval.nome}</div>
+      <div class="aval-score" style="color:${cor}">${val}<span style="font-size:.7rem;color:#94a3b8"> / ${aval.max}</span></div>
+      <div class="aval-interp" style="color:${cor}">${interp}</div>
+      <div class="aval-data">${fmtData(entry.data||'')}</div>
+    </div>`;
+  }).filter(Boolean).join('');
+  document.getElementById('aval-grid').innerHTML=html||'<div style="color:#94a3b8;font-size:.78rem;grid-column:span 2">Nenhuma avaliação realizada ainda.</div>';
+}
+
+function addPRM(){
+  const cat=document.getElementById('prm-cat').value;
+  const txt=document.getElementById('prm-txt').value.trim();
+  if(!txt){showToast('Descreva o problema');return;}
+  _prms.push({cat,txt});
+  document.getElementById('prm-txt').value='';
+  renderPRMs();
+}
+function addINT(){
+  const cat=document.getElementById('int-cat').value;
+  const txt=document.getElementById('int-txt').value.trim();
+  if(!txt){showToast('Descreva a intervenção');return;}
+  _ints.push({cat,txt});
+  document.getElementById('int-txt').value='';
+  renderINTs();
+}
+function renderPRMs(){
+  document.getElementById('prm-list').innerHTML=_prms.map((p,i)=>`<div class="prm-item">
+    <div class="prm-num">${p.cat}</div>
+    <div class="prm-txt">${esc(p.txt)}</div>
+    <button class="rm-btn" onclick="rmPRM(${i})">✕</button>
+  </div>`).join('');
+}
+function renderINTs(){
+  document.getElementById('int-list').innerHTML=_ints.map((it,i)=>`<div class="int-item">
+    <div class="int-num">${it.cat}</div>
+    <div class="int-txt">${esc(it.txt)}</div>
+    <button class="rm-btn" onclick="rmINT(${i})">✕</button>
+  </div>`).join('');
+}
+function rmPRM(i){_prms.splice(i,1);renderPRMs();}
+function rmINT(i){_ints.splice(i,1);renderINTs();}
+
+async function salvar(){
+  if(!_pid){showToast('Selecione um paciente');return;}
+  // Salvar config do farmacêutico
+  const farmCfg={nome:document.getElementById('farm-nome').value,crf:document.getElementById('farm-crf').value,inst:document.getElementById('farm-inst').value};
+  await dbSetConfig('farm_cfg',{...farmCfg});
+  const rcf={
+    pid:_pid,
+    pacNome:_pac?.nome||'',
+    farmNome:farmCfg.nome,farmCRF:farmCfg.crf,farmInst:farmCfg.inst,
+    data:document.getElementById('farm-data').value,
+    proxData:document.getElementById('prox-data').value,
+    meds:_meds.map(m=>({nome:m.nome||m.medicamento,dose:m.dose,freq:m.frequencia||m.intervalo})),
+    prms:_prms,ints:_ints,
+    plano:document.getElementById('plan-txt').value,
+    ts:Date.now(),
+  };
+  const hist=await dbGetConfig('rcf_hist_'+_pid)||[];
+  hist.push(rcf);
+  await dbSetConfig('rcf_hist_'+_pid,hist);
+  showToast('✅ RCF salvo com sucesso');
+}
+
+async function mostrarHist(){
+  if(!_pid){showToast('Selecione um paciente');return;}
+  const hist=await dbGetConfig('rcf_hist_'+_pid)||[];
+  document.getElementById('hist-section').style.display=document.getElementById('hist-section').style.display==='none'?'block':'none';
+  if(!hist.length){document.getElementById('hist-list').innerHTML='<div style="color:#94a3b8;font-size:.78rem">Nenhum RCF salvo para este paciente.</div>';return;}
+  document.getElementById('hist-list').innerHTML=hist.slice().reverse().map((r,i)=>`<div class="hist-item" onclick="carregarRCF(${hist.length-1-i})">
+    <div class="hi-date">RCF — ${fmtData(r.data||'')}</div>
+    <div class="hi-info">${r.prms?.length||0} PRM${(r.prms?.length||0)!==1?'s':''} · ${r.ints?.length||0} intervenção(ões) · ${r.farmNome||'Farm. não informado'}</div>
+  </div>`).join('');
+}
+
+async function carregarRCF(idx){
+  const hist=await dbGetConfig('rcf_hist_'+_pid)||[];
+  const rcf=hist[idx];
+  if(!rcf) return;
+  _prms=rcf.prms||[];_ints=rcf.ints||[];
+  document.getElementById('farm-nome').value=rcf.farmNome||'';
+  document.getElementById('farm-crf').value=rcf.farmCRF||'';
+  document.getElementById('farm-inst').value=rcf.farmInst||'';
+  document.getElementById('farm-data').value=rcf.data||'';
+  document.getElementById('prox-data').value=rcf.proxData||'';
+  document.getElementById('plan-txt').value=rcf.plano||'';
+  renderPRMs();renderINTs();
+  document.getElementById('hist-section').style.display='none';
+  window.scrollTo(0,0);
+  showToast('RCF de '+fmtData(rcf.data)+' carregado');
+}
+
+function novo(){
+  _prms=[];_ints=[];
+  document.getElementById('prm-txt').value='';
+  document.getElementById('int-txt').value='';
+  document.getElementById('plan-txt').value='';
+  document.getElementById('prox-data').value='';
+  document.getElementById('farm-data').value=new Date().toISOString().slice(0,10);
+  renderPRMs();renderINTs();
+  showToast('Novo RCF iniciado');
+}
+
+function imprimir(){
+  if(!_pid){showToast('Selecione um paciente');return;}
+  window.print();
+}
+
+function calcIdade(dn){
+  if(!dn) return '—';
+  const d=new Date(dn),n=new Date();
+  let a=n.getFullYear()-d.getFullYear();
+  if(n.getMonth()<d.getMonth()||(n.getMonth()===d.getMonth()&&n.getDate()<d.getDate())) a--;
+  return a+' anos';
+}
+function fmtData(d){return d?String(d).slice(0,10).split('-').reverse().join('/'):''}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+
+document.addEventListener('DOMContentLoaded',async()=>{
+  const pacs=await dbGetAll('pacientes');
+  const sel=document.getElementById('sel-pac');
+  sel.innerHTML='<option value="">Selecione o paciente...</option>'+pacs.map(p=>`<option value="${p.id}">${esc(p.nome||'Paciente '+p.id)}</option>`).join('');
+  const pid=getActivePacienteId();
+  if(pid){sel.value=pid;await init();}
+});
+</script>
+</body>
+</html>
