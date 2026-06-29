@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Evolução Clínica — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    body { background:#f0f4f8;margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif }
+
+    .topbar { display:flex;align-items:center;gap:10px;padding:12px 16px;background:#1e3a5f;position:sticky;top:0;z-index:100 }
+    .back-btn { background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:8px;padding:6px 11px;font-size:1rem;cursor:pointer }
+    .topbar-title { font-size:.95rem;font-weight:800;color:#fff;flex:1 }
+    .btn-print { background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:8px;padding:7px 12px;font-size:.75rem;font-weight:700;cursor:pointer }
+
+    main { padding:12px 14px 90px;max-width:540px;margin:0 auto }
+
+    /* Period filters */
+    .period-row { display:flex;gap:6px;margin-bottom:12px;overflow-x:auto }
+    .per-btn { border:1.5px solid #e2e8f0;background:#fff;border-radius:8px;padding:6px 14px;font-size:.75rem;font-weight:700;color:#64748b;cursor:pointer;white-space:nowrap;flex-shrink:0 }
+    .per-btn.active { background:#1e3a5f;color:#fff;border-color:#1e3a5f }
+
+    /* Parameter selector */
+    .param-scroll { display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-bottom:12px }
+    .param-chip { border:1.5px solid #e2e8f0;background:#fff;border-radius:20px;padding:5px 12px;font-size:.73rem;font-weight:700;color:#64748b;cursor:pointer;white-space:nowrap;flex-shrink:0 }
+    .param-chip.active { color:#fff;border-color:transparent }
+
+    /* Chart card */
+    .chart-card { background:#fff;border-radius:16px;box-shadow:0 1px 6px rgba(0,0,0,.08);overflow:hidden;margin-bottom:12px }
+    .chart-header { padding:14px 16px 8px;display:flex;align-items:center;justify-content:space-between }
+    .chart-title { font-size:.88rem;font-weight:800;color:#1e293b }
+    .chart-meta  { font-size:.7rem;color:#94a3b8 }
+    .chart-svg-wrap { padding:0 12px 8px;overflow:hidden }
+    svg.chart { width:100%;display:block }
+
+    /* Stats row below chart */
+    .chart-stats { display:grid;grid-template-columns:repeat(4,1fr);gap:0;border-top:1px solid #f1f5f9 }
+    .cs { text-align:center;padding:10px 4px;border-right:1px solid #f1f5f9 }
+    .cs:last-child { border-right:none }
+    .cs-val { font-size:.9rem;font-weight:800 }
+    .cs-lbl { font-size:.58rem;font-weight:700;color:#94a3b8;text-transform:uppercase;margin-top:2px }
+
+    /* Target line legend */
+    .ref-row { padding:6px 16px 10px;display:flex;align-items:center;gap:10px;flex-wrap:wrap }
+    .ref-item { display:flex;align-items:center;gap:4px;font-size:.65rem;color:#64748b }
+    .ref-dot { width:12px;height:3px;border-radius:2px }
+
+    .empty-chart { text-align:center;padding:40px 20px;color:#94a3b8 }
+    .empty-chart p { font-size:.82rem;margin-top:8px }
+
+    @media print { .topbar,.period-row,.param-scroll { display:none } body { background:#fff } main { padding:0;max-width:none } }
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <span class="topbar-title">📈 Evolução Clínica</span>
+  <button class="btn-print" onclick="window.print()">🖨️</button>
+</div>
+
+<main>
+  <div class="period-row" id="periodRow">
+    <button class="per-btn active" onclick="setPeriodo(30,this)">30d</button>
+    <button class="per-btn"        onclick="setPeriodo(90,this)">3m</button>
+    <button class="per-btn"        onclick="setPeriodo(180,this)">6m</button>
+    <button class="per-btn"        onclick="setPeriodo(365,this)">1a</button>
+    <button class="per-btn"        onclick="setPeriodo(9999,this)">Tudo</button>
+  </div>
+
+  <div class="param-scroll" id="paramRow"></div>
+
+  <div id="chartsWrap">
+    <div class="empty-chart"><div style="font-size:2.5rem">📈</div><p>Carregando dados clínicos...</p></div>
+  </div>
+</main>
+
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+
+<script src="js/db.js"></script>
+<script src="js/utils.js"></script>
+<script>
+
+let _dias = 30;
+let _ativo = null;
+let _allSeries = {};
+
+/* Parâmetros com config: label, cor, referência, unidade, campo no diário ou tipo no lab */
+const PARAMS = [
+  { id:'pa_s',   lbl:'PA sistólica',   cor:'#dc2626', unid:'mmHg', refMin:null, refMax:130, src:'diario', campo:'pa',       extrai: v => parseInt(String(v).split('/')[0]) },
+  { id:'pa_d',   lbl:'PA diastólica',  cor:'#ea580c', unid:'mmHg', refMin:null, refMax:80,  src:'diario', campo:'pa',       extrai: v => parseInt(String(v).split('/')[1]) },
+  { id:'glic',   lbl:'Glicemia',       cor:'#d97706', unid:'mg/dL',refMin:70,   refMax:130, src:'diario', campo:'glicemia', extrai: v => parseFloat(v) },
+  { id:'peso',   lbl:'Peso',           cor:'#7c3aed', unid:'kg',   refMin:null, refMax:null, src:'diario', campo:'peso',    extrai: v => parseFloat(v) },
+  { id:'fc',     lbl:'FC',             cor:'#0891b2', unid:'bpm',  refMin:60,   refMax:100, src:'diario', campo:'fc',       extrai: v => parseFloat(v) },
+  { id:'hba1c',  lbl:'HbA1c',          cor:'#d97706', unid:'%',   refMin:null, refMax:7,   src:'lab',    tipo:'HbA1c',     extrai: v => parseFloat(v) },
+  { id:'inr',    lbl:'INR',            cor:'#dc2626', unid:'',    refMin:2.0,  refMax:3.0, src:'lab',    tipo:'INR',        extrai: v => parseFloat(v) },
+  { id:'ldl',    lbl:'LDL-colesterol', cor:'#ea580c', unid:'mg/dL',refMin:null,refMax:130, src:'lab',    tipo:'LDL-colesterol', extrai: v => parseFloat(v) },
+  { id:'tg',     lbl:'Triglicerídeos', cor:'#d97706', unid:'mg/dL',refMin:null,refMax:150, src:'lab',    tipo:'Triglicerídeos', extrai: v => parseFloat(v) },
+  { id:'creat',  lbl:'Creatinina',     cor:'#0891b2', unid:'mg/dL',refMin:null,refMax:1.2, src:'lab',    tipo:'Creatinina',    extrai: v => parseFloat(v) },
+  { id:'hb',     lbl:'Hemoglobina',    cor:'#dc2626', unid:'g/dL', refMin:12,  refMax:17,  src:'lab',    tipo:'Hemoglobina',   extrai: v => parseFloat(v) },
+  { id:'k',      lbl:'Potássio',       cor:'#0f766e', unid:'mEq/L',refMin:3.5, refMax:5.0, src:'lab',    tipo:'Potássio',      extrai: v => parseFloat(v) },
+  { id:'ureia',  lbl:'Ureia',          cor:'#6366f1', unid:'mg/dL',refMin:null,refMax:40,  src:'lab',    tipo:'Ureia',         extrai: v => parseFloat(v) },
+  { id:'acuri',  lbl:'Ácido úrico',    cor:'#0891b2', unid:'mg/dL',refMin:null,refMax:6,   src:'lab',    tipo:'Ácido úrico',   extrai: v => parseFloat(v) },
+];
+
+async function init() {
+  const pid = getActivePacienteId();
+  if (!pid) { document.getElementById('chartsWrap').innerHTML = '<div class="empty-chart"><p>Nenhum paciente ativo.</p></div>'; return; }
+
+  const [allDiario, allLab] = await Promise.all([
+    dbGetAll('diario'),
+    dbGetAll('laboratorio'),
+  ]);
+
+  const diario = (allDiario||[]).filter(d => !d.pacienteId || d.pacienteId===pid);
+  const labs   = (allLab||[]).filter(l => l.pacienteId===pid);
+
+  /* Monta séries por parâmetro */
+  _allSeries = {};
+  for (const p of PARAMS) {
+    let pts = [];
+    if (p.src === 'diario') {
+      pts = diario.filter(d => d[p.campo] != null && d[p.campo] !== '').map(d => {
+        const v = p.extrai(d[p.campo]);
+        return isNaN(v) ? null : { data: d.data, v };
+      }).filter(Boolean);
+    } else {
+      pts = labs.filter(l => l.tipo === p.tipo && l.valor != null).map(l => {
+        const v = p.extrai(l.valor);
+        return isNaN(v) ? null : { data: l.data, v };
+      }).filter(Boolean);
+    }
+    pts.sort((a,b) => a.data.localeCompare(b.data));
+    if (pts.length) _allSeries[p.id] = pts;
+  }
+
+  /* Chips apenas para os parâmetros com dados */
+  const disponiveis = PARAMS.filter(p => _allSeries[p.id]);
+  if (!disponiveis.length) {
+    document.getElementById('chartsWrap').innerHTML = '<div class="empty-chart"><div style="font-size:2.5rem">📋</div><p>Nenhum dado de evolução registrado ainda.<br>Registre vitais no Diário e resultados em Exames.</p></div>';
+    return;
+  }
+
+  const row = document.getElementById('paramRow');
+  row.innerHTML = '<button class="param-chip active" style="background:#1e3a5f" onclick="setParam(null,this)">Todos</button>' +
+    disponiveis.map(p => `<button class="param-chip" style="" onclick="setParam('${p.id}',this)" data-pid="${p.id}">${p.lbl}</button>`).join('');
+
+  render();
+}
+
+function setParam(id, btn) {
+  _ativo = id;
+  document.querySelectorAll('.param-chip').forEach(b => {
+    const p = PARAMS.find(x=>x.id===b.dataset.pid);
+    b.classList.remove('active');
+    b.style.background = '';
+    b.style.color = '';
+    b.style.borderColor = '';
+  });
+  btn.classList.add('active');
+  btn.style.background = _ativo ? (PARAMS.find(p=>p.id===_ativo)||{}).cor||'#1e3a5f' : '#1e3a5f';
+  btn.style.color = '#fff';
+  btn.style.borderColor = 'transparent';
+  render();
+}
+
+function setPeriodo(dias, btn) {
+  _dias = dias;
+  document.querySelectorAll('.per-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  render();
+}
+
+function render() {
+  const wrap = document.getElementById('chartsWrap');
+  const corte = (() => { const d=new Date(); d.setDate(d.getDate()-_dias); return d.toISOString().slice(0,10); })();
+  const filtrar = pts => _dias >= 9999 ? pts : pts.filter(p => p.data >= corte);
+
+  const params = _ativo ? PARAMS.filter(p=>p.id===_ativo) : PARAMS;
+  const visivel = params.filter(p => _allSeries[p.id] && filtrar(_allSeries[p.id]).length >= 1);
+
+  if (!visivel.length) {
+    wrap.innerHTML = '<div class="empty-chart"><p>Sem dados no período selecionado.</p></div>';
+    return;
+  }
+
+  wrap.innerHTML = visivel.map(p => {
+    const pts = filtrar(_allSeries[p.id]);
+    return buildChart(p, pts);
+  }).join('');
+}
+
+function buildChart(p, pts) {
+  if (!pts.length) return '';
+
+  const vals = pts.map(x=>x.v);
+  const minV = Math.min(...vals);
+  const maxV = Math.max(...vals);
+  const ultimo = pts[pts.length-1].v;
+  const media  = vals.reduce((a,b)=>a+b,0)/vals.length;
+  const tendencia = pts.length >= 2 ? (pts[pts.length-1].v - pts[pts.length-2].v) : 0;
+  const tendIcon = Math.abs(tendencia) < 0.01 ? '→' : tendencia > 0 ? '↑' : '↓';
+  const tendCor  = Math.abs(tendencia) < 0.01 ? '#64748b' : (tendencia > 0 ? (p.refMax && ultimo > p.refMax ? '#dc2626':'#16a34a') : '#16a34a');
+
+  /* SVG */
+  const W = 480, H = 120, PAD = 24;
+  const range = maxV - minV || 1;
+  const xScale = (i) => PAD + (W - PAD*2) * (i / (pts.length - 1 || 1));
+  const yScale = (v) => PAD + (H - PAD*2) * (1 - (v - minV) / range);
+
+  const polyline = pts.map((pt,i) => `${xScale(i).toFixed(1)},${yScale(pt.v).toFixed(1)}`).join(' ');
+  const areaPath = `M${xScale(0).toFixed(1)},${H-8} ` + pts.map((pt,i)=>`L${xScale(i).toFixed(1)},${yScale(pt.v).toFixed(1)}`).join(' ') + ` L${xScale(pts.length-1).toFixed(1)},${H-8} Z`;
+
+  /* Linha de referência */
+  let refLines = '';
+  if (p.refMax != null) {
+    const ry = yScale(Math.min(p.refMax, maxV + range*0.1));
+    if (ry >= PAD && ry <= H-8)
+      refLines += `<line x1="${PAD}" y1="${ry.toFixed(1)}" x2="${W-PAD}" y2="${ry.toFixed(1)}" stroke="#dc2626" stroke-width="1" stroke-dasharray="4,3" opacity=".5"/>`;
+  }
+  if (p.refMin != null) {
+    const ry = yScale(Math.max(p.refMin, minV - range*0.1));
+    if (ry >= PAD && ry <= H-8)
+      refLines += `<line x1="${PAD}" y1="${ry.toFixed(1)}" x2="${W-PAD}" y2="${ry.toFixed(1)}" stroke="#16a34a" stroke-width="1" stroke-dasharray="4,3" opacity=".5"/>`;
+  }
+
+  /* Pontos */
+  const circles = pts.map((pt,i) => {
+    const cx = xScale(i).toFixed(1), cy = yScale(pt.v).toFixed(1);
+    const col = (p.refMax && pt.v > p.refMax) || (p.refMin && pt.v < p.refMin) ? '#dc2626' : p.cor;
+    return `<circle cx="${cx}" cy="${cy}" r="3" fill="${col}" stroke="#fff" stroke-width="1.5"/>`;
+  }).join('');
+
+  /* Labels eixo X (primeiro e último) */
+  const fmtDt = dt => { const [,m,d]=dt.split('-'); return `${d}/${m}`; };
+  const xLabels = pts.length > 1
+    ? `<text x="${PAD}" y="${H+2}" font-size="9" fill="#94a3b8" text-anchor="middle">${fmtDt(pts[0].data)}</text>
+       <text x="${W-PAD}" y="${H+2}" font-size="9" fill="#94a3b8" text-anchor="middle">${fmtDt(pts[pts.length-1].data)}</text>`
+    : `<text x="${xScale(0).toFixed(1)}" y="${H+2}" font-size="9" fill="#94a3b8" text-anchor="middle">${fmtDt(pts[0].data)}</text>`;
+
+  const ulCorFundo = (p.refMax && ultimo > p.refMax) || (p.refMin && ultimo < p.refMin) ? '#fee2e2' : '#f0fdf4';
+  const ulCorTxt   = (p.refMax && ultimo > p.refMax) || (p.refMin && ultimo < p.refMin) ? '#991b1b' : '#15803d';
+
+  return `<div class="chart-card">
+    <div class="chart-header">
+      <div>
+        <div class="chart-title">${p.lbl}</div>
+        <div class="chart-meta">${pts.length} registro${pts.length>1?'s':''} · ${p.unid}</div>
+      </div>
+      <div style="background:${ulCorFundo};border-radius:10px;padding:6px 12px;text-align:right">
+        <div style="font-size:1.2rem;font-weight:900;color:${ulCorTxt}">${ultimo.toFixed(ultimo<10?1:0)} <span style="font-size:.6rem">${p.unid}</span></div>
+        <div style="font-size:.65rem;color:${tendCor};font-weight:700">${tendIcon} Último</div>
+      </div>
+    </div>
+
+    <div class="chart-svg-wrap">
+      <svg class="chart" viewBox="0 0 ${W} ${H+12}" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="grad-${p.id}" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="${p.cor}" stop-opacity=".15"/>
+            <stop offset="100%" stop-color="${p.cor}" stop-opacity="0"/>
+          </linearGradient>
+        </defs>
+        ${refLines}
+        <path d="${areaPath}" fill="url(#grad-${p.id})"/>
+        <polyline points="${polyline}" fill="none" stroke="${p.cor}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+        ${circles}
+        ${xLabels}
+      </svg>
+    </div>
+
+    <div class="chart-stats">
+      <div class="cs"><div class="cs-val" style="color:${p.cor}">${minV.toFixed(minV<10?1:0)}</div><div class="cs-lbl">Mínimo</div></div>
+      <div class="cs"><div class="cs-val" style="color:${p.cor}">${maxV.toFixed(maxV<10?1:0)}</div><div class="cs-lbl">Máximo</div></div>
+      <div class="cs"><div class="cs-val" style="color:#374151">${media.toFixed(media<10?1:0)}</div><div class="cs-lbl">Média</div></div>
+      <div class="cs"><div class="cs-val" style="color:${tendCor}">${tendIcon} ${Math.abs(tendencia).toFixed(tendencia<10?1:0)}</div><div class="cs-lbl">Variação</div></div>
+    </div>
+
+    ${(p.refMax || p.refMin) ? `<div class="ref-row">
+      ${p.refMax ? `<span class="ref-item"><span class="ref-dot" style="background:#dc2626;opacity:.6"></span>Limite superior: ${p.refMax} ${p.unid}</span>` : ''}
+      ${p.refMin ? `<span class="ref-item"><span class="ref-dot" style="background:#16a34a;opacity:.6"></span>Limite inferior: ${p.refMin} ${p.unid}</span>` : ''}
+    </div>` : ''}
+  </div>`;
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
