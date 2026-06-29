@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>Cartão Resumo do Paciente — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .topbar{display:flex;align-items:center;gap:10px;padding:12px 16px;background:#1e293b;position:sticky;top:0;z-index:100}
+    .back-btn{background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:8px;padding:6px 11px;cursor:pointer;font-size:1rem}
+    .topbar-title{font-size:.93rem;font-weight:800;color:#fff;flex:1}
+    .topbar-sub{font-size:.62rem;color:rgba(255,255,255,.7);margin-top:1px}
+    .btn-top{background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:8px;padding:7px 11px;font-size:.72rem;font-weight:700;cursor:pointer;margin-left:4px}
+    main{max-width:680px;margin:0 auto;padding:12px 14px 90px}
+    .pac-sel{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:12px;padding:11px 14px;font-size:.88rem;margin-bottom:10px;background:#fff}
+
+    /* Dicas */
+    .tip{background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:10px 13px;font-size:.72rem;color:#475569;margin-bottom:10px;line-height:1.5}
+
+    /* Cartão */
+    .cartao{background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.12);margin-bottom:16px}
+
+    /* Header do cartão */
+    .cartao-hdr{background:linear-gradient(135deg,#1e293b,#334155);padding:16px;display:flex;gap:14px;align-items:center}
+    .pac-foto{width:64px;height:64px;border-radius:14px;background:#475569;display:flex;align-items:center;justify-content:center;font-size:2rem;flex-shrink:0;overflow:hidden;border:2px solid rgba(255,255,255,.2)}
+    .pac-foto img{width:100%;height:100%;object-fit:cover}
+    .pac-hdr-info{flex:1;color:#fff}
+    .pac-hdr-nome{font-size:1.1rem;font-weight:900;line-height:1.2}
+    .pac-hdr-det{font-size:.65rem;color:rgba(255,255,255,.7);margin-top:4px;line-height:1.5}
+    .vitadose-badge{font-size:.55rem;background:rgba(255,255,255,.15);color:#e2e8f0;padding:3px 8px;border-radius:10px;margin-top:6px;display:inline-block}
+
+    /* Seções do cartão */
+    .c-sec{padding:12px 16px;border-bottom:1px solid #f1f5f9}
+    .c-sec:last-child{border:none}
+    .c-sec-title{font-size:.6rem;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px}
+
+    /* Alergias */
+    .alerg-tags{display:flex;gap:5px;flex-wrap:wrap}
+    .alerg-tag{background:#fee2e2;color:#991b1b;border-radius:6px;padding:4px 9px;font-size:.68rem;font-weight:700}
+    .alerg-none{color:#22c55e;font-size:.72rem;font-weight:700}
+
+    /* Condições */
+    .cond-tags{display:flex;gap:5px;flex-wrap:wrap}
+    .cond-tag{background:#eff6ff;color:#1e40af;border-radius:6px;padding:4px 9px;font-size:.68rem;font-weight:600}
+
+    /* Medicamentos */
+    .med-table{width:100%;border-collapse:collapse;font-size:.7rem}
+    .med-table th{background:#f8fafc;color:#475569;font-weight:800;padding:5px 6px;text-align:left;font-size:.62rem;border-bottom:1px solid #e2e8f0}
+    .med-table td{padding:6px 6px;border-bottom:1px solid #f8fafc;vertical-align:middle}
+    .med-table tr:last-child td{border:none}
+    .horario-badge{font-size:.58rem;background:#f0f9ff;color:#0369a1;border-radius:4px;padding:1px 5px;font-weight:700;margin-right:2px;display:inline-block}
+
+    /* Contatos */
+    .contato-item{display:flex;gap:8px;align-items:center;padding:5px 0;border-bottom:1px solid #f8fafc;font-size:.75rem}
+    .contato-item:last-child{border:none}
+    .cont-ico{font-size:1rem;flex-shrink:0}
+    .cont-info{flex:1}
+    .cont-nome{font-weight:700;color:#0f172a}
+    .cont-rel{font-size:.62rem;color:#94a3b8}
+    .cont-tel{font-size:.7rem;color:#0369a1;font-weight:600}
+    .ligar-btn{background:#dcfce7;border:none;color:#166534;border-radius:8px;padding:5px 10px;font-size:.65rem;font-weight:800;cursor:pointer;text-decoration:none}
+
+    /* Scores */
+    .scores-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+    .score-mini{background:#f8fafc;border-radius:8px;padding:7px;text-align:center}
+    .sm-val{font-size:1rem;font-weight:900}
+    .sm-lbl{font-size:.55rem;color:#94a3b8;font-weight:700;margin-top:1px}
+    .sm-date{font-size:.5rem;color:#cbd5e1}
+
+    /* Lab */
+    .lab-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:6px}
+    .lab-mini{background:#f8fafc;border-radius:8px;padding:7px}
+    .lm-lbl{font-size:.6rem;color:#64748b;font-weight:700}
+    .lm-val{font-size:.85rem;font-weight:900;color:#0f172a;margin-top:2px}
+    .lm-date{font-size:.52rem;color:#cbd5e1}
+
+    /* PA / Glicemia mais recente */
+    .vital-row{display:flex;gap:8px}
+    .vital-box{flex:1;background:#f8fafc;border-radius:8px;padding:8px;text-align:center}
+    .vb-val{font-size:1rem;font-weight:900}
+    .vb-lbl{font-size:.58rem;color:#94a3b8;font-weight:700;margin-top:2px}
+
+    /* Próxima consulta */
+    .prox-event{background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:8px 10px;font-size:.72rem;color:#1e40af;font-weight:600}
+
+    /* Footer */
+    .cartao-footer{background:#f8fafc;padding:8px 16px;display:flex;justify-content:space-between;align-items:center}
+    .cf-data{font-size:.58rem;color:#94a3b8}
+    .cf-logo{font-size:.62rem;font-weight:800;color:#1e293b}
+
+    /* Ações */
+    .action-row{display:flex;gap:8px;flex-wrap:wrap}
+    .action-btn{flex:1;padding:12px;border:none;border-radius:12px;font-size:.8rem;font-weight:800;cursor:pointer;min-width:120px}
+    .btn-print{background:#1e293b;color:#fff}
+    .btn-share{background:#f0f9ff;color:#0369a1;border:1.5px solid #bae6fd}
+
+    .empty{text-align:center;padding:40px;color:#94a3b8;font-size:.78rem}
+
+    /* PRINT */
+    @media print{
+      .topbar,.pac-sel,.tip,.action-row,nav{display:none!important}
+      body{background:#fff;margin:0}
+      main{max-width:100%;padding:0}
+      .cartao{box-shadow:none;border:1px solid #e2e8f0;border-radius:8px;max-width:148mm;margin:0 auto}
+      .cartao-hdr{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+      @page{size:A5 portrait;margin:8mm}
+    }
+  </style>
+</head>
+<body>
+<div class="topbar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <div style="flex:1">
+    <div class="topbar-title">🪪 Cartão Resumo do Paciente</div>
+    <div class="topbar-sub">Emergências · Consultas · Identificação clínica</div>
+  </div>
+  <button class="btn-top" onclick="window.print()">🖨️</button>
+</div>
+<main>
+  <select class="pac-sel" id="sel-pac" onchange="init()"><option value="">Selecione o paciente...</option></select>
+
+  <div class="tip">
+    💡 O cartão resume automaticamente os dados do paciente. Imprima e entregue ao cuidador para levar a pronto-socorros e consultas com especialistas.
+  </div>
+
+  <div id="cartao-div"></div>
+
+  <div class="action-row" id="actions" style="display:none">
+    <button class="action-btn btn-print" onclick="window.print()">🖨️ Imprimir / Salvar PDF</button>
+    <button class="action-btn btn-share" onclick="compartilhar()">📤 Compartilhar (WhatsApp)</button>
+  </div>
+</main>
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+<script src="js/db.js"></script>
+<script src="js/utils.js"></script>
+<script>
+let _pid=null,_pac=null;
+
+const SCORE_CFG=[
+  {key:'mmas8_hist',lbl:'MMAS-8',getVal:e=>e.score??e.total,max:8,cor:v=>v>=6?'#22c55e':v>=4?'#f59e0b':'#ef4444'},
+  {key:'barthel_hist',lbl:'Barthel',getVal:e=>e.total,max:100,cor:v=>v>=85?'#22c55e':v>=60?'#84cc16':v>=40?'#f59e0b':'#ef4444'},
+  {key:'meem_hist',lbl:'MEEM',getVal:e=>e.total,max:30,cor:v=>v>=25?'#22c55e':v>=20?'#f59e0b':'#ef4444'},
+  {key:'frail_hist',lbl:'FRAIL',getVal:e=>e.total??e.score,max:5,cor:v=>v===0?'#22c55e':v<=2?'#f59e0b':'#ef4444'},
+  {key:'charlson_hist',lbl:'Charlson',getVal:e=>e.total??e.score,max:15,cor:v=>v<=1?'#22c55e':v<=3?'#f59e0b':'#ef4444'},
+  {key:'zarit_hist',lbl:'Zarit',getVal:e=>e.total,max:88,cor:v=>v<=20?'#22c55e':v<=40?'#f59e0b':'#ef4444'},
+];
+
+async function init(){
+  _pid=parseInt(document.getElementById('sel-pac').value)||null;
+  if(!_pid){document.getElementById('cartao-div').innerHTML='';document.getElementById('actions').style.display='none';return;}
+  const [pac,meds,labDados]=await Promise.all([
+    dbGet('pacientes',_pid),
+    dbGetByIndex('medicamentos','pacienteId',_pid),
+    dbGetAll('laboratorio'),
+  ]);
+  _pac=pac;
+  const medsAtivos=(meds||[]).filter(m=>m.ativo!==false&&m.ativo!==0);
+  const labPac=(labDados||[]).filter(d=>d.pacienteId===_pid);
+
+  // Scores
+  const scoreVals=await Promise.all(SCORE_CFG.map(async s=>{
+    const hist=await dbGetConfig(s.key+'_'+_pid)||[];
+    if(!hist.length) return {cfg:s,entry:null};
+    return {cfg:s,entry:hist[hist.length-1]};
+  }));
+
+  // PA última
+  const paLast=(await dbGetConfig('pa_registros_'+_pid)||[]).sort((a,b)=>b.ts-a.ts)[0]||null;
+  // Glicemia última
+  const gLast=(await dbGetConfig('glicemia_'+_pid)||[]).sort((a,b)=>b.ts-a.ts)[0]||null;
+  // Próximo evento agenda
+  const agenda=await dbGetConfig('agenda_'+_pid)||[];
+  const proximo=agenda.filter(e=>e.status==='pendente'&&e.data>=hoje()).sort((a,b)=>a.data.localeCompare(b.data))[0]||null;
+
+  renderCartao(pac,medsAtivos,labPac,scoreVals,paLast,gLast,proximo);
+  document.getElementById('actions').style.display='flex';
+}
+
+function renderCartao(pac,meds,lab,scores,paLast,gLast,proximo){
+  if(!pac){document.getElementById('cartao-div').innerHTML='<div class="empty">Paciente não encontrado.</div>';return;}
+  const idade=pac.dataNascimento?calcIdade(pac.dataNascimento)+'a':'—';
+  const foto=pac.foto?`<img src="${pac.foto}" alt="foto">`:'👤';
+  const condicoes=(pac.condicoes||pac.doencas||[]);
+  const alergias=(pac.alergias||'').trim();
+  const tipoSangue=pac.tipoSangue||pac.grupoSanguineo||'';
+  const telefone=pac.telefone||pac.contato||'';
+  const cuidador=pac.cuidador||'';
+  const telCuidador=pac.telefoneCuidador||pac.telefoneEmergencia||'';
+  const medico=pac.medico||pac.medicoAssistente||'';
+  const telMedico=pac.telefoneMedico||'';
+
+  // Scores HTML
+  const scoresHtml=scores.filter(s=>s.entry).map(s=>{
+    const v=s.cfg.getVal(s.entry);
+    const c=s.cfg.cor(v);
+    return `<div class="score-mini" style="border-top:3px solid ${c}">
+      <div class="sm-val" style="color:${c}">${v}<span style="font-size:.55rem;color:#94a3b8">/${s.cfg.max}</span></div>
+      <div class="sm-lbl">${s.cfg.lbl}</div>
+      <div class="sm-date">${fmtData(s.entry.data||'')}</div>
+    </div>`;
+  }).join('');
+
+  // Lab recente (últimos 5 exames distintos)
+  const labRecent={};
+  (lab||[]).sort((a,b)=>new Date(b.data)-new Date(a.data)).forEach(l=>{
+    if(l.parametro&&!labRecent[l.parametro]) labRecent[l.parametro]={val:l.valor,unit:l.unidade||'',data:l.data};
+  });
+  const labKeys=Object.keys(labRecent).slice(0,6);
+  const labHtml=labKeys.map(k=>`<div class="lab-mini">
+    <div class="lm-lbl">${esc(k)}</div>
+    <div class="lm-val">${esc(labRecent[k].val)} <span style="font-size:.6rem;color:#94a3b8">${esc(labRecent[k].unit)}</span></div>
+    <div class="lm-date">${fmtData(labRecent[k].data)}</div>
+  </div>`).join('');
+
+  // Meds (max 10 para o cartão)
+  const medRows=meds.slice(0,12).map(m=>{
+    const hrs=(m.horarios&&m.horarios.length)?m.horarios.map(h=>`<span class="horario-badge">${h}</span>`).join(''):'';
+    return `<tr>
+      <td style="font-weight:700">${esc(m.nome||m.medicamento||'—')}</td>
+      <td>${esc(m.dose||'—')}</td>
+      <td>${esc(m.frequencia||m.intervalo||'—')}</td>
+      <td>${hrs||'—'}</td>
+    </tr>`;
+  }).join('');
+  const maisCount=meds.length-12;
+
+  let html=`<div class="cartao">
+    <div class="cartao-hdr">
+      <div class="pac-foto">${foto}</div>
+      <div class="pac-hdr-info">
+        <div class="pac-hdr-nome">${esc(pac.nome||'Paciente')}</div>
+        <div class="pac-hdr-det">
+          ${idade}${pac.dataNascimento?' · '+fmtData(pac.dataNascimento):''}
+          ${tipoSangue?' · 🩸 '+esc(tipoSangue):''}
+          ${telefone?'<br>📱 '+esc(telefone):''}
+        </div>
+        <div class="vitadose-badge">VitaDose · Atualizado ${fmtData(hoje())}</div>
+      </div>
+    </div>`;
+
+  // Alergias
+  html+=`<div class="c-sec">
+    <div class="c-sec-title">⚠️ Alergias e Reações</div>
+    ${alergias?`<div class="alerg-tags">${alergias.split(/[,;]/).map(a=>a.trim()).filter(Boolean).map(a=>`<span class="alerg-tag">🚫 ${esc(a)}</span>`).join('')}</div>`:`<span class="alerg-none">✅ Sem alergias conhecidas</span>`}
+  </div>`;
+
+  // Condições
+  if(condicoes.length){
+    html+=`<div class="c-sec">
+      <div class="c-sec-title">🏥 Condições de Saúde</div>
+      <div class="cond-tags">${condicoes.map(c=>`<span class="cond-tag">${esc(c)}</span>`).join('')}</div>
+    </div>`;
+  }
+
+  // Medicamentos
+  if(meds.length){
+    html+=`<div class="c-sec">
+      <div class="c-sec-title">💊 Medicamentos em Uso (${meds.length})</div>
+      <table class="med-table">
+        <thead><tr><th>Medicamento</th><th>Dose</th><th>Frequência</th><th>Horários</th></tr></thead>
+        <tbody>${medRows}</tbody>
+      </table>
+      ${maisCount>0?`<div style="font-size:.62rem;color:#94a3b8;margin-top:4px">+${maisCount} medicamento${maisCount>1?'s':''} — ver perfil completo</div>`:''}
+    </div>`;
+  }
+
+  // Sinais vitais recentes
+  if(paLast||gLast){
+    html+=`<div class="c-sec">
+      <div class="c-sec-title">📊 Sinais Vitais Recentes</div>
+      <div class="vital-row">
+        ${paLast?`<div class="vital-box"><div class="vb-val" style="color:#1e3a5f">${paLast.s}/${paLast.d}</div><div class="vb-lbl">PA (mmHg) · ${fmtData(paLast.data)}</div></div>`:''}
+        ${gLast?`<div class="vital-box"><div class="vb-val" style="color:#065f46">${gLast.val}</div><div class="vb-lbl">Glicemia (mg/dL) · ${fmtData(gLast.data)}</div></div>`:''}
+      </div>
+    </div>`;
+  }
+
+  // Scores clínicos
+  if(scoresHtml){
+    html+=`<div class="c-sec">
+      <div class="c-sec-title">🔬 Avaliações Clínicas</div>
+      <div class="scores-grid">${scoresHtml}</div>
+    </div>`;
+  }
+
+  // Laboratório
+  if(labHtml){
+    html+=`<div class="c-sec">
+      <div class="c-sec-title">🧪 Exames Laboratoriais</div>
+      <div class="lab-grid">${labHtml}</div>
+    </div>`;
+  }
+
+  // Contatos
+  html+=`<div class="c-sec">
+    <div class="c-sec-title">📞 Contatos</div>
+    ${cuidador?`<div class="contato-item"><div class="cont-ico">🧡</div><div class="cont-info"><div class="cont-nome">${esc(cuidador)}</div><div class="cont-rel">Cuidador / Responsável</div>${telCuidador?`<div class="cont-tel">📱 ${esc(telCuidador)}</div>`:''}</div>${telCuidador?`<a class="ligar-btn" href="tel:${esc(telCuidador)}">Ligar</a>`:''}</div>`:''}
+    ${medico?`<div class="contato-item"><div class="cont-ico">👨‍⚕️</div><div class="cont-info"><div class="cont-nome">${esc(medico)}</div><div class="cont-rel">Médico Assistente</div>${telMedico?`<div class="cont-tel">📱 ${esc(telMedico)}</div>`:''}</div>${telMedico?`<a class="ligar-btn" href="tel:${esc(telMedico)}">Ligar</a>`:''}</div>`:''}
+    ${!cuidador&&!medico?'<div style="color:#94a3b8;font-size:.72rem">Sem contatos cadastrados. Edite o perfil do paciente.</div>':''}
+  </div>`;
+
+  // Próxima consulta
+  if(proximo){
+    html+=`<div class="c-sec">
+      <div class="c-sec-title">📅 Próxima Agenda</div>
+      <div class="prox-event">📌 ${esc(proximo.titulo)} · ${fmtData(proximo.data)}${proximo.local?' — '+esc(proximo.local):''}</div>
+    </div>`;
+  }
+
+  html+=`<div class="cartao-footer">
+    <div class="cf-data">Gerado em ${fmtData(hoje())} · Dados do VitaDose</div>
+    <div class="cf-logo">💊 VitaDose</div>
+  </div></div>`;
+
+  document.getElementById('cartao-div').innerHTML=html;
+}
+
+function compartilhar(){
+  if(!_pac) return;
+  const meds=document.querySelectorAll('.med-table tbody tr');
+  let txt=`*${_pac.nome || 'Paciente'} — Cartão Médico (VitaDose)*\n\n`;
+  txt+=`📋 *Alergias:* ${_pac.alergias||'Nenhuma conhecida'}\n`;
+  if((_pac.condicoes||[]).length) txt+=`🏥 *Condições:* ${(_pac.condicoes||[]).join(', ')}\n`;
+  txt+=`\n💊 *Medicamentos em uso:*\n`;
+  meds.forEach(r=>{const cells=[...r.cells];txt+=`• ${cells[0]?.textContent||''} ${cells[1]?.textContent||''} — ${cells[2]?.textContent||''}\n`;});
+  txt+=`\n_VitaDose — ${fmtData(hoje())}_`;
+  const url='https://wa.me/?text='+encodeURIComponent(txt);
+  window.open(url,'_blank');
+}
+
+function calcIdade(dn){
+  if(!dn) return '';
+  const d=new Date(dn),n=new Date();
+  let a=n.getFullYear()-d.getFullYear();
+  if(n.getMonth()<d.getMonth()||(n.getMonth()===d.getMonth()&&n.getDate()<d.getDate())) a--;
+  return a;
+}
+function hoje(){return new Date().toISOString().slice(0,10);}
+function fmtData(d){return d?String(d).slice(0,10).split('-').reverse().join('/'):''}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+
+document.addEventListener('DOMContentLoaded',async()=>{
+  const pacs=await dbGetAll('pacientes');
+  const sel=document.getElementById('sel-pac');
+  sel.innerHTML='<option value="">Selecione o paciente...</option>'+pacs.map(p=>`<option value="${p.id}">${esc(p.nome||'Paciente '+p.id)}</option>`).join('');
+  const pid=getActivePacienteId();
+  if(pid){sel.value=pid;await init();}
+});
+</script>
+</body>
+</html>

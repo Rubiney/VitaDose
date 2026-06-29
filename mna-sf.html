@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>MNA-SF — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .topbar{display:flex;align-items:center;gap:10px;padding:12px 16px;background:#78350f;position:sticky;top:0;z-index:100}
+    .back-btn{background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:8px;padding:6px 11px;cursor:pointer;font-size:1rem}
+    .topbar-title{font-size:.93rem;font-weight:800;color:#fff;flex:1}
+    .topbar-sub{font-size:.62rem;color:rgba(255,255,255,.7);margin-top:1px}
+    main{max-width:620px;margin:0 auto;padding:12px 14px 90px}
+    .pac-sel{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:12px;padding:11px 14px;font-size:.88rem;margin-bottom:10px;background:#fff}
+
+    .intro{background:#fef3c7;border:1px solid #fde68a;border-radius:12px;padding:11px 14px;font-size:.75rem;color:#78350f;margin-bottom:12px;line-height:1.5;display:none}
+
+    /* Progresso */
+    .prog-strip{background:#fff;border-radius:12px;padding:10px 14px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.07);display:none;align-items:center;gap:12px}
+    .prog-bar{flex:1;height:8px;background:#fef3c7;border-radius:4px;overflow:hidden}
+    .prog-fill{height:100%;border-radius:4px;background:#f59e0b;transition:width .3s}
+    .prog-txt{font-size:.68rem;font-weight:700;color:#92400e;white-space:nowrap}
+
+    /* Questões */
+    .q-card{background:#fff;border-radius:14px;padding:14px;margin-bottom:8px;box-shadow:0 1px 4px rgba(0,0,0,.06);border-left:4px solid #fde68a;transition:.15s}
+    .q-card.respondida{border-left-color:#f59e0b}
+    .q-num{font-size:.62rem;font-weight:800;color:#f59e0b;text-transform:uppercase;margin-bottom:4px}
+    .q-texto{font-size:.82rem;color:#1e293b;font-weight:600;margin-bottom:4px;line-height:1.4}
+    .q-nota{font-size:.65rem;color:#94a3b8;margin-bottom:10px;font-style:italic}
+    .q-opts{display:flex;flex-direction:column;gap:6px}
+    .opt-btn{padding:9px 13px;border-radius:10px;border:1.5px solid #e2e8f0;font-size:.78rem;color:#334155;cursor:pointer;background:#f8fafc;text-align:left;transition:.12s;display:flex;align-items:center;gap:8px}
+    .opt-pts{font-size:.6rem;font-weight:800;padding:2px 6px;border-radius:10px;background:#f1f5f9;color:#64748b;flex-shrink:0;margin-left:auto}
+    .opt-btn.sel{background:#fef3c7;border-color:#f59e0b;color:#92400e}
+    .opt-btn.sel .opt-pts{background:#fde68a;color:#92400e}
+
+    /* BMI opcional */
+    .bmi-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:8px}
+    label{font-size:.68rem;font-weight:700;color:#64748b;display:block;margin-bottom:3px}
+    input[type=number]{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:9px;padding:9px 11px;font-size:.85rem;background:#fff}
+    input:focus{outline:none;border-color:#78350f}
+
+    /* Resultado */
+    .result-card{background:#fff;border-radius:16px;padding:18px;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,.08);display:none}
+    .result-card.visivel{display:block}
+    .result-score{font-size:3rem;font-weight:900;text-align:center;line-height:1}
+    .result-label{font-size:1rem;font-weight:800;text-align:center;margin-top:6px}
+    .result-interp{font-size:.78rem;color:#475569;text-align:center;margin-top:8px;line-height:1.5}
+    .score-bar{display:flex;height:14px;border-radius:8px;overflow:hidden;margin:12px 0 6px}
+    .score-seg{transition:flex .4s;position:relative;display:flex;align-items:center;justify-content:center;font-size:.58rem;font-weight:800;color:#fff}
+    .score-ptr{position:absolute;top:-6px;width:3px;height:26px;background:#0f172a;border-radius:2px;transform:translateX(-50%)}
+    .score-labels{display:flex;justify-content:space-between;font-size:.6rem;color:#94a3b8;font-weight:700}
+
+    /* Recomendações */
+    .rec-card{background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:12px 14px;margin-bottom:10px}
+    .rec-title{font-size:.7rem;font-weight:800;color:#78350f;margin-bottom:8px}
+    .rec-item{font-size:.76rem;padding:5px 0;border-bottom:1px solid #fef3c7;color:#451a03;display:flex;gap:8px;line-height:1.4}
+    .rec-item:last-child{border:none}
+
+    /* Perfil integrado */
+    .perf-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:10px}
+    .perf-card{background:#f8fafc;border-radius:10px;padding:8px;text-align:center;border:1px solid #e2e8f0}
+    .perf-val{font-size:1.1rem;font-weight:900;color:#0f172a}
+    .perf-lbl{font-size:.58rem;color:#94a3b8;font-weight:700;text-transform:uppercase;margin-top:2px}
+
+    /* Histórico */
+    .hist-section{background:#fff;border-radius:14px;padding:14px;margin-top:10px;box-shadow:0 1px 4px rgba(0,0,0,.07);display:none}
+    .hist-title{font-size:.68rem;font-weight:800;color:#78350f;text-transform:uppercase;margin-bottom:8px}
+
+    .salvar-btn{width:100%;padding:13px;background:#78350f;color:#fff;border:none;border-radius:12px;font-size:.85rem;font-weight:800;cursor:pointer;margin:10px 0;display:none}
+    @media print{.topbar,.pac-sel,.prog-strip,.salvar-btn,nav{display:none!important}body{background:#fff}main{padding:0}}
+  </style>
+</head>
+<body>
+<div class="topbar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <div style="flex:1">
+    <div class="topbar-title">🥗 Triagem Nutricional — MNA-SF</div>
+    <div class="topbar-sub">Mini Nutritional Assessment · Guigoz 1994 · Val. brasileira</div>
+  </div>
+</div>
+<main>
+  <select class="pac-sel" id="sel-pac" onchange="init()"><option value="">Selecione o paciente...</option></select>
+
+  <div class="intro" id="intro">
+    O MNA-SF rastreia risco nutricional em idosos em 6 questões. Aplicar ao cuidador ou ao próprio paciente.
+    Pontuação máxima: <strong>14 pontos</strong>. Tempo de aplicação: ~3 minutos.
+  </div>
+
+  <div class="prog-strip" id="prog-strip">
+    <div class="prog-bar"><div class="prog-fill" id="prog-fill" style="width:0%"></div></div>
+    <div class="prog-txt" id="prog-txt">0 / 6</div>
+  </div>
+
+  <div id="questoes"></div>
+
+  <button class="salvar-btn" id="btn-salvar" onclick="salvar()">💾 Calcular e Salvar</button>
+
+  <div class="result-card" id="result-card">
+    <div class="result-score" id="res-score"></div>
+    <div class="result-label" id="res-label"></div>
+    <div class="result-interp" id="res-interp"></div>
+    <div class="score-bar" id="score-bar">
+      <div class="score-seg" style="background:#ef4444;flex:8" id="seg-desnut">0–7<br>Desnutr.</div>
+      <div class="score-seg" style="background:#f59e0b;flex:4" id="seg-risco">8–11<br>Risco</div>
+      <div class="score-seg" style="background:#22c55e;flex:3" id="seg-norm">12–14<br>Normal</div>
+      <div class="score-ptr" id="score-ptr"></div>
+    </div>
+    <div class="score-labels"><span>0</span><span>7</span><span>11</span><span>14</span></div>
+    <div id="perf-integrado" style="margin-top:14px"></div>
+    <div id="recomendacoes" style="margin-top:10px"></div>
+  </div>
+
+  <div class="hist-section" id="hist-section">
+    <div class="hist-title">Histórico</div>
+    <svg id="hist-svg" width="100%" height="130" viewBox="0 0 380 130"></svg>
+  </div>
+</main>
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+<script src="js/db.js"></script>
+<script src="js/utils.js"></script>
+<script>
+const QS=[
+  {
+    lbl:'A — Ingestão alimentar',
+    q:'Houve diminuição da ingestão alimentar nos últimos 3 meses por falta de apetite, problemas digestivos ou dificuldades para mastigar/engolir?',
+    opts:[{txt:'Diminuição grave da ingestão',pts:0},{txt:'Diminuição moderada da ingestão',pts:1},{txt:'Sem diminuição da ingestão',pts:2}],
+  },
+  {
+    lbl:'B — Perda de peso',
+    q:'Perda de peso nos últimos 3 meses',
+    opts:[{txt:'Perda de peso maior que 3 kg',pts:0},{txt:'Não sabe informar',pts:1},{txt:'Perda de peso entre 1 e 3 kg',pts:2},{txt:'Sem perda de peso',pts:3}],
+  },
+  {
+    lbl:'C — Mobilidade',
+    q:'Mobilidade atual do paciente',
+    opts:[{txt:'Acamado ou cadeirante',pts:0},{txt:'Capaz de levantar, mas não sai de casa',pts:1},{txt:'Sai de casa normalmente',pts:2}],
+  },
+  {
+    lbl:'D — Doença aguda / Estresse',
+    q:'O paciente sofreu pressão psicológica ou doença aguda nos últimos 3 meses?',
+    opts:[{txt:'Sim',pts:0},{txt:'Não',pts:2}],
+  },
+  {
+    lbl:'E — Problemas neuropsicológicos',
+    q:'Presença de demência ou depressão',
+    opts:[{txt:'Demência grave ou depressão grave',pts:0},{txt:'Demência leve',pts:1},{txt:'Sem problemas neuropsicológicos',pts:2}],
+  },
+  {
+    lbl:'F — IMC ou Circunferência da Panturrilha',
+    q:'Índice de Massa Corporal (kg/m²) ou, se não disponível, Circunferência da Panturrilha (CP)',
+    nota:'Calcule abaixo ou use a CP se o IMC não estiver disponível.',
+    bmi:true,
+    opts:[
+      {txt:'IMC < 19  ou  CP < 31 cm',pts:0},
+      {txt:'IMC 19 a < 21',pts:1},
+      {txt:'IMC 21 a < 23',pts:2},
+      {txt:'IMC ≥ 23  ou  CP ≥ 31 cm',pts:3},
+    ],
+  },
+];
+
+const INTERP=[
+  {min:12,max:14,cor:'#22c55e',lbl:'Estado Nutricional Normal',txt:'Sem risco nutricional detectado. Reavalie periodicamente (6-12 meses ou em caso de intercorrência).'},
+  {min:8,max:11,cor:'#f59e0b',lbl:'Em Risco de Desnutrição',txt:'Risco nutricional moderado. Revisar dieta, reforçar ingesta calórica e proteica, considerar suplementação oral. Reavaliar em 1-3 meses.'},
+  {min:0,max:7,cor:'#ef4444',lbl:'Desnutrido',txt:'Desnutrição confirmada. Encaminhar para nutricionista. Considerar suplementação nutricional oral ou enteral. Revisar medicamentos que afetam apetite.'},
+];
+
+let _pid=null,_respostas=Array(6).fill(null);
+
+async function init(){
+  _pid=parseInt(document.getElementById('sel-pac').value)||null;
+  _respostas=Array(6).fill(null);
+  document.getElementById('result-card').classList.remove('visivel');
+  if(!_pid){
+    document.getElementById('questoes').innerHTML='';
+    document.getElementById('intro').style.display='none';
+    document.getElementById('prog-strip').style.display='none';
+    document.getElementById('btn-salvar').style.display='none';
+    document.getElementById('hist-section').style.display='none';
+    return;
+  }
+  const ant=await dbGetConfig('mnasf_'+_pid);
+  if(ant?.respostas) _respostas=[...ant.respostas];
+  document.getElementById('intro').style.display='block';
+  document.getElementById('prog-strip').style.display='flex';
+  document.getElementById('btn-salvar').style.display='block';
+  renderQuestoes();
+  await renderHist();
+}
+
+function renderQuestoes(){
+  let html='';
+  QS.forEach((q,i)=>{
+    const resp=_respostas[i];
+    html+=`<div class="q-card ${resp!==null?'respondida':''}" id="qc-${i}">
+      <div class="q-num">${q.lbl}</div>
+      <div class="q-texto">${esc(q.q)}</div>
+      ${q.nota?`<div class="q-nota">${q.nota}</div>`:''}
+      ${q.bmi?renderBMI():''}
+      <div class="q-opts">
+        ${q.opts.map((o,v)=>`<button class="opt-btn ${resp===o.pts?'sel':''}" onclick="selResp(${i},${o.pts},this)">
+          ${esc(o.txt)}<span class="opt-pts">${o.pts} pt${o.pts!==1?'s':''}</span>
+        </button>`).join('')}
+      </div>
+    </div>`;
+  });
+  document.getElementById('questoes').innerHTML=html;
+  atualizarProg();
+}
+
+function renderBMI(){
+  return `<div class="bmi-row">
+    <div><label>Peso (kg)</label><input type="number" id="bmi-peso" placeholder="Ex: 65" min="20" max="250" step=".1" oninput="calcBMI()"></div>
+    <div><label>Altura (m)</label><input type="number" id="bmi-alt" placeholder="Ex: 1.65" min=".5" max="2.5" step=".01" oninput="calcBMI()"></div>
+    <div><label>IMC calculado</label><input type="number" id="bmi-res" placeholder="—" readonly style="background:#f8fafc;font-weight:700"></div>
+  </div>
+  <div style="font-size:.65rem;color:#78350f;font-weight:700;margin-bottom:8px" id="bmi-class"></div>`;
+}
+
+function calcBMI(){
+  const p=parseFloat(document.getElementById('bmi-peso')?.value)||0;
+  const a=parseFloat(document.getElementById('bmi-alt')?.value)||0;
+  if(!p||!a) return;
+  const bmi=p/(a*a);
+  document.getElementById('bmi-res').value=bmi.toFixed(1);
+  let cls='';
+  if(bmi<18.5) cls='Baixo peso';
+  else if(bmi<25) cls='Peso normal';
+  else if(bmi<30) cls='Sobrepeso';
+  else cls='Obesidade';
+  document.getElementById('bmi-class').textContent=`IMC ${bmi.toFixed(1)} kg/m² — ${cls}`;
+}
+
+function selResp(qi,pts,btn){
+  _respostas[qi]=pts;
+  const card=document.getElementById('qc-'+qi);
+  card.classList.add('respondida');
+  card.querySelectorAll('.opt-btn').forEach(b=>b.classList.remove('sel'));
+  btn.classList.add('sel');
+  atualizarProg();
+}
+
+function atualizarProg(){
+  const n=_respostas.filter(r=>r!==null).length;
+  document.getElementById('prog-fill').style.width=(n/6*100)+'%';
+  document.getElementById('prog-txt').textContent=n+' / 6';
+}
+
+async function salvar(){
+  const inc=_respostas.filter(r=>r===null).length;
+  if(inc>0){showToast('Responda todas as '+inc+' questões restantes');return;}
+  const total=_respostas.reduce((a,b)=>a+b,0);
+  const bmi=parseFloat(document.getElementById('bmi-res')?.value)||null;
+  const entrada={pid:_pid,total,respostas:[..._respostas],bmi,data:new Date().toISOString().slice(0,10),ts:Date.now()};
+  await dbSetConfig('mnasf_'+_pid,entrada);
+  const hist=await dbGetConfig('mnasf_hist_'+_pid)||[];
+  hist.push(entrada);
+  await dbSetConfig('mnasf_hist_'+_pid,hist);
+  renderResultado(total);
+  await renderHist();
+  showToast('✅ MNA-SF salvo');
+}
+
+async function renderResultado(total){
+  const interp=INTERP.find(i=>total>=i.min&&total<=i.max)||INTERP[INTERP.length-1];
+  document.getElementById('res-score').innerHTML=`<span style="color:${interp.cor}">${total}</span><span style="font-size:1rem;color:#94a3b8"> / 14</span>`;
+  document.getElementById('res-label').style.color=interp.cor;
+  document.getElementById('res-label').textContent=interp.lbl;
+  document.getElementById('res-interp').textContent=interp.txt;
+  // Ponteiro
+  const pct=total/14*100;
+  document.getElementById('score-ptr').style.left=pct+'%';
+
+  // Integração
+  const [barthel,meem,frail]=await Promise.all([
+    dbGetConfig('barthel_hist_'+_pid),
+    dbGetConfig('meem_hist_'+_pid),
+    dbGetConfig('frail_hist_'+_pid),
+  ]);
+  const last=arr=>(arr&&arr.length)?arr[arr.length-1]:null;
+  const bL=last(barthel),mL=last(meem),fL=last(frail);
+  if(bL||mL||fL){
+    let ph='<div style="font-size:.65rem;font-weight:800;color:#94a3b8;text-transform:uppercase;margin-bottom:8px">Contexto geriátrico</div><div class="perf-grid">';
+    if(bL) ph+=`<div class="perf-card"><div class="perf-val">${bL.total}</div><div class="perf-lbl">Barthel</div></div>`;
+    if(mL) ph+=`<div class="perf-card"><div class="perf-val">${mL.total}</div><div class="perf-lbl">MEEM</div></div>`;
+    if(fL) ph+=`<div class="perf-card"><div class="perf-val">${fL.total}</div><div class="perf-lbl">FRAIL</div></div>`;
+    ph+='</div>';
+    document.getElementById('perf-integrado').innerHTML=ph;
+  }
+
+  // Recomendações
+  const recs=[];
+  if(total<=7){
+    recs.push('Encaminhar para nutricionista com urgência.');
+    recs.push('Avaliar necessidade de suplementação nutricional oral (hipercalórico/hiperproteico).');
+    recs.push('Investigar disfagia se houver dificuldade para engolir (QA com score 0).');
+    recs.push('Revisar medicamentos que causam anorexia, náusea ou xerostomia.');
+  } else if(total<=11){
+    recs.push('Reforçar ingesta calórica: 30-35 kcal/kg/dia e proteica: 1,2-1,5 g/kg/dia.');
+    recs.push('Considerar suplementação proteica oral (whey, caseína).');
+    recs.push('Monitorar peso semanalmente. Reavaliar MNA-SF em 1-3 meses.');
+  }
+  if(bL&&bL.total<60) recs.push('Dependência funcional (Barthel <60): risco aumentado de desnutrição por dificuldade de auto-alimentação.');
+  if(mL&&mL.total<24) recs.push('Declínio cognitivo (MEEM <24): supervisionar refeições e avaliar textura dos alimentos.');
+  if(!recs.length) recs.push('Estado nutricional adequado. Manter dieta equilibrada. Reavaliar em 6-12 meses.');
+  document.getElementById('recomendacoes').innerHTML=`<div class="rec-card"><div class="rec-title">Condutas Recomendadas</div>${recs.map(r=>`<div class="rec-item"><span>•</span><span>${r}</span></div>`).join('')}</div>`;
+  document.getElementById('result-card').classList.add('visivel');
+}
+
+async function renderHist(){
+  if(!_pid) return;
+  const hist=await dbGetConfig('mnasf_hist_'+_pid)||[];
+  if(hist.length<2){document.getElementById('hist-section').style.display='none';return;}
+  document.getElementById('hist-section').style.display='block';
+  const W=380,H=130,pad={t:18,b:28,l:28,r=10};
+  const pts=hist.slice(-10);
+  const xS=(W-pad.l-pad.r)/(pts.length-1||1);
+  const yS=v=>pad.t+(1-v/14)*(H-pad.t-pad.b);
+  let svg='';
+  [[7,'#ef4444'],[11,'#f59e0b']].forEach(([v,c])=>{
+    const y=yS(v);
+    svg+=`<line x1="${pad.l}" y1="${y}" x2="${W-pad.r}" y2="${y}" stroke="${c}" stroke-width="1" stroke-dasharray="3"/>
+    <text x="${pad.l-4}" y="${y+4}" text-anchor="end" font-size="9" fill="${c}">${v}</text>`;
+  });
+  const path=pts.map((p,i)=>`${i?'L':'M'}${pad.l+i*xS},${yS(p.total)}`).join(' ');
+  svg+=`<path d="${path}" fill="none" stroke="#78350f" stroke-width="2.5"/>`;
+  pts.forEach((p,i)=>{
+    const x=pad.l+i*xS,y=yS(p.total);
+    const c=p.total>=12?'#22c55e':p.total>=8?'#f59e0b':'#ef4444';
+    svg+=`<circle cx="${x}" cy="${y}" r="5" fill="${c}" stroke="#fff" stroke-width="2"/>
+    <text x="${x}" y="${y-9}" text-anchor="middle" font-size="10" font-weight="700" fill="${c}">${p.total}</text>
+    <text x="${x}" y="${H-2}" text-anchor="middle" font-size="8" fill="#94a3b8">${(p.data||'').slice(5)}</text>`;
+  });
+  document.getElementById('hist-svg').innerHTML=svg;
+}
+
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+
+document.addEventListener('DOMContentLoaded',async()=>{
+  const pacs=await dbGetAll('pacientes');
+  const sel=document.getElementById('sel-pac');
+  sel.innerHTML='<option value="">Selecione o paciente...</option>'+pacs.map(p=>`<option value="${p.id}">${esc(p.nome||'Paciente '+p.id)}</option>`).join('');
+  const pid=getActivePacienteId();
+  if(pid){sel.value=pid;await init();}
+});
+</script>
+</body>
+</html>

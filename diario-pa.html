@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>Diário de Pressão Arterial — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .topbar{display:flex;align-items:center;gap:10px;padding:12px 16px;background:#1e3a5f;position:sticky;top:0;z-index:100}
+    .back-btn{background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:8px;padding:6px 11px;cursor:pointer;font-size:1rem}
+    .topbar-title{font-size:.93rem;font-weight:800;color:#fff;flex:1}
+    .topbar-sub{font-size:.62rem;color:rgba(255,255,255,.7);margin-top:1px}
+    .btn-top{background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:8px;padding:7px 11px;font-size:.72rem;font-weight:700;cursor:pointer;margin-left:4px}
+    main{max-width:640px;margin:0 auto;padding:12px 14px 90px}
+    .pac-sel{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:12px;padding:11px 14px;font-size:.88rem;margin-bottom:10px;background:#fff}
+
+    /* Classificação atual */
+    .class-card{border-radius:14px;padding:16px;margin-bottom:10px;text-align:center;transition:.3s}
+    .class-val{font-size:2.4rem;font-weight:900;letter-spacing:.02em;line-height:1}
+    .class-fc{font-size:1rem;font-weight:700;margin-top:4px;opacity:.8}
+    .class-lbl{font-size:.8rem;font-weight:800;margin-top:6px;text-transform:uppercase;letter-spacing:.04em}
+    .class-ref{font-size:.62rem;margin-top:4px;opacity:.7}
+
+    /* KPIs 7 dias */
+    .kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px}
+    .kpi-card{background:#fff;border-radius:12px;padding:10px 6px;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,.07);border-top:3px solid}
+    .kpi-val{font-size:1.2rem;font-weight:900;line-height:1}
+    .kpi-lbl{font-size:.55rem;color:#64748b;text-transform:uppercase;font-weight:700;margin-top:3px}
+
+    /* Antihipertensivos */
+    .med-strip{background:#f0f9ff;border:1px solid #bae6fd;border-radius:10px;padding:8px 12px;margin-bottom:10px;font-size:.72rem;color:#0369a1;display:none}
+    .med-strip strong{color:#0c4a6e}
+
+    /* Registro */
+    .reg-card{background:#fff;border-radius:14px;padding:14px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.07)}
+    .reg-title{font-size:.68rem;font-weight:800;color:#1e3a5f;text-transform:uppercase;margin-bottom:10px}
+    .pa-inputs{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:8px}
+    label{font-size:.68rem;font-weight:700;color:#64748b;display:block;margin-bottom:3px}
+    input[type=number],input[type=date],input[type=time],select{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:9px;padding:9px 11px;font-size:.85rem;background:#fff}
+    input:focus,select:focus{outline:none;border-color:#1e3a5f}
+    .pa-preview{text-align:center;padding:12px;background:#f0f4ff;border-radius:10px;margin-bottom:8px;font-size:1.5rem;font-weight:900;color:#1e3a5f}
+    .ctx-pills{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px}
+    .ctx-pill{padding:5px 10px;border-radius:20px;border:1.5px solid #e2e8f0;font-size:.65rem;font-weight:700;cursor:pointer;background:#f8fafc;color:#475569;transition:.12s}
+    .ctx-pill.ativo{background:#dbeafe;border-color:#1e3a5f;color:#1e3a5f}
+    .add-btn{width:100%;padding:12px;background:#1e3a5f;color:#fff;border:none;border-radius:10px;font-size:.83rem;font-weight:800;cursor:pointer}
+
+    /* Período */
+    .period-row{display:flex;gap:6px;margin-bottom:10px}
+    .period-btn{padding:6px 12px;border-radius:20px;border:1.5px solid #e2e8f0;font-size:.68rem;font-weight:700;cursor:pointer;background:#fff;color:#64748b;transition:.12s}
+    .period-btn.ativo{background:#1e3a5f;border-color:#1e3a5f;color:#fff}
+
+    /* Gráfico */
+    .chart-card{background:#fff;border-radius:14px;padding:14px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.07);overflow-x:auto}
+    .chart-title{font-size:.68rem;font-weight:800;color:#1e3a5f;text-transform:uppercase;margin-bottom:8px;display:flex;gap:12px;align-items:center}
+    .chart-leg{font-size:.62rem;font-weight:700;display:flex;align-items:center;gap:4px}
+    .leg-dot{width:10px;height:3px;border-radius:2px;display:inline-block}
+
+    /* Lista */
+    .list-card{background:#fff;border-radius:14px;padding:14px;box-shadow:0 1px 4px rgba(0,0,0,.07)}
+    .list-title{font-size:.68rem;font-weight:800;color:#1e3a5f;text-transform:uppercase;margin-bottom:8px}
+    .pa-item{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid #f1f5f9}
+    .pa-item:last-child{border:none}
+    .pa-badge{font-size:.75rem;font-weight:900;padding:6px 10px;border-radius:8px;min-width:80px;text-align:center;flex-shrink:0}
+    .pa-info{flex:1}
+    .pa-vals{font-size:.82rem;font-weight:700;color:#0f172a}
+    .pa-ctx{font-size:.62rem;color:#94a3b8;margin-top:1px}
+    .del-btn{background:none;border:none;color:#fca5a5;cursor:pointer;font-size:.78rem;padding:2px 5px}
+
+    .empty{text-align:center;padding:30px;color:#94a3b8;font-size:.78rem}
+    @media print{.topbar,.pac-sel,.reg-card,.period-row,.btn-top,nav,.del-btn{display:none!important}body{background:#fff}main{padding:0}}
+  </style>
+</head>
+<body>
+<div class="topbar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <div style="flex:1">
+    <div class="topbar-title">💙 Diário de Pressão Arterial</div>
+    <div class="topbar-sub">Classificação SBC 2020 · Média 7 dias · Controle domiciliar</div>
+  </div>
+  <button class="btn-top" onclick="window.print()">🖨️</button>
+</div>
+<main>
+  <select class="pac-sel" id="sel-pac" onchange="init()"><option value="">Selecione o paciente...</option></select>
+
+  <div id="class-card" class="class-card" style="display:none"></div>
+  <div class="kpi-grid" id="kpi-grid" style="display:none">
+    <div class="kpi-card" style="border-top-color:#ef4444"><div class="kpi-val" id="kv-sist">—</div><div class="kpi-lbl">Média Sist.</div></div>
+    <div class="kpi-card" style="border-top-color:#3b82f6"><div class="kpi-val" id="kv-diast">—</div><div class="kpi-lbl">Média Diast.</div></div>
+    <div class="kpi-card" style="border-top-color:#8b5cf6"><div class="kpi-val" id="kv-fc">—</div><div class="kpi-lbl">Média FC</div></div>
+    <div class="kpi-card" id="kpi-ctrl" style="border-top-color:#22c55e"><div class="kpi-val" id="kv-ctrl">—</div><div class="kpi-lbl">Controladas</div></div>
+  </div>
+  <div class="med-strip" id="med-strip"></div>
+
+  <!-- Novo registro -->
+  <div class="reg-card">
+    <div class="reg-title">➕ Registrar Medição</div>
+    <div class="pa-inputs">
+      <div><label>Sistólica (mmHg)</label><input type="number" id="pa-s" placeholder="Ex: 130" min="60" max="260" oninput="preview()"></div>
+      <div><label>Diastólica (mmHg)</label><input type="number" id="pa-d" placeholder="Ex: 85" min="30" max="160" oninput="preview()"></div>
+      <div><label>Frequência cardíaca</label><input type="number" id="pa-fc" placeholder="Ex: 72" min="30" max="220"></div>
+    </div>
+    <div class="pa-preview" id="pa-preview">—/— mmHg</div>
+    <label>Contexto</label>
+    <div class="ctx-pills">
+      <div class="ctx-pill ativo" onclick="selCtx(this,'Manhã (repouso)')">🌅 Manhã</div>
+      <div class="ctx-pill" onclick="selCtx(this,'Tarde')">☀️ Tarde</div>
+      <div class="ctx-pill" onclick="selCtx(this,'Noite')">🌙 Noite</div>
+      <div class="ctx-pill" onclick="selCtx(this,'Após atividade')">🏃 Pós-atividade</div>
+      <div class="ctx-pill" onclick="selCtx(this,'Após medicamento')">💊 Pós-medicamento</div>
+      <div class="ctx-pill" onclick="selCtx(this,'Sentado')">🪑 Sentado</div>
+      <div class="ctx-pill" onclick="selCtx(this,'Em pé')">🧍 Em pé</div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+      <div><label>Data</label><input type="date" id="pa-data"></div>
+      <div><label>Hora</label><input type="time" id="pa-hora"></div>
+    </div>
+    <button class="add-btn" onclick="addPA()">Registrar</button>
+  </div>
+
+  <div class="period-row" id="period-row" style="display:none">
+    <div class="period-btn ativo" onclick="setPeriodo(7,this)">7 dias</div>
+    <div class="period-btn" onclick="setPeriodo(14,this)">14 dias</div>
+    <div class="period-btn" onclick="setPeriodo(30,this)">30 dias</div>
+    <div class="period-btn" onclick="setPeriodo(90,this)">90 dias</div>
+  </div>
+
+  <div class="chart-card" id="chart-card" style="display:none">
+    <div class="chart-title">
+      Evolução
+      <span class="chart-leg"><span class="leg-dot" style="background:#ef4444"></span>Sistólica</span>
+      <span class="chart-leg"><span class="leg-dot" style="background:#3b82f6"></span>Diastólica</span>
+    </div>
+    <svg id="chart-svg" height="160" viewBox="0 0 420 160" style="width:100%;min-width:300px"></svg>
+  </div>
+
+  <div class="list-card" id="list-card" style="display:none">
+    <div class="list-title">Registros recentes</div>
+    <div id="pa-lista"></div>
+  </div>
+</main>
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+<script src="js/db.js"></script>
+<script src="js/utils.js"></script>
+<script>
+let _pid=null, _dados=[], _ctx='Manhã (repouso)', _periodo=7;
+
+// Classificação SBC 2020
+function classPA(s,d){
+  if(s>180||d>120) return {cls:'Crise Hipertensiva',cor:'#7f1d1d',bg:'#fee2e2',emoji:'🚨'};
+  if(s>=180||d>=110) return {cls:'HTN Estágio 3',cor:'#991b1b',bg:'#fecaca',emoji:'🔴'};
+  if(s>=160||d>=100) return {cls:'HTN Estágio 2',cor:'#ef4444',bg:'#fee2e2',emoji:'🔴'};
+  if(s>=140||d>=90)  return {cls:'HTN Estágio 1',cor:'#f97316',bg:'#fff7ed',emoji:'🟠'};
+  if(s>=130||d>=85)  return {cls:'Limítrofe',cor:'#f59e0b',bg:'#fef3c7',emoji:'🟡'};
+  if(s>=120&&d<80)   return {cls:'Normal',cor:'#84cc16',bg:'#f7fee7',emoji:'🟢'};
+  return {cls:'Ótima',cor:'#22c55e',bg:'#dcfce7',emoji:'✅'};
+}
+
+const ANTI_HT=/captopril|enalapril|lisinopril|ramipril|perindopril|losartan|valsartan|irbesartan|candesartan|telmisartan|amlodipino|anlodipino|nifedipino|atenolol|metoprolol|carvedilol|bisoprolol|propranolol|hidroclorotiazida|furosemida|indapamida|clortalidona|espironolactona|clonidina|hidralazina|alfametildopa/i;
+
+function selCtx(btn,ctx){
+  _ctx=ctx;
+  document.querySelectorAll('.ctx-pill').forEach(b=>b.classList.remove('ativo'));
+  btn.classList.add('ativo');
+}
+
+function preview(){
+  const s=parseInt(document.getElementById('pa-s').value)||0;
+  const d=parseInt(document.getElementById('pa-d').value)||0;
+  const el=document.getElementById('pa-preview');
+  if(s&&d){
+    const c=classPA(s,d);
+    el.style.background=c.bg;
+    el.style.color=c.cor;
+    el.textContent=`${s}/${d} mmHg — ${c.emoji} ${c.cls}`;
+  } else el.textContent='—/— mmHg';
+}
+
+function hoje(){return new Date().toISOString().slice(0,10);}
+function horaAgora(){const a=new Date();return a.getHours().toString().padStart(2,'0')+':'+a.getMinutes().toString().padStart(2,'0');}
+function diasAtras(n){const d=new Date();d.setDate(d.getDate()-n);return d.toISOString().slice(0,10);}
+
+async function init(){
+  _pid=parseInt(document.getElementById('sel-pac').value)||null;
+  document.getElementById('pa-data').value=hoje();
+  document.getElementById('pa-hora').value=horaAgora();
+  if(!_pid){
+    document.getElementById('class-card').style.display='none';
+    document.getElementById('kpi-grid').style.display='none';
+    document.getElementById('med-strip').style.display='none';
+    document.getElementById('period-row').style.display='none';
+    document.getElementById('chart-card').style.display='none';
+    document.getElementById('list-card').style.display='none';
+    return;
+  }
+  _dados=await dbGetConfig('pa_registros_'+_pid)||[];
+  // Anti-hipertensivos
+  const meds=await dbGetByIndex('medicamentos','pacienteId',_pid)||[];
+  const ah=meds.filter(m=>ANTI_HT.test(m.nome||m.medicamento||''));
+  const strip=document.getElementById('med-strip');
+  if(ah.length){
+    strip.style.display='block';
+    strip.innerHTML='💊 <strong>Anti-hipertensivos em uso:</strong> '+ah.map(m=>esc(m.nome||m.medicamento)+' '+esc(m.dose||'')).join(' · ');
+  }
+  renderDados();
+}
+
+function setPeriodo(d,btn){
+  _periodo=d;
+  document.querySelectorAll('.period-btn').forEach(b=>b.classList.remove('ativo'));
+  btn.classList.add('ativo');
+  renderDados();
+}
+
+function renderDados(){
+  if(!_dados.length){
+    document.getElementById('class-card').style.display='none';
+    document.getElementById('kpi-grid').style.display='none';
+    document.getElementById('period-row').style.display='none';
+    document.getElementById('chart-card').style.display='none';
+    document.getElementById('list-card').style.display='block';
+    document.getElementById('pa-lista').innerHTML='<div class="empty">Nenhum registro ainda.</div>';
+    return;
+  }
+  const sorted=[..._dados].sort((a,b)=>b.ts-a.ts);
+  const corte=diasAtras(_periodo);
+  const filt=_dados.filter(d=>d.data>=corte).sort((a,b)=>a.data.localeCompare(b.data)||a.ts-b.ts);
+
+  // Última medição
+  const ult=sorted[0];
+  const c=classPA(ult.s,ult.d);
+  const card=document.getElementById('class-card');
+  card.style.display='block';
+  card.style.background=c.bg;
+  card.innerHTML=`<div class="class-val" style="color:${c.cor}">${ult.s}/${ult.d}</div>
+    <div class="class-fc" style="color:${c.cor}">FC ${ult.fc||'—'} bpm</div>
+    <div class="class-lbl" style="color:${c.cor}">${c.emoji} ${c.cls}</div>
+    <div class="class-ref" style="color:${c.cor}">Última medição: ${fmtData(ult.data)} ${ult.hora||''} · ${esc(ult.ctx||'—')}</div>`;
+
+  // KPIs 7 dias
+  document.getElementById('kpi-grid').style.display='grid';
+  const corte7=diasAtras(7);
+  const f7=_dados.filter(d=>d.data>=corte7);
+  const avgS=f7.length?Math.round(f7.reduce((a,b)=>a+b.s,0)/f7.length):0;
+  const avgD=f7.length?Math.round(f7.reduce((a,b)=>a+b.d,0)/f7.length):0;
+  const avgFC=f7.filter(d=>d.fc).length?Math.round(f7.filter(d=>d.fc).reduce((a,b)=>a+(b.fc||0),0)/f7.filter(d=>d.fc).length):0;
+  const ctrl=f7.filter(d=>d.s<140&&d.d<90).length;
+  const ctrlPct=f7.length?Math.round(ctrl/f7.length*100):0;
+  const cAvg=avgS&&avgD?classPA(avgS,avgD):{cor:'#94a3b8'};
+  document.getElementById('kv-sist').textContent=avgS||'—';
+  document.getElementById('kv-sist').style.color=cAvg.cor;
+  document.getElementById('kv-diast').textContent=avgD||'—';
+  document.getElementById('kv-fc').textContent=avgFC||'—';
+  document.getElementById('kv-ctrl').textContent=ctrlPct+'%';
+  document.getElementById('kpi-ctrl').style.borderTopColor=ctrlPct>=80?'#22c55e':ctrlPct>=60?'#f59e0b':'#ef4444';
+
+  // Período e gráfico
+  document.getElementById('period-row').style.display='flex';
+  if(filt.length>=2) renderChart(filt);
+  else document.getElementById('chart-card').style.display='none';
+
+  // Lista
+  document.getElementById('list-card').style.display='block';
+  document.getElementById('pa-lista').innerHTML=sorted.slice(0,20).map((d,i)=>{
+    const c=classPA(d.s,d.d);
+    return `<div class="pa-item">
+      <div class="pa-badge" style="background:${c.bg};color:${c.cor}">${c.emoji} ${c.cls}</div>
+      <div class="pa-info">
+        <div class="pa-vals">${d.s}/${d.d} mmHg${d.fc?' · FC '+d.fc:''}</div>
+        <div class="pa-ctx">${esc(d.ctx||'—')} · ${fmtData(d.data)} ${d.hora||''}</div>
+      </div>
+      <button class="del-btn" onclick="deletar(${i})">🗑️</button>
+    </div>`;
+  }).join('');
+}
+
+function renderChart(dados){
+  document.getElementById('chart-card').style.display='block';
+  const W=420,H=160,pad={t:20,b:28,l:40,r:10};
+  const sVals=dados.map(d=>d.s),dVals=dados.map(d=>d.d);
+  const minV=Math.max(40,Math.min(...dVals)-10);
+  const maxV=Math.max(220,Math.max(...sVals)+10);
+  const xS=(W-pad.l-pad.r)/(dados.length-1||1);
+  const yS=v=>pad.t+(1-(v-minV)/(maxV-minV))*(H-pad.t-pad.b);
+  let svg='';
+  [[140,'#f97316','140'],[90,'#3b82f6','90']].forEach(([v,c,lbl])=>{
+    const y=yS(v);
+    svg+=`<line x1="${pad.l}" y1="${y}" x2="${W-pad.r}" y2="${y}" stroke="${c}" stroke-width="1" stroke-dasharray="4,3" opacity=".6"/>
+    <text x="${pad.l-4}" y="${y+4}" text-anchor="end" font-size="9" fill="${c}">${lbl}</text>`;
+  });
+  const pathS=dados.map((d,i)=>`${i?'L':'M'}${pad.l+i*xS},${yS(d.s)}`).join(' ');
+  const pathD=dados.map((d,i)=>`${i?'L':'M'}${pad.l+i*xS},${yS(d.d)}`).join(' ');
+  svg+=`<path d="${pathS}" fill="none" stroke="#ef4444" stroke-width="2"/>`;
+  svg+=`<path d="${pathD}" fill="none" stroke="#3b82f6" stroke-width="2"/>`;
+  dados.forEach((d,i)=>{
+    const x=pad.l+i*xS;
+    const cs=classPA(d.s,d.d);
+    svg+=`<circle cx="${x}" cy="${yS(d.s)}" r="3.5" fill="#ef4444" stroke="#fff" stroke-width="1.5"/>`;
+    svg+=`<circle cx="${x}" cy="${yS(d.d)}" r="3.5" fill="#3b82f6" stroke="#fff" stroke-width="1.5"/>`;
+    const step=Math.max(1,Math.floor(dados.length/6));
+    if(i%step===0||i===dados.length-1) svg+=`<text x="${x}" y="${H-2}" text-anchor="middle" font-size="8" fill="#94a3b8">${(d.data||'').slice(5)}</text>`;
+  });
+  document.getElementById('chart-svg').innerHTML=svg;
+}
+
+async function addPA(){
+  if(!_pid){showToast('Selecione um paciente');return;}
+  const s=parseInt(document.getElementById('pa-s').value)||0;
+  const d=parseInt(document.getElementById('pa-d').value)||0;
+  if(!s||!d||s<60||s>260||d<30||d>160){showToast('Valores de PA inválidos');return;}
+  const fc=parseInt(document.getElementById('pa-fc').value)||null;
+  const reg={s,d,fc,ctx:_ctx,data:document.getElementById('pa-data').value||hoje(),hora:document.getElementById('pa-hora').value||horaAgora(),ts:Date.now()};
+  _dados.push(reg);
+  await dbSetConfig('pa_registros_'+_pid,_dados);
+  document.getElementById('pa-s').value='';
+  document.getElementById('pa-d').value='';
+  document.getElementById('pa-fc').value='';
+  document.getElementById('pa-preview').textContent='—/— mmHg';
+  document.getElementById('pa-preview').style.background='#f0f4ff';
+  document.getElementById('pa-preview').style.color='#1e3a5f';
+  renderDados();
+  const c=classPA(s,d);
+  showToast(`✅ ${s}/${d} mmHg registrado — ${c.cls}`);
+  if(c.cls==='Crise Hipertensiva') showToast('🚨 ATENÇÃO: Pressão em nível de crise! Buscar atendimento imediato.');
+}
+
+async function deletar(idx){
+  const sorted=[..._dados].sort((a,b)=>b.ts-a.ts);
+  const item=sorted[idx];
+  _dados=_dados.filter(d=>d.ts!==item.ts);
+  await dbSetConfig('pa_registros_'+_pid,_dados);
+  renderDados();
+}
+
+function fmtData(d){return d?String(d).slice(0,10).split('-').reverse().join('/'):''}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+
+document.addEventListener('DOMContentLoaded',async()=>{
+  const pacs=await dbGetAll('pacientes');
+  const sel=document.getElementById('sel-pac');
+  sel.innerHTML='<option value="">Selecione o paciente...</option>'+pacs.map(p=>`<option value="${p.id}">${esc(p.nome||'Paciente '+p.id)}</option>`).join('');
+  const pid=getActivePacienteId();
+  if(pid){sel.value=pid;await init();}
+  else{document.getElementById('pa-data').value=hoje();document.getElementById('pa-hora').value=horaAgora();}
+});
+</script>
+</body>
+</html>
