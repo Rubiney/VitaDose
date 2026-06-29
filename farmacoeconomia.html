@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>Farmacoeconomia — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .topbar { display:flex;align-items:center;gap:10px;padding:12px 16px;background:#065f46;position:sticky;top:0;z-index:100 }
+    .back-btn { background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:8px;padding:6px 11px;cursor:pointer;font-size:1rem }
+    .topbar-title { font-size:.93rem;font-weight:800;color:#fff;flex:1 }
+    .topbar-sub { font-size:.62rem;color:rgba(255,255,255,.7);margin-top:1px }
+    .btn-top { background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:8px;padding:7px 11px;font-size:.72rem;font-weight:700;cursor:pointer;margin-left:4px }
+
+    main { max-width:600px;margin:0 auto;padding:12px 14px 90px }
+
+    .pac-sel { width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:12px;padding:11px 14px;font-size:.88rem;margin-bottom:12px;background:#fff }
+
+    /* KPI */
+    .kpi-row { display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px }
+    .kpi { background:#fff;border-radius:12px;padding:14px 10px;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,.07) }
+    .kpi-n { font-size:1.6rem;font-weight:900;line-height:1 }
+    .kpi-l { font-size:.6rem;color:#64748b;font-weight:700;text-transform:uppercase;margin-top:3px;line-height:1.3 }
+
+    /* Badges de programa */
+    .prog-badge { display:inline-block;padding:2px 7px;border-radius:5px;font-size:.6rem;font-weight:800;margin-right:3px;white-space:nowrap }
+    .pb-fp   { background:#16a34a;color:#fff }
+    .pb-sus  { background:#0369a1;color:#fff }
+    .pb-gen  { background:#7c3aed;color:#fff }
+    .pb-ref  { background:#dc2626;color:#fff }
+
+    /* Tabela de medicamentos */
+    .med-table { width:100%;border-collapse:collapse;font-size:.78rem }
+    .med-table th { background:#f1f5f9;padding:7px 8px;text-align:left;font-size:.62rem;color:#64748b;border-bottom:1.5px solid #e2e8f0;font-weight:700 }
+    .med-table td { padding:7px 8px;border-bottom:1px solid #f8fafc;vertical-align:middle }
+    .med-table tr:last-child td { border:none }
+    .med-table tr:hover td { background:#fafafa }
+
+    .price-inp { border:1.5px solid #e2e8f0;border-radius:6px;padding:4px 7px;font-size:.8rem;width:80px;text-align:right;color:#1e293b }
+    .price-inp:focus { outline:none;border-color:#065f46 }
+    .qty-inp  { border:1.5px solid #e2e8f0;border-radius:6px;padding:4px 6px;font-size:.8rem;width:48px;text-align:center;color:#1e293b }
+
+    .custo-cell { font-weight:700;color:#065f46 }
+
+    /* Cards de economia */
+    .card { background:#fff;border-radius:14px;padding:16px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.07) }
+    .card-title { font-size:.65rem;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px }
+
+    .economia-item { display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid #f8fafc }
+    .economia-item:last-child { border:none }
+    .ei-nome { flex:1;font-size:.82rem;color:#1e293b }
+    .ei-preco { font-size:.78rem;color:#64748b;text-align:right }
+    .ei-econ { font-size:.8rem;font-weight:700;color:#16a34a;text-align:right;min-width:60px }
+
+    /* Farmácia Popular list highlight */
+    .fp-card { background:linear-gradient(135deg,#f0fdf4,#dcfce7);border:1.5px solid #86efac;border-radius:12px;padding:14px;margin-bottom:10px }
+    .fp-title { font-size:.75rem;font-weight:800;color:#166534;margin-bottom:8px }
+    .fp-item  { display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid rgba(134,239,172,.3) }
+    .fp-item:last-child { border:none }
+    .fp-nome { font-size:.8rem;color:#1e293b }
+    .fp-preco { font-size:.75rem;color:#16a34a;font-weight:700 }
+
+    .aviso { background:#fef3c7;border:1.5px solid #fcd34d;border-radius:10px;padding:10px 12px;font-size:.74rem;color:#92400e;margin-bottom:10px }
+
+    @media print {
+      .topbar,.pac-sel,.btn-top,nav { display:none!important }
+      body { background:#fff }
+      main { padding:0;max-width:none }
+    }
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <div style="flex:1">
+    <div class="topbar-title">💰 Farmacoeconomia</div>
+    <div class="topbar-sub">Custo mensal da farmacoterapia</div>
+  </div>
+  <button class="btn-top" onclick="window.print()">🖨️</button>
+</div>
+
+<main>
+  <select class="pac-sel" id="sel-pac" onchange="init()">
+    <option value="">Selecione o paciente...</option>
+  </select>
+
+  <div id="conteudo"><p style="color:#94a3b8;font-size:.82rem;text-align:center;padding:30px">Selecione um paciente para calcular o custo do tratamento.</p></div>
+</main>
+
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+
+<script src="js/db.js"></script>
+<script src="js/utils.js"></script>
+<script>
+
+/* ── Banco de preços e programas ────────────────────────── */
+// Preços aproximados de referência (R$) — comprimido/cápsula unitário
+// Fonte: Farmácia Popular ATFP / brasíndice / dados públicos 2024
+const DB_PRECO = {
+  // Farmácia Popular (gratuito HAS/DM; até 90% subsidiado outros)
+  'metformina':        { preco:0.05, gen:true,  fp:true,  sus:true,  fpGrat:true,  fp_cond:'DM'  },
+  'glibenclamida':     { preco:0.03, gen:true,  fp:true,  sus:true,  fpGrat:true,  fp_cond:'DM'  },
+  'glicazida':         { preco:0.28, gen:true,  fp:true,  sus:false, fpGrat:false, fp_cond:'DM'  },
+  'glipizida':         { preco:0.15, gen:true,  fp:false, sus:false, fpGrat:false },
+  'insulina':          { preco:0.00, gen:false, fp:true,  sus:true,  fpGrat:true,  fp_cond:'DM'  },
+  'losartana':         { preco:0.06, gen:true,  fp:true,  sus:true,  fpGrat:true,  fp_cond:'HAS' },
+  'enalapril':         { preco:0.04, gen:true,  fp:true,  sus:true,  fpGrat:true,  fp_cond:'HAS' },
+  'captopril':         { preco:0.03, gen:true,  fp:true,  sus:true,  fpGrat:true,  fp_cond:'HAS' },
+  'atenolol':          { preco:0.04, gen:true,  fp:true,  sus:true,  fpGrat:true,  fp_cond:'HAS' },
+  'propranolol':       { preco:0.03, gen:true,  fp:true,  sus:true,  fpGrat:true,  fp_cond:'HAS' },
+  'carvedilol':        { preco:0.12, gen:true,  fp:false, sus:true,  fpGrat:false },
+  'metoprolol':        { preco:0.18, gen:true,  fp:false, sus:true,  fpGrat:false },
+  'hidroclorotiazida': { preco:0.03, gen:true,  fp:true,  sus:true,  fpGrat:true,  fp_cond:'HAS' },
+  'furosemida':        { preco:0.05, gen:true,  fp:false, sus:true,  fpGrat:false },
+  'espironolactona':   { preco:0.18, gen:true,  fp:false, sus:true,  fpGrat:false },
+  'amlodipina':        { preco:0.07, gen:true,  fp:true,  sus:true,  fpGrat:true,  fp_cond:'HAS' },
+  'nifedipina':        { preco:0.09, gen:true,  fp:false, sus:true,  fpGrat:false },
+  'verapamil':         { preco:0.15, gen:true,  fp:false, sus:true,  fpGrat:false },
+  'sinvastatina':      { preco:0.06, gen:true,  fp:true,  sus:true,  fpGrat:false, fp_desc:'Dislipidemia' },
+  'atorvastatina':     { preco:0.12, gen:true,  fp:false, sus:true,  fpGrat:false },
+  'rosuvastatina':     { preco:0.28, gen:true,  fp:false, sus:false, fpGrat:false },
+  'ezetimiba':         { preco:1.40, gen:true,  fp:false, sus:false, fpGrat:false },
+  'omeprazol':         { preco:0.08, gen:true,  fp:false, sus:true,  fpGrat:false },
+  'pantoprazol':       { preco:0.14, gen:true,  fp:false, sus:true,  fpGrat:false },
+  'ranitidina':        { preco:0.07, gen:true,  fp:false, sus:true,  fpGrat:false },
+  'domperidona':       { preco:0.12, gen:true,  fp:false, sus:true,  fpGrat:false },
+  'levotiroxina':      { preco:0.10, gen:true,  fp:true,  sus:true,  fpGrat:false, fp_desc:'Hipotireoidismo' },
+  'alendronato':       { preco:0.19, gen:true,  fp:true,  sus:true,  fpGrat:false, fp_desc:'Osteoporose' },
+  'acido alendrônico': { preco:0.19, gen:true,  fp:true,  sus:true,  fpGrat:false, fp_desc:'Osteoporose' },
+  'carbonato de calcio': { preco:0.08,gen:true, fp:false, sus:true,  fpGrat:false },
+  'vitamina d':        { preco:0.20, gen:true,  fp:false, sus:false, fpGrat:false },
+  'colecalciferol':    { preco:0.35, gen:true,  fp:false, sus:false, fpGrat:false },
+  'acido folico':      { preco:0.04, gen:true,  fp:false, sus:true,  fpGrat:false },
+  'sulfato ferroso':   { preco:0.05, gen:true,  fp:false, sus:true,  fpGrat:false },
+  'ácido acetilsalicílico': { preco:0.04, gen:true, fp:false, sus:true, fpGrat:false },
+  'aas':               { preco:0.04, gen:true,  fp:false, sus:true,  fpGrat:false },
+  'clopidogrel':       { preco:0.28, gen:true,  fp:false, sus:false, fpGrat:false },
+  'warfarina':         { preco:0.08, gen:true,  fp:false, sus:true,  fpGrat:false },
+  'rivaroxabana':      { preco:4.20, gen:false, fp:false, sus:false, fpGrat:false },
+  'apixabana':         { preco:5.10, gen:false, fp:false, sus:false, fpGrat:false },
+  'dabigatrana':       { preco:4.80, gen:false, fp:false, sus:false, fpGrat:false },
+  'digoxina':          { preco:0.12, gen:true,  fp:false, sus:true,  fpGrat:false },
+  'amiodarona':        { preco:0.35, gen:true,  fp:false, sus:true,  fpGrat:false },
+  'salbutamol':        { preco:0.00, gen:true,  fp:true,  sus:true,  fpGrat:false, fp_desc:'Asma' },
+  'beclometasona':     { preco:0.00, gen:true,  fp:true,  sus:true,  fpGrat:false, fp_desc:'Asma' },
+  'formoterol':        { preco:1.80, gen:false, fp:false, sus:true,  fpGrat:false },
+  'budesonida':        { preco:0.90, gen:true,  fp:false, sus:true,  fpGrat:false },
+  'loratadina':        { preco:0.08, gen:true,  fp:true,  sus:false, fpGrat:false, fp_desc:'Rinite' },
+  'cetirizina':        { preco:0.14, gen:true,  fp:true,  sus:false, fpGrat:false, fp_desc:'Rinite' },
+  'fexofenadina':      { preco:0.55, gen:true,  fp:false, sus:false, fpGrat:false },
+  'diazepam':          { preco:0.07, gen:true,  fp:false, sus:true,  fpGrat:false },
+  'clonazepam':        { preco:0.15, gen:true,  fp:false, sus:true,  fpGrat:false },
+  'alprazolam':        { preco:0.18, gen:true,  fp:false, sus:false, fpGrat:false },
+  'amitriptilina':     { preco:0.06, gen:true,  fp:false, sus:true,  fpGrat:false },
+  'fluoxetina':        { preco:0.08, gen:true,  fp:false, sus:true,  fpGrat:false },
+  'sertralina':        { preco:0.12, gen:true,  fp:false, sus:true,  fpGrat:false },
+  'escitalopram':      { preco:0.28, gen:true,  fp:false, sus:true,  fpGrat:false },
+  'venlafaxina':       { preco:0.45, gen:true,  fp:false, sus:true,  fpGrat:false },
+  'quetiapina':        { preco:1.20, gen:true,  fp:false, sus:true,  fpGrat:false },
+  'risperidona':       { preco:0.35, gen:true,  fp:false, sus:true,  fpGrat:false },
+  'haloperidol':       { preco:0.08, gen:true,  fp:false, sus:true,  fpGrat:false },
+  'levodopa':          { preco:0.22, gen:true,  fp:true,  sus:true,  fpGrat:false, fp_desc:'Parkinson' },
+  'metildopa':         { preco:0.10, gen:true,  fp:true,  sus:true,  fpGrat:false, fp_desc:'Gestação' },
+  'alopurinol':        { preco:0.07, gen:true,  fp:false, sus:true,  fpGrat:false },
+  'colchicina':        { preco:0.65, gen:true,  fp:false, sus:true,  fpGrat:false },
+  'prednisona':        { preco:0.06, gen:true,  fp:false, sus:true,  fpGrat:false },
+  'dexametasona':      { preco:0.07, gen:true,  fp:false, sus:true,  fpGrat:false },
+  'tramadol':          { preco:0.28, gen:true,  fp:false, sus:true,  fpGrat:false },
+  'dipirona':          { preco:0.06, gen:true,  fp:false, sus:true,  fpGrat:false },
+  'paracetamol':       { preco:0.05, gen:true,  fp:false, sus:true,  fpGrat:false },
+  'ibuprofeno':        { preco:0.08, gen:true,  fp:false, sus:true,  fpGrat:false },
+};
+
+function buscarPreco(nome) {
+  const n = (nome||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9 ]/g,'').trim();
+  for (const [k,v] of Object.entries(DB_PRECO)) {
+    const kn = k.normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9 ]/g,'');
+    if (n.includes(kn) || kn.includes(n.split(' ')[0])) return { ...v, key:k };
+  }
+  return null;
+}
+
+function freqParaQtdMes(freq) {
+  if (!freq) return 30;
+  const f = freq.toLowerCase();
+  if (f.includes('1x') || f.includes('uma vez') || f.includes('1 vez')) return 30;
+  if (f.includes('2x') || f.includes('duas') || f.includes('12/12') || f.includes('12h')) return 60;
+  if (f.includes('3x') || f.includes('três') || f.includes('8/8') || f.includes('8h')) return 90;
+  if (f.includes('4x') || f.includes('seis') || f.includes('6/6') || f.includes('6h')) return 120;
+  if (f.includes('semana') || f.includes('semanal')) return 4;
+  if (f.includes('quinz') || f.includes('15 dias')) return 2;
+  if (f.includes('mês') || f.includes('mensal')) return 1;
+  return 30;
+}
+
+let _meds = [], _dadosMeds = {};
+
+async function init() {
+  const sel = document.getElementById('sel-pac');
+  if (!sel.dataset.loaded) {
+    const pacs = await dbGetAll('pacientes');
+    sel.innerHTML = '<option value="">Selecione o paciente...</option>' +
+      pacs.map(p=>`<option value="${p.id}">${esc(p.nome||'Paciente '+p.id)}</option>`).join('');
+    sel.dataset.loaded='1';
+    const pid = getActivePacienteId();
+    if (pid) sel.value = pid;
+  }
+  const pid = parseInt(sel.value);
+  if (!pid) { document.getElementById('conteudo').innerHTML='<p style="color:#94a3b8;text-align:center;padding:30px">Selecione um paciente.</p>'; return; }
+
+  const hj = hoje();
+  const pac = await dbGet('pacientes', pid);
+  const allMeds = await dbGetByIndex('medicamentos', 'pacienteId', pid);
+  _meds = allMeds.filter(m=>m.ativo!==false&&(!m.dataFim||m.dataFim>=hj));
+
+  // Carrega preços salvos
+  _dadosMeds = (await dbGetConfig('farmacoeco_' + pid)) || {};
+
+  renderTabela(pac);
+}
+
+function renderTabela(pac) {
+  const rows = _meds.map((m, i) => {
+    const db    = buscarPreco(m.nome);
+    const salvo = _dadosMeds[m.id] || {};
+    const preco = salvo.preco !== undefined ? salvo.preco : (db?.preco ?? '');
+    const qtd   = salvo.qtd   !== undefined ? salvo.qtd   : freqParaQtdMes(m.frequencia);
+    const custo = (preco !== '' && qtd) ? (parseFloat(preco) * parseInt(qtd)).toFixed(2) : '';
+    const tags  = [];
+    if (db?.fpGrat) tags.push(`<span class="prog-badge pb-fp">FP Gratuito (${db.fp_cond})</span>`);
+    else if (db?.fp) tags.push(`<span class="prog-badge pb-fp">Farm. Popular</span>`);
+    if (db?.sus && !db?.fpGrat) tags.push(`<span class="prog-badge pb-sus">SUS</span>`);
+    if (db?.gen) tags.push(`<span class="prog-badge pb-gen">Genérico</span>`);
+
+    return `<tr>
+      <td>
+        <div style="font-weight:700;color:#1e293b;font-size:.82rem">${esc(m.nome||'—')}</div>
+        <div style="font-size:.68rem;color:#94a3b8;margin-top:2px">${esc(m.dosagem||'')} ${m.frequencia?'· '+esc(m.frequencia):''}</div>
+        <div style="margin-top:3px">${tags.join('')}</div>
+      </td>
+      <td style="text-align:center">
+        <input class="price-inp" type="number" min="0" step="0.01"
+          value="${preco}" placeholder="0,00"
+          onchange="salvarPreco(${m.id},this.value,'qty-${i}')" id="preco-${i}">
+      </td>
+      <td style="text-align:center">
+        <input class="qty-inp" type="number" min="1"
+          value="${qtd}" id="qty-${i}"
+          onchange="salvarQty(${m.id},this.value,'preco-${i}')">
+      </td>
+      <td class="custo-cell" style="text-align:right" id="custo-${i}">
+        ${custo !== '' ? 'R$ '+custo : '—'}
+      </td>
+    </tr>`;
+  }).join('');
+
+  const totalAtual = calcTotal();
+  const totalGratuito = calcTotalGratuito();
+  const totalEconomia = calcEconomia();
+
+  document.getElementById('conteudo').innerHTML = `
+    <div class="kpi-row">
+      <div class="kpi">
+        <div class="kpi-n" style="color:#065f46">R$ ${totalAtual.toFixed(0)}</div>
+        <div class="kpi-l">Custo mensal estimado</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-n" style="color:#16a34a">R$ ${totalGratuito.toFixed(0)}</div>
+        <div class="kpi-l">Gratuito via SUS/FP</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-n" style="color:#7c3aed">R$ ${totalEconomia.toFixed(0)}</div>
+        <div class="kpi-l">Economia potencial</div>
+      </div>
+    </div>
+
+    <div class="aviso">
+      💡 Preencha o preço unitário de cada medicamento (por comprimido/frasco). O sistema pré-estima a quantidade mensal pela frequência. Preços de referência já conhecidos são preenchidos automaticamente.
+    </div>
+
+    <div class="card">
+      <div class="card-title">💊 Farmacoterapia ativa — ${_meds.length} medicamentos</div>
+      <div style="overflow-x:auto">
+      <table class="med-table">
+        <thead><tr>
+          <th>Medicamento</th>
+          <th style="text-align:center">Preço unit. (R$)</th>
+          <th style="text-align:center">Qtd/mês</th>
+          <th style="text-align:right">Custo mês</th>
+        </tr></thead>
+        <tbody id="tabela-body">${rows}</tbody>
+        <tfoot><tr style="background:#f8fafc">
+          <td colspan="3" style="font-weight:800;padding:10px 8px;font-size:.82rem">Total mensal estimado</td>
+          <td style="text-align:right;font-weight:900;font-size:1rem;color:#065f46;padding:10px 8px" id="total-row">R$ ${totalAtual.toFixed(2)}</td>
+        </tr></tfoot>
+      </table>
+      </div>
+    </div>
+
+    ${renderFarmaciaPopular()}
+    ${renderSubstituicoes()}
+    ${renderContexto(totalAtual)}
+  `;
+}
+
+function calcTotal() {
+  let t = 0;
+  _meds.forEach((m,i)=>{
+    const p = parseFloat(document.getElementById('preco-'+i)?.value||_dadosMeds[m.id]?.preco||0);
+    const q = parseInt(document.getElementById('qty-'+i)?.value||_dadosMeds[m.id]?.qtd||freqParaQtdMes(m.frequencia));
+    if (!isNaN(p) && !isNaN(q)) t += p*q;
+  });
+  return t;
+}
+
+function calcTotalGratuito() {
+  let t = 0;
+  _meds.forEach((m,i)=>{
+    const db = buscarPreco(m.nome);
+    if (db?.fpGrat || db?.sus) {
+      const p = parseFloat(document.getElementById('preco-'+i)?.value||_dadosMeds[m.id]?.preco||db?.preco||0);
+      const q = parseInt(document.getElementById('qty-'+i)?.value||_dadosMeds[m.id]?.qtd||freqParaQtdMes(m.frequencia));
+      if (!isNaN(p) && !isNaN(q)) t += p*q;
+    }
+  });
+  return t;
+}
+
+function calcEconomia() {
+  let t = 0;
+  _meds.forEach((m,i)=>{
+    const db = buscarPreco(m.nome);
+    if (!db?.gen) {
+      // medicamento sem genérico conhecido — potencial de substituição estimado em 60%
+      const p = parseFloat(document.getElementById('preco-'+i)?.value||_dadosMeds[m.id]?.preco||0);
+      const q = parseInt(document.getElementById('qty-'+i)?.value||_dadosMeds[m.id]?.qtd||freqParaQtdMes(m.frequencia));
+      if (!isNaN(p)&&!isNaN(q)&&p>0) t += p*q*0.6;
+    }
+  });
+  return t;
+}
+
+function renderFarmaciaPopular() {
+  const fpMeds = _meds.filter(m=>{
+    const db=buscarPreco(m.nome); return db?.fp||db?.fpGrat;
+  });
+  if (!fpMeds.length) return '';
+  return `<div class="fp-card">
+    <div class="fp-title">🟢 Farmácia Popular — ${fpMeds.length} medicamento${fpMeds.length!==1?'s':''} disponíveis</div>
+    ${fpMeds.map(m=>{
+      const db=buscarPreco(m.nome);
+      return `<div class="fp-item">
+        <div class="fp-nome">${esc(m.nome||'—')}</div>
+        <div class="fp-preco">${db?.fpGrat?'Gratuito':'Subsidiado 90%'}${db?.fp_cond||db?.fp_desc?' ('+esc(db.fp_cond||db.fp_desc)+')':''}</div>
+      </div>`;
+    }).join('')}
+    <div style="font-size:.68rem;color:#166534;margin-top:8px">ℹ️ Verificar disponibilidade na farmácia credenciada mais próxima.</div>
+  </div>`;
+}
+
+function renderSubstituicoes() {
+  const refMeds = _meds.filter(m=>{ const db=buscarPreco(m.nome); return !db?.gen && !db?.fpGrat; });
+  if (!refMeds.length) return '';
+  return `<div class="card">
+    <div class="card-title">🔄 Oportunidades de substituição por genérico</div>
+    ${refMeds.map(m=>{
+      const i = _meds.indexOf(m);
+      const p = parseFloat(document.getElementById('preco-'+i)?.value||_dadosMeds[m.id]?.preco||0);
+      const q = parseInt(document.getElementById('qty-'+i)?.value||_dadosMeds[m.id]?.qtd||freqParaQtdMes(m.frequencia));
+      const custoRef = p*q;
+      const custoGen = custoRef*0.4;
+      const eco = custoRef - custoGen;
+      return `<div class="economia-item">
+        <div class="ei-nome">
+          <strong>${esc(m.nome||'—')}</strong><br>
+          <span style="font-size:.72rem;color:#94a3b8">Sem genérico identificado no banco de dados local</span>
+        </div>
+        ${eco>0?`<div class="ei-econ">~ R$ ${eco.toFixed(2)}/mês</div>`:'<div class="ei-preco">Preencha o preço</div>'}
+      </div>`;
+    }).join('')}
+    <div style="font-size:.68rem;color:#94a3b8;margin-top:8px">* Estimativa de economia de 60% com genérico. Verificar com a farmácia.</div>
+  </div>`;
+}
+
+function renderContexto(total) {
+  const smAtual = 1518; // Salário mínimo BR 2024
+  const pctSM = total > 0 ? (total/smAtual*100).toFixed(1) : '—';
+  return `<div class="card">
+    <div class="card-title">📊 Contexto socioeconômico</div>
+    <div style="display:flex;flex-direction:column;gap:8px;font-size:.8rem;color:#374151">
+      <div>Custo mensal total: <strong style="color:#065f46">R$ ${total.toFixed(2)}</strong></div>
+      <div>Representa: <strong>${pctSM}%</strong> do salário mínimo atual (R$ ${smAtual})</div>
+      <div style="margin-top:4px;padding:8px 10px;background:#f0fdf4;border-radius:8px;font-size:.75rem;color:#166534">
+        💡 Se o paciente tiver HAS e/ou DM e utilizar os medicamentos disponíveis na Farmácia Popular, o custo pode ser <strong>reduzido a R$ 0</strong> para essas condições.
+      </div>
+    </div>
+  </div>`;
+}
+
+async function salvarPreco(medId, valor, qtyId) {
+  if (!_dadosMeds[medId]) _dadosMeds[medId] = {};
+  _dadosMeds[medId].preco = parseFloat(valor)||0;
+  const pid = parseInt(document.getElementById('sel-pac').value);
+  await dbSetConfig('farmacoeco_' + pid, _dadosMeds);
+  atualizarCusto(medId, qtyId);
+}
+
+async function salvarQty(medId, valor, precoId) {
+  if (!_dadosMeds[medId]) _dadosMeds[medId] = {};
+  _dadosMeds[medId].qtd = parseInt(valor)||30;
+  const pid = parseInt(document.getElementById('sel-pac').value);
+  await dbSetConfig('farmacoeco_' + pid, _dadosMeds);
+  atualizarCusto(medId, precoId);
+}
+
+function atualizarCusto(medId, outroId) {
+  _meds.forEach((m,i)=>{
+    if (m.id !== medId) return;
+    const p = parseFloat(document.getElementById('preco-'+i)?.value||0);
+    const q = parseInt(document.getElementById('qty-'+i)?.value||30);
+    const c = document.getElementById('custo-'+i);
+    if (c) c.textContent = (!isNaN(p)&&!isNaN(q)&&p>0) ? 'R$ '+(p*q).toFixed(2) : '—';
+  });
+  const t = calcTotal();
+  const tot = document.getElementById('total-row');
+  if (tot) tot.textContent = 'R$ ' + t.toFixed(2);
+}
+
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') }
+
+document.addEventListener('DOMContentLoaded', async () => {
+  const pacs = await dbGetAll('pacientes');
+  const sel  = document.getElementById('sel-pac');
+  sel.innerHTML = '<option value="">Selecione o paciente...</option>' +
+    pacs.map(p=>`<option value="${p.id}">${esc(p.nome||'Paciente '+p.id)}</option>`).join('');
+  sel.dataset.loaded='1';
+  const pid = getActivePacienteId();
+  if (pid) { sel.value = pid; await init(); }
+});
+</script>
+</body>
+</html>

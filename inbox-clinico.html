@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>Inbox Clínico — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .topbar { display:flex;align-items:center;gap:10px;padding:12px 16px;background:#0f172a;position:sticky;top:0;z-index:100 }
+    .back-btn { background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:8px;padding:6px 11px;cursor:pointer;font-size:1rem }
+    .topbar-title { font-size:.93rem;font-weight:800;color:#fff;flex:1 }
+    .topbar-sub { font-size:.62rem;color:rgba(255,255,255,.65);margin-top:1px }
+    .btn-refresh { background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:8px;padding:7px 11px;cursor:pointer;font-size:.85rem }
+
+    main { max-width:560px;margin:0 auto;padding:12px 14px 90px }
+
+    /* Hero badge */
+    .hero { background:linear-gradient(135deg,#0f172a,#1e3a5f);border-radius:16px;padding:20px;margin-bottom:12px;text-align:center;color:#fff }
+    .hero-n { font-size:4rem;font-weight:900;line-height:1 }
+    .hero-l { font-size:.8rem;opacity:.7;margin-top:4px }
+    .hero-sub { font-size:.72rem;opacity:.5;margin-top:6px }
+
+    /* Categoria strip */
+    .cat-strip { display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:12px }
+    .cat-item { background:#fff;border-radius:10px;padding:10px 6px;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,.07) }
+    .cat-n { font-size:1.5rem;font-weight:900;line-height:1 }
+    .cat-l { font-size:.58rem;color:#64748b;font-weight:700;text-transform:uppercase;margin-top:3px;line-height:1.2 }
+
+    /* Seção */
+    .sec-hdr { display:flex;align-items:center;gap:8px;margin:14px 0 6px }
+    .sec-dot { width:10px;height:10px;border-radius:50%;flex-shrink:0 }
+    .sec-title { font-size:.78rem;font-weight:800;color:#1e293b;flex:1 }
+    .sec-cnt { font-size:.7rem;color:#94a3b8;font-weight:700 }
+
+    /* Item card */
+    .inbox-item { background:#fff;border-radius:12px;padding:12px 14px;margin-bottom:6px;box-shadow:0 1px 4px rgba(0,0,0,.06);display:flex;align-items:flex-start;gap:10px;border-left:3px solid #e2e8f0 }
+    .inbox-item.urgente { border-left-color:#dc2626 }
+    .inbox-item.moderado { border-left-color:#d97706 }
+    .inbox-item.info    { border-left-color:#0891b2 }
+    .inbox-item.ok      { border-left-color:#16a34a }
+
+    .ii-icon { font-size:1.3rem;flex-shrink:0;margin-top:1px }
+    .ii-body { flex:1;min-width:0 }
+    .ii-titulo { font-size:.84rem;font-weight:700;color:#1e293b;margin-bottom:2px }
+    .ii-desc   { font-size:.74rem;color:#64748b;line-height:1.4 }
+    .ii-pac    { font-size:.68rem;color:#94a3b8;margin-top:3px }
+    .ii-action { flex-shrink:0 }
+    .btn-ir { background:#1e3a5f;color:#fff;border:none;border-radius:8px;padding:6px 11px;font-size:.72rem;font-weight:700;cursor:pointer;white-space:nowrap }
+    .btn-ir:hover { background:#16305a }
+    .btn-ir.verde { background:#16a34a }
+    .btn-ir.cinza { background:#64748b }
+
+    .empty-sec { color:#94a3b8;font-size:.76rem;padding:8px 0 8px 14px }
+
+    /* Tudo ok */
+    .tudo-ok { text-align:center;padding:40px 20px;color:#16a34a }
+    .tudo-ok-icon { font-size:3rem }
+    .tudo-ok-txt { font-size:.9rem;font-weight:700;margin-top:8px }
+    .tudo-ok-sub { font-size:.75rem;color:#94a3b8;margin-top:4px }
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <div style="flex:1">
+    <div class="topbar-title">📥 Inbox Clínico</div>
+    <div class="topbar-sub" id="topbar-data"></div>
+  </div>
+  <button class="btn-refresh" onclick="init()" title="Atualizar">↻</button>
+</div>
+
+<main>
+  <div id="conteudo"><div style="text-align:center;padding:50px 0;color:#94a3b8">⏳ Verificando pendências clínicas...</div></div>
+</main>
+
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+
+<script src="js/db.js"></script>
+<script src="js/utils.js"></script>
+<script>
+
+const HJ = hoje();
+
+document.getElementById('topbar-data').textContent =
+  new Date().toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'long'});
+
+async function init() {
+  document.getElementById('conteudo').innerHTML = '<div style="text-align:center;padding:50px 0;color:#94a3b8">⏳ Verificando pendências...</div>';
+
+  const pacs = await dbGetAll('pacientes');
+  if (!pacs.length) {
+    document.getElementById('conteudo').innerHTML = '<div style="text-align:center;padding:40px;color:#94a3b8">Nenhum paciente cadastrado.</div>';
+    return;
+  }
+
+  const itens = [];  // { tipo, prio, pac, titulo, desc, href, hrefLabel, pid }
+
+  for (const p of pacs) {
+    const pid = p.id;
+    const nome = p.nome || 'Paciente ' + pid;
+
+    const [plano, notasInt, rams, planoSeg, agendaRet, ints] = await Promise.all([
+      dbGetConfig('plano_cuidados_' + pid),
+      dbGetConfig('nota_int_' + pid),
+      dbGetConfig('ram_' + pid),
+      dbGetConfig('plano_seg_' + pid),
+      dbGetConfig('agenda_ret_' + pid),
+      dbGetConfig('sft_int_' + pid),
+    ]);
+
+    // 1. Retornos atrasados
+    const retornos = (agendaRet || []).filter(r => !r.feito && r.data && r.data < HJ);
+    if (planoSeg?.retorno && planoSeg.retorno < HJ) {
+      const jaExiste = retornos.some(r=>r.data===planoSeg.retorno);
+      if (!jaExiste) retornos.push({ data: planoSeg.retorno, obs: planoSeg.plano||'Retorno SFT', fonte:'SFT' });
+    }
+    retornos.forEach(r => {
+      const dias = Math.round((new Date(HJ) - new Date(r.data+'T12:00')) / 86400000);
+      itens.push({ tipo:'retorno', prio:'urgente', pid, pac:nome,
+        titulo:`Retorno atrasado há ${dias} dia${dias!==1?'s':''}`,
+        desc: r.obs || 'Consulta de retorno não realizada',
+        href:'agenda-retornos.html', hrefLabel:'Agenda' });
+    });
+
+    // 2. PRMs sem desfecho
+    const prms = (plano?.problemas || []).filter(pr => !pr.desfecho && pr.status !== 'resolvido');
+    if (prms.length) {
+      itens.push({ tipo:'prm', prio:'urgente', pid, pac:nome,
+        titulo:`${prms.length} PRM${prms.length!==1?'s':''} sem desfecho documentado`,
+        desc: prms.slice(0,2).map(pr=>pr.problema||'PRM sem descrição').join(' · ') + (prms.length>2?` +${prms.length-2}`:''),
+        href:'desfechos.html', hrefLabel:'Desfechos' });
+    }
+
+    // 3. Notas de intervenção pendentes
+    const notasPend = (notasInt || []).filter(n => !n.resposta || n.resposta === 'pendente');
+    if (notasPend.length) {
+      itens.push({ tipo:'nota', prio:'moderado', pid, pac:nome,
+        titulo:`${notasPend.length} nota${notasPend.length!==1?'s':''} de intervenção sem resposta`,
+        desc: notasPend.map(n=>n.numNota||'NI').join(', '),
+        href:'nota-intervencao.html', hrefLabel:'Notas' });
+    }
+
+    // 4. Metas terapêuticas não atingidas
+    const metasNao = (plano?.metas || []).filter(m => m.status === 'nao_atingida');
+    if (metasNao.length) {
+      itens.push({ tipo:'meta', prio:'moderado', pid, pac:nome,
+        titulo:`${metasNao.length} meta${metasNao.length!==1?'s':''} terapêutica${metasNao.length!==1?'s':''} não atingida${metasNao.length!==1?'s':''}`,
+        desc: metasNao.slice(0,2).map(m=>m.meta||'Meta sem descrição').join(' · '),
+        href:'plano-cuidados.html', hrefLabel:'Plano' });
+    }
+
+    // 5. RAMs sem causalidade avaliada
+    const ramsSemNaranjo = (rams || []).filter(r => !r.naranjoScore && r.naranjoScore !== 0);
+    if (ramsSemNaranjo.length) {
+      itens.push({ tipo:'ram', prio:'moderado', pid, pac:nome,
+        titulo:`${ramsSemNaranjo.length} RAM${ramsSemNaranjo.length!==1?'s':''} sem avaliação de causalidade`,
+        desc: ramsSemNaranjo.slice(0,2).map(r=>r.med||r.medicamento||'?').join(', '),
+        href:'naranjo.html', hrefLabel:'Naranjo' });
+    }
+
+    // 6. Intervenções SFT sem resultado documentado
+    const intsSemRes = (ints || []).filter(i => (!i.resultado && !i.result) || i.aceita === undefined || i.aceita === null);
+    if (intsSemRes.length) {
+      itens.push({ tipo:'int', prio:'info', pid, pac:nome,
+        titulo:`${intsSemRes.length} intervenção${intsSemRes.length!==1?'ões':''} sem resultado documentado`,
+        desc: intsSemRes.slice(0,2).map(i=>i.conduta||i.acao||'?').join(' · '),
+        href:'relatorio-sft.html', hrefLabel:'SFT' });
+    }
+
+    // 7. Retorno hoje
+    const retHoje = (agendaRet||[]).filter(r=>!r.feito&&r.data===HJ);
+    if (planoSeg?.retorno === HJ) retHoje.push({ data:HJ, obs:planoSeg.plano||'Retorno SFT' });
+    retHoje.forEach(r => {
+      itens.push({ tipo:'hoje', prio:'ok', pid, pac:nome,
+        titulo:'Consulta de retorno agendada para HOJE',
+        desc: r.obs || 'Clique para realizar a consulta',
+        href:'relatorio-sft.html', hrefLabel:'Consultar' });
+    });
+  }
+
+  renderInbox(itens, pacs.length);
+}
+
+function renderInbox(itens, nPacs) {
+  const nUrgente  = itens.filter(i=>i.prio==='urgente').length;
+  const nModerado = itens.filter(i=>i.prio==='moderado').length;
+  const nInfo     = itens.filter(i=>i.prio==='info').length;
+  const nHoje     = itens.filter(i=>i.prio==='ok').length;
+  const total     = itens.length;
+
+  if (!total) {
+    document.getElementById('conteudo').innerHTML = `
+      <div class="cat-strip">
+        <div class="cat-item"><div class="cat-n" style="color:#16a34a">0</div><div class="cat-l">Urgentes</div></div>
+        <div class="cat-item"><div class="cat-n" style="color:#d97706">0</div><div class="cat-l">Moderados</div></div>
+        <div class="cat-item"><div class="cat-n" style="color:#0891b2">0</div><div class="cat-l">Informativo</div></div>
+        <div class="cat-item"><div class="cat-n" style="color:#94a3b8">${nPacs}</div><div class="cat-l">Pacientes</div></div>
+      </div>
+      <div class="tudo-ok">
+        <div class="tudo-ok-icon">✅</div>
+        <div class="tudo-ok-txt">Nenhuma pendência clínica!</div>
+        <div class="tudo-ok-sub">Todos os ${nPacs} paciente${nPacs!==1?'s':''} estão em dia.</div>
+      </div>`;
+    return;
+  }
+
+  const grupos = [
+    { prio:'ok',       cor:'#16a34a', icone:'🗓️', label:'Hoje',               itens: itens.filter(i=>i.prio==='ok') },
+    { prio:'urgente',  cor:'#dc2626', icone:'🚨', label:'Ação imediata',       itens: itens.filter(i=>i.prio==='urgente') },
+    { prio:'moderado', cor:'#d97706', icone:'⚠️', label:'Atenção necessária',  itens: itens.filter(i=>i.prio==='moderado') },
+    { prio:'info',     cor:'#0891b2', icone:'ℹ️', label:'Completar registro', itens: itens.filter(i=>i.prio==='info') },
+  ].filter(g=>g.itens.length);
+
+  const BTN = { urgente:'btn-ir', moderado:'btn-ir', ok:'btn-ir verde', info:'btn-ir cinza' };
+
+  document.getElementById('conteudo').innerHTML = `
+    <div class="hero">
+      <div class="hero-n" style="color:${nUrgente?'#fca5a5':nModerado?'#fde68a':'#86efac'}">${total}</div>
+      <div class="hero-l">Pendência${total!==1?'s':''} clínica${total!==1?'s':''}</div>
+      <div class="hero-sub">${nPacs} paciente${nPacs!==1?'s':''} monitorados · ${new Date().toLocaleDateString('pt-BR')}</div>
+    </div>
+
+    <div class="cat-strip">
+      <div class="cat-item"><div class="cat-n" style="color:${nUrgente?'#dc2626':'#94a3b8'}">${nUrgente}</div><div class="cat-l">Urgentes</div></div>
+      <div class="cat-item"><div class="cat-n" style="color:${nModerado?'#d97706':'#94a3b8'}">${nModerado}</div><div class="cat-l">Atenção</div></div>
+      <div class="cat-item"><div class="cat-n" style="color:${nHoje?'#16a34a':'#94a3b8'}">${nHoje}</div><div class="cat-l">Hoje</div></div>
+      <div class="cat-item"><div class="cat-n" style="color:#94a3b8">${nPacs}</div><div class="cat-l">Pacientes</div></div>
+    </div>
+
+    ${grupos.map(g=>`
+      <div class="sec-hdr">
+        <div class="sec-dot" style="background:${g.cor}"></div>
+        <div class="sec-title">${g.icone} ${g.label}</div>
+        <div class="sec-cnt">${g.itens.length} item${g.itens.length!==1?'s':''}</div>
+      </div>
+      ${g.itens.map(i=>`
+        <div class="inbox-item ${i.prio}">
+          <div class="ii-icon">${ICONE[i.tipo]||'📋'}</div>
+          <div class="ii-body">
+            <div class="ii-titulo">${esc(i.titulo)}</div>
+            <div class="ii-desc">${esc(i.desc)}</div>
+            <div class="ii-pac">👤 ${esc(i.pac)}</div>
+          </div>
+          <div class="ii-action">
+            <button class="${BTN[i.prio]||'btn-ir'}" onclick="irPara('${i.href}',${i.pid})">${esc(i.hrefLabel)} →</button>
+          </div>
+        </div>`).join('')}
+    `).join('')}
+  `;
+}
+
+const ICONE = {
+  retorno:'📅', prm:'🎯', nota:'📝', meta:'🏁', ram:'⚠️', int:'🩺', hoje:'🗓️'
+};
+
+function irPara(href, pid) {
+  if (pid) localStorage.setItem('vd_active', pid);
+  window.location.href = href;
+}
+
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') }
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
