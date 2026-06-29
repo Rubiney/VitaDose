@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>Agenda Clínica — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .topbar{display:flex;align-items:center;gap:10px;padding:12px 16px;background:#1e40af;position:sticky;top:0;z-index:100}
+    .back-btn{background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:8px;padding:6px 11px;cursor:pointer;font-size:1rem}
+    .topbar-title{font-size:.93rem;font-weight:800;color:#fff;flex:1}
+    .topbar-sub{font-size:.62rem;color:rgba(255,255,255,.7);margin-top:1px}
+    .btn-top{background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:8px;padding:7px 11px;font-size:.72rem;font-weight:700;cursor:pointer;margin-left:4px}
+    main{max-width:640px;margin:0 auto;padding:12px 14px 90px}
+    .pac-sel{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:12px;padding:11px 14px;font-size:.88rem;margin-bottom:10px;background:#fff}
+
+    /* Alertas */
+    .alert-banner{border-radius:12px;padding:12px 14px;margin-bottom:10px;display:flex;gap:10px;align-items:flex-start}
+    .alert-vencido{background:#fee2e2;border:1px solid #fca5a5}
+    .alert-proximo{background:#fef3c7;border:1px solid #fde68a}
+    .alert-auto{background:#eff6ff;border:1px solid #bfdbfe}
+    .alert-icon{font-size:1.2rem;flex-shrink:0}
+    .alert-body{flex:1}
+    .alert-title{font-size:.72rem;font-weight:800;margin-bottom:2px}
+    .alert-desc{font-size:.68rem;line-height:1.4}
+
+    /* Tabs */
+    .tab-row{display:flex;gap:0;background:#f1f5f9;border-radius:12px;padding:4px;margin-bottom:12px}
+    .tab-btn{flex:1;padding:9px 6px;border:none;border-radius:9px;font-size:.72rem;font-weight:700;cursor:pointer;background:transparent;color:#64748b;transition:.15s}
+    .tab-btn.ativo{background:#fff;color:#1e40af;box-shadow:0 1px 4px rgba(0,0,0,.1)}
+
+    /* Novo evento */
+    .novo-card{background:#fff;border-radius:14px;padding:14px;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,.07)}
+    .novo-title{font-size:.68rem;font-weight:800;color:#1e40af;text-transform:uppercase;margin-bottom:10px}
+    label{font-size:.68rem;font-weight:700;color:#64748b;display:block;margin-bottom:3px}
+    input,select,textarea{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:9px;padding:9px 11px;font-size:.83rem;background:#fff;font-family:inherit;margin-bottom:8px}
+    input:focus,select:focus,textarea:focus{outline:none;border-color:#1e40af}
+    textarea{resize:none;height:60px}
+    .form-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .add-btn{width:100%;padding:12px;background:#1e40af;color:#fff;border:none;border-radius:10px;font-size:.82rem;font-weight:800;cursor:pointer}
+
+    /* Sugestões automáticas */
+    .sug-list{margin-bottom:12px}
+    .sug-title{font-size:.65rem;font-weight:800;color:#94a3b8;text-transform:uppercase;margin-bottom:8px}
+    .sug-item{background:#f0f9ff;border:1px solid #bae6fd;border-radius:10px;padding:10px 12px;margin-bottom:6px;cursor:pointer;transition:.12s;display:flex;gap:10px;align-items:center}
+    .sug-item:hover{background:#e0f2fe;border-color:#7dd3fc}
+    .sug-icon{font-size:1.2rem;flex-shrink:0}
+    .sug-body{flex:1}
+    .sug-nome{font-size:.78rem;font-weight:700;color:#0c4a6e}
+    .sug-detalhe{font-size:.62rem;color:#0369a1;margin-top:2px}
+    .add-sug-btn{background:#0ea5e9;border:none;color:#fff;border-radius:8px;padding:5px 10px;font-size:.65rem;font-weight:800;cursor:pointer;flex-shrink:0}
+
+    /* Lista de eventos */
+    .evento-card{background:#fff;border-radius:14px;margin-bottom:8px;box-shadow:0 1px 4px rgba(0,0,0,.07);overflow:hidden}
+    .ev-header{display:flex;align-items:center;gap:10px;padding:12px 14px}
+    .ev-status-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0}
+    .ev-tipo-badge{font-size:.6rem;font-weight:800;padding:3px 8px;border-radius:20px;flex-shrink:0}
+    .ev-consulta{background:#eff6ff;color:#1e40af}
+    .ev-exame{background:#faf5ff;color:#7c3aed}
+    .ev-receita{background:#fff7ed;color:#c2410c}
+    .ev-info{flex:1;min-width:0}
+    .ev-titulo{font-size:.82rem;font-weight:800;color:#0f172a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .ev-data{font-size:.65rem;color:#64748b;margin-top:2px}
+    .ev-nota{font-size:.65rem;color:#94a3b8;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .ev-actions{display:flex;gap:6px;padding:0 14px 10px;flex-wrap:wrap}
+    .ev-btn{padding:5px 10px;border-radius:8px;border:none;font-size:.65rem;font-weight:700;cursor:pointer}
+    .btn-done{background:#dcfce7;color:#166534}
+    .btn-del{background:#fee2e2;color:#991b1b}
+    .btn-agendar{background:#eff6ff;color:#1e40af}
+
+    /* Dias restantes badge */
+    .dias-badge{font-size:.65rem;font-weight:800;padding:4px 9px;border-radius:20px;white-space:nowrap;flex-shrink:0}
+    .dias-venc{background:#fee2e2;color:#991b1b}
+    .dias-urg{background:#fef3c7;color:#92400e}
+    .dias-ok{background:#dcfce7;color:#166534}
+    .dias-realiz{background:#f1f5f9;color:#94a3b8}
+
+    .empty{text-align:center;padding:30px;color:#94a3b8;font-size:.78rem}
+    @media print{.topbar,.pac-sel,.tab-row,.novo-card,.sug-list,.btn-top,nav,.ev-actions{display:none!important}body{background:#fff}main{padding:0}}
+  </style>
+</head>
+<body>
+<div class="topbar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <div style="flex:1">
+    <div class="topbar-title">📅 Agenda Clínica</div>
+    <div class="topbar-sub">Consultas · Exames · Renovações · Alertas</div>
+  </div>
+  <button class="btn-top" onclick="window.print()">🖨️</button>
+</div>
+<main>
+  <select class="pac-sel" id="sel-pac" onchange="init()"><option value="">Selecione o paciente...</option></select>
+
+  <div id="alertas-div"></div>
+
+  <div class="tab-row">
+    <button class="tab-btn ativo" onclick="setTab('pendentes',this)">🔔 Pendentes</button>
+    <button class="tab-btn" onclick="setTab('realizados',this)">✅ Realizados</button>
+    <button class="tab-btn" onclick="setTab('novo',this)">➕ Adicionar</button>
+    <button class="tab-btn" onclick="setTab('sugestoes',this)">💡 Sugeridos</button>
+  </div>
+
+  <!-- Aba: Novo evento -->
+  <div id="tab-novo" style="display:none">
+    <div class="novo-card">
+      <div class="novo-title">📌 Novo Evento</div>
+      <label>Tipo</label>
+      <select id="ev-tipo">
+        <option value="consulta">🩺 Consulta médica</option>
+        <option value="exame">🧪 Exame / Laboratório</option>
+        <option value="receita">📄 Renovação de receita</option>
+        <option value="vacina">💉 Vacinação</option>
+        <option value="procedimento">🏥 Procedimento</option>
+        <option value="outro">📌 Outro</option>
+      </select>
+      <label>Descrição</label>
+      <input type="text" id="ev-titulo" placeholder="Ex: Cardiologista — consulta de rotina">
+      <div class="form-row">
+        <div>
+          <label>Data</label>
+          <input type="date" id="ev-data">
+        </div>
+        <div>
+          <label>Local / Médico</label>
+          <input type="text" id="ev-local" placeholder="Ex: Dr. João / Lab ABC">
+        </div>
+      </div>
+      <label>Observações</label>
+      <textarea id="ev-obs" placeholder="Levar exames anteriores, jejum de 8h..."></textarea>
+      <button class="add-btn" onclick="addEvento()">Agendar</button>
+    </div>
+  </div>
+
+  <!-- Aba: Sugestões automáticas -->
+  <div id="tab-sugestoes" style="display:none">
+    <div class="sug-list">
+      <div class="sug-title">💡 Exames sugeridos pelos medicamentos em uso</div>
+      <div id="sug-lista"></div>
+    </div>
+  </div>
+
+  <!-- Aba: Pendentes -->
+  <div id="tab-pendentes">
+    <div id="lista-pendentes"></div>
+  </div>
+
+  <!-- Aba: Realizados -->
+  <div id="tab-realizados" style="display:none">
+    <div id="lista-realizados"></div>
+  </div>
+</main>
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+<script src="js/db.js"></script>
+<script src="js/utils.js"></script>
+<script>
+let _pid=null,_eventos=[],_tab='pendentes';
+
+// Banco de sugestões por medicamento
+const MED_MONIT=[
+  {pattern:/varfarin|warfarin/i, exame:'INR',freq:'mensal',urgencia:'alta',motivo:'Anticoagulante oral — risco de sangramento'},
+  {pattern:/amiodarona/i, exame:'TSH + T4 livre + TGO + TGP + Rx tórax',freq:'a cada 6 meses',urgencia:'alta',motivo:'Vigilância tireoide e pulmão'},
+  {pattern:/metformina/i, exame:'HbA1c + glicemia de jejum',freq:'trimestral',urgencia:'media',motivo:'Controle glicêmico'},
+  {pattern:/insulina/i, exame:'HbA1c + perfil glicêmico',freq:'trimestral',urgencia:'alta',motivo:'Controle diabetes'},
+  {pattern:/glibenclamida|glimepirid|glipizida|gliclazida/i, exame:'HbA1c',freq:'trimestral',urgencia:'media',motivo:'Controle diabetes'},
+  {pattern:/lisinopril|enalapril|captopril|ramipril|perindopril/i, exame:'Creatinina + K⁺',freq:'a cada 6 meses',urgencia:'media',motivo:'Monitorar função renal e potássio'},
+  {pattern:/losartan|valsartan|irbesartan|candesartan|telmisartan/i, exame:'Creatinina + K⁺',freq:'a cada 6 meses',urgencia:'media',motivo:'Monitorar função renal e potássio'},
+  {pattern:/levotiroxina/i, exame:'TSH + T4 livre',freq:'a cada 6 meses',urgencia:'media',motivo:'Ajuste de dose hormonal'},
+  {pattern:/sinvastatina|atorvastatina|rosuvastatina|lovastatina/i, exame:'Lipidograma + CPK + TGO + TGP',freq:'anual',urgencia:'baixa',motivo:'Monitorar lipídeos e miopatia'},
+  {pattern:/metotrexato/i, exame:'Hemograma + TGO + TGP + creatinina',freq:'mensal',urgencia:'alta',motivo:'Toxicidade hematológica e hepática'},
+  {pattern:/furosemida/i, exame:'Eletrólitos + creatinina',freq:'a cada 3 meses',urgencia:'media',motivo:'Desequilíbrio hidroeletrolítico'},
+  {pattern:/espironolactona/i, exame:'K⁺ + creatinina',freq:'a cada 3 meses',urgencia:'media',motivo:'Risco de hipercalemia'},
+  {pattern:/digoxina/i, exame:'Digoxinemia + K⁺ + ECG',freq:'a cada 6 meses',urgencia:'alta',motivo:'Janela terapêutica estreita'},
+  {pattern:/lítio/i, exame:'Litememia + creatinina + TSH',freq:'a cada 3 meses',urgencia:'alta',motivo:'Janela terapêutica estreita'},
+  {pattern:/fenitoína|carbamazepina/i, exame:'Nível sérico + hemograma',freq:'a cada 6 meses',urgencia:'media',motivo:'Monitoramento de antiepiléptico'},
+  {pattern:/valproato|ácido valproico/i, exame:'Nível sérico + TGO + TGP + hemograma',freq:'a cada 6 meses',urgencia:'media',motivo:'Toxicidade hepática e hematológica'},
+  {pattern:/prednisona|prednisolona|dexametasona|hidrocortisona/i, exame:'Glicemia + PA + densitometria óssea',freq:'anual',urgencia:'media',motivo:'Síndrome de Cushing e osteoporose'},
+  {pattern:/alopurinol/i, exame:'Ácido úrico + creatinina',freq:'a cada 6 meses',urgencia:'baixa',motivo:'Controle de gota'},
+  {pattern:/alendronato|ibandronato|risedronato/i, exame:'Densitometria óssea + Ca + Vit D',freq:'a cada 1-2 anos',urgencia:'baixa',motivo:'Monitorar osteoporose'},
+  {pattern:/clozapina/i, exame:'Hemograma completo',freq:'semanal (1° ano) → mensal',urgencia:'alta',motivo:'Risco de agranulocitose'},
+];
+
+function hoje(){return new Date().toISOString().slice(0,10);}
+function diasAte(data){if(!data) return null;const d=new Date(data)-new Date();return Math.round(d/864e5);}
+
+function setTab(tab,btn){
+  _tab=tab;
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('ativo'));
+  btn.classList.add('ativo');
+  ['novo','sugestoes','pendentes','realizados'].forEach(t=>{
+    document.getElementById('tab-'+t).style.display=t===tab?'block':'none';
+  });
+}
+
+async function init(){
+  _pid=parseInt(document.getElementById('sel-pac').value)||null;
+  document.getElementById('ev-data').value=hoje();
+  if(!_pid){
+    document.getElementById('alertas-div').innerHTML='';
+    document.getElementById('lista-pendentes').innerHTML='';
+    document.getElementById('lista-realizados').innerHTML='';
+    document.getElementById('sug-lista').innerHTML='';
+    return;
+  }
+  _eventos=await dbGetConfig('agenda_'+_pid)||[];
+  await renderSugestoes();
+  renderAlertas();
+  renderListas();
+}
+
+async function renderSugestoes(){
+  if(!_pid) return;
+  const meds=await dbGetByIndex('medicamentos','pacienteId',_pid)||[];
+  const meds_ativos=meds.filter(m=>m.ativo!==false&&m.ativo!==0);
+  const sugs=[];
+  meds_ativos.forEach(med=>{
+    const nome=med.nome||med.medicamento||'';
+    MED_MONIT.forEach(m=>{
+      if(m.pattern.test(nome)&&!sugs.find(s=>s.exame===m.exame)){
+        sugs.push({...m,medNome:nome});
+      }
+    });
+  });
+  const urgCor={alta:'#ef4444',media:'#f59e0b',baixa:'#22c55e'};
+  document.getElementById('sug-lista').innerHTML=sugs.length?sugs.map(s=>`
+    <div class="sug-item">
+      <div class="sug-icon">🧪</div>
+      <div class="sug-body">
+        <div class="sug-nome">${esc(s.exame)}</div>
+        <div class="sug-detalhe">💊 ${esc(s.medNome)} · ${s.freq} · <span style="color:${urgCor[s.urgencia]};font-weight:800">${s.urgencia.toUpperCase()}</span></div>
+        <div style="font-size:.6rem;color:#94a3b8;margin-top:2px">${esc(s.motivo)}</div>
+      </div>
+      <button class="add-sug-btn" onclick="addSugestao('${esc(s.exame)}','${esc(s.medNome)} — ${s.freq}')">+ Agendar</button>
+    </div>`).join(''):'<div class="empty">Sem medicamentos com monitoramento específico cadastrados.</div>';
+}
+
+function addSugestao(exame,obs){
+  document.getElementById('ev-tipo').value='exame';
+  document.getElementById('ev-titulo').value=exame;
+  document.getElementById('ev-obs').value=obs;
+  setTab('novo',document.querySelectorAll('.tab-btn')[2]);
+}
+
+async function addEvento(){
+  if(!_pid){showToast('Selecione um paciente');return;}
+  const titulo=document.getElementById('ev-titulo').value.trim();
+  if(!titulo){showToast('Informe a descrição');return;}
+  const data=document.getElementById('ev-data').value;
+  if(!data){showToast('Informe a data');return;}
+  const ev={
+    id:Date.now(),tipo:document.getElementById('ev-tipo').value,
+    titulo,data,local:document.getElementById('ev-local').value,
+    obs:document.getElementById('ev-obs').value,
+    status:'pendente',ts:Date.now(),
+  };
+  _eventos.push(ev);
+  await dbSetConfig('agenda_'+_pid,_eventos);
+  document.getElementById('ev-titulo').value='';
+  document.getElementById('ev-local').value='';
+  document.getElementById('ev-obs').value='';
+  document.getElementById('ev-data').value=hoje();
+  renderAlertas();renderListas();
+  setTab('pendentes',document.querySelectorAll('.tab-btn')[0]);
+  showToast('✅ Evento agendado');
+}
+
+function renderAlertas(){
+  const pendentes=_eventos.filter(e=>e.status==='pendente');
+  const vencidos=pendentes.filter(e=>diasAte(e.data)<0);
+  const proximos=pendentes.filter(e=>{const d=diasAte(e.data);return d>=0&&d<=7;});
+  let html='';
+  if(vencidos.length) html+=`<div class="alert-banner alert-vencido"><div class="alert-icon">🔴</div><div class="alert-body"><div class="alert-title" style="color:#991b1b">⚠️ ${vencidos.length} evento${vencidos.length>1?'s':''} vencido${vencidos.length>1?'s':''}</div><div class="alert-desc" style="color:#7f1d1d">${vencidos.map(e=>e.titulo).join(' · ')}</div></div></div>`;
+  if(proximos.length) html+=`<div class="alert-banner alert-proximo"><div class="alert-icon">🟡</div><div class="alert-body"><div class="alert-title" style="color:#92400e">⏰ ${proximos.length} evento${proximos.length>1?'s':''} nos próximos 7 dias</div><div class="alert-desc" style="color:#78350f">${proximos.map(e=>e.titulo+' — '+fmtData(e.data)).join(' · ')}</div></div></div>`;
+  document.getElementById('alertas-div').innerHTML=html;
+}
+
+function renderListas(){
+  const TIPO_ICONS={consulta:'🩺',exame:'🧪',receita:'📄',vacina:'💉',procedimento:'🏥',outro:'📌'};
+  const pendentes=_eventos.filter(e=>e.status==='pendente').sort((a,b)=>a.data.localeCompare(b.data));
+  const realizados=_eventos.filter(e=>e.status==='realizado').sort((a,b)=>b.data.localeCompare(a.data));
+
+  const renderEv=(ev)=>{
+    const d=diasAte(ev.data);
+    const isPend=ev.status==='pendente';
+    const dcls=isPend?(d<0?'dias-venc':d<=7?'dias-urg':'dias-ok'):'dias-realiz';
+    const dtxt=isPend?(d<0?`${Math.abs(d)}d atraso`:d===0?'Hoje':d<=7?`Em ${d} dias`:`${fmtData(ev.data)}`):'Realizado';
+    const dotCor=isPend?(d<0?'#ef4444':d<=7?'#f59e0b':'#22c55e'):'#94a3b8';
+    return `<div class="evento-card">
+      <div class="ev-header">
+        <div class="ev-status-dot" style="background:${dotCor}"></div>
+        <span class="ev-tipo-badge ev-${ev.tipo}">${TIPO_ICONS[ev.tipo]||'📌'} ${ev.tipo}</span>
+        <div class="ev-info">
+          <div class="ev-titulo">${esc(ev.titulo)}</div>
+          <div class="ev-data">${fmtData(ev.data)}${ev.local?' · '+esc(ev.local):''}</div>
+          ${ev.obs?`<div class="ev-nota">${esc(ev.obs)}</div>`:''}
+        </div>
+        <span class="dias-badge ${dcls}">${dtxt}</span>
+      </div>
+      <div class="ev-actions">
+        ${isPend?`<button class="ev-btn btn-done" onclick="marcarFeito('${ev.id}')">✅ Realizado</button>`:''}
+        <button class="ev-btn btn-del" onclick="deletarEv('${ev.id}')">🗑️ Remover</button>
+      </div>
+    </div>`;
+  };
+
+  document.getElementById('lista-pendentes').innerHTML=pendentes.length?pendentes.map(renderEv).join(''):`<div class="empty">Nenhum evento pendente.<br>Use "➕ Adicionar" ou "💡 Sugeridos" para agendar.</div>`;
+  document.getElementById('lista-realizados').innerHTML=realizados.length?realizados.map(renderEv).join(''):`<div class="empty">Nenhum evento marcado como realizado ainda.</div>`;
+}
+
+async function marcarFeito(id){
+  const ev=_eventos.find(e=>String(e.id)===String(id));
+  if(ev){ev.status='realizado';ev.dataRealizacao=hoje();}
+  await dbSetConfig('agenda_'+_pid,_eventos);
+  renderAlertas();renderListas();
+}
+async function deletarEv(id){
+  _eventos=_eventos.filter(e=>String(e.id)!==String(id));
+  await dbSetConfig('agenda_'+_pid,_eventos);
+  renderAlertas();renderListas();
+}
+
+function fmtData(d){return d?String(d).slice(0,10).split('-').reverse().join('/'):''}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+
+document.addEventListener('DOMContentLoaded',async()=>{
+  const pacs=await dbGetAll('pacientes');
+  const sel=document.getElementById('sel-pac');
+  sel.innerHTML='<option value="">Selecione o paciente...</option>'+pacs.map(p=>`<option value="${p.id}">${esc(p.nome||'Paciente '+p.id)}</option>`).join('');
+  const pid=getActivePacienteId();
+  if(pid){sel.value=pid;await init();}
+  document.getElementById('ev-data').value=hoje();
+  // Iniciar na aba pendentes
+  document.getElementById('tab-pendentes').style.display='block';
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>Perfil Glicêmico — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .topbar{display:flex;align-items:center;gap:10px;padding:12px 16px;background:#065f46;position:sticky;top:0;z-index:100}
+    .back-btn{background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:8px;padding:6px 11px;cursor:pointer;font-size:1rem}
+    .topbar-title{font-size:.93rem;font-weight:800;color:#fff;flex:1}
+    .topbar-sub{font-size:.62rem;color:rgba(255,255,255,.7);margin-top:1px}
+    .btn-top{background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:8px;padding:7px 11px;font-size:.72rem;font-weight:700;cursor:pointer;margin-left:4px}
+    main{max-width:640px;margin:0 auto;padding:12px 14px 90px}
+    .pac-sel{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:12px;padding:11px 14px;font-size:.88rem;margin-bottom:10px;background:#fff}
+
+    /* KPIs */
+    .kpi-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:12px}
+    .kpi-card{background:#fff;border-radius:14px;padding:14px;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,.07);border-top:4px solid}
+    .kpi-val{font-size:1.8rem;font-weight:900;line-height:1}
+    .kpi-unit{font-size:.62rem;color:#94a3b8;font-weight:700;margin-top:2px}
+    .kpi-lbl{font-size:.6rem;color:#64748b;text-transform:uppercase;font-weight:700;margin-top:4px}
+
+    /* TIR Bar */
+    .tir-card{background:#fff;border-radius:14px;padding:14px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.07)}
+    .tir-title{font-size:.68rem;font-weight:800;color:#065f46;text-transform:uppercase;margin-bottom:8px}
+    .tir-bar{display:flex;height:20px;border-radius:6px;overflow:hidden;margin-bottom:6px}
+    .tir-seg{transition:flex .4s;display:flex;align-items:center;justify-content:center;font-size:.6rem;font-weight:800;color:#fff}
+    .tir-legend{display:flex;gap:10px;flex-wrap:wrap;font-size:.62rem;color:#475569}
+    .tir-dot{width:10px;height:10px;border-radius:3px;display:inline-block;margin-right:4px}
+
+    /* Registro de glicemia */
+    .reg-card{background:#fff;border-radius:14px;padding:14px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.07)}
+    .reg-title{font-size:.68rem;font-weight:800;color:#065f46;text-transform:uppercase;margin-bottom:10px}
+    .reg-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
+    label{font-size:.68rem;font-weight:700;color:#64748b;display:block;margin-bottom:3px}
+    input[type=number],input[type=date],input[type=time],select{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:9px;padding:9px 11px;font-size:.83rem;background:#fff}
+    input:focus,select:focus{outline:none;border-color:#065f46}
+    .ctx-pills{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px}
+    .ctx-pill{padding:5px 10px;border-radius:20px;border:1.5px solid #e2e8f0;font-size:.65rem;font-weight:700;cursor:pointer;background:#f8fafc;color:#475569;transition:.12s}
+    .ctx-pill.ativo{background:#d1fae5;border-color:#065f46;color:#065f46}
+    .add-btn{width:100%;padding:12px;background:#065f46;color:#fff;border:none;border-radius:10px;font-size:.83rem;font-weight:800;cursor:pointer}
+
+    /* Período */
+    .period-row{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap}
+    .period-btn{padding:6px 12px;border-radius:20px;border:1.5px solid #e2e8f0;font-size:.68rem;font-weight:700;cursor:pointer;background:#fff;color:#64748b;transition:.12s}
+    .period-btn.ativo{background:#065f46;border-color:#065f46;color:#fff}
+
+    /* Gráfico SVG */
+    .chart-card{background:#fff;border-radius:14px;padding:14px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.07);overflow-x:auto}
+    .chart-title{font-size:.68rem;font-weight:800;color:#065f46;text-transform:uppercase;margin-bottom:8px}
+
+    /* Lista de registros */
+    .list-card{background:#fff;border-radius:14px;padding:14px;box-shadow:0 1px 4px rgba(0,0,0,.07)}
+    .list-title{font-size:.68rem;font-weight:800;color:#065f46;text-transform:uppercase;margin-bottom:8px}
+    .glic-item{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #f1f5f9}
+    .glic-item:last-child{border:none}
+    .glic-val-badge{font-size:.9rem;font-weight:900;width:52px;text-align:center;border-radius:8px;padding:4px 0;flex-shrink:0}
+    .glic-ctx{font-size:.72rem;font-weight:600;color:#334155;flex:1}
+    .glic-dt{font-size:.6rem;color:#94a3b8}
+    .del-btn{background:none;border:none;color:#fca5a5;cursor:pointer;font-size:.78rem;padding:2px 5px}
+
+    .empty{text-align:center;padding:30px;color:#94a3b8;font-size:.78rem}
+    @media print{.topbar,.pac-sel,.reg-card,.period-row,.btn-top,nav,.del-btn{display:none!important}body{background:#fff}main{padding:0}}
+  </style>
+</head>
+<body>
+<div class="topbar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <div style="flex:1">
+    <div class="topbar-title">🩸 Perfil Glicêmico</div>
+    <div class="topbar-sub">TIR · HbA1c estimada · Hipoglicemias</div>
+  </div>
+  <button class="btn-top" onclick="window.print()">🖨️</button>
+</div>
+<main>
+  <select class="pac-sel" id="sel-pac" onchange="init()"><option value="">Selecione o paciente...</option></select>
+
+  <!-- KPIs -->
+  <div class="kpi-grid" id="kpi-grid" style="display:none">
+    <div class="kpi-card" id="kpi-media" style="border-top-color:#065f46">
+      <div class="kpi-val" id="kv-media">—</div>
+      <div class="kpi-unit">mg/dL</div>
+      <div class="kpi-lbl">Média (período)</div>
+    </div>
+    <div class="kpi-card" id="kpi-hba1c" style="border-top-color:#3b82f6">
+      <div class="kpi-val" id="kv-hba1c">—</div>
+      <div class="kpi-unit">% estimado</div>
+      <div class="kpi-lbl">HbA1c estimada</div>
+    </div>
+    <div class="kpi-card" id="kpi-hipo" style="border-top-color:#ef4444">
+      <div class="kpi-val" id="kv-hipo">—</div>
+      <div class="kpi-unit">eventos</div>
+      <div class="kpi-lbl">Hipoglicemias &lt;70</div>
+    </div>
+    <div class="kpi-card" id="kpi-tir" style="border-top-color:#22c55e">
+      <div class="kpi-val" id="kv-tir">—</div>
+      <div class="kpi-unit">%</div>
+      <div class="kpi-lbl">TIR 70–180 mg/dL</div>
+    </div>
+  </div>
+
+  <!-- TIR Bar -->
+  <div class="tir-card" id="tir-card" style="display:none">
+    <div class="tir-title">⏱️ Tempo no Alvo (TIR)</div>
+    <div class="tir-bar">
+      <div class="tir-seg" id="tir-baixo" style="background:#ef4444"></div>
+      <div class="tir-seg" id="tir-alvo"  style="background:#22c55e"></div>
+      <div class="tir-seg" id="tir-alto"  style="background:#f59e0b"></div>
+      <div class="tir-seg" id="tir-muito-alto" style="background:#dc2626"></div>
+    </div>
+    <div class="tir-legend">
+      <span><span class="tir-dot" style="background:#ef4444"></span>Hipo &lt;70</span>
+      <span><span class="tir-dot" style="background:#22c55e"></span>No alvo 70–180</span>
+      <span><span class="tir-dot" style="background:#f59e0b"></span>Alto 181–250</span>
+      <span><span class="tir-dot" style="background:#dc2626"></span>Muito alto &gt;250</span>
+    </div>
+    <div id="tir-meta" style="font-size:.68rem;color:#064e3b;font-weight:700;margin-top:8px;padding:6px 10px;background:#d1fae5;border-radius:6px"></div>
+  </div>
+
+  <!-- Novo registro -->
+  <div class="reg-card">
+    <div class="reg-title">➕ Registrar Glicemia</div>
+    <div class="reg-grid">
+      <div>
+        <label>Glicemia (mg/dL)</label>
+        <input type="number" id="glic-val" placeholder="Ex: 120" min="20" max="600" step="1">
+      </div>
+      <div>
+        <label>Data</label>
+        <input type="date" id="glic-data">
+      </div>
+    </div>
+    <label>Momento da medição</label>
+    <div class="ctx-pills" id="ctx-pills">
+      <div class="ctx-pill ativo" onclick="selCtx(this,'Jejum')">🌅 Jejum</div>
+      <div class="ctx-pill" onclick="selCtx(this,'Pré-café')">☕ Pré-café</div>
+      <div class="ctx-pill" onclick="selCtx(this,'Pós-café')">☕ Pós-café</div>
+      <div class="ctx-pill" onclick="selCtx(this,'Pré-almoço')">🍽️ Pré-almoço</div>
+      <div class="ctx-pill" onclick="selCtx(this,'Pós-almoço')">🍽️ Pós-almoço</div>
+      <div class="ctx-pill" onclick="selCtx(this,'Pré-jantar')">🍴 Pré-jantar</div>
+      <div class="ctx-pill" onclick="selCtx(this,'Pós-jantar')">🍴 Pós-jantar</div>
+      <div class="ctx-pill" onclick="selCtx(this,'Ao dormir')">🌙 Ao dormir</div>
+      <div class="ctx-pill" onclick="selCtx(this,'Madrugada')">🌃 Madrugada</div>
+      <div class="ctx-pill" onclick="selCtx(this,'Aleatório')">🔀 Aleatório</div>
+    </div>
+    <button class="add-btn" onclick="addGlicemia()">Registrar</button>
+  </div>
+
+  <!-- Período e gráfico -->
+  <div class="period-row" id="period-row" style="display:none">
+    <div class="period-btn ativo" onclick="setPeriodo(7,this)">7 dias</div>
+    <div class="period-btn" onclick="setPeriodo(14,this)">14 dias</div>
+    <div class="period-btn" onclick="setPeriodo(30,this)">30 dias</div>
+    <div class="period-btn" onclick="setPeriodo(90,this)">90 dias</div>
+  </div>
+
+  <div class="chart-card" id="chart-card" style="display:none">
+    <div class="chart-title">Evolução Glicêmica</div>
+    <svg id="chart-svg" height="160" viewBox="0 0 420 160" style="width:100%;min-width:300px"></svg>
+  </div>
+
+  <div class="list-card" id="list-card" style="display:none">
+    <div class="list-title">Registros recentes</div>
+    <div id="glic-lista"></div>
+  </div>
+</main>
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+<script src="js/db.js"></script>
+<script src="js/utils.js"></script>
+<script>
+let _pid=null,_dados=[],_ctx='Jejum',_periodo=7;
+
+function selCtx(btn,ctx){
+  _ctx=ctx;
+  document.querySelectorAll('.ctx-pill').forEach(b=>b.classList.remove('ativo'));
+  btn.classList.add('ativo');
+}
+function setPeriodo(d,btn){
+  _periodo=d;
+  document.querySelectorAll('.period-btn').forEach(b=>b.classList.remove('ativo'));
+  btn.classList.add('ativo');
+  renderDados();
+}
+
+function hoje(){return new Date().toISOString().slice(0,10);}
+function diasAtras(n){const d=new Date();d.setDate(d.getDate()-n);return d.toISOString().slice(0,10);}
+
+async function init(){
+  _pid=parseInt(document.getElementById('sel-pac').value)||null;
+  document.getElementById('glic-data').value=hoje();
+  if(!_pid){
+    document.getElementById('kpi-grid').style.display='none';
+    document.getElementById('tir-card').style.display='none';
+    document.getElementById('period-row').style.display='none';
+    document.getElementById('chart-card').style.display='none';
+    document.getElementById('list-card').style.display='none';
+    return;
+  }
+  _dados=await dbGetConfig('glicemia_'+_pid)||[];
+  renderDados();
+}
+
+function renderDados(){
+  const corte=diasAtras(_periodo);
+  const filt=_dados.filter(d=>d.data>=corte).sort((a,b)=>a.data.localeCompare(b.data)||a.ts-b.ts);
+  const todos=_dados.sort((a,b)=>b.ts-a.ts);
+
+  if(!_dados.length){
+    document.getElementById('kpi-grid').style.display='none';
+    document.getElementById('tir-card').style.display='none';
+    document.getElementById('period-row').style.display='none';
+    document.getElementById('chart-card').style.display='none';
+    document.getElementById('list-card').style.display='block';
+    document.getElementById('glic-lista').innerHTML='<div class="empty">Nenhum registro ainda. Adicione a primeira medição.</div>';
+    return;
+  }
+
+  // KPIs
+  const vals=filt.map(d=>d.val);
+  const media=vals.length?Math.round(vals.reduce((a,b)=>a+b,0)/vals.length):0;
+  const hba1c=vals.length?((media+46.7)/28.7).toFixed(1):'—';
+  const hipo=vals.filter(v=>v<70).length;
+  const noAlvo=vals.filter(v=>v>=70&&v<=180).length;
+  const alto=vals.filter(v=>v>180&&v<=250).length;
+  const mAlto=vals.filter(v=>v>250).length;
+  const tir=vals.length?Math.round(noAlvo/vals.length*100):0;
+
+  document.getElementById('kpi-grid').style.display='grid';
+  document.getElementById('kv-media').textContent=media||'—';
+  document.getElementById('kpi-media').style.borderTopColor=media>250?'#ef4444':media>180?'#f59e0b':media>=70?'#22c55e':'#ef4444';
+  document.getElementById('kv-hba1c').textContent=vals.length?hba1c:'—';
+  document.getElementById('kv-hipo').textContent=hipo;
+  document.getElementById('kpi-hipo').style.borderTopColor=hipo>0?'#ef4444':'#22c55e';
+  document.getElementById('kv-tir').textContent=tir;
+  document.getElementById('kpi-tir').style.borderTopColor=tir>=70?'#22c55e':tir>=50?'#f59e0b':'#ef4444';
+
+  // TIR bar
+  document.getElementById('tir-card').style.display='block';
+  const total=vals.length||1;
+  const hipoP=Math.round(hipo/total*100);
+  const alvoP=tir;
+  const altoP=Math.round(alto/total*100);
+  const mAltoP=Math.round(mAlto/total*100);
+  document.getElementById('tir-baixo').style.flex=hipoP;document.getElementById('tir-baixo').textContent=hipoP>5?hipoP+'%':'';
+  document.getElementById('tir-alvo').style.flex=alvoP;document.getElementById('tir-alvo').textContent=alvoP>5?alvoP+'%':'';
+  document.getElementById('tir-alto').style.flex=altoP;document.getElementById('tir-alto').textContent=altoP>5?altoP+'%':'';
+  document.getElementById('tir-muito-alto').style.flex=mAltoP;document.getElementById('tir-muito-alto').textContent=mAltoP>5?mAltoP+'%':'';
+  const meta=tir>=70?`✅ Meta de TIR atingida (≥ 70%). Alvo ADA/EASD para DM2.`:
+             tir>=50?`⚠️ TIR abaixo da meta de 70%. Revisar esquema terapêutico.`:
+             `🔴 TIR crítico (< 50%). Controle glicêmico inadequado — avaliar urgência.`;
+  document.getElementById('tir-meta').textContent=meta;
+
+  // Período e gráfico
+  document.getElementById('period-row').style.display='flex';
+  if(filt.length>=2) renderChart(filt);
+  else document.getElementById('chart-card').style.display='none';
+
+  // Lista recente
+  document.getElementById('list-card').style.display='block';
+  document.getElementById('glic-lista').innerHTML=todos.slice(0,20).map((d,i)=>{
+    const cor=d.val<70?'#fee2e2':d.val<=180?'#dcfce7':d.val<=250?'#fef3c7':'#fee2e2';
+    const txt=d.val<70?'#991b1b':d.val<=180?'#166534':d.val<=250?'#92400e':'#991b1b';
+    return `<div class="glic-item">
+      <div class="glic-val-badge" style="background:${cor};color:${txt}">${d.val}</div>
+      <div style="flex:1">
+        <div class="glic-ctx">${esc(d.ctx||'—')}</div>
+        <div class="glic-dt">${fmtData(d.data)} ${d.hora||''}</div>
+      </div>
+      <button class="del-btn" onclick="deletar(${i})">🗑️</button>
+    </div>`;
+  }).join('')||'<div class="empty">Sem registros.</div>';
+}
+
+function renderChart(dados){
+  document.getElementById('chart-card').style.display='block';
+  const W=420,H=160,pad={t:20,b:30,l:42,r:10};
+  const vals=dados.map(d=>d.val);
+  const minV=Math.min(50,...vals);
+  const maxV=Math.max(300,...vals);
+  const xS=(W-pad.l-pad.r)/(dados.length-1||1);
+  const yS=v=>pad.t+(1-(v-minV)/(maxV-minV))*(H-pad.t-pad.b);
+
+  let svg='';
+  // Zonas
+  const y70=yS(70),y180=yS(180),y250=yS(250);
+  svg+=`<rect x="${pad.l}" y="${y180}" width="${W-pad.l-pad.r}" height="${y70-y180}" fill="#dcfce7" opacity=".5"/>`;
+  svg+=`<rect x="${pad.l}" y="${Math.min(y250,pad.t)}" width="${W-pad.l-pad.r}" height="${Math.abs(y180-Math.min(y250,pad.t))}" fill="#fef3c7" opacity=".5"/>`;
+  // Linhas de referência
+  [[70,'#ef4444'],[180,'#22c55e'],[250,'#f59e0b']].forEach(([v,c])=>{
+    const y=yS(v);
+    svg+=`<line x1="${pad.l}" y1="${y}" x2="${W-pad.r}" y2="${y}" stroke="${c}" stroke-width="1" stroke-dasharray="3,3"/>
+    <text x="${pad.l-4}" y="${y+4}" text-anchor="end" font-size="9" fill="${c}">${v}</text>`;
+  });
+  // Linha principal
+  const path=dados.map((d,i)=>`${i?'L':'M'}${pad.l+i*xS},${yS(d.val)}`).join(' ');
+  svg+=`<path d="${path}" fill="none" stroke="#065f46" stroke-width="2"/>`;
+  // Pontos
+  dados.forEach((d,i)=>{
+    const x=pad.l+i*xS,y=yS(d.val);
+    const cor=d.val<70?'#ef4444':d.val<=180?'#22c55e':d.val<=250?'#f59e0b':'#dc2626';
+    svg+=`<circle cx="${x}" cy="${y}" r="4" fill="${cor}" stroke="#fff" stroke-width="1.5"/>`;
+    if(dados.length<=10) svg+=`<text x="${x}" y="${y-8}" text-anchor="middle" font-size="9" fill="${cor}" font-weight="700">${d.val}</text>`;
+  });
+  // Datas no eixo X (mostrar só alguns)
+  const step=Math.max(1,Math.floor(dados.length/5));
+  dados.forEach((d,i)=>{
+    if(i%step===0||i===dados.length-1){
+      const x=pad.l+i*xS;
+      svg+=`<text x="${x}" y="${H-2}" text-anchor="middle" font-size="8" fill="#94a3b8">${(d.data||'').slice(5)}</text>`;
+    }
+  });
+  document.getElementById('chart-svg').innerHTML=svg;
+}
+
+async function addGlicemia(){
+  if(!_pid){showToast('Selecione um paciente');return;}
+  const val=parseInt(document.getElementById('glic-val').value)||0;
+  if(!val||val<20||val>600){showToast('Valor inválido (20–600 mg/dL)');return;}
+  const data=document.getElementById('glic-data').value||hoje();
+  const hora=new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+  const reg={val,ctx:_ctx,data,hora,ts:Date.now()};
+  _dados.push(reg);
+  await dbSetConfig('glicemia_'+_pid,_dados);
+  document.getElementById('glic-val').value='';
+  renderDados();
+  showToast('✅ Glicemia registrada');
+}
+
+async function deletar(idx){
+  // idx é na lista invertida (todos ordenados por -ts)
+  const sorted=[..._dados].sort((a,b)=>b.ts-a.ts);
+  const item=sorted[idx];
+  _dados=_dados.filter(d=>d.ts!==item.ts);
+  await dbSetConfig('glicemia_'+_pid,_dados);
+  renderDados();
+}
+
+function fmtData(d){return d?String(d).slice(0,10).split('-').reverse().join('/'):''}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+
+document.addEventListener('DOMContentLoaded',async()=>{
+  const pacs=await dbGetAll('pacientes');
+  const sel=document.getElementById('sel-pac');
+  sel.innerHTML='<option value="">Selecione o paciente...</option>'+pacs.map(p=>`<option value="${p.id}">${esc(p.nome||'Paciente '+p.id)}</option>`).join('');
+  const pid=getActivePacienteId();
+  if(pid){sel.value=pid;await init();}
+  else document.getElementById('glic-data').value=hoje();
+});
+</script>
+</body>
+</html>

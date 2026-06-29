@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>Avaliação de Dor — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .topbar{display:flex;align-items:center;gap:10px;padding:12px 16px;background:#7f1d1d;position:sticky;top:0;z-index:100}
+    .back-btn{background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:8px;padding:6px 11px;cursor:pointer;font-size:1rem}
+    .topbar-title{font-size:.93rem;font-weight:800;color:#fff;flex:1}
+    .topbar-sub{font-size:.62rem;color:rgba(255,255,255,.7);margin-top:1px}
+    main{max-width:620px;margin:0 auto;padding:12px 14px 90px}
+    .pac-sel{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:12px;padding:11px 14px;font-size:.88rem;margin-bottom:10px;background:#fff}
+
+    .sec{background:#fff;border-radius:14px;padding:16px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.07)}
+    .sec-title{font-size:.73rem;font-weight:800;color:#7f1d1d;text-transform:uppercase;margin-bottom:12px}
+
+    /* EVA */
+    .eva-row{display:flex;gap:4px;margin-bottom:8px;flex-wrap:wrap}
+    .eva-btn{flex:1;min-width:28px;padding:10px 4px;border-radius:8px;border:2px solid #e2e8f0;font-size:.7rem;font-weight:800;cursor:pointer;text-align:center;background:#f8fafc;transition:.12s;line-height:1.2}
+    .eva-btn.sel{border-width:2px}
+    .eva-faces{display:flex;justify-content:space-between;font-size:1.3rem;margin-bottom:4px}
+    .eva-labels{display:flex;justify-content:space-between;font-size:.6rem;color:#94a3b8;font-weight:700}
+    .eva-selecionado{text-align:center;padding:10px;border-radius:12px;margin-top:8px;font-size:1rem;font-weight:900}
+
+    /* Características */
+    .char-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+    .char-btn{padding:8px 10px;border-radius:10px;border:1.5px solid #e2e8f0;font-size:.72rem;font-weight:700;cursor:pointer;background:#f8fafc;color:#475569;transition:.12s;text-align:left}
+    .char-btn.sel{background:#fee2e2;border-color:#ef4444;color:#991b1b}
+
+    /* DN4 */
+    .dn4-item{padding:10px 0;border-bottom:1px solid #f8fafc;display:flex;gap:10px;align-items:flex-start}
+    .dn4-item:last-child{border:none}
+    .dn4-q{font-size:.78rem;color:#1e293b;flex:1;line-height:1.4}
+    .dn4-note{font-size:.62rem;color:#94a3b8;margin-top:2px}
+    .dn4-toggle{display:flex;gap:6px;flex-shrink:0}
+    .yn-btn{padding:5px 10px;border-radius:8px;border:1.5px solid #e2e8f0;font-size:.68rem;font-weight:700;cursor:pointer;background:#f8fafc;transition:.12s}
+    .yn-btn.sim.sel{background:#fee2e2;border-color:#ef4444;color:#991b1b}
+    .yn-btn.nao.sel{background:#dcfce7;border-color:#22c55e;color:#166534}
+    .dn4-score-bar{height:8px;border-radius:4px;background:#f1f5f9;overflow:hidden;margin-top:8px}
+    .dn4-score-fill{height:100%;border-radius:4px;background:#ef4444;transition:width .3s}
+
+    /* Resultado */
+    .result-strip{border-radius:12px;padding:14px;margin-bottom:10px}
+    .result-strip.ok{background:#dcfce7;border:1.5px solid #86efac}
+    .result-strip.neuropat{background:#fee2e2;border:1.5px solid #fca5a5}
+    .rs-title{font-size:.85rem;font-weight:900;margin-bottom:6px}
+    .rs-txt{font-size:.75rem;line-height:1.5}
+
+    /* Escada OMS */
+    .escada{display:flex;gap:6px;flex-direction:column;margin:10px 0}
+    .degrau{border-radius:10px;padding:10px 12px;border:2px solid transparent;transition:.2s}
+    .degrau.ativo{border-width:2px}
+    .dg-titulo{font-size:.75rem;font-weight:800}
+    .dg-meds{font-size:.68rem;opacity:.8;margin-top:2px}
+
+    /* Analgésicos em uso */
+    .anal-badge{display:inline-block;padding:4px 10px;border-radius:20px;font-size:.65rem;font-weight:700;margin:2px;background:#fee2e2;color:#991b1b}
+
+    /* Local da dor */
+    label{font-size:.7rem;font-weight:700;color:#64748b;display:block;margin-bottom:3px}
+    input[type=text],textarea,select{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:9px;padding:9px 11px;font-size:.83rem;background:#fff;font-family:inherit}
+    input:focus,textarea:focus{outline:none;border-color:#7f1d1d}
+
+    /* Histórico */
+    .hist-card{background:#fff;border-radius:14px;padding:14px;box-shadow:0 1px 4px rgba(0,0,0,.07)}
+    .hist-title{font-size:.68rem;font-weight:800;color:#7f1d1d;text-transform:uppercase;margin-bottom:8px}
+    .hist-item{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #f1f5f9}
+    .hist-item:last-child{border:none}
+    .eva-badge-sm{font-size:.9rem;font-weight:900;width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+
+    .salvar-btn{width:100%;padding:13px;background:#7f1d1d;color:#fff;border:none;border-radius:12px;font-size:.85rem;font-weight:800;cursor:pointer;margin:10px 0}
+    @media print{.topbar,.pac-sel,.salvar-btn,nav{display:none!important}body{background:#fff}main{padding:0}}
+  </style>
+</head>
+<body>
+<div class="topbar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <div style="flex:1">
+    <div class="topbar-title">🔴 Avaliação de Dor</div>
+    <div class="topbar-sub">EVA · DN4 · Escada Analgésica OMS</div>
+  </div>
+</div>
+<main>
+  <select class="pac-sel" id="sel-pac" onchange="init()"><option value="">Selecione o paciente...</option></select>
+
+  <!-- EVA -->
+  <div class="sec">
+    <div class="sec-title">📊 Escala Visual Analógica (EVA)</div>
+    <div class="eva-faces">😌 😐 😟 😣 😭</div>
+    <div class="eva-row" id="eva-row">
+      <!-- gerado por JS -->
+    </div>
+    <div class="eva-labels"><span>Sem dor</span><span>Dor moderada</span><span>Pior dor possível</span></div>
+    <div class="eva-selecionado" id="eva-sel" style="display:none"></div>
+  </div>
+
+  <!-- Características da dor -->
+  <div class="sec">
+    <div class="sec-title">🔍 Características da Dor</div>
+    <div class="char-grid" id="char-grid">
+      <button class="char-btn" onclick="togChar(this,'Queimação')">🔥 Queimação</button>
+      <button class="char-btn" onclick="togChar(this,'Choque elétrico')">⚡ Choque elétrico</button>
+      <button class="char-btn" onclick="togChar(this,'Formigamento')">🐜 Formigamento</button>
+      <button class="char-btn" onclick="togChar(this,'Dormência')">💤 Dormência</button>
+      <button class="char-btn" onclick="togChar(this,'Facadas / pontadas')">🔪 Facadas / pontadas</button>
+      <button class="char-btn" onclick="togChar(this,'Latejamento')">💓 Latejamento</button>
+      <button class="char-btn" onclick="togChar(this,'Pressão / aperto')">🤜 Pressão / aperto</button>
+      <button class="char-btn" onclick="togChar(this,'Coceira / prurido')">🌿 Coceira / prurido</button>
+    </div>
+    <div style="margin-top:10px">
+      <label>Localização da dor</label>
+      <input type="text" id="local-dor" placeholder="Ex: membro inferior direito, lombar, cabeça...">
+    </div>
+    <div style="margin-top:8px">
+      <label>Frequência / padrão</label>
+      <select id="freq-dor">
+        <option value="">Selecione...</option>
+        <option>Constante (sempre presente)</option>
+        <option>Intermitente (vai e volta)</option>
+        <option>Episódica (crises)</option>
+        <option>Noturna (piora à noite)</option>
+        <option>Ao esforço</option>
+        <option>Ao repouso</option>
+      </select>
+    </div>
+    <div style="margin-top:8px">
+      <label>Duração (meses)</label>
+      <input type="number" id="duracao-dor" placeholder="Ex: 3" min="0" step="1">
+    </div>
+  </div>
+
+  <!-- DN4 -->
+  <div class="sec">
+    <div class="sec-title">🧠 Questionário DN4 — Componente Neuropático</div>
+    <div style="font-size:.72rem;color:#64748b;margin-bottom:12px;line-height:1.4">
+      Responda SIM ou NÃO a cada item. <strong>Itens 8–10</strong> requerem avaliação clínica pelo profissional de saúde.
+    </div>
+    <div id="dn4-questoes"></div>
+    <div style="margin-top:10px">
+      <div style="font-size:.68rem;font-weight:700;color:#64748b;margin-bottom:4px">Score DN4: <span id="dn4-score-txt">0</span> / 10</div>
+      <div class="dn4-score-bar"><div class="dn4-score-fill" id="dn4-score-fill" style="width:0%"></div></div>
+    </div>
+    <div id="dn4-result" style="margin-top:8px"></div>
+  </div>
+
+  <!-- Resultado e Escada OMS -->
+  <div id="oms-div" style="display:none">
+    <div class="sec">
+      <div class="sec-title">🪜 Escada Analgésica OMS</div>
+      <div class="escada" id="escada"></div>
+      <div id="anal-em-uso" style="margin-top:8px"></div>
+    </div>
+  </div>
+
+  <button class="salvar-btn" id="btn-salvar" style="display:none" onclick="salvar()">💾 Salvar Avaliação de Dor</button>
+
+  <!-- Histórico -->
+  <div class="hist-card" id="hist-card" style="display:none">
+    <div class="hist-title">Histórico de Avaliações</div>
+    <svg id="hist-svg" width="100%" height="120" viewBox="0 0 380 120"></svg>
+    <div id="hist-lista"></div>
+  </div>
+</main>
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+<script src="js/db.js"></script>
+<script src="js/utils.js"></script>
+<script>
+let _pid=null,_evaVal=null,_chars=new Set(),_dn4=Array(10).fill(null);
+
+const EVA_COR=['#22c55e','#22c55e','#84cc16','#84cc16','#facc15','#facc15','#f97316','#f97316','#ef4444','#ef4444','#dc2626'];
+const EVA_EMOJI=['😌','😌','😐','😐','😟','😟','😣','😣','😭','😭','😱'];
+
+const DN4_QS=[
+  {q:'A dor tem caráter de queimação?',tipo:'paciente'},
+  {q:'A dor provoca sensação de frio doloroso?',tipo:'paciente'},
+  {q:'A dor provoca sensação de choque elétrico?',tipo:'paciente'},
+  {q:'A dor é associada a formigamento na mesma área?',tipo:'paciente'},
+  {q:'A dor é associada a sensação de picada de agulha?',tipo:'paciente'},
+  {q:'A dor é associada a dormência?',tipo:'paciente'},
+  {q:'A dor é associada a coceira?',tipo:'paciente'},
+  {q:'Hipoestesia ao toque (redução de sensibilidade)?',tipo:'exame',nota:'Avaliação clínica'},
+  {q:'Hipoestesia à picada de agulha?',tipo:'exame',nota:'Avaliação clínica'},
+  {q:'A dor é provocada ou aumentada pelo toque leve (alodinia)?',tipo:'exame',nota:'Avaliação clínica'},
+];
+
+function renderEVA(){
+  const row=document.getElementById('eva-row');
+  row.innerHTML=[0,1,2,3,4,5,6,7,8,9,10].map(v=>`
+    <div class="eva-btn" id="eva-${v}" onclick="selEVA(${v})" style="border-color:${EVA_COR[v]};color:${EVA_COR[v]}">
+      ${EVA_EMOJI[v]}<br>${v}
+    </div>`).join('');
+}
+
+function selEVA(v){
+  _evaVal=v;
+  document.querySelectorAll('.eva-btn').forEach(b=>b.classList.remove('sel'));
+  const btn=document.getElementById('eva-'+v);
+  btn.classList.add('sel');
+  btn.style.background=EVA_COR[v]+'20';
+  const desc=v===0?'Sem dor':v<=3?'Dor leve':v<=6?'Dor moderada':v<=8?'Dor intensa':'Dor insuportável';
+  const sel=document.getElementById('eva-sel');
+  sel.style.display='block';
+  sel.style.background=EVA_COR[v]+'20';
+  sel.style.color=EVA_COR[v];
+  sel.textContent=`${EVA_EMOJI[v]} EVA ${v}/10 — ${desc}`;
+  renderOMS();
+  document.getElementById('btn-salvar').style.display='block';
+}
+
+function togChar(btn,c){
+  if(_chars.has(c)){_chars.delete(c);btn.classList.remove('sel');}
+  else{_chars.add(c);btn.classList.add('sel');}
+}
+
+function renderDN4(){
+  document.getElementById('dn4-questoes').innerHTML=DN4_QS.map((q,i)=>`
+    <div class="dn4-item">
+      <div style="flex:1">
+        <div class="dn4-q">${i+1}. ${esc(q.q)}</div>
+        ${q.nota?`<div class="dn4-note">⚕️ ${q.nota}</div>`:''}
+      </div>
+      <div class="dn4-toggle">
+        <button class="yn-btn sim" id="dn4-s-${i}" onclick="setDN4(${i},1,this)">Sim</button>
+        <button class="yn-btn nao" id="dn4-n-${i}" onclick="setDN4(${i},0,this)">Não</button>
+      </div>
+    </div>`).join('');
+}
+
+function setDN4(i,val,btn){
+  _dn4[i]=val;
+  const isS=btn.classList.contains('sim');
+  document.getElementById('dn4-s-'+i).classList.toggle('sel',isS&&val===1||(val===1));
+  document.getElementById('dn4-n-'+i).classList.toggle('sel',!isS&&val===0||(val===0));
+  if(val===1){document.getElementById('dn4-s-'+i).classList.add('sel');document.getElementById('dn4-n-'+i).classList.remove('sel');}
+  else{document.getElementById('dn4-n-'+i).classList.add('sel');document.getElementById('dn4-s-'+i).classList.remove('sel');}
+  const score=_dn4.filter(v=>v===1).length;
+  document.getElementById('dn4-score-txt').textContent=score;
+  document.getElementById('dn4-score-fill').style.width=(score/10*100)+'%';
+  const res=document.getElementById('dn4-result');
+  if(score>=4){
+    res.innerHTML=`<div class="result-strip neuropat"><div class="rs-title" style="color:#991b1b">⚠️ Componente Neuropático Provável (DN4 ≥ 4)</div>
+    <div class="rs-txt" style="color:#7f1d1d">Score ${score}/10. Considerar gabapentina, pregabalina, duloxetina ou amitriptilina conforme avaliação médica. Avaliar causa subjacente (diabetes, herpes zoster, compressão nervosa).</div></div>`;
+  } else if(_dn4.filter(v=>v!==null).length>=5){
+    res.innerHTML=`<div class="result-strip ok"><div class="rs-title" style="color:#166534">✅ Componente Neuropático Improvável (DN4 < 4)</div>
+    <div class="rs-txt" style="color:#14532d">Score ${score}/10. Dor predominantemente nociceptiva. Tratar conforme intensidade na escala EVA.</div></div>`;
+  } else res.innerHTML='';
+}
+
+function renderOMS(){
+  if(_evaVal===null) return;
+  document.getElementById('oms-div').style.display='block';
+  const degraus=[
+    {n:1,lbl:'Degrau 1 — Dor leve (EVA 1–3)',meds:'AINEs, Paracetamol, Dipirona',cor:'#dcfce7',txt:'#166534',ativo:_evaVal>=1&&_evaVal<=3},
+    {n:2,lbl:'Degrau 2 — Dor moderada (EVA 4–6)',meds:'Tramadol, Codeína + não opioide',cor:'#fef3c7',txt:'#92400e',ativo:_evaVal>=4&&_evaVal<=6},
+    {n:3,lbl:'Degrau 3 — Dor intensa (EVA 7–10)',meds:'Morfina, Oxicodona, Fentanil + não opioide',cor:'#fee2e2',txt:'#991b1b',ativo:_evaVal>=7},
+  ];
+  document.getElementById('escada').innerHTML=degraus.map(d=>`
+    <div class="degrau ${d.ativo?'ativo':''}" style="background:${d.cor};border-color:${d.ativo?d.txt:'transparent'}">
+      <div class="dg-titulo" style="color:${d.txt}">${d.ativo?'→ ':''} ${d.lbl}</div>
+      <div class="dg-meds" style="color:${d.txt}">💊 ${d.meds}</div>
+    </div>`).join('');
+}
+
+async function init(){
+  _pid=parseInt(document.getElementById('sel-pac').value)||null;
+  _evaVal=null;_chars=new Set();_dn4=Array(10).fill(null);
+  renderEVA();renderDN4();
+  document.getElementById('btn-salvar').style.display='none';
+  document.getElementById('oms-div').style.display='none';
+  if(!_pid){document.getElementById('hist-card').style.display='none';return;}
+  // Analgésicos em uso
+  const meds=await dbGetByIndex('medicamentos','pacienteId',_pid)||[];
+  const analg=meds.filter(m=>{
+    const n=(m.nome||m.medicamento||'').toLowerCase();
+    return /paracetamol|dipirona|ibuprofeno|naproxeno|diclofenaco|cetoprofeno|tramadol|codeina|morfina|oxicodona|fentanil|gabapentina|pregabalina|amitriptilina|duloxetina|cloridrato/.test(n);
+  });
+  const analDiv=document.getElementById('anal-em-uso');
+  if(analg.length){
+    analDiv.innerHTML='<div style="font-size:.65rem;font-weight:800;color:#94a3b8;text-transform:uppercase;margin-bottom:6px">Analgésicos em uso:</div>'+
+      analg.map(m=>`<span class="anal-badge">${esc(m.nome||m.medicamento)} ${esc(m.dose||'')}</span>`).join('');
+  } else analDiv.innerHTML='';
+  await renderHist();
+}
+
+async function salvar(){
+  if(!_pid){showToast('Selecione um paciente');return;}
+  if(_evaVal===null){showToast('Selecione a intensidade na EVA');return;}
+  const dn4Score=_dn4.filter(v=>v===1).length;
+  const entrada={
+    pid:_pid,eva:_evaVal,dn4Score,dn4:_dn4,chars:[..._chars],
+    local:document.getElementById('local-dor').value,
+    freq:document.getElementById('freq-dor').value,
+    duracao:document.getElementById('duracao-dor').value,
+    data:new Date().toISOString().slice(0,10),ts:Date.now(),
+  };
+  const hist=await dbGetConfig('dor_hist_'+_pid)||[];
+  hist.push(entrada);
+  await dbSetConfig('dor_hist_'+_pid,hist);
+  await renderHist();
+  showToast('✅ Avaliação de dor salva');
+}
+
+async function renderHist(){
+  if(!_pid) return;
+  const hist=await dbGetConfig('dor_hist_'+_pid)||[];
+  if(!hist.length){document.getElementById('hist-card').style.display='none';return;}
+  document.getElementById('hist-card').style.display='block';
+  // SVG
+  if(hist.length>=2){
+    const W=380,H=120,pad={t:20,b:25,l:28,r:10};
+    const pts=hist.slice(-12);
+    const xS=(W-pad.l-pad.r)/(pts.length-1||1);
+    const yS=v=>pad.t+(1-v/10)*(H-pad.t-pad.b);
+    let svg=`<line x1="${pad.l}" y1="${yS(3)}" x2="${W-pad.r}" y2="${yS(3)}" stroke="#22c55e" stroke-width="1" stroke-dasharray="3"/>
+    <line x1="${pad.l}" y1="${yS(6)}" x2="${W-pad.r}" y2="${yS(6)}" stroke="#f59e0b" stroke-width="1" stroke-dasharray="3"/>`;
+    const path=pts.map((p,i)=>`${i?'L':'M'}${pad.l+i*xS},${yS(p.eva)}`).join(' ');
+    svg+=`<path d="${path}" fill="none" stroke="#7f1d1d" stroke-width="2"/>`;
+    pts.forEach((p,i)=>{
+      const x=pad.l+i*xS,y=yS(p.eva);
+      const c=EVA_COR[p.eva];
+      svg+=`<circle cx="${x}" cy="${y}" r="5" fill="${c}" stroke="#fff" stroke-width="1.5"/>
+      <text x="${x}" y="${y-9}" text-anchor="middle" font-size="10" font-weight="700" fill="${c}">${p.eva}</text>
+      <text x="${x}" y="${H-2}" text-anchor="middle" font-size="8" fill="#94a3b8">${(p.data||'').slice(5)}</text>`;
+    });
+    document.getElementById('hist-svg').innerHTML=svg;
+  }
+  document.getElementById('hist-lista').innerHTML=hist.slice().reverse().slice(0,5).map(h=>{
+    const c=EVA_COR[h.eva];
+    return `<div class="hist-item">
+      <div class="eva-badge-sm" style="background:${c}20;color:${c}">${h.eva}</div>
+      <div style="flex:1">
+        <div style="font-size:.75rem;font-weight:700;color:#1e293b">EVA ${h.eva}/10 · DN4 ${h.dn4Score}/10${h.dn4Score>=4?' ⚠️ neuropático':''}</div>
+        <div style="font-size:.62rem;color:#94a3b8">${esc(h.local||'—')} · ${fmtData(h.data)}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function fmtData(d){return d?String(d).slice(0,10).split('-').reverse().join('/'):''}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+
+document.addEventListener('DOMContentLoaded',async()=>{
+  renderEVA();renderDN4();
+  const pacs=await dbGetAll('pacientes');
+  const sel=document.getElementById('sel-pac');
+  sel.innerHTML='<option value="">Selecione o paciente...</option>'+pacs.map(p=>`<option value="${p.id}">${esc(p.nome||'Paciente '+p.id)}</option>`).join('');
+  const pid=getActivePacienteId();
+  if(pid){sel.value=pid;await init();}
+});
+</script>
+</body>
+</html>
