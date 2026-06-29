@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>Desfechos Clínicos — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .topbar { display:flex;align-items:center;gap:10px;padding:12px 16px;background:#1e3a5f;position:sticky;top:0;z-index:100 }
+    .back-btn { background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:8px;padding:6px 11px;cursor:pointer;font-size:1rem }
+    .topbar-title { font-size:.93rem;font-weight:800;color:#fff;flex:1 }
+
+    main { max-width:600px;margin:0 auto;padding:12px 14px 90px }
+
+    /* KPI */
+    .kpi-row { display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:12px }
+    .kpi { background:#fff;border-radius:12px;padding:12px 8px;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,.07) }
+    .kpi-n { font-size:1.8rem;font-weight:900;line-height:1 }
+    .kpi-l { font-size:.6rem;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:.04em;margin-top:3px;line-height:1.2 }
+
+    .card { background:#fff;border-radius:14px;padding:14px 16px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.07) }
+    .card-title { font-size:.65rem;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center }
+
+    /* Filtros */
+    .filter-tabs { display:flex;gap:6px;margin-bottom:10px;overflow-x:auto;padding-bottom:2px }
+    .filter-tab { padding:7px 13px;border-radius:999px;border:1.5px solid #e2e8f0;background:#f8fafc;font-size:.75rem;font-weight:700;color:#64748b;cursor:pointer;white-space:nowrap;flex-shrink:0 }
+    .filter-tab.active { background:#1e3a5f;color:#fff;border-color:#1e3a5f }
+
+    /* PRM card */
+    .prm-card { background:#fff;border-radius:12px;border:1.5px solid #e2e8f0;padding:14px;margin-bottom:8px }
+    .prm-card.resolvido      { border-left:4px solid #16a34a }
+    .prm-card.parcial        { border-left:4px solid #d97706 }
+    .prm-card.nao-resolvido  { border-left:4px solid #dc2626 }
+    .prm-card.transferido    { border-left:4px solid #94a3b8 }
+    .prm-card.sem-desfecho   { border-left:4px solid #e2e8f0 }
+
+    .prm-header { display:flex;align-items:flex-start;gap:8px;margin-bottom:8px }
+    .prm-num  { background:#1e3a5f;color:#fff;border-radius:6px;padding:3px 8px;font-size:.65rem;font-weight:800;flex-shrink:0 }
+    .prm-desc { font-size:.85rem;font-weight:700;color:#1e293b;flex:1 }
+    .prm-pac  { font-size:.7rem;color:#64748b;margin-bottom:4px }
+    .prm-cat  { font-size:.68rem;color:#94a3b8;margin-bottom:10px }
+
+    .desfecho-sel { display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px }
+    .ds-btn { padding:6px 12px;border-radius:8px;border:1.5px solid #e2e8f0;background:#f8fafc;font-size:.72rem;font-weight:700;color:#64748b;cursor:pointer;flex-shrink:0 }
+    .ds-btn.ativo-res  { background:#dcfce7;border-color:#16a34a;color:#15803d }
+    .ds-btn.ativo-par  { background:#fef3c7;border-color:#d97706;color:#92400e }
+    .ds-btn.ativo-nao  { background:#fee2e2;border-color:#dc2626;color:#991b1b }
+    .ds-btn.ativo-tra  { background:#f1f5f9;border-color:#94a3b8;color:#475569 }
+
+    label { font-size:.72rem;font-weight:700;color:#475569;display:block;margin-bottom:3px;margin-top:8px }
+    input, select, textarea { width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:8px;padding:7px 10px;font-size:.82rem;color:#1e293b;background:#fff;font-family:inherit }
+    textarea { resize:vertical }
+    input:focus, select:focus, textarea:focus { outline:none;border-color:#1e3a5f }
+
+    .btn-salvar { background:#1e3a5f;color:#fff;border:none;border-radius:9px;padding:8px 16px;font-size:.78rem;font-weight:700;cursor:pointer;margin-top:8px }
+    .btn-salvar:hover { background:#16305a }
+
+    .evidencia-row { display:flex;gap:8px }
+    .evidencia-row input { flex:1 }
+
+    .badge { display:inline-block;padding:2px 8px;border-radius:999px;font-size:.62rem;font-weight:700 }
+    .b-res { background:#dcfce7;color:#16a34a }
+    .b-par { background:#fef3c7;color:#92400e }
+    .b-nao { background:#fee2e2;color:#dc2626 }
+    .b-tra { background:#f1f5f9;color:#64748b }
+    .b-sem { background:#f1f5f9;color:#94a3b8 }
+
+    /* Selector paciente */
+    .pac-sel { width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:10px;padding:9px 12px;font-size:.84rem;margin-bottom:10px;background:#fff }
+
+    .empty { text-align:center;color:#94a3b8;font-size:.82rem;padding:30px 0 }
+
+    /* Gráfico barra desfechos */
+    .desfecho-bar { display:flex;gap:0;border-radius:8px;overflow:hidden;height:18px;margin:6px 0 }
+    .db-seg { display:flex;align-items:center;justify-content:center;font-size:.6rem;font-weight:700;color:#fff;transition:width .4s }
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <div style="flex:1">
+    <div class="topbar-title">🎯 Desfechos Clínicos</div>
+  </div>
+</div>
+
+<main>
+  <!-- KPIs -->
+  <div class="kpi-row" id="kpi-row">
+    <div class="kpi"><div class="kpi-n" style="color:#94a3b8">—</div><div class="kpi-l">Total PRMs</div></div>
+    <div class="kpi"><div class="kpi-n" style="color:#16a34a">—</div><div class="kpi-l">Resolvidos</div></div>
+    <div class="kpi"><div class="kpi-n" style="color:#d97706">—</div><div class="kpi-l">Parciais</div></div>
+    <div class="kpi"><div class="kpi-n" style="color:#dc2626">—</div><div class="kpi-l">Não Resolv.</div></div>
+  </div>
+
+  <!-- Barra visual -->
+  <div class="card" style="padding:10px 14px">
+    <div class="desfecho-bar" id="desfecho-bar"></div>
+    <div style="display:flex;gap:10px;font-size:.63rem;color:#64748b;margin-top:4px">
+      <span style="color:#16a34a">● Resolvido</span>
+      <span style="color:#d97706">● Parcial</span>
+      <span style="color:#dc2626">● Não resolvido</span>
+      <span style="color:#94a3b8">● Outro/S/desfecho</span>
+    </div>
+  </div>
+
+  <!-- Seletor de paciente -->
+  <select class="pac-sel" id="sel-pac" onchange="renderPRMs()">
+    <option value="">Todos os pacientes</option>
+  </select>
+
+  <!-- Filtros -->
+  <div class="filter-tabs">
+    <button class="filter-tab active" onclick="setFiltro('todos',this)">Todos</button>
+    <button class="filter-tab" onclick="setFiltro('sem-desfecho',this)">Sem desfecho</button>
+    <button class="filter-tab" onclick="setFiltro('resolvido',this)">Resolvidos</button>
+    <button class="filter-tab" onclick="setFiltro('parcial',this)">Parciais</button>
+    <button class="filter-tab" onclick="setFiltro('nao-resolvido',this)">Não resolv.</button>
+  </div>
+
+  <div id="lista-prms"></div>
+</main>
+
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+
+<script src="js/db.js"></script>
+<script src="js/utils.js"></script>
+<script>
+
+let _pacs = [];
+let _todosPRMs = [];   // { pid, pacNome, idx, prm }
+let _filtro = 'todos';
+
+async function init() {
+  _pacs = await dbGetAll('pacientes');
+  const sel = document.getElementById('sel-pac');
+  sel.innerHTML = '<option value="">Todos os pacientes</option>' +
+    _pacs.map(p=>`<option value="${p.id}">${esc(p.nome||'Paciente '+p.id)}</option>`).join('');
+
+  const pid = getActivePacienteId();
+  if (pid) sel.value = pid;
+
+  await carregarTodosPRMs();
+  renderKPI();
+  renderPRMs();
+}
+
+async function carregarTodosPRMs() {
+  _todosPRMs = [];
+  for (const p of _pacs) {
+    const plano = (await dbGetConfig('plano_cuidados_' + p.id)) || {};
+    const prms  = plano.problemas || [];
+    prms.forEach((prm, idx) => {
+      _todosPRMs.push({ pid: p.id, pacNome: p.nome||'Paciente '+p.id, idx, prm });
+    });
+  }
+}
+
+function renderKPI() {
+  const tot  = _todosPRMs.length;
+  const res  = _todosPRMs.filter(x=>x.prm.desfecho==='resolvido').length;
+  const par  = _todosPRMs.filter(x=>x.prm.desfecho==='parcial').length;
+  const nao  = _todosPRMs.filter(x=>x.prm.desfecho==='nao-resolvido').length;
+  const sem  = tot - res - par - nao - _todosPRMs.filter(x=>x.prm.desfecho==='transferido').length;
+
+  document.getElementById('kpi-row').innerHTML = `
+    <div class="kpi"><div class="kpi-n" style="color:#1e3a5f">${tot}</div><div class="kpi-l">Total PRMs</div></div>
+    <div class="kpi"><div class="kpi-n" style="color:#16a34a">${res}</div><div class="kpi-l">Resolvidos</div></div>
+    <div class="kpi"><div class="kpi-n" style="color:#d97706">${par}</div><div class="kpi-l">Parciais</div></div>
+    <div class="kpi"><div class="kpi-n" style="color:#dc2626">${nao}</div><div class="kpi-l">Não Resolv.</div></div>`;
+
+  const bar = document.getElementById('desfecho-bar');
+  if (!tot) { bar.innerHTML='<div style="flex:1;background:#f1f5f9"></div>'; return; }
+  bar.innerHTML = [
+    res  ? `<div class="db-seg" style="width:${res/tot*100}%;background:#16a34a">${Math.round(res/tot*100)}%</div>` : '',
+    par  ? `<div class="db-seg" style="width:${par/tot*100}%;background:#d97706">${Math.round(par/tot*100)}%</div>` : '',
+    nao  ? `<div class="db-seg" style="width:${nao/tot*100}%;background:#dc2626">${Math.round(nao/tot*100)}%</div>` : '',
+    sem  ? `<div class="db-seg" style="width:${sem/tot*100}%;background:#e2e8f0"></div>` : '',
+  ].join('');
+}
+
+function renderPRMs() {
+  const pid = parseInt(document.getElementById('sel-pac').value) || null;
+  let lista = pid ? _todosPRMs.filter(x=>x.pid===pid) : _todosPRMs;
+
+  if (_filtro === 'sem-desfecho')  lista = lista.filter(x=>!x.prm.desfecho);
+  if (_filtro === 'resolvido')     lista = lista.filter(x=>x.prm.desfecho==='resolvido');
+  if (_filtro === 'parcial')       lista = lista.filter(x=>x.prm.desfecho==='parcial');
+  if (_filtro === 'nao-resolvido') lista = lista.filter(x=>x.prm.desfecho==='nao-resolvido');
+
+  const el = document.getElementById('lista-prms');
+  if (!lista.length) {
+    el.innerHTML = `<div class="empty">Nenhum PRM ${_filtro==='sem-desfecho'?'aguardando desfecho':_filtro==='todos'?'cadastrado':'com este desfecho'}.<br>${_filtro==='todos'?'Registre PRMs em <a href="plano-cuidados.html" style="color:#1e3a5f;font-weight:700">Plano de Cuidados</a>.':''}</div>`;
+    return;
+  }
+
+  const DCLS = { resolvido:'resolvido', parcial:'parcial', 'nao-resolvido':'nao-resolvido', transferido:'transferido' };
+  const BADGE = {
+    resolvido: '<span class="badge b-res">Resolvido</span>',
+    parcial: '<span class="badge b-par">Parcialmente resolvido</span>',
+    'nao-resolvido': '<span class="badge b-nao">Não resolvido</span>',
+    transferido: '<span class="badge b-tra">Transferido/Óbito</span>',
+  };
+
+  el.innerHTML = lista.map((x, i) => {
+    const p  = x.prm;
+    const ds = p.desfecho || '';
+    const uid = `prm_${x.pid}_${x.idx}`;
+    return `<div class="prm-card ${DCLS[ds]||'sem-desfecho'}" id="card-${uid}">
+      <div class="prm-header">
+        <div class="prm-num">PRM ${x.idx+1}</div>
+        <div>
+          <div class="prm-desc">${esc(p.problema||'Problema não descrito')}</div>
+          <div class="prm-pac">👤 ${esc(x.pacNome)}</div>
+          <div class="prm-cat">${esc(p.categoria||'')}${p.data?' · '+p.data:''}</div>
+        </div>
+        <div>${BADGE[ds]||'<span class="badge b-sem">Sem desfecho</span>'}</div>
+      </div>
+
+      ${p.desfechoEvidencia?`<div style="background:#f0f9ff;border-radius:8px;padding:7px 10px;font-size:.74rem;color:#0369a1;margin-bottom:8px">📊 Evidência: ${esc(p.desfechoEvidencia)}</div>`:''}
+      ${p.desfechoObs?`<div style="background:#f8fafc;border-radius:8px;padding:7px 10px;font-size:.74rem;color:#374151;margin-bottom:8px">📋 ${esc(p.desfechoObs)}</div>`:''}
+
+      <div class="desfecho-sel" id="dsel-${uid}">
+        <button class="ds-btn ${ds==='resolvido'?'ativo-res':''}"    onclick="setDesfecho('${uid}','resolvido')">✅ Resolvido</button>
+        <button class="ds-btn ${ds==='parcial'?'ativo-par':''}"      onclick="setDesfecho('${uid}','parcial')">🔶 Parcial</button>
+        <button class="ds-btn ${ds==='nao-resolvido'?'ativo-nao':''}" onclick="setDesfecho('${uid}','nao-resolvido')">❌ Não resolv.</button>
+        <button class="ds-btn ${ds==='transferido'?'ativo-tra':''}"  onclick="setDesfecho('${uid}','transferido')">↗ Transf./Óbito</button>
+      </div>
+
+      <div>
+        <label>Data do desfecho</label>
+        <input type="date" id="data-${uid}" value="${p.desfechoData||hoje()}">
+
+        <label>Evidência clínica (parâmetro + valor)</label>
+        <div class="evidencia-row">
+          <input type="text" id="evid-${uid}" value="${p.desfechoEvidencia||''}" placeholder="Ex: PA 128/82 mmHg, HbA1c 6,8%, LDL 82 mg/dL...">
+        </div>
+
+        <label>Observação / justificativa</label>
+        <textarea id="obs-${uid}" rows="2" placeholder="Descreva o desfecho, o que levou à resolução ou ao não desfecho...">${p.desfechoObs||''}</textarea>
+
+        <button class="btn-salvar" onclick="salvarDesfecho('${x.pid}','${x.idx}','${uid}')">Salvar desfecho</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function setDesfecho(uid, valor) {
+  const btns = document.querySelectorAll(`#dsel-${uid} .ds-btn`);
+  btns.forEach(b=>b.className='ds-btn');
+  const cls = { resolvido:'ativo-res', parcial:'ativo-par', 'nao-resolvido':'ativo-nao', transferido:'ativo-tra' };
+  event.target.classList.add(cls[valor]||'');
+  event.target.dataset.desfecho = valor;
+
+  // Marca visualmente o card
+  const card = document.getElementById('card-'+uid);
+  card.className = 'prm-card ' + valor;
+  card.dataset.desfecho = valor;
+}
+
+async function salvarDesfecho(pid, idx, uid) {
+  pid = parseInt(pid); idx = parseInt(idx);
+  const card = document.getElementById('card-'+uid);
+  const btns = document.querySelectorAll(`#dsel-${uid} .ds-btn`);
+  let desfecho = '';
+  btns.forEach(b=>{ if(b.classList.contains('ativo-res')) desfecho='resolvido';
+                     if(b.classList.contains('ativo-par')) desfecho='parcial';
+                     if(b.classList.contains('ativo-nao')) desfecho='nao-resolvido';
+                     if(b.classList.contains('ativo-tra')) desfecho='transferido'; });
+
+  const data    = document.getElementById('data-'+uid).value;
+  const evidencia = document.getElementById('evid-'+uid).value.trim();
+  const obs     = document.getElementById('obs-'+uid).value.trim();
+
+  if (!desfecho) { alert('Selecione o desfecho.'); return; }
+
+  const plano = (await dbGetConfig('plano_cuidados_' + pid)) || {};
+  const prms  = plano.problemas || [];
+  if (!prms[idx]) { showToast('PRM não encontrado'); return; }
+
+  prms[idx].desfecho          = desfecho;
+  prms[idx].desfechoData      = data;
+  prms[idx].desfechoEvidencia = evidencia;
+  prms[idx].desfechoObs       = obs;
+  if (desfecho==='resolvido') prms[idx].status = 'resolvido';
+
+  plano.problemas = prms;
+  await dbSetConfig('plano_cuidados_' + pid, plano);
+
+  // Atualiza memória local
+  const item = _todosPRMs.find(x=>x.pid===pid&&x.idx===idx);
+  if (item) {
+    item.prm.desfecho = desfecho;
+    item.prm.desfechoData = data;
+    item.prm.desfechoEvidencia = evidencia;
+    item.prm.desfechoObs = obs;
+  }
+  renderKPI();
+  showToast('✅ Desfecho salvo');
+}
+
+function setFiltro(f, btn) {
+  _filtro = f;
+  document.querySelectorAll('.filter-tab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderPRMs();
+}
+
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') }
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>

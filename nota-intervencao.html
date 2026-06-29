@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>Nota de Intervenção — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .topbar { display:flex;align-items:center;gap:10px;padding:12px 16px;background:#1e3a5f;position:sticky;top:0;z-index:100 }
+    .back-btn { background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:8px;padding:6px 11px;cursor:pointer;font-size:1rem }
+    .topbar-title { font-size:.93rem;font-weight:800;color:#fff;flex:1 }
+    .btn-top { background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:8px;padding:7px 11px;font-size:.72rem;font-weight:700;cursor:pointer;margin-left:4px }
+
+    main { max-width:600px;margin:0 auto;padding:12px 14px 90px }
+
+    .card { background:#fff;border-radius:14px;padding:16px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.07) }
+    .card-title { font-size:.65rem;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px }
+
+    label { font-size:.72rem;font-weight:700;color:#475569;display:block;margin-bottom:4px;margin-top:10px }
+    label:first-child { margin-top:0 }
+    input, select, textarea { width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:9px;padding:9px 11px;font-size:.84rem;color:#1e293b;background:#fff;font-family:inherit }
+    textarea { resize:vertical }
+    input:focus, select:focus, textarea:focus { outline:none;border-color:#1e3a5f }
+
+    .btn-gerar { width:100%;background:#1e3a5f;color:#fff;border:none;border-radius:12px;padding:14px;font-size:.9rem;font-weight:700;cursor:pointer;margin-top:6px }
+    .btn-gerar:hover { background:#16305a }
+
+    /* Nota gerada */
+    #nota-wrap { display:none }
+    .nota-doc { background:#fff;border:1.5px solid #e2e8f0;border-radius:14px;overflow:hidden }
+    .nota-topo { background:#1e3a5f;color:#fff;padding:18px 20px 14px }
+    .nota-titulo { font-size:1rem;font-weight:900;letter-spacing:.02em }
+    .nota-subtit { font-size:.72rem;opacity:.8;margin-top:3px }
+    .nota-corpo  { padding:18px 20px }
+    .nota-linha  { border-top:1.5px solid #e2e8f0;margin:14px 0 }
+    .nota-sec    { font-size:.65rem;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px }
+    .nota-texto  { font-size:.84rem;color:#1e293b;line-height:1.7;white-space:pre-wrap }
+    .nota-campo  { font-size:.83rem;color:#374151;margin-bottom:4px }
+    .nota-campo strong { color:#1e293b }
+
+    /* Resposta do prescritor */
+    .resp-box { background:#f8fafc;border:1.5px dashed #cbd5e1;border-radius:10px;padding:14px;margin-top:14px }
+    .resp-titulo { font-size:.72rem;font-weight:800;color:#475569;margin-bottom:8px }
+    .resp-row { display:flex;gap:8px;margin-bottom:8px }
+    .resp-btn { flex:1;padding:9px;border-radius:9px;font-size:.78rem;font-weight:700;cursor:pointer;border:1.5px solid #e2e8f0;background:#fff;color:#475569 }
+    .resp-btn.ativo-sim  { background:#dcfce7;border-color:#16a34a;color:#166534 }
+    .resp-btn.ativo-nao  { background:#fee2e2;border-color:#dc2626;color:#991b1b }
+    .resp-btn.ativo-pend { background:#fef3c7;border-color:#d97706;color:#92400e }
+
+    .nota-assinatura { display:flex;gap:20px;margin-top:20px }
+    .assin-bloco { flex:1;border-top:1.5px solid #1e293b;padding-top:6px;font-size:.7rem;color:#475569;text-align:center }
+
+    .hist-item { background:#f8fafc;border-radius:10px;padding:10px 12px;margin-bottom:6px;cursor:pointer }
+    .hist-item:hover { background:#f1f5f9 }
+    .hist-pac  { font-size:.82rem;font-weight:700;color:#1e293b }
+    .hist-det  { font-size:.7rem;color:#64748b;margin-top:2px }
+
+    .badge { display:inline-block;padding:2px 9px;border-radius:999px;font-size:.63rem;font-weight:700 }
+    .b-ok  { background:#dcfce7;color:#16a34a }
+    .b-warn{ background:#fef3c7;color:#92400e }
+    .b-bad { background:#fee2e2;color:#dc2626 }
+
+    .alert-box { background:#fef3c7;border:1.5px solid #fcd34d;border-radius:10px;padding:10px 12px;font-size:.75rem;color:#92400e;margin-bottom:10px;display:none }
+
+    @media print {
+      .topbar,.no-print,nav,#form-section,#hist-section { display:none!important }
+      #nota-wrap { display:block!important }
+      body { background:#fff }
+      main { padding:0;max-width:none }
+      .nota-doc { border:none;border-radius:0 }
+      .resp-box { border-style:solid }
+    }
+  </style>
+</head>
+<body>
+
+<div class="topbar no-print">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <div style="flex:1">
+    <div class="topbar-title">📝 Nota de Intervenção</div>
+  </div>
+  <button class="btn-top" id="btn-imprimir" style="display:none" onclick="window.print()">🖨️</button>
+  <button class="btn-top" id="btn-wpp" style="display:none" onclick="compartilharWpp()">📲</button>
+  <button class="btn-top" id="btn-nova" style="display:none" onclick="novaNota()">+ Nova</button>
+</div>
+
+<main>
+  <!-- Formulário -->
+  <div id="form-section">
+    <div class="card">
+      <div class="card-title">Dados da Intervenção</div>
+
+      <label>Paciente</label>
+      <select id="sel-pac" onchange="carregarPaciente()"><option value="">Selecione...</option></select>
+
+      <label>Destinatário (Dr./Dra.)</label>
+      <input type="text" id="inp-dest" placeholder="Nome do médico / equipe (opcional)">
+
+      <label>Local / Serviço</label>
+      <input type="text" id="inp-local" placeholder="Ex: UBS Vila Nova, Ambulatório de Cardiologia...">
+
+      <label>Tipo de PRM / Intervenção</label>
+      <select id="sel-tipo">
+        <option value="Necessidade de medicamento não tratado">Necessidade de medicamento não tratado (P1)</option>
+        <option value="Medicamento desnecessário">Medicamento desnecessário (P1)</option>
+        <option value="Medicamento mais efetivo disponível">Medicamento mais efetivo disponível (P1)</option>
+        <option value="Dose subterapêutica">Dose subterapêutica (P2)</option>
+        <option value="Dose supraterapêutica / tóxica">Dose supraterapêutica / tóxica (P2)</option>
+        <option value="Reação adversa a medicamento (RAM)">Reação adversa a medicamento / RAM (P3)</option>
+        <option value="Interação medicamentosa clinicamente relevante">Interação medicamentosa clinicamente relevante (P3)</option>
+        <option value="Critério de Beers — medicamento potencialmente inapropriado">Critério de Beers — medicamento inapropriado (P1)</option>
+        <option value="Contraindicação identificada">Contraindicação identificada (P1)</option>
+        <option value="Problema de adesão terapêutica">Problema de adesão terapêutica (P4)</option>
+        <option value="Custo / acesso ao medicamento">Custo / acesso ao medicamento (P5)</option>
+        <option value="Outro">Outro</option>
+      </select>
+
+      <label>Medicamento(s) envolvido(s)</label>
+      <input type="text" id="inp-med" placeholder="Ex: Metformina 850mg, Digoxina 0,25mg...">
+
+      <label>Fundamentação clínica</label>
+      <textarea id="inp-fund" rows="4" placeholder="Descreva a base clínica/farmacológica da intervenção. O sistema pode sugerir automaticamente ao selecionar o paciente."></textarea>
+
+      <div id="alert-sugestao" class="alert-box">
+        💡 <strong>Alertas automáticos detectados:</strong> <span id="txt-sugestao"></span>
+      </div>
+
+      <label>Proposta de conduta</label>
+      <textarea id="inp-conduta" rows="3" placeholder="Ex: Substituir por metformina 500mg com escalonamento gradual. Monitorar TFGe em 30 dias."></textarea>
+
+      <label>Prioridade</label>
+      <select id="sel-prior">
+        <option value="Alta — requer atenção imediata">🔴 Alta — requer atenção imediata</option>
+        <option value="Moderada — avaliar em consulta próxima" selected>🟡 Moderada — avaliar em consulta próxima</option>
+        <option value="Baixa — informativa">🟢 Baixa — informativa</option>
+      </select>
+
+      <button class="btn-gerar" onclick="gerarNota()">Gerar Nota de Intervenção →</button>
+    </div>
+
+    <!-- Histórico -->
+    <div id="hist-section" class="card" style="display:none">
+      <div class="card-title">Notas Anteriores</div>
+      <div id="hist-lista"></div>
+    </div>
+  </div>
+
+  <!-- Nota gerada -->
+  <div id="nota-wrap">
+    <div class="nota-doc">
+      <div class="nota-topo">
+        <div class="nota-titulo">NOTA DE INTERVENÇÃO FARMACÊUTICA</div>
+        <div class="nota-subtit" id="nota-subtit"></div>
+      </div>
+      <div class="nota-corpo">
+        <div id="nota-conteudo"></div>
+        <div class="nota-linha"></div>
+        <div class="nota-assinatura">
+          <div class="assin-bloco" id="assin-farm">Farmacêutico(a) Responsável</div>
+          <div class="assin-bloco">Prescritor(a) / Equipe</div>
+        </div>
+
+        <!-- Resposta do prescritor -->
+        <div class="resp-box no-print">
+          <div class="resp-titulo">Registrar resposta do prescritor</div>
+          <div class="resp-row">
+            <button class="resp-btn" id="rbtn-sim"  onclick="setResposta('sim')">✓ Aceita</button>
+            <button class="resp-btn" id="rbtn-nao"  onclick="setResposta('nao')">✗ Não aceita</button>
+            <button class="resp-btn" id="rbtn-pend" onclick="setResposta('pendente')">⏳ Pendente</button>
+          </div>
+          <textarea id="inp-resp-obs" placeholder="Justificativa / observação do prescritor (opcional)" rows="2" style="margin-bottom:8px"></textarea>
+          <button onclick="salvarResposta()" style="background:#1e3a5f;color:#fff;border:none;border-radius:9px;padding:9px 18px;font-size:.8rem;font-weight:700;cursor:pointer;width:100%">Salvar resposta</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<nav class="bottom-nav no-print">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+
+<script src="js/db.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/interacoes.js"></script>
+<script src="js/beers.js"></script>
+<script src="js/contraindicacoes.js"></script>
+
+<script>
+let _pacs = [], _farmCfg = {}, _notaAtual = null, _respostaAtual = 'pendente';
+let _activePid = null;
+
+async function init() {
+  _pacs = await dbGetAll('pacientes');
+  _farmCfg = (await dbGetConfig('farmaceutico_cfg')) || {};
+
+  const sel = document.getElementById('sel-pac');
+  sel.innerHTML = '<option value="">Selecione...</option>' +
+    _pacs.map(p=>`<option value="${p.id}">${esc(p.nome||'Paciente '+p.id)}</option>`).join('');
+
+  const pid = getActivePacienteId();
+  if (pid) { sel.value = pid; await carregarPaciente(); }
+
+  await renderHistorico();
+}
+
+async function carregarPaciente() {
+  const pid = parseInt(document.getElementById('sel-pac').value);
+  if (!pid) return;
+  _activePid = pid;
+
+  const hj = hoje();
+  const [pac, allMeds] = await Promise.all([dbGet('pacientes', pid), dbGetByIndex('medicamentos','pacienteId',pid)]);
+  const meds = allMeds.filter(m=>m.ativo!==false&&(!m.dataFim||m.dataFim>=hj));
+
+  const sugestoes = [];
+
+  // DDI graves
+  if (typeof gerarAlertas==='function') {
+    const alertas = gerarAlertas(meds).filter(a=>a.nivel==='grave');
+    alertas.slice(0,3).forEach(a => sugestoes.push(`DDI GRAVE: ${a.par||a.msg}`));
+  }
+
+  // Beers
+  if (typeof buscarBeers==='function' && (parseInt(pac?.idadePac)||0)>=65) {
+    meds.forEach(m=>{
+      const b = buscarBeers(m.nome);
+      if (b) sugestoes.push(`Beers: ${m.nome} — ${b.motivo||b.risco||'medicamento potencialmente inapropriado'}`);
+    });
+  }
+
+  if (sugestoes.length) {
+    document.getElementById('txt-sugestao').textContent = sugestoes.join(' | ');
+    document.getElementById('alert-sugestao').style.display = 'block';
+    if (!document.getElementById('inp-fund').value) {
+      document.getElementById('inp-fund').value = sugestoes.join('\n');
+    }
+  } else {
+    document.getElementById('alert-sugestao').style.display = 'none';
+  }
+
+  if (meds.length && !document.getElementById('inp-med').value) {
+    document.getElementById('inp-med').value = meds.slice(0,3).map(m=>m.nome+(m.dosagem?' '+m.dosagem:'')).join(', ');
+  }
+}
+
+function gerarNota() {
+  const pid = parseInt(document.getElementById('sel-pac').value);
+  if (!pid) { alert('Selecione o paciente.'); return; }
+  const pac = _pacs.find(p=>p.id===pid);
+  const dest   = document.getElementById('inp-dest').value.trim();
+  const local  = document.getElementById('inp-local').value.trim();
+  const tipo   = document.getElementById('sel-tipo').value;
+  const med    = document.getElementById('inp-med').value.trim();
+  const fund   = document.getElementById('inp-fund').value.trim();
+  const conduta= document.getElementById('inp-conduta').value.trim();
+  const prior  = document.getElementById('sel-prior').value;
+  const dtHoje = new Date().toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'});
+  const numNota= 'NI-' + Date.now().toString().slice(-6);
+
+  _notaAtual = { pid, numNota, dtHoje, pacNome:pac?.nome, dest, local, tipo, med, fund, conduta, prior, resposta:'pendente', respostaObs:'', geradaEm: hoje() };
+
+  // Render
+  document.getElementById('nota-subtit').textContent = `Nº ${numNota}  ·  ${dtHoje}  ·  Prioridade: ${prior.split('—')[0].trim()}`;
+
+  const farmInfo = _farmCfg.nome ? `${_farmCfg.nome}${_farmCfg.crf?' — CRF: '+_farmCfg.crf:''}` : 'Farmacêutico(a)';
+  document.getElementById('assin-farm').textContent = farmInfo;
+
+  document.getElementById('nota-conteudo').innerHTML = `
+    <div class="nota-sec">Destinatário</div>
+    <div class="nota-campo">${dest?`<strong>Dr(a). ${esc(dest)}</strong>`:'<em style="color:#94a3b8">Equipe multiprofissional</em>'}</div>
+    ${local?`<div class="nota-campo" style="color:#64748b">${esc(local)}</div>`:''}
+    <div class="nota-linha"></div>
+
+    <div class="nota-sec">Identificação do Paciente</div>
+    <div class="nota-campo"><strong>${esc(pac?.nome||'—')}</strong>${pac?.idadePac?` · ${pac.idadePac} anos`:''} ${pac?.sexoPac==='F'?'· Fem':pac?.sexoPac==='M'?'· Masc':''}</div>
+    ${(pac?.condicoes||[]).length?`<div class="nota-campo" style="color:#64748b">Condições: ${pac.condicoes.join(', ')}</div>`:''}
+    <div class="nota-linha"></div>
+
+    <div class="nota-sec">Tipo de Problema / Intervenção</div>
+    <div class="nota-campo"><strong>${esc(tipo)}</strong></div>
+    ${med?`<div class="nota-campo">Medicamento(s): <strong>${esc(med)}</strong></div>`:''}
+    <div class="nota-linha"></div>
+
+    <div class="nota-sec">Fundamentação Clínica e Farmacológica</div>
+    <div class="nota-texto">${esc(fund||'—')}</div>
+    <div class="nota-linha"></div>
+
+    <div class="nota-sec">Proposta de Conduta</div>
+    <div class="nota-texto">${esc(conduta||'—')}</div>
+    <div class="nota-linha"></div>
+
+    <div class="nota-sec">Prioridade</div>
+    <div class="nota-campo"><strong>${esc(prior)}</strong></div>
+    <div style="margin-top:6px;font-size:.72rem;color:#64748b">
+      Em caso de dúvidas ou para comunicar a conduta adotada, entre em contato com o serviço de Farmácia Clínica.
+    </div>
+  `;
+
+  setResposta('pendente');
+
+  document.getElementById('form-section').style.display = 'none';
+  document.getElementById('nota-wrap').style.display = 'block';
+  document.getElementById('btn-imprimir').style.display = '';
+  document.getElementById('btn-wpp').style.display = '';
+  document.getElementById('btn-nova').style.display = '';
+
+  salvarNota();
+}
+
+async function salvarNota() {
+  if (!_notaAtual) return;
+  const pid = _notaAtual.pid;
+  const hist = (await dbGetConfig('nota_int_' + pid)) || [];
+  const idx = hist.findIndex(n=>n.numNota===_notaAtual.numNota);
+  if (idx>=0) hist[idx]=_notaAtual; else hist.push(_notaAtual);
+  await dbSetConfig('nota_int_' + pid, hist);
+  showToast('Nota salva');
+}
+
+function setResposta(r) {
+  _respostaAtual = r;
+  document.getElementById('rbtn-sim').className  = 'resp-btn' + (r==='sim'?' ativo-sim':'');
+  document.getElementById('rbtn-nao').className  = 'resp-btn' + (r==='nao'?' ativo-nao':'');
+  document.getElementById('rbtn-pend').className = 'resp-btn' + (r==='pendente'?' ativo-pend':'');
+}
+
+async function salvarResposta() {
+  if (!_notaAtual) return;
+  _notaAtual.resposta    = _respostaAtual;
+  _notaAtual.respostaObs = document.getElementById('inp-resp-obs').value.trim();
+  await salvarNota();
+  showToast(_respostaAtual==='sim'?'✅ Aceita salva':_respostaAtual==='nao'?'❌ Recusa salva':'⏳ Pendente salvo');
+}
+
+async function renderHistorico() {
+  const todas = [];
+  for (const p of _pacs) {
+    const lista = (await dbGetConfig('nota_int_' + p.id)) || [];
+    lista.forEach(n=>todas.push({...n, pacNome:p.nome}));
+  }
+  todas.sort((a,b)=>(b.geradaEm||'')>(a.geradaEm||'')?1:-1);
+  if (!todas.length) { document.getElementById('hist-section').style.display='none'; return; }
+  document.getElementById('hist-section').style.display = 'block';
+  const RCLS = { sim:'b-ok', nao:'b-bad', pendente:'b-warn' };
+  const RLBL = { sim:'Aceita', nao:'Recusada', pendente:'Pendente' };
+  document.getElementById('hist-lista').innerHTML = todas.slice(0,10).map(n=>`
+    <div class="hist-item" onclick="carregarNotaSalva(${n.pid},'${n.numNota}')">
+      <div class="hist-pac">${esc(n.pacNome||'?')} <span class="badge ${RCLS[n.resposta]||'b-warn'}">${RLBL[n.resposta]||'Pendente'}</span></div>
+      <div class="hist-det">${esc(n.tipo||'')} · ${n.geradaEm||''} · ${n.numNota||''}</div>
+    </div>`).join('');
+}
+
+async function carregarNotaSalva(pid, numNota) {
+  const hist = (await dbGetConfig('nota_int_' + pid)) || [];
+  const nota = hist.find(n=>n.numNota===numNota);
+  if (!nota) return;
+  document.getElementById('sel-pac').value = nota.pid;
+  document.getElementById('inp-dest').value = nota.dest||'';
+  document.getElementById('inp-local').value = nota.local||'';
+  document.getElementById('sel-tipo').value = nota.tipo||'';
+  document.getElementById('inp-med').value = nota.med||'';
+  document.getElementById('inp-fund').value = nota.fund||'';
+  document.getElementById('inp-conduta').value = nota.conduta||'';
+  document.getElementById('sel-prior').value = nota.prior||'';
+  _notaAtual = nota;
+  gerarNota();
+  if (nota.resposta) setResposta(nota.resposta);
+  if (nota.respostaObs) document.getElementById('inp-resp-obs').value = nota.respostaObs;
+}
+
+function novaNota() {
+  document.getElementById('form-section').style.display = '';
+  document.getElementById('nota-wrap').style.display = 'none';
+  document.getElementById('btn-imprimir').style.display = 'none';
+  document.getElementById('btn-wpp').style.display = 'none';
+  document.getElementById('btn-nova').style.display = 'none';
+  _notaAtual = null;
+}
+
+function compartilharWpp() {
+  if (!_notaAtual) return;
+  const t = `*NOTA DE INTERVENÇÃO FARMACÊUTICA*\nNº ${_notaAtual.numNota} — ${_notaAtual.dtHoje}\n\n*Paciente:* ${_notaAtual.pacNome||'—'}\n*Para:* ${_notaAtual.dest||'Equipe'}\n\n*Problema:* ${_notaAtual.tipo}\n*Medicamento:* ${_notaAtual.med||'—'}\n\n*Fundamentação:*\n${_notaAtual.fund||'—'}\n\n*Conduta sugerida:*\n${_notaAtual.conduta||'—'}\n\n*Prioridade:* ${_notaAtual.prior||'—'}`;
+  if (navigator.share) navigator.share({ title:'Nota de Intervenção', text:t });
+  else window.open('https://wa.me/?text='+encodeURIComponent(t),'_blank');
+}
+
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') }
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
