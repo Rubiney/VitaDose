@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>Prescrição Farmacêutica — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .topbar{display:flex;align-items:center;gap:10px;padding:12px 16px;background:#0c4a6e;position:sticky;top:0;z-index:100}
+    .back-btn{background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:8px;padding:6px 11px;cursor:pointer;font-size:1rem}
+    .topbar-title{font-size:.93rem;font-weight:800;color:#fff;flex:1}
+    .topbar-sub{font-size:.62rem;color:rgba(255,255,255,.7);margin-top:1px}
+    .btn-top{background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:8px;padding:7px 11px;font-size:.72rem;font-weight:700;cursor:pointer;margin-left:4px}
+    main{max-width:660px;margin:0 auto;padding:12px 14px 90px}
+    .pac-sel{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:12px;padding:11px 14px;font-size:.88rem;margin-bottom:10px;background:#fff}
+
+    /* Abas */
+    .tabs{display:flex;gap:0;background:#f1f5f9;border-radius:12px;padding:3px;margin-bottom:12px}
+    .tab{flex:1;padding:8px;border-radius:9px;font-size:.74rem;font-weight:700;cursor:pointer;text-align:center;color:#64748b;transition:.15s}
+    .tab.ativa{background:#fff;color:#0c4a6e;box-shadow:0 1px 4px rgba(0,0,0,.1)}
+
+    /* Config farmacêutico */
+    .config-card{background:#fff;border-radius:14px;padding:14px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.07)}
+    .config-title{font-size:.75rem;font-weight:800;color:#0c4a6e;margin-bottom:10px}
+    .field-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:6px}
+    @media(max-width:400px){.field-row{grid-template-columns:1fr}}
+    .field-lbl{font-size:.68rem;font-weight:700;color:#475569;margin-bottom:3px}
+    .field-inp{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:8px;padding:8px 10px;font-size:.82rem}
+    .field-inp:focus{outline:none;border-color:#0ea5e9}
+
+    /* Receita */
+    .rx-header{background:#fff;border-radius:14px;padding:14px;margin-bottom:8px;box-shadow:0 1px 4px rgba(0,0,0,.07)}
+    .rx-sec-title{font-size:.73rem;font-weight:800;color:#0c4a6e;margin-bottom:8px;text-transform:uppercase}
+    .pac-info{font-size:.78rem;color:#1e293b;line-height:1.7;background:#f8fafc;border-radius:8px;padding:10px 12px;border:1px solid #e2e8f0}
+    .pac-info b{color:#0c4a6e}
+
+    /* Produto */
+    .produto-card{background:#fff;border-radius:12px;padding:13px;margin-bottom:8px;box-shadow:0 1px 4px rgba(0,0,0,.07);border-left:4px solid #0ea5e9;position:relative}
+    .prod-n{position:absolute;top:10px;right:10px;font-size:.65rem;font-weight:800;color:#94a3b8}
+    .rm-btn{background:#fee2e2;border:none;color:#dc2626;border-radius:6px;padding:4px 8px;font-size:.65rem;font-weight:700;cursor:pointer;margin-left:8px}
+    .add-prod-btn{width:100%;padding:12px;background:#f0f9ff;border:2px dashed #7dd3fc;border-radius:12px;font-size:.78rem;font-weight:700;color:#0369a1;cursor:pointer;margin-bottom:8px;transition:.15s}
+    .add-prod-btn:hover{background:#e0f2fe;border-color:#38bdf8}
+    .tipo-pills{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px}
+    .tipo-pill{padding:4px 10px;border-radius:20px;font-size:.65rem;font-weight:700;cursor:pointer;border:1.5px solid #e2e8f0;background:#f8fafc;color:#475569}
+    .tipo-pill.ativo{background:#e0f2fe;border-color:#38bdf8;color:#0369a1}
+
+    /* Seção observações */
+    .obs-card{background:#fff;border-radius:14px;padding:14px;margin-bottom:8px;box-shadow:0 1px 4px rgba(0,0,0,.07)}
+
+    /* ── IMPRESSÃO ── */
+    @media print {
+      .topbar,.tabs,.pac-sel,.btn-top,nav,.config-card,.add-prod-btn,.rm-btn,.tipo-pills,.obs-card button{display:none!important}
+      body{background:#fff;font-family:Arial,sans-serif}
+      main{padding:0;max-width:100%}
+      #conteudo-nova, #conteudo-hist{display:block!important}
+      .rx-print{display:block!important}
+      .produto-card{border:1px solid #ccc;border-left:3px solid #0c4a6e;margin-bottom:6px;break-inside:avoid}
+      .prod-n{position:static}
+    }
+    .rx-print{display:none}
+    @media print {
+      .rx-print-header{text-align:center;border-bottom:2px solid #0c4a6e;padding-bottom:8px;margin-bottom:12px}
+      .rx-print-header .inst{font-size:1rem;font-weight:900;color:#0c4a6e}
+      .rx-print-header .farm{font-size:.8rem;color:#334155}
+      .rx-print-header .crf{font-size:.72rem;color:#64748b}
+      .rx-print-footer{margin-top:20px;border-top:1px solid #e2e8f0;padding-top:8px;font-size:.68rem;color:#64748b;text-align:center}
+    }
+
+    /* Histórico */
+    .hist-lista{display:flex;flex-direction:column;gap:8px}
+    .hist-item{background:#fff;border-radius:12px;padding:12px 14px;box-shadow:0 1px 4px rgba(0,0,0,.07);display:flex;align-items:center;gap:10px}
+    .hist-data{font-size:.67rem;font-weight:700;color:#94a3b8;min-width:65px}
+    .hist-pac{font-size:.8rem;font-weight:700;color:#1e293b;flex:1}
+    .hist-n{font-size:.7rem;color:#64748b}
+    .hist-btn{background:#e0f2fe;border:none;color:#0369a1;border-radius:7px;padding:5px 10px;font-size:.67rem;font-weight:700;cursor:pointer}
+    .empty{text-align:center;padding:30px;color:#94a3b8;font-size:.8rem}
+    .legal-box{background:#f0f9ff;border:1.5px solid #7dd3fc;border-radius:10px;padding:10px 12px;font-size:.72rem;color:#0c4a6e;line-height:1.8;margin-top:10px}
+  </style>
+</head>
+<body>
+<div class="topbar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <div style="flex:1">
+    <div class="topbar-title">📋 Prescrição Farmacêutica</div>
+    <div class="topbar-sub">CFF Resolução 586/2013 — Prescrição autoral do farmacêutico</div>
+  </div>
+  <button class="btn-top" id="btn-salvar" onclick="salvar()">💾</button>
+  <button class="btn-top" onclick="window.print()">🖨️</button>
+</div>
+<main>
+  <select class="pac-sel" id="sel-pac" onchange="carregarPaciente()"><option value="">Selecione o paciente...</option></select>
+  <div class="tabs">
+    <div class="tab ativa" id="tab-nova" onclick="abaAtiva('nova')">📝 Nova Prescrição</div>
+    <div class="tab" id="tab-config" onclick="abaAtiva('config')">⚙️ Meus Dados</div>
+    <div class="tab" id="tab-hist" onclick="abaAtiva('hist')">📋 Histórico</div>
+  </div>
+
+  <!-- ABA NOVA -->
+  <div id="conteudo-nova">
+    <div class="rx-header" id="pac-header">
+      <div class="rx-sec-title">Dados do Paciente</div>
+      <div class="pac-info" id="pac-info-txt">Selecione um paciente acima.</div>
+    </div>
+
+    <!-- Tipo -->
+    <div class="rx-header" style="padding-bottom:10px">
+      <div class="rx-sec-title">Tipo de Produto</div>
+      <div class="tipo-pills">
+        ${['MIP (Isento de Prescrição)','Fitoterápico (ANVISA)','Suplemento Alimentar','Manipulado / Composto','Produto para Saúde','Cosmético Terapêutico'].map(t=>`<div class="tipo-pill" onclick="selTipo(this,'${esc(t)}')">${esc(t)}</div>`).join('')}
+      </div>
+      <input class="field-inp" id="tipo-sel" readonly placeholder="Clique no tipo acima..." style="background:#f8fafc">
+    </div>
+
+    <!-- Produtos -->
+    <div id="produtos-lista"></div>
+    <button class="add-prod-btn" onclick="addProduto()">➕ Adicionar produto</button>
+
+    <!-- Indicação e observações -->
+    <div class="obs-card">
+      <div class="rx-sec-title">Informações complementares</div>
+      <div class="field-row">
+        <div>
+          <div class="field-lbl">Indicação / Motivo da prescrição</div>
+          <input class="field-inp" id="indicacao" placeholder="Ex: Rinite alérgica, suplementação vitamínica...">
+        </div>
+        <div>
+          <div class="field-lbl">Cidade e data</div>
+          <input class="field-inp" id="cidade-data" value="${cidadeHoje()}">
+        </div>
+      </div>
+      <div class="field-lbl" style="margin-top:6px">Orientações ao paciente</div>
+      <textarea class="field-inp" id="orientacoes" style="height:70px;resize:vertical" placeholder="Instruções especiais, cuidados, quando retornar..."></textarea>
+    </div>
+
+    <!-- Preview da prescrição -->
+    <div id="rx-preview" style="background:#fff;border-radius:14px;padding:16px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.07);display:none">
+      <div class="rx-sec-title" style="color:#0c4a6e">Prévia da Prescrição</div>
+      <div id="rx-preview-inner"></div>
+    </div>
+
+    <div class="legal-box">
+      <strong>Prescrição Farmacêutica — Resolução CFF 586/2013</strong><br>
+      O farmacêutico pode prescrever: medicamentos isentos de prescrição (MIPs), fitoterápicos com registro ANVISA, suplementos alimentares, produtos para saúde e cosméticos terapêuticos.<br>
+      Esta ferramenta é para fins de registro e organização clínica — a prescrição física impressa deve ser assinada manualmente com carimbo e CRF.
+    </div>
+  </div>
+
+  <!-- ABA CONFIG -->
+  <div id="conteudo-config" style="display:none">
+    <div class="config-card">
+      <div class="config-title">⚙️ Dados do Farmacêutico</div>
+      <div class="field-row">
+        <div><div class="field-lbl">Nome completo</div><input class="field-inp" id="cfg-nome" placeholder="Dr(a). Nome Sobrenome"></div>
+        <div><div class="field-lbl">CRF / UF</div><input class="field-inp" id="cfg-crf" placeholder="CRF-SP 00000"></div>
+      </div>
+      <div class="field-row">
+        <div><div class="field-lbl">Instituição / Farmácia</div><input class="field-inp" id="cfg-inst" placeholder="Farmácia / Hospital / UBS"></div>
+        <div><div class="field-lbl">Cidade — UF</div><input class="field-inp" id="cfg-cidade" placeholder="São Paulo — SP"></div>
+      </div>
+      <div class="field-row">
+        <div><div class="field-lbl">Telefone</div><input class="field-inp" id="cfg-tel" placeholder="(11) 9 9999-9999"></div>
+        <div><div class="field-lbl">E-mail profissional</div><input class="field-inp" id="cfg-email" placeholder="farmaceutico@email.com"></div>
+      </div>
+      <button style="width:100%;padding:11px;background:#0c4a6e;color:#fff;border:none;border-radius:10px;font-size:.82rem;font-weight:700;cursor:pointer;margin-top:8px" onclick="salvarConfig()">💾 Salvar meus dados</button>
+    </div>
+  </div>
+
+  <!-- ABA HIST -->
+  <div id="conteudo-hist" style="display:none">
+    <div id="hist-lista-div"><div class="empty">Nenhuma prescrição salva ainda.</div></div>
+  </div>
+</main>
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+<script src="js/db.js"></script>
+<script src="js/utils.js"></script>
+<script>
+let _pid=null, _pac=null, _produtos=[], _cfg={}, _tipoSel='';
+let _numRx=null;
+
+function cidadeHoje(){
+  return new Date().toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'});
+}
+
+function abaAtiva(aba){
+  ['nova','config','hist'].forEach(a=>{
+    document.getElementById('conteudo-'+a).style.display=a===aba?'block':'none';
+    document.getElementById('tab-'+a).classList.toggle('ativa',a===aba);
+  });
+  if(aba==='config') carregarConfig();
+  if(aba==='hist') carregarHistorico();
+  document.getElementById('btn-salvar').style.display=aba==='nova'?'':'none';
+}
+
+async function carregarPaciente(){
+  _pid=parseInt(document.getElementById('sel-pac').value)||null;
+  if(!_pid){document.getElementById('pac-info-txt').textContent='Selecione um paciente acima.';_pac=null;return;}
+  _pac=await dbGet('pacientes',_pid);
+  const idade=_pac?.dataNascimento?calcIdade(_pac.dataNascimento):'';
+  const txt=_pac?`<b>Nome:</b> ${esc(_pac.nome||'')} &nbsp;·&nbsp; <b>Idade:</b> ${idade} anos &nbsp;·&nbsp; <b>CPF:</b> ${esc(_pac.cpf||'—')}<br>
+    <b>Endereço:</b> ${esc(_pac.endereco||'—')}`:'Dados não encontrados';
+  document.getElementById('pac-info-txt').innerHTML=txt;
+  atualizarPreview();
+}
+
+function calcIdade(dn){
+  const n=new Date(dn),h=new Date();
+  let a=h.getFullYear()-n.getFullYear();
+  if(h.getMonth()<n.getMonth()||(h.getMonth()===n.getMonth()&&h.getDate()<n.getDate())) a--;
+  return a;
+}
+
+function selTipo(btn,tipo){
+  _tipoSel=tipo;
+  document.querySelectorAll('.tipo-pill').forEach(b=>b.classList.remove('ativo'));
+  btn.classList.add('ativo');
+  document.getElementById('tipo-sel').value=tipo;
+}
+
+let _prodCont=0;
+function addProduto(){
+  _prodCont++;
+  const idx=_prodCont;
+  const div=document.createElement('div');
+  div.className='produto-card';
+  div.id='prod-'+idx;
+  div.innerHTML=`<span class="prod-n">Produto ${idx}</span>
+    <button class="rm-btn" onclick="rmProduto(${idx})">✕ Remover</button>
+    <div class="field-row" style="margin-top:4px">
+      <div><div class="field-lbl">Nome do produto</div><input class="field-inp" id="p${idx}-nome" placeholder="Ex: Dipirona 500mg — EMS" oninput="atualizarPreview()"></div>
+      <div><div class="field-lbl">Concentração / Forma</div><input class="field-inp" id="p${idx}-conc" placeholder="Ex: 500mg comprimido" oninput="atualizarPreview()"></div>
+    </div>
+    <div class="field-row">
+      <div><div class="field-lbl">Posologia</div><input class="field-inp" id="p${idx}-pos" placeholder="Ex: 1 comprimido a cada 8 horas" oninput="atualizarPreview()"></div>
+      <div><div class="field-lbl">Duração</div><input class="field-inp" id="p${idx}-dur" placeholder="Ex: por 5 dias" oninput="atualizarPreview()"></div>
+    </div>
+    <div><div class="field-lbl">Instruções especiais</div><input class="field-inp" id="p${idx}-inst" placeholder="Ex: Tomar com alimento, evitar álcool..." oninput="atualizarPreview()"></div>`;
+  document.getElementById('produtos-lista').appendChild(div);
+  _produtos.push(idx);
+  atualizarPreview();
+}
+
+function rmProduto(idx){
+  document.getElementById('prod-'+idx)?.remove();
+  _produtos=_produtos.filter(i=>i!==idx);
+  atualizarPreview();
+}
+
+function coletarProdutos(){
+  return _produtos.map(i=>({
+    nome:document.getElementById('p'+i+'-nome')?.value||'',
+    conc:document.getElementById('p'+i+'-conc')?.value||'',
+    pos:document.getElementById('p'+i+'-pos')?.value||'',
+    dur:document.getElementById('p'+i+'-dur')?.value||'',
+    inst:document.getElementById('p'+i+'-inst')?.value||'',
+  })).filter(p=>p.nome);
+}
+
+function atualizarPreview(){
+  const prods=coletarProdutos();
+  const prev=document.getElementById('rx-preview');
+  if(!prods.length){prev.style.display='none';return;}
+  prev.style.display='block';
+  const ind=document.getElementById('indicacao')?.value||'';
+  const ori=document.getElementById('orientacoes')?.value||'';
+  const cd=document.getElementById('cidade-data')?.value||'';
+  let html=`<div style="font-size:.75rem;color:#64748b;margin-bottom:6px">Indicação: ${esc(ind)||'—'}</div>`;
+  prods.forEach((p,i)=>{
+    html+=`<div style="border-left:3px solid #0ea5e9;padding:6px 10px;margin-bottom:6px;background:#f0f9ff;border-radius:0 8px 8px 0">
+      <div style="font-size:.8rem;font-weight:800;color:#0c4a6e">${i+1}. ${esc(p.nome)} ${esc(p.conc)}</div>
+      <div style="font-size:.73rem;color:#334155">${esc(p.pos)} ${esc(p.dur)}</div>
+      ${p.inst?`<div style="font-size:.68rem;color:#64748b;font-style:italic">${esc(p.inst)}</div>`:''}
+    </div>`;
+  });
+  if(ori) html+=`<div style="font-size:.73rem;color:#334155;margin-top:4px"><b>Orientações:</b> ${esc(ori)}</div>`;
+  html+=`<div style="font-size:.68rem;color:#94a3b8;margin-top:6px;text-align:right">${esc(cd)}</div>`;
+  document.getElementById('rx-preview-inner').innerHTML=html;
+}
+
+async function carregarConfig(){
+  _cfg=await dbGetConfig('farm_cfg')||{};
+  ['nome','crf','inst','cidade','tel','email'].forEach(k=>{
+    const el=document.getElementById('cfg-'+k);
+    if(el) el.value=_cfg[k]||'';
+  });
+}
+
+async function salvarConfig(){
+  _cfg={
+    nome:document.getElementById('cfg-nome').value,
+    crf:document.getElementById('cfg-crf').value,
+    inst:document.getElementById('cfg-inst').value,
+    cidade:document.getElementById('cfg-cidade').value,
+    tel:document.getElementById('cfg-tel').value,
+    email:document.getElementById('cfg-email').value,
+  };
+  await dbSetConfig('farm_cfg',_cfg);
+  showToast('✅ Dados salvos');
+}
+
+async function salvar(){
+  if(!_pid){showToast('Selecione um paciente');return;}
+  const prods=coletarProdutos();
+  if(!prods.length){showToast('Adicione ao menos um produto');return;}
+  _cfg=await dbGetConfig('farm_cfg')||{};
+  const rx={
+    pid:_pid,
+    pacNome:_pac?.nome||'Paciente',
+    tipo:_tipoSel||document.getElementById('tipo-sel').value,
+    produtos:prods,
+    indicacao:document.getElementById('indicacao').value,
+    orientacoes:document.getElementById('orientacoes').value,
+    cidadeData:document.getElementById('cidade-data').value,
+    farmaceutico:_cfg,
+    data:hoje(),
+    numero:'RXF-'+Date.now().toString(36).toUpperCase(),
+  };
+  const hist=await dbGetConfig('rx_farm_hist')||[];
+  hist.push(rx);
+  await dbSetConfig('rx_farm_hist',rx.numero); // ponteiro último
+  await dbSetConfig('rx_farm_'+rx.numero,rx);
+  await dbSetConfig('rx_farm_hist_all',hist);
+  showToast('✅ Prescrição '+rx.numero+' salva');
+  _numRx=rx.numero;
+}
+
+async function carregarHistorico(){
+  const hist=await dbGetConfig('rx_farm_hist_all')||[];
+  const el=document.getElementById('hist-lista-div');
+  if(!hist.length){el.innerHTML='<div class="empty">Nenhuma prescrição salva ainda.<br>Crie uma na aba "Nova Prescrição".</div>';return;}
+  el.innerHTML=`<div class="hist-lista">
+    ${hist.slice().reverse().map(rx=>`
+      <div class="hist-item">
+        <div class="hist-data">${(rx.data||'').split('-').reverse().join('/')}</div>
+        <div style="flex:1">
+          <div class="hist-pac">${esc(rx.pacNome||'Paciente')}</div>
+          <div class="hist-n">${rx.numero} · ${rx.produtos?.length||0} produto(s)</div>
+        </div>
+        <button class="hist-btn" onclick="verRx('${rx.numero}')">Ver</button>
+      </div>`).join('')}
+  </div>`;
+}
+
+async function verRx(num){
+  const rx=await dbGetConfig('rx_farm_'+num);
+  if(!rx){showToast('Prescrição não encontrada');return;}
+  const farm=rx.farmaceutico||{};
+  let html=`<div style="max-width:520px;margin:0 auto;background:#fff;border-radius:14px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,.12)">
+    <div style="text-align:center;border-bottom:2px solid #0c4a6e;padding-bottom:10px;margin-bottom:14px">
+      <div style="font-size:.95rem;font-weight:900;color:#0c4a6e">${esc(farm.inst||'VitaDose')}</div>
+      <div style="font-size:.75rem;color:#334155">${esc(farm.nome||'Farmacêutico')} · ${esc(farm.crf||'CRF')}</div>
+    </div>
+    <div style="font-size:.73rem;color:#64748b;margin-bottom:8px"><b>Nº:</b> ${rx.numero} · <b>Data:</b> ${(rx.data||'').split('-').reverse().join('/')} · <b>Tipo:</b> ${esc(rx.tipo||'—')}</div>
+    <div style="font-size:.73rem;background:#f8fafc;border-radius:8px;padding:8px 10px;margin-bottom:10px">
+      <b>Paciente:</b> ${esc(rx.pacNome||'—')}<br>
+      <b>Indicação:</b> ${esc(rx.indicacao||'—')}
+    </div>`;
+  (rx.produtos||[]).forEach((p,i)=>{
+    html+=`<div style="border-left:3px solid #0ea5e9;padding:8px 12px;margin-bottom:8px;background:#f0f9ff;border-radius:0 8px 8px 0">
+      <div style="font-size:.82rem;font-weight:800;color:#0c4a6e">${i+1}. ${esc(p.nome)} ${esc(p.conc)}</div>
+      <div style="font-size:.74rem">${esc(p.pos)} ${esc(p.dur)}</div>
+      ${p.inst?`<div style="font-size:.68rem;color:#64748b;font-style:italic">${esc(p.inst)}</div>`:''}
+    </div>`;
+  });
+  if(rx.orientacoes) html+=`<div style="font-size:.73rem;background:#fefce8;border:1px solid #fde047;border-radius:8px;padding:8px 10px;margin-bottom:8px"><b>Orientações:</b> ${esc(rx.orientacoes)}</div>`;
+  html+=`<div style="margin-top:14px;border-top:1px solid #e2e8f0;padding-top:10px;font-size:.68rem;color:#94a3b8;text-align:center">
+    ${esc(rx.cidadeData||'')} · ${esc(farm.tel||'')} · ${esc(farm.email||'')}<br>
+    Prescrição farmacêutica conforme CFF Res. 586/2013
+  </div></div>`;
+  const pop=document.createElement('div');
+  pop.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:999;padding:16px;overflow:auto;display:flex;align-items:center;justify-content:center';
+  pop.innerHTML=html+`<button onclick="this.parentElement.remove()" style="position:fixed;top:16px;right:16px;background:#fff;border:none;border-radius:8px;padding:8px 12px;font-size:.8rem;font-weight:700;cursor:pointer;z-index:1000">✕ Fechar</button>`;
+  document.body.appendChild(pop);
+}
+
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+
+document.addEventListener('DOMContentLoaded',async()=>{
+  const pacs=await dbGetAll('pacientes');
+  const sel=document.getElementById('sel-pac');
+  sel.innerHTML='<option value="">Selecione o paciente...</option>'+pacs.map(p=>`<option value="${p.id}">${esc(p.nome||'Paciente '+p.id)}</option>`).join('');
+  const pid=getActivePacienteId();
+  if(pid){sel.value=pid;await carregarPaciente();}
+  await carregarConfig();
+  addProduto();
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>PSQI — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .topbar{display:flex;align-items:center;gap:10px;padding:12px 16px;background:#1e1b4b;position:sticky;top:0;z-index:100}
+    .back-btn{background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:8px;padding:6px 11px;cursor:pointer;font-size:1rem}
+    .topbar-title{font-size:.93rem;font-weight:800;color:#fff;flex:1}
+    .topbar-sub{font-size:.62rem;color:rgba(255,255,255,.7);margin-top:1px}
+    .btn-top{background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:8px;padding:7px 11px;font-size:.72rem;font-weight:700;cursor:pointer;margin-left:4px}
+    main{max-width:620px;margin:0 auto;padding:12px 14px 90px}
+    .pac-sel{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:12px;padding:11px 14px;font-size:.88rem;margin-bottom:10px;background:#fff}
+
+    /* Score hero */
+    .score-hero{border-radius:16px;padding:16px 20px;color:#fff;text-align:center;margin-bottom:12px}
+    .sh-n{font-size:3.4rem;font-weight:900;line-height:1}
+    .sh-max{font-size:1rem;opacity:.7}
+    .sh-nivel{font-size:1rem;font-weight:800;margin-top:4px}
+    .sh-sub{font-size:.7rem;opacity:.8;margin-top:3px}
+    .sh-prog{height:8px;background:rgba(255,255,255,.2);border-radius:6px;margin-top:12px;overflow:hidden}
+    .sh-fill{height:100%;border-radius:6px;background:#fff;transition:width .4s}
+
+    /* Componentes */
+    .comp-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-bottom:10px}
+    @media(min-width:480px){.comp-grid{grid-template-columns:repeat(7,1fr)}}
+    .comp-mini{background:#fff;border-radius:9px;padding:8px 5px;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,.07);border-top:3px solid #e2e8f0}
+    .comp-val{font-size:1.1rem;font-weight:900;color:#1e293b}
+    .comp-lbl{font-size:.5rem;font-weight:700;color:#64748b;text-transform:uppercase;margin-top:1px;line-height:1.3}
+
+    /* Secão */
+    .sec-card{background:#fff;border-radius:14px;padding:14px 16px;margin-bottom:8px;box-shadow:0 1px 4px rgba(0,0,0,.07);border-left:4px solid}
+    .sec-title{font-size:.8rem;font-weight:800;margin-bottom:2px}
+    .sec-comp{font-size:.62rem;color:#94a3b8;margin-bottom:10px}
+    .q-txt{font-size:.8rem;color:#1e293b;font-weight:500;line-height:1.4;margin-bottom:8px}
+    .q-sub{font-size:.68rem;color:#64748b;font-style:italic;margin-bottom:6px}
+    .opts{display:flex;flex-direction:column;gap:5px}
+    .opt{border:1.5px solid #e2e8f0;border-radius:9px;padding:8px 12px;font-size:.78rem;cursor:pointer;background:#f8fafc;font-weight:500;color:#334155;display:flex;align-items:center;gap:8px;transition:.12s}
+    .opt.sel{background:#eef2ff;border-color:#818cf8;color:#1e1b4b;font-weight:700}
+    .opt-pts{font-size:.63rem;color:#94a3b8;margin-left:auto}
+    .opt.sel .opt-pts{color:#6366f1}
+    .inp-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px}
+    .inp-row label{font-size:.73rem;font-weight:700;color:#475569;min-width:90px}
+    .inp-time{border:1.5px solid #e2e8f0;border-radius:8px;padding:7px 10px;font-size:.9rem;width:120px}
+    .inp-num{border:1.5px solid #e2e8f0;border-radius:8px;padding:7px 10px;font-size:.9rem;width:80px}
+
+    /* Perturbações grid */
+    .perturb-list{display:flex;flex-direction:column;gap:8px}
+    .perturb-item{background:#f8fafc;border-radius:10px;padding:10px 12px;border:1px solid #e2e8f0}
+    .perturb-nome{font-size:.76rem;font-weight:600;color:#1e293b;margin-bottom:6px}
+    .perturb-btns{display:flex;gap:5px}
+    .perturb-btn{flex:1;padding:5px 3px;border-radius:7px;border:1.5px solid #e2e8f0;font-size:.63rem;font-weight:700;cursor:pointer;background:#fff;text-align:center;transition:.12s}
+    .perturb-btn.sel{background:#eef2ff;border-color:#818cf8;color:#1e1b4b}
+
+    /* Correlações */
+    .corr-box{background:#eef2ff;border:1.5px solid #c7d2fe;border-radius:10px;padding:10px 12px;font-size:.73rem;color:#1e1b4b;line-height:1.7;margin-top:10px}
+
+    /* Histórico */
+    .hist-card{background:#fff;border-radius:14px;padding:14px;margin-top:10px;box-shadow:0 1px 4px rgba(0,0,0,.07)}
+    .hist-title{font-size:.65rem;font-weight:800;color:#94a3b8;text-transform:uppercase;margin-bottom:10px}
+    svg.grafico{display:block;width:100%;overflow:visible}
+    .ref-box{background:#eef2ff;border:1.5px solid #c7d2fe;border-radius:10px;padding:10px 12px;font-size:.72rem;color:#1e1b4b;line-height:1.8;margin-top:8px}
+    @media print{.topbar,.pac-sel,.btn-top,nav,.opts,.perturb-btns{display:none!important}body{background:#fff}main{padding:0}}
+  </style>
+</head>
+<body>
+<div class="topbar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <div style="flex:1">
+    <div class="topbar-title">😴 PSQI — Qualidade do Sono</div>
+    <div class="topbar-sub">Pittsburgh Sleep Quality Index • Buysse, 1989</div>
+  </div>
+  <button class="btn-top" onclick="salvar()">💾</button>
+  <button class="btn-top" onclick="window.print()">🖨️</button>
+</div>
+<main>
+  <select class="pac-sel" id="sel-pac" onchange="init()"><option value="">Selecione o paciente...</option></select>
+  <div id="conteudo"></div>
+</main>
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+<script src="js/db.js"></script>
+<script src="js/utils.js"></script>
+<script>
+// Perturbações do sono — Q5b a Q5j
+const PERTURB = [
+  {id:'5b', nome:'Acordou no meio da noite ou de manhã cedo'},
+  {id:'5c', nome:'Precisou levantar para ir ao banheiro'},
+  {id:'5d', nome:'Não conseguiu respirar confortavelmente'},
+  {id:'5e', nome:'Tossiu ou roncou muito forte'},
+  {id:'5f', nome:'Sentiu muito frio'},
+  {id:'5g', nome:'Sentiu muito calor'},
+  {id:'5h', nome:'Teve pesadelos'},
+  {id:'5i', nome:'Teve dores'},
+  {id:'5j', nome:'Outro motivo (dificuldade em dormir)'},
+];
+const FREQ_OPTS = ['Nenhuma vez no último mês','Menos de 1 vez por semana','1–2 vezes por semana','3 ou mais vezes por semana'];
+
+let _r={}, _pid=null;
+
+// ── Cálculo dos 7 componentes ────────────────────────────────────────
+function compScore(){
+  // C1 — Qualidade subjetiva
+  const c1 = _r.q6 != null ? _r.q6 : null;
+
+  // C2 — Latência (Q2 + Q5a)
+  let q2s=null;
+  if(_r.q2!=null){const m=parseInt(_r.q2)||0;q2s=m<=15?0:m<=30?1:m<=60?2:3;}
+  const q5a=_r['5a']!=null?_r['5a']:null;
+  let c2=null;
+  if(q2s!=null&&q5a!=null){const s=q2s+q5a;c2=s===0?0:s<=2?1:s<=4?2:3;}
+  else if(q2s!=null) c2=q2s;
+
+  // C3 — Duração
+  let c3=null;
+  if(_r.q4!=null){const h=parseFloat(_r.q4)||0;c3=h>7?0:h>=6?1:h>=5?2:3;}
+
+  // C4 — Eficiência
+  let c4=null;
+  if(_r.q1&&_r.q3&&_r.q4){
+    const [dh,dm]=(_r.q1||'22:00').split(':').map(Number);
+    const [wh,wm]=(_r.q3||'07:00').split(':').map(Number);
+    let inBed=(wh*60+wm)-(dh*60+dm);
+    if(inBed<=0) inBed+=1440;
+    const eff=inBed>0?(parseFloat(_r.q4)*60/inBed)*100:0;
+    c4=eff>=85?0:eff>=75?1:eff>=65?2:3;
+  }
+
+  // C5 — Perturbações (Q5b–Q5j)
+  const pVals=PERTURB.map(p=>_r[p.id]!=null?_r[p.id]:null);
+  const pDef=pVals.filter(v=>v!=null);
+  let c5=null;
+  if(pDef.length===PERTURB.length){const s=pDef.reduce((a,b)=>a+b,0);c5=s===0?0:s<=9?1:s<=18?2:3;}
+
+  // C6 — Medicação
+  const c6 = _r.q7 != null ? _r.q7 : null;
+
+  // C7 — Disfunção diurna
+  let c7=null;
+  if(_r.q8!=null&&_r.q9!=null){const s=_r.q8+_r.q9;c7=s===0?0:s<=2?1:s<=4?2:3;}
+
+  const total=[c1,c2,c3,c4,c5,c6,c7].reduce((a,v)=>a+(v!=null?v:0),0);
+  return {c1,c2,c3,c4,c5,c6,c7,total,respondidos:[c1,c2,c3,c4,c5,c6,c7].filter(v=>v!=null).length};
+}
+
+function nivel(t){
+  if(t<=5) return ['Qualidade de sono boa','#16a34a','linear-gradient(135deg,#064e3b,#10b981)'];
+  if(t<=10) return ['Qualidade de sono ruim','#f97316','linear-gradient(135deg,#78350f,#f97316)'];
+  return ['Distúrbio do sono grave','#dc2626','linear-gradient(135deg,#450a0a,#dc2626)'];
+}
+
+function render(){
+  const {c1,c2,c3,c4,c5,c6,c7,total,respondidos}=compScore();
+  const [niv,,grad]=nivel(total);
+
+  const compNomes=['C1 Qualidade','C2 Latência','C3 Duração','C4 Eficiência','C5 Perturb.','C6 Medicação','C7 Diurna'];
+  const compVals=[c1,c2,c3,c4,c5,c6,c7];
+
+  let html=`
+  <div class="score-hero" style="background:${grad}">
+    <div class="sh-n">${total}<span class="sh-max">/21</span></div>
+    <div class="sh-nivel">${niv}</div>
+    <div class="sh-sub">${respondidos}/7 componentes · Cutoff: &gt;5 = sono ruim</div>
+    <div class="sh-prog"><div class="sh-fill" style="width:${total/21*100}%"></div></div>
+  </div>
+  <div class="comp-grid">
+    ${compNomes.map((n,i)=>`<div class="comp-mini" style="border-top-color:${compVals[i]!=null?(compVals[i]===0?'#22c55e':compVals[i]===1?'#fbbf24':compVals[i]===2?'#f97316':'#dc2626'):'#e2e8f0'}">
+      <div class="comp-val" style="color:${compVals[i]!=null?'#1e1b4b':'#cbd5e1'}">${compVals[i]!=null?compVals[i]:'–'}</div>
+      <div class="comp-lbl">${n}</div>
+    </div>`).join('')}
+  </div>
+  <div id="corr-div"></div>
+
+  <!-- C1 Qualidade subjetiva -->
+  <div class="sec-card" style="border-left-color:#6366f1">
+    <div class="sec-title" style="color:#1e1b4b">C1 — Qualidade Subjetiva do Sono</div>
+    <div class="sec-comp">Componente 1 · 0–3 pts</div>
+    <div class="q-txt">Durante o último mês, como você avaliaria a qualidade geral do seu sono?</div>
+    <div class="opts">
+      ${['Muito boa','Boa','Ruim','Muito ruim'].map((o,v)=>`<div class="opt ${_r.q6===v?'sel':''}" onclick="setR('q6',${v},this)">${esc(o)}<span class="opt-pts">${v} pt${v!==1?'s':''}</span></div>`).join('')}
+    </div>
+  </div>
+
+  <!-- C2 Latência -->
+  <div class="sec-card" style="border-left-color:#8b5cf6">
+    <div class="sec-title" style="color:#1e1b4b">C2 — Latência do Sono</div>
+    <div class="sec-comp">Componente 2 · combina Q2 + Q5a</div>
+    <div class="inp-row">
+      <label>Horário de deitar:</label>
+      <input type="time" class="inp-time" id="q1-inp" value="${_r.q1||'22:00'}" onchange="setField('q1',this.value)">
+    </div>
+    <div class="inp-row">
+      <label>Minutos para dormir:</label>
+      <input type="number" class="inp-num" id="q2-inp" value="${_r.q2||''}" placeholder="min" min="0" onchange="setField('q2',this.value)">
+    </div>
+    <div class="q-txt" style="margin-top:8px">Durante o último mês, com que frequência você teve dificuldade de dormir porque não conseguiu adormecer em 30 minutos?</div>
+    <div class="opts">
+      ${FREQ_OPTS.map((o,v)=>`<div class="opt ${_r['5a']===v?'sel':''}" onclick="setPerturb('5a',${v},this)">${esc(o)}<span class="opt-pts">${v} pt${v!==1?'s':''}</span></div>`).join('')}
+    </div>
+  </div>
+
+  <!-- C3 Duração -->
+  <div class="sec-card" style="border-left-color:#0ea5e9">
+    <div class="sec-title" style="color:#1e1b4b">C3 — Duração do Sono</div>
+    <div class="sec-comp">Componente 3 · Q3 + Q4</div>
+    <div class="inp-row">
+      <label>Horário de acordar:</label>
+      <input type="time" class="inp-time" id="q3-inp" value="${_r.q3||'07:00'}" onchange="setField('q3',this.value)">
+    </div>
+    <div class="inp-row">
+      <label>Horas de sono:</label>
+      <input type="number" class="inp-num" id="q4-inp" value="${_r.q4||''}" placeholder="horas" min="0" max="24" step="0.5" onchange="setField('q4',this.value)">
+      <span style="font-size:.73rem;color:#64748b">&gt;7h: 0pt · 6–7h: 1pt · 5–6h: 2pts · &lt;5h: 3pts</span>
+    </div>
+    ${_r.q1&&_r.q3&&_r.q4?`<div style="font-size:.73rem;color:#6366f1;font-weight:700;margin-top:4px">Eficiência calculada (C4): ${calcEfic()}%</div>`:''}
+  </div>
+
+  <!-- C5 Perturbações -->
+  <div class="sec-card" style="border-left-color:#10b981">
+    <div class="sec-title" style="color:#1e1b4b">C5 — Perturbações do Sono</div>
+    <div class="sec-comp">Componente 5 · Q5b–Q5j</div>
+    <div class="q-sub">Durante o último mês, com que frequência você teve dificuldade para dormir por causa de...</div>
+    <div class="perturb-list">
+      ${PERTURB.map(p=>`<div class="perturb-item">
+        <div class="perturb-nome">${esc(p.nome)}</div>
+        <div class="perturb-btns">
+          ${FREQ_OPTS.map((o,v)=>`<div class="perturb-btn ${_r[p.id]===v?'sel':''}" onclick="setPerturb('${p.id}',${v},this)">${v===0?'Nunca':v===1?'<1×/sem':v===2?'1–2×/sem':'≥3×/sem'}</div>`).join('')}
+        </div>
+      </div>`).join('')}
+    </div>
+  </div>
+
+  <!-- C6 Medicação -->
+  <div class="sec-card" style="border-left-color:#f97316">
+    <div class="sec-title" style="color:#1e1b4b">C6 — Uso de Medicação para Dormir</div>
+    <div class="sec-comp">Componente 6 · Q7</div>
+    <div class="q-txt">Durante o último mês, com que frequência você tomou medicamento (prescrito ou por conta própria) para ajudar a dormir?</div>
+    <div class="opts">
+      ${FREQ_OPTS.map((o,v)=>`<div class="opt ${_r.q7===v?'sel':''}" onclick="setR('q7',${v},this)">${esc(o)}<span class="opt-pts">${v} pt${v!==1?'s':''}</span></div>`).join('')}
+    </div>
+  </div>
+
+  <!-- C7 Disfunção diurna -->
+  <div class="sec-card" style="border-left-color:#e11d48">
+    <div class="sec-title" style="color:#1e1b4b">C7 — Disfunção Diurna</div>
+    <div class="sec-comp">Componente 7 · Q8 + Q9</div>
+    <div class="q-txt">Durante o último mês, com que frequência você teve dificuldade em ficar acordado enquanto dirigia, comia ou participava de atividades sociais?</div>
+    <div class="opts" style="margin-bottom:10px">
+      ${FREQ_OPTS.map((o,v)=>`<div class="opt ${_r.q8===v?'sel':''}" onclick="setR('q8',${v},this)">${esc(o)}<span class="opt-pts">${v} pt${v!==1?'s':''}</span></div>`).join('')}
+    </div>
+    <div class="q-txt">Durante o último mês, quão problemático foi para você manter o entusiasmo para realizar suas atividades?</div>
+    <div class="opts">
+      ${['Nenhum problema','Problema muito pequeno','Problema razoável','Problema muito grande'].map((o,v)=>`<div class="opt ${_r.q9===v?'sel':''}" onclick="setR('q9',${v},this)">${esc(o)}<span class="opt-pts">${v} pt${v!==1?'s':''}</span></div>`).join('')}
+    </div>
+  </div>
+
+  <div id="hist-div"></div>
+  <div class="ref-box">
+    <strong>Interpretação PSQI:</strong> 0–5: Qualidade boa · 6–10: Qualidade ruim · &gt;10: Distúrbio grave<br>
+    Cutoff &gt;5: sensibilidade 89,6% / especificidade 86,5% para distinguir "bons" vs "maus" dormidores.<br><br>
+    Buysse DJ et al. <em>Psychiatry Res</em>. 1989;28(2):193-213 (original)<br>
+    Bertolazi AN et al. <em>Sleep</em>. 2011;34(10):1379-86 (validação brasileira)
+  </div>`;
+
+  document.getElementById('conteudo').innerHTML=html;
+  carregarCorr();
+  carregarHistorico();
+}
+
+function calcEfic(){
+  if(!_r.q1||!_r.q3||!_r.q4) return '--';
+  const [dh,dm]=(_r.q1||'22:00').split(':').map(Number);
+  const [wh,wm]=(_r.q3||'07:00').split(':').map(Number);
+  let inBed=(wh*60+wm)-(dh*60+dm);
+  if(inBed<=0) inBed+=1440;
+  return inBed>0?Math.round((parseFloat(_r.q4)*60/inBed)*100):'--';
+}
+
+function setR(key,val,btn){
+  _r[key]=val;
+  btn.closest('.opts').querySelectorAll('.opt').forEach(b=>{b.classList.remove('sel');});
+  btn.classList.add('sel');
+  atualizarHero();
+}
+function setPerturb(key,val,btn){
+  _r[key]=val;
+  btn.closest('.perturb-btns,.opts').querySelectorAll('.perturb-btn,.opt').forEach(b=>{b.classList.remove('sel');});
+  btn.classList.add('sel');
+  atualizarHero();
+}
+function setField(key,val){
+  _r[key]=val;
+  atualizarHero();
+}
+function atualizarHero(){
+  const {total,respondidos}=compScore(); const [niv,,grad]=nivel(total);
+  const h=document.querySelector('.score-hero');
+  if(!h)return;
+  h.style.background=grad;
+  h.querySelector('.sh-n').innerHTML=total+'<span class="sh-max">/21</span>';
+  h.querySelector('.sh-nivel').textContent=niv;
+  h.querySelector('.sh-sub').textContent=respondidos+'/7 componentes · Cutoff: >5 = sono ruim';
+  h.querySelector('.sh-fill').style.width=(total/21*100)+'%';
+  // Componentes
+  const {c1,c2,c3,c4,c5,c6,c7}=compScore();
+  const vals=[c1,c2,c3,c4,c5,c6,c7];
+  document.querySelectorAll('.comp-mini').forEach((el,i)=>{
+    const v=vals[i];
+    const cor=v!=null?(v===0?'#22c55e':v===1?'#fbbf24':v===2?'#f97316':'#dc2626'):'#e2e8f0';
+    el.style.borderTopColor=cor;
+    el.querySelector('.comp-val').textContent=v!=null?v:'–';
+    el.querySelector('.comp-val').style.color=v!=null?'#1e1b4b':'#cbd5e1';
+  });
+}
+
+async function carregarCorr(){
+  if(!_pid)return;
+  const [mmas,phq]=await Promise.all([dbGetConfig('mmas8_hist_'+_pid),dbGetConfig('phq9gad7_hist_'+_pid)]);
+  const {total}=compScore();
+  if(!mmas?.length&&!phq) return;
+  let msg='';
+  if(mmas?.length&&total>5) msg+='PSQI >5 + aderência reduzida (MMAS-8): pacientes com sono ruim têm 2× mais chance de não adesão (Norell-Clarke et al.). ';
+  if(phq&&total>5) msg+='PSQI >5 + PHQ-9: insônia é sintoma nuclear da depressão — avaliar se o distúrbio do sono é causa ou consequência. ';
+  if(!msg) return;
+  document.getElementById('corr-div').innerHTML=`<div class="corr-box">🔗 <strong>Correlações clínicas:</strong><br>${msg}</div>`;
+}
+
+async function carregarHistorico(){
+  if(!_pid)return;
+  const hist=await dbGetConfig('psqi_hist_'+_pid)||[];
+  const el=document.getElementById('hist-div');
+  if(!hist.length){el.innerHTML='';return;}
+  const W=500,H=90,px=30,py=10;
+  const sx=i=>px+(W-2*px)*i/(Math.max(hist.length-1,1));
+  const sy=v=>py+(H-2*py)*(1-v/21);
+  const pts=hist.map((h,i)=>`${sx(i)},${sy(h.total)}`).join(' ');
+  const fill=`${sx(0)},${H-py} ${pts} ${sx(hist.length-1)},${H-py}`;
+  el.innerHTML=`<div class="hist-card"><div class="hist-title">Evolução PSQI</div>
+    <svg class="grafico" viewBox="0 0 ${W} ${H}">
+      <polygon points="${fill}" fill="#6366f1" opacity=".1"/>
+      <line x1="${px}" y1="${sy(5)}" x2="${W-px}" y2="${sy(5)}" stroke="#f97316" stroke-width="1" stroke-dasharray="6,3" opacity=".6"/>
+      <text x="${W-px+2}" y="${sy(5)+4}" font-size="9" fill="#f97316">5</text>
+      <polyline points="${pts}" fill="none" stroke="#6366f1" stroke-width="2.5" stroke-linejoin="round"/>
+      ${hist.map((h,i)=>{
+        const x=sx(i),y=sy(h.total);
+        const cor=h.total<=5?'#16a34a':h.total<=10?'#f97316':'#dc2626';
+        return `<circle cx="${x}" cy="${y}" r="5" fill="${cor}" stroke="white" stroke-width="1.5"/>
+                <text x="${x}" y="${y-8}" text-anchor="middle" font-size="10" fill="${cor}" font-weight="800">${h.total}</text>
+                <text x="${x}" y="${H-1}" text-anchor="middle" font-size="8" fill="#94a3b8">${(h.data||'').slice(5).split('-').join('/')}</text>`;
+      }).join('')}
+    </svg>
+  </div>`;
+}
+
+async function init(){
+  _pid=parseInt(document.getElementById('sel-pac').value)||null;
+  if(!_pid){document.getElementById('conteudo').innerHTML='';return;}
+  const saved=await dbGetConfig('psqi_'+_pid)||{};
+  _r=saved.resp||{};
+  render();
+}
+
+async function salvar(){
+  if(!_pid){showToast('Selecione um paciente');return;}
+  const {total,respondidos,c1,c2,c3,c4,c5,c6,c7}=compScore();
+  const [niv]=nivel(total);
+  await dbSetConfig('psqi_'+_pid,{resp:{..._r},total,nivel:niv,componentes:{c1,c2,c3,c4,c5,c6,c7},data:hoje()});
+  const hist=await dbGetConfig('psqi_hist_'+_pid)||[];
+  hist.push({data:hoje(),total,nivel:niv});
+  await dbSetConfig('psqi_hist_'+_pid,hist);
+  showToast('✅ PSQI: '+total+'/21 — '+niv);
+  await carregarHistorico();
+}
+
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+
+document.addEventListener('DOMContentLoaded',async()=>{
+  const pacs=await dbGetAll('pacientes');
+  const sel=document.getElementById('sel-pac');
+  sel.innerHTML='<option value="">Selecione o paciente...</option>'+pacs.map(p=>`<option value="${p.id}">${esc(p.nome||'Paciente '+p.id)}</option>`).join('');
+  const pid=getActivePacienteId();
+  if(pid){sel.value=pid;await init();}
+});
+</script>
+</body>
+</html>
