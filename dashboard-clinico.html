@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>Dashboard Clínico — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    body { background:#f1f5f9 }
+    .topbar { display:flex;align-items:center;gap:10px;padding:12px 16px;background:#1e3a5f;position:sticky;top:0;z-index:100 }
+    .back-btn { background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:8px;padding:6px 11px;cursor:pointer;font-size:1rem }
+    .topbar-title { font-size:.93rem;font-weight:800;color:#fff;flex:1 }
+    .topbar-sub { font-size:.62rem;color:rgba(255,255,255,.7);margin-top:1px }
+
+    main { max-width:560px;margin:0 auto;padding:14px 14px 90px }
+
+    /* Patient header */
+    .pac-header { background:linear-gradient(135deg,#1e3a5f,#0891b2);border-radius:16px;padding:16px;margin-bottom:12px;color:#fff }
+    .pac-nome  { font-size:1.1rem;font-weight:900 }
+    .pac-meta  { font-size:.75rem;opacity:.8;margin-top:3px }
+    .pac-cond  { display:flex;gap:5px;flex-wrap:wrap;margin-top:8px }
+    .pac-cond-tag { background:rgba(255,255,255,.2);border-radius:6px;padding:3px 8px;font-size:.65rem;font-weight:700 }
+
+    /* KPI grid */
+    .kpi-grid { display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:12px }
+    .kpi-card { background:#fff;border-radius:14px;padding:14px;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,.07) }
+    .kpi-num  { font-size:1.8rem;font-weight:900 }
+    .kpi-lbl  { font-size:.65rem;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-top:2px }
+    .kpi-sub  { font-size:.68rem;color:#94a3b8;margin-top:3px }
+
+    /* Seções */
+    .sec-card { background:#fff;border-radius:14px;padding:14px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.07) }
+    .sec-title { font-size:.65rem;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center }
+    .sec-link  { font-size:.68rem;font-weight:700;color:#1e3a5f;text-decoration:none }
+
+    /* Aderência — barras CSS */
+    .adh-bars { display:flex;gap:3px;align-items:flex-end;height:64px }
+    .adh-bar  { flex:1;border-radius:4px 4px 0 0;min-width:8px;transition:height .3s }
+    .adh-tomado { background:#16a34a }
+    .adh-parcial{ background:#d97706 }
+    .adh-zero   { background:#e2e8f0 }
+    .adh-axis { display:flex;justify-content:space-between;font-size:.58rem;color:#94a3b8;margin-top:3px }
+
+    /* Vitais sparkline */
+    .vitals-grid { display:grid;grid-template-columns:1fr 1fr;gap:8px }
+    .vital-mini { background:#f8fafc;border-radius:10px;padding:10px }
+    .vital-label { font-size:.65rem;color:#94a3b8;font-weight:700;text-transform:uppercase }
+    .vital-val { font-size:1.1rem;font-weight:900;margin-top:4px }
+    .vital-val.ok  { color:#16a34a }
+    .vital-val.warn{ color:#d97706 }
+    .vital-val.bad { color:#dc2626 }
+    .vital-sub { font-size:.65rem;color:#94a3b8;margin-top:1px }
+
+    /* PRMs */
+    .prm-row { display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #f1f5f9 }
+    .prm-row:last-child { border-bottom:none }
+    .prm-dot { width:10px;height:10px;border-radius:50%;flex-shrink:0 }
+    .prm-nome { font-size:.82rem;font-weight:600;color:#1e293b;flex:1 }
+    .prm-status { font-size:.68rem;font-weight:700;border-radius:6px;padding:2px 8px }
+    .prm-aberto   { background:#fee2e2;color:#dc2626 }
+    .prm-resolvido{ background:#dcfce7;color:#16a34a }
+    .prm-parcial  { background:#fef3c7;color:#92400e }
+
+    /* Labs */
+    .lab-row { display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #f1f5f9 }
+    .lab-row:last-child { border-bottom:none }
+    .lab-nome { font-size:.8rem;color:#64748b;flex:1 }
+    .lab-val  { font-size:.88rem;font-weight:700 }
+    .lab-dt   { font-size:.65rem;color:#94a3b8 }
+    .lab-ok   { color:#16a34a }
+    .lab-bad  { color:#dc2626 }
+
+    /* Intervenções */
+    .int-row { padding:9px 0;border-bottom:1px solid #f1f5f9 }
+    .int-row:last-child { border-bottom:none }
+    .int-tipo { font-size:.65rem;font-weight:800;color:#1e3a5f;text-transform:uppercase }
+    .int-cond { font-size:.8rem;color:#374151;margin-top:2px }
+    .int-dt   { font-size:.65rem;color:#94a3b8;margin-top:2px }
+    .int-aceita { font-size:.65rem;font-weight:700;border-radius:5px;padding:1px 7px;margin-left:4px }
+    .int-sim  { background:#dcfce7;color:#16a34a }
+    .int-nao  { background:#fee2e2;color:#dc2626 }
+    .int-pend { background:#f1f5f9;color:#64748b }
+
+    /* SOAP */
+    .soap-mini { background:#f8fafc;border-radius:10px;padding:10px;font-size:.78rem;line-height:1.6 }
+    .soap-k { font-weight:800;color:#1e3a5f;margin-right:4px }
+
+    /* Quick actions */
+    .quick-btns { display:grid;grid-template-columns:repeat(3,1fr);gap:8px }
+    .q-btn { background:#fff;border:1.5px solid #e2e8f0;border-radius:12px;padding:12px 6px;text-align:center;font-size:.7rem;font-weight:700;color:#374151;text-decoration:none;cursor:pointer;display:block }
+    .q-btn-icon { font-size:1.2rem;display:block;margin-bottom:4px }
+
+    .empty { color:#94a3b8;font-size:.82rem;text-align:center;padding:12px 0 }
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <div style="flex:1">
+    <div class="topbar-title">📊 Dashboard Clínico</div>
+    <div class="topbar-sub" id="subNome">Carregando...</div>
+  </div>
+</div>
+
+<main>
+  <div id="content"><p class="empty" style="padding:40px 0">Carregando...</p></div>
+</main>
+
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+
+<script src="js/db.js"></script>
+<script src="js/utils.js"></script>
+<script>
+
+async function init() {
+  const pid = getActivePacienteId();
+  if (!pid) { document.getElementById('content').innerHTML = '<p class="empty" style="padding:40px 0">Nenhum paciente ativo.<br><a href="pacientes.html" style="color:#1e3a5f;font-weight:700">Selecionar paciente</a></p>'; return; }
+
+  const hj = hoje();
+  const [pac, allMeds, allDoses, allDiario, allLabs,
+         soapHist, intHist, planoCfg, ramHist] = await Promise.all([
+    dbGet('pacientes', pid),
+    dbGetByIndex('medicamentos','pacienteId',pid),
+    dbGetAll('doses'),
+    dbGetAll('diario'),
+    dbGetAll('laboratorio'),
+    dbGetConfig('soap_'+pid),
+    dbGetConfig('sft_int_'+pid),
+    dbGetConfig('plano_cuidados_'+pid),
+    dbGetConfig('ram_'+pid),
+  ]);
+
+  document.getElementById('subNome').textContent = pac?.nome || '—';
+
+  const meds = allMeds.filter(m => m.ativo !== false && (!m.dataFim || m.dataFim >= hj));
+  const diarioPac = allDiario.filter(d => d.pacienteId === pid || !d.pacienteId);
+  const labsPac   = allLabs.filter(l => l.pacienteId === pid || !l.pacienteId);
+
+  // Aderência 30 dias
+  const ini30 = new Date(); ini30.setDate(ini30.getDate()-29);
+  const ini30s = ini30.toISOString().slice(0,10);
+  const doses30 = allDoses.filter(d => d.data >= ini30s);
+  const totDoses = doses30.length;
+  const tomadas  = doses30.filter(d=>d.status==='tomado').length;
+  const pctAdh   = totDoses ? Math.round(tomadas/totDoses*100) : null;
+  const corAdh   = pctAdh===null?'#94a3b8':pctAdh>=80?'#16a34a':pctAdh>=60?'#d97706':'#dc2626';
+
+  // PRMs do plano de cuidados
+  const prms = (planoCfg?.problemas || []);
+  const prmsAbertos    = prms.filter(p => p.status === 'ativo' || !p.status);
+  const prmsResolvidos = prms.filter(p => p.status === 'resolvido');
+
+  // Intervenções
+  const ints = (intHist || []).slice(-10).reverse();
+  const nInts = (intHist||[]).length;
+  const nAceitas = (intHist||[]).filter(i => i.aceita === 'sim' || i.aceita === true).length;
+
+  // Vitais recentes
+  const diarioSorted = [...diarioPac].sort((a,b)=>(b.data||'')>(a.data||'')?1:-1);
+  const ultimo = diarioSorted[0];
+
+  // Labs recentes
+  const labsByTipo = {};
+  labsPac.forEach(l => {
+    const k = l.tipo || l.nome || l.exame || '?';
+    if (!labsByTipo[k] || (l.data||'') > (labsByTipo[k].data||'')) labsByTipo[k] = l;
+  });
+  const labsEntries = Object.entries(labsByTipo).slice(0,8);
+
+  // Aderência — dados dos últimos 7 dias para barras
+  const barDays = 14;
+  const barData = [];
+  for (let i = barDays-1; i >= 0; i--) {
+    const d = new Date(); d.setDate(d.getDate()-i);
+    const ds = d.toISOString().slice(0,10);
+    const dayDoses = allDoses.filter(x => x.data === ds);
+    const tot = dayDoses.length;
+    const tom = dayDoses.filter(x=>x.status==='tomado').length;
+    barData.push({ ds, pct: tot ? tom/tot : -1, lbl: d.getDate()+'/'+(d.getMonth()+1) });
+  }
+
+  // SOAP último
+  const lastSoap = soapHist?.length ? soapHist[soapHist.length-1] : null;
+
+  document.getElementById('content').innerHTML = `
+
+  <!-- Patient header -->
+  <div class="pac-header">
+    <div class="pac-nome">${esc(pac?.nome||'—')}</div>
+    <div class="pac-meta">${[
+      pac?.idadePac?(pac.idadePac+' anos'):'',
+      pac?.sexoPac==='M'?'Masc':pac?.sexoPac==='F'?'Fem':'',
+      pac?.pesoPac?(pac.pesoPac+' kg'):'',
+      pac?.tipoSanguineo||''
+    ].filter(Boolean).join(' · ')}</div>
+    ${pac?.alergias ? `<div style="margin-top:6px;font-size:.72rem;background:rgba(220,38,38,.3);border-radius:6px;padding:4px 8px;color:#fff">⚠️ ${esc(pac.alergias)}</div>` : ''}
+    <div class="pac-cond">
+      ${(pac?.condicoes||[]).map(c=>`<span class="pac-cond-tag">${esc(c)}</span>`).join('')}
+    </div>
+  </div>
+
+  <!-- KPIs -->
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <div class="kpi-num" style="color:${corAdh}">${pctAdh!==null?pctAdh+'%':'—'}</div>
+      <div class="kpi-lbl">Aderência 30d</div>
+      <div class="kpi-sub">${tomadas} de ${totDoses} doses</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-num" style="color:${prmsAbertos.length>0?'#dc2626':'#16a34a'}">${prmsAbertos.length}</div>
+      <div class="kpi-lbl">PRMs Abertos</div>
+      <div class="kpi-sub">${prmsResolvidos.length} resolvidos</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-num" style="color:#1e3a5f">${nInts}</div>
+      <div class="kpi-lbl">Intervenções</div>
+      <div class="kpi-sub">${nAceitas} aceitas</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-num" style="color:#0891b2">${meds.length}</div>
+      <div class="kpi-lbl">Medicamentos</div>
+      <div class="kpi-sub">ativos hoje</div>
+    </div>
+  </div>
+
+  <!-- Aderência — barras 14 dias -->
+  <div class="sec-card">
+    <div class="sec-title">
+      <span>📊 Aderência — 14 dias</span>
+      <a href="historico.html" class="sec-link">Ver tudo →</a>
+    </div>
+    <div class="adh-bars">
+      ${barData.map(b => {
+        const pct = b.pct < 0 ? 0 : b.pct;
+        const cls = b.pct < 0 ? 'adh-zero' : b.pct >= 0.8 ? 'adh-tomado' : b.pct >= 0.5 ? 'adh-parcial' : 'adh-zero';
+        const h   = b.pct < 0 ? 10 : Math.max(4, Math.round(b.pct*60));
+        return `<div class="adh-bar ${cls}" style="height:${h}px" title="${b.lbl}: ${b.pct<0?'sem registro':Math.round(b.pct*100)+'%'}"></div>`;
+      }).join('')}
+    </div>
+    <div class="adh-axis">
+      <span>${barData[0].lbl}</span>
+      <span>${barData[6].lbl}</span>
+      <span>${barData[13].lbl}</span>
+    </div>
+  </div>
+
+  <!-- Vitais -->
+  <div class="sec-card">
+    <div class="sec-title">
+      <span>💓 Últimos Sinais Vitais</span>
+      <a href="diario.html" class="sec-link">Registrar →</a>
+    </div>
+    ${ultimo ? (() => {
+      const pa = ultimo.paSis && ultimo.paDia ? `${ultimo.paSis}/${ultimo.paDia}` : null;
+      const paCor = !pa ? '' : (parseInt(ultimo.paSis)<120&&parseInt(ultimo.paDia)<80)?'ok':(parseInt(ultimo.paSis)<140)?'warn':'bad';
+      const glcCor = !ultimo.glicemia?'':ultimo.glicemia<70?'bad':ultimo.glicemia<=130?'ok':ultimo.glicemia<=180?'warn':'bad';
+      return `<div class="vitals-grid">
+        ${pa ? `<div class="vital-mini"><div class="vital-label">PA</div><div class="vital-val ${paCor}">${esc(pa)}</div><div class="vital-sub">mmHg</div></div>` : ''}
+        ${ultimo.glicemia ? `<div class="vital-mini"><div class="vital-label">Glicemia</div><div class="vital-val ${glcCor}">${esc(String(ultimo.glicemia))}</div><div class="vital-sub">mg/dL</div></div>` : ''}
+        ${ultimo.peso ? `<div class="vital-mini"><div class="vital-label">Peso</div><div class="vital-val ok">${esc(String(ultimo.peso))}</div><div class="vital-sub">kg</div></div>` : ''}
+        ${ultimo.fc ? `<div class="vital-mini"><div class="vital-label">FC</div><div class="vital-val ${parseInt(ultimo.fc)<60||parseInt(ultimo.fc)>100?'warn':'ok'}">${esc(String(ultimo.fc))}</div><div class="vital-sub">bpm</div></div>` : ''}
+      </div>
+      <div style="font-size:.65rem;color:#94a3b8;margin-top:6px">Último registro: ${ultimo.data?new Date(ultimo.data+'T12:00').toLocaleDateString('pt-BR'):'—'}</div>`;
+    })() : '<p class="empty">Nenhum registro no diário.</p>'}
+  </div>
+
+  <!-- PRMs -->
+  ${prms.length ? `<div class="sec-card">
+    <div class="sec-title">
+      <span>🎯 PRMs — Plano de Cuidados</span>
+      <a href="plano-cuidados.html" class="sec-link">Ver plano →</a>
+    </div>
+    ${prms.slice(0,6).map(p => {
+      const cor = p.prioridade==='alta'?'#dc2626':p.prioridade==='media'?'#d97706':'#0891b2';
+      const stCls = p.status==='resolvido'?'prm-resolvido':p.status==='parcial'?'prm-parcial':'prm-aberto';
+      const stLbl = p.status==='resolvido'?'Resolvido':p.status==='parcial'?'Parcial':'Aberto';
+      return `<div class="prm-row">
+        <div class="prm-dot" style="background:${cor}"></div>
+        <div class="prm-nome">${esc(p.problema||p.desc||'—')}</div>
+        <span class="prm-status ${stCls}">${stLbl}</span>
+      </div>`;
+    }).join('')}
+    ${prms.length>6?`<p style="font-size:.72rem;color:#94a3b8;text-align:center;padding:6px 0">+${prms.length-6} problema(s)...</p>`:''}
+  </div>` : ''}
+
+  <!-- Intervenções recentes -->
+  ${ints.length ? `<div class="sec-card">
+    <div class="sec-title">
+      <span>🩺 Intervenções Recentes</span>
+      <a href="relatorio-sft.html" class="sec-link">Ver SFT →</a>
+    </div>
+    ${ints.slice(0,4).map(i => {
+      const dtStr = i.data ? new Date(i.data+'T12:00').toLocaleDateString('pt-BR') : '—';
+      const aceita = (i.aceita==='sim'||i.aceita===true)?'sim':(i.aceita==='nao'||i.aceita===false)?'nao':'pend';
+      const acCls  = aceita==='sim'?'int-sim':aceita==='nao'?'int-nao':'int-pend';
+      const acLbl  = aceita==='sim'?'✅ Aceita':aceita==='nao'?'❌ Não aceita':'⏳ Pendente';
+      const cond = i.conduta || i.acao || '—';
+      const tipo = i.tipo || 'Intervenção';
+      return `<div class="int-row">
+        <div class="int-tipo">${esc(tipo)}<span class="int-aceita ${acCls}">${acLbl}</span></div>
+        <div class="int-cond">${esc(cond.slice(0,100))}</div>
+        <div class="int-dt">${dtStr}</div>
+      </div>`;
+    }).join('')}
+  </div>` : ''}
+
+  <!-- Labs -->
+  ${labsEntries.length ? `<div class="sec-card">
+    <div class="sec-title">
+      <span>🔬 Exames — Último Resultado</span>
+      <a href="laboratorio.html" class="sec-link">Ver todos →</a>
+    </div>
+    ${labsEntries.map(([k,l]) => {
+      const vNum = parseFloat(l.valor);
+      const cls = isNaN(vNum) ? '' : (l.refMin&&vNum<l.refMin)||(l.refMax&&vNum>l.refMax) ? 'lab-bad' : 'lab-ok';
+      const dtStr = l.data ? new Date(l.data+'T12:00').toLocaleDateString('pt-BR') : '—';
+      return `<div class="lab-row">
+        <div class="lab-nome">${esc(k)}</div>
+        <div class="lab-val ${cls}">${esc(String(l.valor||'—'))}${l.unidade?' '+esc(l.unidade):''}</div>
+        <div class="lab-dt">${dtStr}</div>
+      </div>`;
+    }).join('')}
+  </div>` : ''}
+
+  <!-- SOAP último -->
+  ${lastSoap ? `<div class="sec-card">
+    <div class="sec-title">
+      <span>📝 Última Nota SOAP</span>
+      <a href="relatorio-sft.html" class="sec-link">Ver relatório →</a>
+    </div>
+    <div style="font-size:.68rem;color:#94a3b8;margin-bottom:6px">${lastSoap.data?new Date(lastSoap.data+'T12:00').toLocaleDateString('pt-BR'):'—'}</div>
+    <div class="soap-mini">
+      ${lastSoap.s?`<div><span class="soap-k">S</span>${esc(lastSoap.s.slice(0,120))}...</div>`:''}
+      ${lastSoap.a?`<div><span class="soap-k">A</span>${esc(lastSoap.a.slice(0,120))}...</div>`:''}
+      ${lastSoap.p?`<div><span class="soap-k">P</span>${esc(lastSoap.p.slice(0,100))}...</div>`:''}
+    </div>
+  </div>` : ''}
+
+  <!-- RAMs -->
+  ${(ramHist||[]).length ? `<div class="sec-card">
+    <div class="sec-title"><span>⚠️ RAMs Registradas</span></div>
+    ${(ramHist||[]).slice(0,3).map(r=>`<div class="prm-row">
+      <div class="prm-dot" style="background:#dc2626"></div>
+      <div class="prm-nome">${esc(r.med||r.medicamento||'—')} → ${esc(r.reacao||'—')}</div>
+      <span style="font-size:.65rem;color:#dc2626;font-weight:700">${esc(r.grau||'')}</span>
+    </div>`).join('')}
+  </div>` : ''}
+
+  <!-- Ações rápidas -->
+  <div class="sec-card">
+    <div class="sec-title"><span>⚡ Ações Rápidas</span></div>
+    <div class="quick-btns">
+      <a href="consulta-rapida.html" class="q-btn"><span class="q-btn-icon">⚡</span>Consulta</a>
+      <a href="relatorio-sft.html"   class="q-btn"><span class="q-btn-icon">📝</span>SOAP/SFT</a>
+      <a href="plano-cuidados.html"  class="q-btn"><span class="q-btn-icon">📌</span>Plano</a>
+      <a href="evolucao-clinica.html"class="q-btn"><span class="q-btn-icon">📈</span>Evolução</a>
+      <a href="dossie-clinico.html"  class="q-btn"><span class="q-btn-icon">📋</span>Dossiê</a>
+      <a href="plano-alta.html"      class="q-btn"><span class="q-btn-icon">🏥</span>Alta</a>
+    </div>
+  </div>`;
+}
+
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') }
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>

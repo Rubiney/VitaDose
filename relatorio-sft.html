@@ -93,6 +93,29 @@
     <div id="secPac" style="font-size:.82rem">Carregando…</div>
   </div>
 
+  <!-- Anamnese Farmacêutica -->
+  <div class="card">
+    <p class="sec-lbl">Motivo da Consulta / Anamnese Farmacêutica</p>
+    <div id="secAnamnese">
+      <div style="display:flex;flex-direction:column;gap:8px" class="no-print">
+        <div>
+          <label style="font-size:.7rem;font-weight:600;color:#64748b;display:block;margin-bottom:4px">Queixa principal / Motivo da consulta</label>
+          <textarea id="anamQueixa" rows="2" placeholder="Ex: Paciente refere dificuldade em controlar a pressão arterial, relata esquecimento de doses…" class="inp-rpt" style="resize:vertical"></textarea>
+        </div>
+        <div>
+          <label style="font-size:.7rem;font-weight:600;color:#64748b;display:block;margin-bottom:4px">História farmacoterapêutica relevante</label>
+          <textarea id="anamHist" rows="2" placeholder="Ex: Uso prolongado de AINE, histórico de RAM a AAS, automedicação com suplementos…" class="inp-rpt" style="resize:vertical"></textarea>
+        </div>
+        <div>
+          <label style="font-size:.7rem;font-weight:600;color:#64748b;display:block;margin-bottom:4px">Hábitos de vida</label>
+          <textarea id="anamHabitos" rows="1" placeholder="Ex: Tabagista 20 anos/maço, etilismo social, sedentário, dieta hipossódica…" class="inp-rpt" style="resize:vertical"></textarea>
+        </div>
+        <button class="btn" style="align-self:flex-start;padding:7px 16px;font-size:.78rem" onclick="salvarAnamnese()">💾 Salvar Anamnese</button>
+      </div>
+      <div id="anamDisp" class="print-only"></div>
+    </div>
+  </div>
+
   <!-- Medicamentos -->
   <div class="card">
     <p class="sec-lbl">Medicamentos em Uso <span id="nMeds" style="font-size:.7rem;color:#64748b"></span></p>
@@ -103,6 +126,12 @@
   <div class="card">
     <p class="sec-lbl">Problemas Relacionados a Medicamentos — Identificação Automática</p>
     <div id="secPRMs">Analisando…</div>
+  </div>
+
+  <!-- Metas Terapêuticas -->
+  <div class="card">
+    <p class="sec-lbl">Metas Terapêuticas</p>
+    <div id="secMetas">Carregando…</div>
   </div>
 
   <!-- Intervenções farmacêuticas -->
@@ -174,6 +203,23 @@
     <div id="secLabs">Carregando…</div>
   </div>
 
+  <!-- Plano de Seguimento -->
+  <div class="card">
+    <p class="sec-lbl">Plano de Seguimento / Próxima Consulta</p>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end" class="no-print">
+      <div style="flex:1;min-width:140px">
+        <label style="font-size:.7rem;font-weight:600;color:#64748b;display:block;margin-bottom:4px">Data do próximo retorno</label>
+        <input id="fRetornoSFT" type="date" class="inp-rpt">
+      </div>
+      <div style="flex:2;min-width:200px">
+        <label style="font-size:.7rem;font-weight:600;color:#64748b;display:block;margin-bottom:4px">Plano e condutas para o próximo encontro</label>
+        <textarea id="fPlanoSeg" rows="2" placeholder="Ex: Retornar em 30 dias para avaliar controle pressórico e reforçar aderência. Solicitar creatinina e potássio." class="inp-rpt" style="resize:vertical"></textarea>
+      </div>
+      <button class="btn" style="padding:8px 14px;font-size:.8rem" onclick="salvarPlanoSeg()">💾 Salvar</button>
+    </div>
+    <div id="planoSegDisp"></div>
+  </div>
+
   <!-- Assinatura -->
   <div class="card">
     <p class="sec-lbl">Responsável Técnico</p>
@@ -228,7 +274,7 @@ async function init() {
   document.getElementById('farmCRF').value  = farmCfg.crf  || '';
   renderFarmDisp(farmCfg);
 
-  const [pac, allMeds, allDoses, allDiario, soapHist, mrpaSess, mrpaCons, ramHist, allLabs] = await Promise.all([
+  const [pac, allMeds, allDoses, allDiario, soapHist, mrpaSess, mrpaCons, ramHist, allLabs, planoCfg, anamCfg, planoSegCfg] = await Promise.all([
     dbGet('pacientes', isNaN(pid) ? pid : parseInt(pid)),
     dbGetAll('medicamentos'),
     dbGetAll('doses'),
@@ -238,12 +284,17 @@ async function init() {
     dbGetConfig('mrpa_cons_' + pid),
     dbGetConfig('ram_' + pid),
     dbGetAll('laboratorio'),
+    dbGetConfig('plano_cuidados_' + pid),
+    dbGetConfig('anamnese_sft_' + pid),
+    dbGetConfig('plano_seg_' + pid),
   ]);
 
   renderPac(pac);
+  renderAnamnese(anamCfg);
   const medsAtivos = allMeds.filter(m => (!m.pacienteId || String(m.pacienteId) === String(pid)) && m.ativo !== false && m.status !== 'inativo');
   renderMeds(allMeds);
   renderPRMs(medsAtivos, pac);
+  renderMetas(planoCfg);
   renderIntHist();
   renderAdesao(allDoses);
   renderSOAP(soapHist);
@@ -251,6 +302,7 @@ async function init() {
   renderMRPA(mrpaSess);
   renderRAM(ramHist);
   renderLabs(allLabs);
+  renderPlanoSeg(planoSegCfg);
 }
 
 function renderPac(pac) {
@@ -276,12 +328,13 @@ function renderMeds(all) {
   const el = document.getElementById('secMeds');
   if (!meds.length) { el.innerHTML = '<p style="color:#94a3b8;font-size:.8rem">Nenhum medicamento ativo.</p>'; return; }
   el.innerHTML = `<table class="rt">
-    <thead><tr><th>Medicamento</th><th>Dose</th><th>Horários</th><th>Via</th></tr></thead>
+    <thead><tr><th>Medicamento</th><th>Dose</th><th>Horários</th><th>Via</th><th>Indicação</th></tr></thead>
     <tbody>${meds.map(m => `<tr>
       <td><strong>${x(m.nome||'—')}</strong></td>
       <td>${x(m.dose||'—')}</td>
       <td>${x(Array.isArray(m.horarios) ? m.horarios.join(', ') : (m.frequencia||'—'))}</td>
       <td>${x(m.via||'—')}</td>
+      <td style="font-size:.73rem;color:#475569">${x(m.indicacao||'—')}</td>
     </tr>`).join('')}</tbody>
   </table>`;
 }
@@ -488,15 +541,20 @@ async function renderIntHist() {
   const el   = document.getElementById('int-hist');
   if (!hist.length) { el.innerHTML = ''; return; }
   const acIcon = { sim:'✅', parcial:'🟡', nao:'❌', pendente:'⏳' };
-  el.innerHTML = `<p style="font-size:.7rem;font-weight:700;color:#64748b;margin:8px 0 6px">Histórico de intervenções</p>
+  el.innerHTML = `<p style="font-size:.7rem;font-weight:700;color:#64748b;margin:8px 0 6px">Histórico de intervenções (${hist.length})</p>
   <table class="rt">
-    <thead><tr><th>Data</th><th>Intervenção</th><th>Resultado esperado</th><th>Retorno</th><th>Aceita</th></tr></thead>
+    <thead><tr><th>Data</th><th>Tipo / Conduta</th><th>Resultado / Retorno</th><th>Aceita</th></tr></thead>
     <tbody>${hist.slice().reverse().map(h=>`<tr>
       <td style="white-space:nowrap">${h.data ? new Date(h.data+'T12:00').toLocaleDateString('pt-BR') : '—'}</td>
-      <td>${x(h.acao||'—')}</td>
-      <td style="font-size:.72rem;color:#475569">${x(h.result||'—')}</td>
-      <td style="white-space:nowrap">${h.retorno ? new Date(h.retorno+'T12:00').toLocaleDateString('pt-BR') : '—'}</td>
-      <td>${(acIcon[h.aceita]||'—')}</td>
+      <td>
+        ${h.tipo ? `<span style="font-size:.65rem;font-weight:700;color:#1e3a5f;display:block">${x(h.tipo)}</span>` : ''}
+        ${x(h.conduta||h.acao||'—')}
+      </td>
+      <td style="font-size:.72rem;color:#475569">
+        ${x(h.resultado||h.result||'—')}
+        ${h.retorno ? `<br><span style="color:#0369a1">Retorno: ${new Date(h.retorno+'T12:00').toLocaleDateString('pt-BR')}</span>` : ''}
+      </td>
+      <td>${(acIcon[h.aceita]||acIcon[h.aceita===true?'sim':h.aceita===false?'nao':'']||'—')}</td>
     </tr>`).join('')}</tbody>
   </table>`;
 }
@@ -520,6 +578,69 @@ async function compartilhar() {
   } else {
     window.print();
   }
+}
+
+function renderAnamnese(cfg) {
+  if (cfg?.queixa) {
+    document.getElementById('anamQueixa').value = cfg.queixa || '';
+    document.getElementById('anamHist').value   = cfg.hist   || '';
+    document.getElementById('anamHabitos').value= cfg.habitos|| '';
+    document.getElementById('anamDisp').innerHTML = cfg.queixa
+      ? `<p style="font-size:.8rem;line-height:1.6"><strong>Queixa:</strong> ${x(cfg.queixa)}<br>
+         ${cfg.hist?`<strong>Histórico:</strong> ${x(cfg.hist)}<br>`:''}
+         ${cfg.habitos?`<strong>Hábitos:</strong> ${x(cfg.habitos)}`:''}
+         </p>` : '';
+  }
+}
+
+async function salvarAnamnese() {
+  const cfg = {
+    queixa:  document.getElementById('anamQueixa').value.trim(),
+    hist:    document.getElementById('anamHist').value.trim(),
+    habitos: document.getElementById('anamHabitos').value.trim(),
+  };
+  await dbSetConfig('anamnese_sft_' + pid, cfg);
+  renderAnamnese(cfg);
+  alert('Anamnese salva!');
+}
+
+function renderMetas(planoCfg) {
+  const el = document.getElementById('secMetas');
+  const metas = planoCfg?.metas || [];
+  if (!metas.length) { el.innerHTML = '<p style="color:#94a3b8;font-size:.8rem">Nenhuma meta registrada no Plano de Cuidados.</p>'; return; }
+  const corStatus = { atingida:'#16a34a', parcial:'#d97706', nao_atingida:'#dc2626' };
+  const lbStatus  = { atingida:'Atingida', parcial:'Parcial', nao_atingida:'Não atingida' };
+  el.innerHTML = `<table class="rt">
+    <thead><tr><th>Meta Terapêutica</th><th>Prazo</th><th>Status</th></tr></thead>
+    <tbody>${metas.map(m=>`<tr>
+      <td>${x(m.meta||m.desc||'—')}</td>
+      <td style="white-space:nowrap">${m.prazo?new Date(m.prazo+'T12:00').toLocaleDateString('pt-BR'):'—'}</td>
+      <td><span class="badge" style="background:${(corStatus[m.status]||'#94a3b8')}22;color:${corStatus[m.status]||'#64748b'}">${lbStatus[m.status]||m.status||'—'}</span></td>
+    </tr>`).join('')}</tbody>
+  </table>`;
+}
+
+function renderPlanoSeg(cfg) {
+  const el = document.getElementById('planoSegDisp');
+  if (!cfg) return;
+  if (cfg.retorno) document.getElementById('fRetornoSFT').value = cfg.retorno;
+  if (cfg.plano)   document.getElementById('fPlanoSeg').value   = cfg.plano;
+  if (cfg.retorno || cfg.plano) {
+    const dtRet = cfg.retorno ? new Date(cfg.retorno+'T12:00').toLocaleDateString('pt-BR') : '—';
+    el.innerHTML = `<div style="background:#f0f9ff;border-radius:8px;padding:10px 12px;font-size:.8rem;color:#0369a1;margin-top:8px;line-height:1.6">
+      📅 <strong>Retorno:</strong> ${x(dtRet)}${cfg.plano?'<br>📋 '+x(cfg.plano):''}
+    </div>`;
+  }
+}
+
+async function salvarPlanoSeg() {
+  const cfg = {
+    retorno: document.getElementById('fRetornoSFT').value,
+    plano:   document.getElementById('fPlanoSeg').value.trim(),
+  };
+  await dbSetConfig('plano_seg_' + pid, cfg);
+  renderPlanoSeg(cfg);
+  alert('Plano de seguimento salvo!');
 }
 
 function x(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }

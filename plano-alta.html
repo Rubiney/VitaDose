@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>Plano de Alta Farmacêutica — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .topbar { display:flex;align-items:center;gap:10px;padding:12px 16px;background:#0f172a;position:sticky;top:0;z-index:100 }
+    .back-btn { background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:8px;padding:6px 11px;cursor:pointer;font-size:1rem }
+    .topbar-title { font-size:.95rem;font-weight:800;color:#fff;flex:1 }
+    .btn-top { background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:8px;padding:7px 12px;font-size:.73rem;font-weight:700;cursor:pointer;margin-left:4px }
+
+    main { max-width:620px;margin:0 auto;padding:14px 16px 90px }
+
+    /* Cards */
+    .doc-card { background:#fff;border-radius:14px;padding:16px;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,.07) }
+    .sec-lbl { font-size:.62rem;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px }
+
+    /* Header do documento */
+    .doc-head { background:linear-gradient(135deg,#0f172a,#1e3a5f);color:#fff;border-radius:14px;padding:18px;margin-bottom:12px }
+    .doc-head-title { font-size:1rem;font-weight:900;letter-spacing:.03em }
+    .doc-head-sub   { font-size:.73rem;opacity:.75;margin-top:3px }
+
+    /* Campos de data */
+    .grid-2 { display:grid;grid-template-columns:1fr 1fr;gap:10px }
+    .field-lbl { font-size:.68rem;font-weight:700;color:#475569;display:block;margin-bottom:3px;margin-top:10px }
+    .field-inp { width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:9px;padding:8px 11px;font-size:.83rem;color:#1e293b }
+    .field-inp:focus { outline:none;border-color:#0f172a }
+    .field-sel { width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:9px;padding:8px 11px;font-size:.8rem;color:#1e293b;background:#fff }
+    .field-ta  { width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:9px;padding:8px 11px;font-size:.8rem;min-height:60px;resize:vertical;color:#1e293b }
+
+    /* Tabela de mudanças */
+    .mud-row { display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid #f1f5f9 }
+    .mud-row:last-child { border-bottom:none }
+    .mud-badge { border-radius:6px;padding:3px 9px;font-size:.64rem;font-weight:800;white-space:nowrap;flex-shrink:0;margin-top:2px }
+    .mud-iniciado  { background:#dcfce7;color:#15803d }
+    .mud-suspenso  { background:#fee2e2;color:#dc2626 }
+    .mud-alterado  { background:#fef3c7;color:#92400e }
+    .mud-mantido   { background:#f1f5f9;color:#475569 }
+    .mud-nome { font-size:.88rem;font-weight:700;color:#1e293b;flex:1 }
+    .mud-det  { font-size:.73rem;color:#64748b;margin-top:2px }
+
+    /* Lista de medicamentos final */
+    .med-alta-card { background:#f8fafc;border-radius:12px;padding:12px 14px;margin-bottom:8px;border-left:4px solid #0f172a }
+    .med-alta-nome { font-size:.92rem;font-weight:800;color:#1e293b }
+    .med-alta-dose { font-size:.78rem;color:#475569;margin-top:2px }
+    .med-alta-instr { font-size:.76rem;color:#64748b;margin-top:5px;line-height:1.5 }
+    .med-alta-alert { font-size:.7rem;background:#fee2e2;color:#991b1b;border-radius:6px;padding:3px 8px;margin-top:6px;display:inline-block;font-weight:700 }
+
+    /* Sinais de alerta */
+    .sinal-item { display:flex;align-items:flex-start;gap:8px;padding:8px 0;border-bottom:1px solid #f1f5f9 }
+    .sinal-item:last-child { border-bottom:none }
+    .sinal-dot { width:8px;height:8px;border-radius:50%;background:#dc2626;flex-shrink:0;margin-top:5px }
+    .sinal-txt { font-size:.82rem;color:#374151;line-height:1.45 }
+
+    /* Assinatura */
+    .sig-box { display:flex;gap:20px;margin-top:16px }
+    .sig-line { flex:1;border-top:1.5px solid #374151;padding-top:5px;font-size:.68rem;color:#475569;text-align:center }
+
+    /* Ações */
+    .btn-gerar { width:100%;background:#0f172a;color:#fff;border:none;border-radius:12px;padding:13px;font-size:.9rem;font-weight:800;cursor:pointer;margin-bottom:10px }
+    .btn-share { width:100%;background:#16a34a;color:#fff;border:none;border-radius:12px;padding:12px;font-size:.85rem;font-weight:700;cursor:pointer }
+
+    /* Doc gerado */
+    #docAlta { display:none }
+
+    @media print {
+      .topbar,.btn-gerar,.btn-share,nav { display:none!important }
+      #docAlta { display:block!important }
+      .doc-card,.med-alta-card { box-shadow:none;border:1px solid #e5e7eb }
+      main { padding:0;max-width:none }
+      body { background:#fff }
+    }
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <div style="flex:1">
+    <div class="topbar-title">🏥 Plano de Alta Farmacêutica</div>
+  </div>
+  <button class="btn-top" onclick="window.print()">🖨️</button>
+  <button class="btn-top" onclick="compartilhar()">📤</button>
+</div>
+
+<main>
+
+  <!-- Formulário de configuração -->
+  <div id="formSection">
+    <div class="doc-card">
+      <p class="sec-lbl">Dados da Alta</p>
+      <div class="grid-2">
+        <div>
+          <label class="field-lbl">Serviço / Unidade</label>
+          <input class="field-inp" id="fServico" type="text" placeholder="Ex: Clínica Médica, APS">
+        </div>
+        <div>
+          <label class="field-lbl">Data da alta</label>
+          <input class="field-inp" id="fDataAlta" type="date">
+        </div>
+      </div>
+      <div class="grid-2">
+        <div>
+          <label class="field-lbl">Data do retorno</label>
+          <input class="field-inp" id="fRetorno" type="date">
+        </div>
+        <div>
+          <label class="field-lbl">Local do retorno</label>
+          <input class="field-inp" id="fLocalRet" type="text" placeholder="Ex: UBS, Ambulatório">
+        </div>
+      </div>
+      <label class="field-lbl">Diagnóstico principal (CID)</label>
+      <input class="field-inp" id="fDiag" type="text" placeholder="Ex: Hipertensão arterial sistêmica (I10)">
+      <label class="field-lbl">Orientações gerais</label>
+      <textarea class="field-ta" id="fOrientGerais" placeholder="Dieta, atividade física, restrições, acompanhamento..."></textarea>
+    </div>
+
+    <div class="doc-card">
+      <p class="sec-lbl">Sinais de Alerta — Quando procurar atendimento</p>
+      <div id="sinaisList">
+        <div class="sinal-row" style="display:flex;gap:8px;margin-bottom:6px">
+          <input class="field-inp" style="flex:1" type="text" placeholder="Ex: PA acima de 180/110 mmHg">
+          <button onclick="addSinal()" style="background:#0f172a;color:#fff;border:none;border-radius:8px;padding:6px 12px;font-size:.8rem;font-weight:700;cursor:pointer;white-space:nowrap">+ Add</button>
+        </div>
+      </div>
+      <div id="sinaisItems"></div>
+      <div style="background:#e0f2fe;border-radius:10px;padding:10px 12px;font-size:.72rem;color:#0369a1;margin-top:8px;line-height:1.6">
+        💡 Sinais padrão já incluídos: febre persistente, sangramento inesperado, falta de ar súbita, piora do estado geral.
+      </div>
+    </div>
+
+    <button class="btn-gerar" onclick="gerar()">📋 Gerar Plano de Alta</button>
+  </div>
+
+  <!-- Documento gerado -->
+  <div id="docAlta"></div>
+
+</main>
+
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+
+<script src="js/db.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/interacoes.js"></script>
+<script src="js/beers.js"></script>
+<script src="js/anticolin.js"></script>
+<script>
+
+let _pac = null;
+let _meds = [];
+let _farmCfg = null;
+let _sinais = [];
+let _conciliacao = null;
+
+const SINAIS_PADRAO = [
+  'Febre acima de 38°C por mais de 2 dias',
+  'Falta de ar súbita ou piora',
+  'Sangramento inesperado (urina, fezes, pele)',
+  'Dor intensa no peito ou cabeça',
+  'Edema progressivo nas pernas',
+];
+
+async function init() {
+  const pid = getActivePacienteId();
+  if (!pid) { document.getElementById('formSection').innerHTML = '<p style="text-align:center;color:#94a3b8;padding:30px">Nenhum paciente ativo.</p>'; return; }
+
+  const hj = hoje();
+  document.getElementById('fDataAlta').value = hj;
+
+  [_pac, _farmCfg] = await Promise.all([
+    dbGet('pacientes', pid),
+    dbGetConfig('farmaceutico_cfg'),
+  ]);
+
+  const allMeds = await dbGetByIndex('medicamentos', 'pacienteId', pid);
+  _meds = allMeds.filter(m => m.ativo !== false && (!m.dataFim || m.dataFim >= hj));
+
+  _conciliacao = await dbGetConfig('conciliacao_' + pid);
+}
+
+function addSinal() {
+  const el = document.querySelector('.sinal-row input');
+  const txt = el.value.trim();
+  if (!txt) return;
+  _sinais.push(txt);
+  el.value = '';
+  renderSinais();
+}
+
+function removerSinal(i) {
+  _sinais.splice(i, 1);
+  renderSinais();
+}
+
+function renderSinais() {
+  document.getElementById('sinaisItems').innerHTML = _sinais.map((s, i) =>
+    `<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #f1f5f9">
+      <div class="sinal-dot"></div>
+      <span style="flex:1;font-size:.82rem;color:#374151">${esc(s)}</span>
+      <button onclick="removerSinal(${i})" style="background:none;border:none;color:#dc2626;cursor:pointer;font-size:.85rem">✕</button>
+    </div>`
+  ).join('');
+}
+
+async function gerar() {
+  const dataAlta    = document.getElementById('fDataAlta').value;
+  const retorno     = document.getElementById('fRetorno').value;
+  const localRet    = document.getElementById('fLocalRet').value.trim();
+  const servico     = document.getElementById('fServico').value.trim();
+  const diag        = document.getElementById('fDiag').value.trim();
+  const orientGerais= document.getElementById('fOrientGerais').value.trim();
+
+  const pid = getActivePacienteId();
+  const farm = _farmCfg?.nome ? `${_farmCfg.nome}${_farmCfg.crf?' — '+_farmCfg.crf:''}` : 'Farmacêutico Responsável';
+  const dtAlta = dataAlta ? new Date(dataAlta+'T12:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'}) : '—';
+  const dtRet  = retorno  ? new Date(retorno+'T12:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'}) : '—';
+
+  // Detecta mudanças via conciliação salva
+  let mudancas = [];
+  if (_conciliacao?.discrepancias?.length) {
+    mudancas = _conciliacao.discrepancias.map(d => ({
+      tipo: d.tipo === 'adicionado' ? 'iniciado' : d.tipo === 'omitido' ? 'suspenso' : d.tipo === 'alterado' ? 'alterado' : 'mantido',
+      nome: d.nome,
+      det:  d.justificativa || '',
+    }));
+  }
+
+  // Alertas (DDI + Beers)
+  const alertas = [];
+  if (typeof gerarAlertas === 'function') {
+    gerarAlertas(_meds).filter(a => a.nivel === 'grave').slice(0,3).forEach(a =>
+      alertas.push({ tipo:'DDI', txt: a.titulo + ': ' + (a.desc||'').slice(0,80) })
+    );
+  }
+  if (typeof buscarBeers === 'function' && _pac && (parseInt(_pac.idadePac)||0) >= 65) {
+    _meds.forEach(m => {
+      const b = buscarBeers(m.nome);
+      if (b) alertas.push({ tipo:'Beers', txt: m.nome + ': ' + (b.obs||b.motivo||'').slice(0,80) });
+    });
+  }
+
+  const todosSinais = [...SINAIS_PADRAO, ..._sinais];
+
+  // Salva no histórico
+  await dbSetConfig('plano_alta_' + pid, {
+    data: hoje(), dataAlta, retorno, localRet, servico, diag, orientGerais,
+    meds: _meds.map(m => m.id), sinais: _sinais,
+  });
+
+  const docHTML = `
+  <div class="doc-card" style="border:2px solid #0f172a">
+    <!-- Cabeçalho -->
+    <div style="border-bottom:2px solid #0f172a;padding-bottom:12px;margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px">
+        <div>
+          <div style="font-size:1.05rem;font-weight:900;color:#0f172a">PLANO DE ALTA FARMACÊUTICA</div>
+          <div style="font-size:.72rem;color:#64748b;margin-top:2px">${esc(servico||'Farmácia Clínica')} · VitaDose</div>
+        </div>
+        <div style="text-align:right;font-size:.72rem;color:#64748b">
+          <div>Alta: ${dtAlta}</div>
+          <div>Retorno: ${dtRet}${localRet?' · '+esc(localRet):''}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Paciente -->
+    <table style="width:100%;font-size:.8rem;border-collapse:collapse;margin-bottom:12px">
+      <tr style="background:#f8fafc">
+        <td style="padding:7px 10px;font-weight:700;color:#64748b;width:130px">Paciente:</td>
+        <td style="padding:7px 10px;font-weight:800;color:#0f172a">${esc(_pac?.nome||'—')}</td>
+        <td style="padding:7px 10px;font-weight:700;color:#64748b;width:80px">Idade:</td>
+        <td style="padding:7px 10px">${_pac?.idadePac||'—'} anos</td>
+      </tr>
+      <tr>
+        <td style="padding:7px 10px;font-weight:700;color:#64748b">Peso:</td>
+        <td style="padding:7px 10px">${_pac?.pesoPac||'—'} kg</td>
+        <td style="padding:7px 10px;font-weight:700;color:#64748b">Tipo sang.:</td>
+        <td style="padding:7px 10px">${_pac?.tipoSanguineo||'—'}</td>
+      </tr>
+      ${_pac?.alergias ? `<tr style="background:#fee2e2"><td style="padding:7px 10px;font-weight:700;color:#dc2626" colspan="2">⚠️ Alergia:</td><td colspan="2" style="padding:7px 10px;color:#dc2626;font-weight:700">${esc(_pac.alergias)}</td></tr>` : ''}
+      ${diag ? `<tr style="background:#f0f9ff"><td style="padding:7px 10px;font-weight:700;color:#0369a1">CID / Diagnóstico:</td><td colspan="3" style="padding:7px 10px">${esc(diag)}</td></tr>` : ''}
+    </table>
+
+    ${mudancas.length ? `
+    <div style="margin-bottom:14px">
+      <div style="font-size:.68rem;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px">O que mudou na alta</div>
+      ${mudancas.map(m => {
+        const cls = m.tipo==='iniciado'?'mud-iniciado':m.tipo==='suspenso'?'mud-suspenso':m.tipo==='alterado'?'mud-alterado':'mud-mantido';
+        const lbl = m.tipo==='iniciado'?'Iniciado':m.tipo==='suspenso'?'Suspenso':m.tipo==='alterado'?'Alterado':'Mantido';
+        return `<div class="mud-row"><span class="mud-badge ${cls}">${lbl}</span>
+          <div><div class="mud-nome">${esc(m.nome)}</div>${m.det?`<div class="mud-det">${esc(m.det)}</div>`:''}</div></div>`;
+      }).join('')}
+    </div>` : ''}
+
+    <!-- Medicamentos -->
+    <div style="font-size:.68rem;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px">Medicamentos ao sair (${_meds.length})</div>
+    ${_meds.map(m => {
+      const hors = (m.horarios||[]).join(', ') || m.frequencia || '—';
+      const alerta = (typeof buscarBeers==='function' && _pac && (parseInt(_pac.idadePac)||0)>=65) ? buscarBeers(m.nome) : null;
+      return `<div class="med-alta-card">
+        <div class="med-alta-nome">${esc(m.nome)}</div>
+        <div class="med-alta-dose">${esc(m.dose||'')}${m.unidade?' '+esc(m.unidade):''} · ${esc(hors)}</div>
+        ${m.indicacao ? `<div class="med-alta-instr">Indicação: ${esc(m.indicacao)}</div>` : ''}
+        ${m.observacoes ? `<div class="med-alta-instr">📋 ${esc(m.observacoes)}</div>` : ''}
+        ${alerta ? `<span class="med-alta-alert">⚠️ Beers: ${esc((alerta.obs||alerta.motivo||'').slice(0,80))}</span>` : ''}
+      </div>`;
+    }).join('')}
+
+    ${alertas.length ? `
+    <div style="background:#fee2e2;border-radius:10px;padding:10px 12px;margin-top:10px;margin-bottom:4px">
+      <div style="font-size:.68rem;font-weight:800;color:#dc2626;text-transform:uppercase;margin-bottom:6px">⚠️ Alertas de Segurança</div>
+      ${alertas.map(a=>`<div style="font-size:.75rem;color:#991b1b;margin-bottom:4px"><strong>${esc(a.tipo)}:</strong> ${esc(a.txt)}</div>`).join('')}
+    </div>` : ''}
+
+    ${orientGerais ? `
+    <div style="background:#f0fdf4;border-radius:10px;padding:10px 12px;margin-top:10px">
+      <div style="font-size:.68rem;font-weight:800;color:#15803d;text-transform:uppercase;margin-bottom:6px">Orientações Gerais</div>
+      <div style="font-size:.8rem;color:#166534;line-height:1.6">${esc(orientGerais).replace(/\n/g,'<br>')}</div>
+    </div>` : ''}
+
+    <!-- Sinais de alerta -->
+    <div style="margin-top:12px">
+      <div style="font-size:.68rem;font-weight:800;color:#dc2626;text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px">🚨 Quando procurar atendimento IMEDIATO</div>
+      ${todosSinais.map(s => `<div class="sinal-item"><div class="sinal-dot"></div><div class="sinal-txt">${esc(s)}</div></div>`).join('')}
+    </div>
+
+    <!-- Retorno -->
+    <div style="margin-top:12px;background:#e0f2fe;border-radius:10px;padding:10px 12px;font-size:.8rem;color:#0369a1">
+      📅 <strong>Retorno:</strong> ${dtRet}${localRet?' — '+esc(localRet):''}
+    </div>
+
+    <!-- Assinatura -->
+    <div class="sig-box" style="margin-top:20px">
+      <div class="sig-line">${esc(_pac?.nome||'Paciente')}<br>ou Responsável</div>
+      <div class="sig-line">${esc(_farmCfg?.nome||'Farmacêutico')}${_farmCfg?.crf?'<br>'+esc(_farmCfg.crf):''}</div>
+    </div>
+
+    <div style="font-size:.62rem;color:#94a3b8;text-align:center;margin-top:12px">
+      Documento gerado em ${new Date().toLocaleDateString('pt-BR')} · VitaDose Farmácia Clínica
+    </div>
+  </div>
+
+  <div style="display:flex;gap:8px;margin-top:12px">
+    <button onclick="window.print()" style="flex:1;background:#0f172a;color:#fff;border:none;border-radius:12px;padding:13px;font-size:.85rem;font-weight:700;cursor:pointer">🖨️ Imprimir</button>
+    <button onclick="compartilhar()" style="flex:1;background:#16a34a;color:#fff;border:none;border-radius:12px;padding:13px;font-size:.85rem;font-weight:700;cursor:pointer">📤 Compartilhar</button>
+  </div>`;
+
+  document.getElementById('docAlta').style.display = '';
+  document.getElementById('docAlta').innerHTML = docHTML;
+  document.getElementById('formSection').style.display = 'none';
+  document.getElementById('docAlta').scrollIntoView({ behavior:'smooth' });
+}
+
+async function compartilhar() {
+  const pid = getActivePacienteId();
+  const retorno = document.getElementById('fRetorno').value;
+  const dtRet = retorno ? new Date(retorno+'T12:00').toLocaleDateString('pt-BR') : '—';
+  const farm = _farmCfg?.nome || 'Farmacêutico';
+  const medsStr = _meds.map(m => `• ${m.nome} ${m.dose||''} — ${(m.horarios||[]).join(', ')||'ver orientação'}`).join('\n');
+  const txt = `🏥 *PLANO DE ALTA FARMACÊUTICA*\n*Paciente:* ${_pac?.nome||'—'}\n\n*Medicamentos ao sair:*\n${medsStr}\n\n*Retorno:* ${dtRet}\n\n_${farm} · VitaDose_`;
+  if (navigator.share) {
+    try { await navigator.share({ title:'Plano de Alta Farmacêutica', text:txt }); return; } catch(e){}
+  }
+  window.open('https://wa.me/?text='+encodeURIComponent(txt),'_blank');
+}
+
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') }
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
