@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>Adesão por Dispensação — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .topbar{display:flex;align-items:center;gap:10px;padding:12px 16px;background:#1e40af;position:sticky;top:0;z-index:100}
+    .back-btn{background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:8px;padding:6px 11px;cursor:pointer;font-size:1rem}
+    .topbar-title{font-size:.93rem;font-weight:800;color:#fff;flex:1}
+    .topbar-sub{font-size:.62rem;color:rgba(255,255,255,.7);margin-top:1px}
+    main{max-width:680px;margin:0 auto;padding:12px 14px 90px}
+    .pac-sel{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:12px;padding:11px 14px;font-size:.88rem;margin-bottom:10px;background:#fff}
+
+    /* KPIs */
+    .kpi-row{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:12px}
+    .kpi{background:#fff;border-radius:12px;padding:10px 8px;text-align:center;border:1.5px solid #e2e8f0}
+    .kpi-val{font-size:1.3rem;font-weight:900}
+    .kpi-lbl{font-size:.55rem;color:#94a3b8;font-weight:700;margin-top:2px}
+    .kpi-sub{font-size:.52rem;color:#cbd5e1}
+
+    /* Formulário */
+    .form-card{background:#fff;border-radius:14px;border:1.5px solid #e2e8f0;padding:14px;margin-bottom:12px}
+    .form-title{font-size:.78rem;font-weight:800;color:#1e40af;margin-bottom:10px}
+    .form-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .form-row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+    label{font-size:.66rem;font-weight:700;color:#64748b;display:block;margin-bottom:3px;margin-top:8px}
+    input,select{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:9px;padding:9px 11px;font-size:.83rem;background:#fff}
+    .save-btn{width:100%;padding:13px;background:#1e40af;color:#fff;border:none;border-radius:10px;font-size:.85rem;font-weight:800;cursor:pointer;margin-top:10px}
+
+    /* Card por medicamento */
+    .med-disp-card{background:#fff;border-radius:13px;border:1.5px solid #e2e8f0;margin-bottom:10px;overflow:hidden}
+    .mdc-hdr{padding:12px 14px;display:flex;align-items:center;gap:10px;cursor:pointer}
+    .mpr-bar-wrap{flex:1;background:#f1f5f9;border-radius:6px;height:10px;overflow:hidden;max-width:120px}
+    .mpr-bar{height:100%;border-radius:6px;transition:.4s}
+    .mdc-nome{font-size:.83rem;font-weight:800;color:#0f172a;flex:1}
+    .mdc-mpr{font-size:.78rem;font-weight:900;flex-shrink:0}
+    .mdc-badge{font-size:.6rem;font-weight:800;padding:2px 8px;border-radius:5px;flex-shrink:0}
+    .mdc-body{display:none;padding:0 14px 14px;border-top:1px solid #f1f5f9}
+    .mdc-body.open{display:block}
+
+    /* Timeline */
+    .timeline-wrap{overflow-x:auto;margin:10px 0;background:#f8fafc;border-radius:8px;padding:8px}
+    svg.tl-svg{display:block;min-width:320px}
+
+    /* Dispensações */
+    .disp-list{display:flex;flex-direction:column;gap:5px;margin-top:8px}
+    .disp-item{display:flex;align-items:center;gap:8px;font-size:.7rem;padding:6px 8px;background:#f8fafc;border-radius:7px}
+    .disp-data{font-weight:700;color:#0f172a;flex-shrink:0;width:75px}
+    .disp-qtd{color:#64748b;flex:1}
+    .disp-del{background:#fee2e2;border:none;color:#dc2626;border-radius:5px;padding:3px 8px;font-size:.62rem;cursor:pointer;flex-shrink:0}
+    .add-disp-row{display:flex;gap:6px;align-items:flex-end;margin-top:8px}
+    .add-disp-inp{flex:1;border:1.5px solid #e2e8f0;border-radius:8px;padding:7px 9px;font-size:.78rem;background:#fff}
+    .add-disp-btn{padding:8px 12px;background:#1e40af;color:#fff;border:none;border-radius:8px;font-size:.72rem;font-weight:800;cursor:pointer;flex-shrink:0}
+
+    /* PDC visual */
+    .pdc-visual{display:flex;gap:2px;flex-wrap:wrap;margin-top:8px}
+    .pdc-day{width:12px;height:12px;border-radius:2px}
+
+    .empty{text-align:center;padding:30px;color:#94a3b8;font-size:.78rem}
+    .info-box{background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:10px 12px;font-size:.7rem;color:#1e40af;margin-bottom:10px;line-height:1.5}
+
+    /* Período selector */
+    .periodo-chips{display:flex;gap:6px;margin-bottom:10px}
+    .pchip{padding:6px 13px;border-radius:8px;background:#f1f5f9;color:#475569;font-size:.7rem;font-weight:700;cursor:pointer;border:1.5px solid transparent}
+    .pchip.sel{background:#dbeafe;color:#1e40af;border-color:#93c5fd}
+  </style>
+</head>
+<body>
+<div class="topbar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <div style="flex:1">
+    <div class="topbar-title">📊 Adesão por Dispensação</div>
+    <div class="topbar-sub">MPR · PDC · Gaps de retirada · Alpha7 / Farmácia</div>
+  </div>
+</div>
+<main>
+  <select class="pac-sel" id="sel-pac" onchange="init()"><option value="">Selecione o paciente...</option></select>
+
+  <div class="info-box">
+    💡 <strong>MPR</strong> (Medication Possession Ratio) = dias com medicamento / período × 100%. <strong>PDC</strong> (Proportion of Days Covered) = dias cobertos sem sobreposição / período × 100%. Registre cada retirada na farmácia. Dados importados do Alpha7 via CSV são carregados automaticamente.
+  </div>
+
+  <div class="periodo-chips" id="periodo-chips">
+    <div class="pchip sel" onclick="selPeriodo(30,this)">30 dias</div>
+    <div class="pchip" onclick="selPeriodo(60,this)">60 dias</div>
+    <div class="pchip" onclick="selPeriodo(90,this)">90 dias</div>
+    <div class="pchip" onclick="selPeriodo(180,this)">6 meses</div>
+  </div>
+
+  <div class="kpi-row" id="kpi-row" style="display:none"></div>
+  <div id="lista-div"></div>
+</main>
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+<script src="js/db.js"></script>
+<script src="js/utils.js"></script>
+<script>
+let _pid=null, _meds=[], _dispensacoes={}, _periodo=30;
+
+function selPeriodo(d,btn){
+  _periodo=d;
+  document.querySelectorAll('.pchip').forEach(c=>c.classList.remove('sel'));
+  btn.classList.add('sel');
+  renderLista();
+}
+
+/* Calcula MPR e PDC para um medicamento num período */
+function calcMetricas(disps,diasSupr,periodo){
+  // Ordena por data
+  const sorted=[...disps].sort((a,b)=>new Date(a.data)-new Date(b.data));
+  const hoje=new Date(); hoje.setHours(0,0,0,0);
+  const inicio=new Date(hoje); inicio.setDate(inicio.getDate()-periodo);
+  // Filtra dispensações no período
+  const noPerido=sorted.filter(d=>new Date(d.data)>=inicio&&new Date(d.data)<=hoje);
+  // Dias de supply totais dispensados no período
+  const totalDiasDisp=noPerido.reduce((s,d)=>s+(d.dias||diasSupr||30),0);
+  const mpr=Math.min(100,Math.round(totalDiasDisp/periodo*100));
+  // PDC: calcula dias cobertos (sem sobreposição)
+  const cobertos=new Set();
+  let cursor=inicio.getTime();
+  noPerido.forEach(d=>{
+    const inicio_d=Math.max(new Date(d.data).getTime(),inicio.getTime());
+    const fim_d=inicio_d+(d.dias||diasSupr||30)*86400000;
+    for(let t=inicio_d;t<Math.min(fim_d,hoje.getTime());t+=86400000){
+      cobertos.add(Math.floor(t/86400000));
+    }
+  });
+  const pdc=Math.min(100,Math.round(cobertos.size/periodo*100));
+  // Gaps
+  const gaps=[];let gap_start=null;
+  for(let i=0;i<=periodo;i++){
+    const day=new Date(inicio);day.setDate(day.getDate()+i);
+    const dayKey=Math.floor(day.getTime()/86400000);
+    const coberto=cobertos.has(dayKey);
+    if(!coberto&&day<=hoje){if(!gap_start) gap_start=new Date(day);}
+    else if(gap_start){const gap_dias=Math.round((day-gap_start)/86400000);if(gap_dias>3) gaps.push({inicio:gap_start,dias:gap_dias});gap_start=null;}
+  }
+  // PDC dias map (para visual)
+  const pdcMap=[];
+  for(let i=0;i<Math.min(periodo,90);i++){
+    const day=new Date(inicio);day.setDate(day.getDate()+i);
+    if(day>hoje) break;
+    pdcMap.push(cobertos.has(Math.floor(day.getTime()/86400000)));
+  }
+  return{mpr,pdc,totalDiasDisp,gaps,pdcMap};
+}
+
+function clsMpr(v){
+  if(v>=80) return{cls:'Boa adesão',cor:'#22c55e',bg:'#dcfce7'};
+  if(v>=50) return{cls:'Adesão moderada',cor:'#f59e0b',bg:'#fef3c7'};
+  return    {cls:'Baixa adesão',cor:'#dc2626',bg:'#fee2e2'};
+}
+
+function toggle(id){document.getElementById('mdc-body-'+id)?.classList.toggle('open');}
+
+async function addDisp(medId,el){
+  const dataEl=document.getElementById('disp-data-'+medId);
+  const qtdEl=document.getElementById('disp-qtd-'+medId);
+  const diasEl=document.getElementById('disp-dias-'+medId);
+  const data=dataEl?.value||hoje();
+  const qtd=parseFloat(qtdEl?.value)||null;
+  const dias=parseInt(diasEl?.value)||30;
+  if(!data){showToast('Informe a data da dispensação');return;}
+  _dispensacoes[medId]=_dispensacoes[medId]||[];
+  _dispensacoes[medId].push({data,qtd,dias,ts:Date.now()});
+  await dbSetConfig('dispensacoes_'+_pid,_dispensacoes);
+  renderLista();showToast('Dispensação registrada!');
+}
+
+async function delDisp(medId,idx){
+  _dispensacoes[medId].splice(idx,1);
+  await dbSetConfig('dispensacoes_'+_pid,_dispensacoes);
+  renderLista();
+}
+
+function renderKpiGlobal(){
+  const mprs=_meds.map(m=>{
+    const disps=_dispensacoes[m.id]||[];
+    if(!disps.length) return null;
+    const {mpr,pdc}=calcMetricas(disps,30,_periodo);
+    return{mpr,pdc};
+  }).filter(Boolean);
+  if(!mprs.length){document.getElementById('kpi-row').style.display='none';return;}
+  document.getElementById('kpi-row').style.display='grid';
+  const avgMpr=Math.round(mprs.reduce((s,x)=>s+x.mpr,0)/mprs.length);
+  const avgPdc=Math.round(mprs.reduce((s,x)=>s+x.pdc,0)/mprs.length);
+  const boa=mprs.filter(x=>x.pdc>=80).length;
+  const c=clsMpr(avgPdc);
+  document.getElementById('kpi-row').innerHTML=`
+    <div class="kpi"><div class="kpi-val" style="color:${c.cor}">${avgMpr}%</div><div class="kpi-lbl">MPR médio</div><div class="kpi-sub">últimos ${_periodo}d</div></div>
+    <div class="kpi"><div class="kpi-val" style="color:${c.cor}">${avgPdc}%</div><div class="kpi-lbl">PDC médio</div><div class="kpi-sub">${c.cls}</div></div>
+    <div class="kpi"><div class="kpi-val" style="color:${boa===mprs.length?'#22c55e':'#f59e0b'}">${boa}/${mprs.length}</div><div class="kpi-lbl">PDC ≥80%</div><div class="kpi-sub">boa adesão</div></div>`;
+}
+
+function renderLista(){
+  renderKpiGlobal();
+  if(!_meds.length){document.getElementById('lista-div').innerHTML='<div class="empty">Nenhum medicamento ativo.</div>';return;}
+  document.getElementById('lista-div').innerHTML=_meds.map(m=>{
+    const id=m.id;
+    const disps=(_dispensacoes[id]||[]).sort((a,b)=>new Date(b.data)-new Date(a.data));
+    const met=disps.length?calcMetricas(disps,30,_periodo):null;
+    const mpr=met?.mpr??null;const pdc=met?.pdc??null;
+    const c=mpr!=null?clsMpr(mpr):{cls:'Sem dados',cor:'#94a3b8',bg:'#f1f5f9'};
+    const pdcVisual=met?.pdcMap?.map(cob=>`<div class="pdc-day" style="background:${cob?'#22c55e':'#fee2e2'}"></div>`).join('')||'';
+    const gapsTxt=met?.gaps?.length?met.gaps.map(g=>`⚠️ ${g.dias}d sem medicamento (a partir ${g.inicio.toLocaleDateString('pt-BR')})`).join('<br>'):'';
+    return `<div class="med-disp-card">
+      <div class="mdc-hdr" onclick="toggle(${id})">
+        <div class="mdc-nome">${esc(m.nome||m.medicamento||'—')} <span style="font-size:.63rem;color:#94a3b8">${esc(m.dose||'')}</span></div>
+        ${mpr!=null?`<div class="mpr-bar-wrap"><div class="mpr-bar" style="width:${mpr}%;background:${c.cor}"></div></div>`:''}
+        <div class="mdc-mpr" style="color:${c.cor}">${pdc!=null?'PDC '+pdc+'%':'—'}</div>
+        <div class="mdc-badge" style="background:${c.bg};color:${c.cor}">${mpr!=null?'MPR '+mpr+'%':'Sem dados'}</div>
+      </div>
+      <div class="mdc-body" id="mdc-body-${id}">
+        ${pdcVisual?`<div style="margin-top:8px;font-size:.6rem;color:#64748b;font-weight:700;margin-bottom:4px">COBERTURA DIA A DIA (${_periodo}d)</div><div class="pdc-visual">${pdcVisual}</div>`:''}
+        ${gapsTxt?`<div style="font-size:.65rem;color:#dc2626;margin-top:6px;line-height:1.8">${gapsTxt}</div>`:''}
+        <div class="disp-list">
+          ${disps.slice(0,8).map((d,i)=>`<div class="disp-item"><div class="disp-data">${d.data.split('-').reverse().join('/')}</div><div class="disp-qtd">${d.qtd?d.qtd+'un':''} · ${d.dias||30} dias de supply</div><button class="disp-del" onclick="delDisp(${id},${(_dispensacoes[id]||[]).indexOf(d)})">✕</button></div>`).join('')}
+        </div>
+        <div style="font-size:.65rem;font-weight:800;color:#94a3b8;text-transform:uppercase;margin-top:10px;margin-bottom:4px">Registrar dispensação</div>
+        <div class="add-disp-row">
+          <input class="add-disp-inp" type="date" id="disp-data-${id}" value="${hoje()}">
+          <input class="add-disp-inp" type="number" id="disp-qtd-${id}" min="1" placeholder="Qtd" style="max-width:60px">
+          <input class="add-disp-inp" type="number" id="disp-dias-${id}" min="1" max="180" placeholder="Dias" value="30" style="max-width:60px">
+          <button class="add-disp-btn" onclick="addDisp(${id})">+ Add</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function hoje(){return new Date().toISOString().slice(0,10);}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+
+async function init(){
+  _pid=parseInt(document.getElementById('sel-pac').value)||null;
+  if(!_pid){document.getElementById('lista-div').innerHTML='';document.getElementById('kpi-row').style.display='none';return;}
+  [_meds,_dispensacoes]=await Promise.all([
+    dbGetByIndex('medicamentos','pacienteId',_pid),
+    dbGetConfig('dispensacoes_'+_pid)||Promise.resolve({}),
+  ]);
+  _meds=(_meds||[]).filter(m=>m.ativo!==false&&m.ativo!==0);
+  _dispensacoes=_dispensacoes||{};
+  renderLista();
+}
+
+document.addEventListener('DOMContentLoaded',async()=>{
+  const pacs=await dbGetAll('pacientes');
+  const sel=document.getElementById('sel-pac');
+  sel.innerHTML='<option value="">Selecione o paciente...</option>'+pacs.map(p=>`<option value="${p.id}">${esc(p.nome||'Paciente '+p.id)}</option>`).join('');
+  const pid=getActivePacienteId();
+  if(pid){sel.value=pid;await init();}
+});
+</script>
+</body>
+</html>

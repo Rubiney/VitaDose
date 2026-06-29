@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>Custo do Tratamento — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .topbar{display:flex;align-items:center;gap:10px;padding:12px 16px;background:#166534;position:sticky;top:0;z-index:100}
+    .back-btn{background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:8px;padding:6px 11px;cursor:pointer;font-size:1rem}
+    .topbar-title{font-size:.93rem;font-weight:800;color:#fff;flex:1}
+    .topbar-sub{font-size:.62rem;color:rgba(255,255,255,.7);margin-top:1px}
+    main{max-width:680px;margin:0 auto;padding:12px 14px 90px}
+    .pac-sel{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:12px;padding:11px 14px;font-size:.88rem;margin-bottom:10px;background:#fff}
+
+    /* Resumo financeiro */
+    .resumo-card{background:linear-gradient(135deg,#166534,#15803d);border-radius:16px;padding:16px;margin-bottom:12px;color:#fff}
+    .resumo-total{font-size:2rem;font-weight:900;margin:4px 0}
+    .resumo-lbl{font-size:.7rem;opacity:.8;font-weight:700}
+    .resumo-economia{background:rgba(255,255,255,.15);border-radius:10px;padding:10px 12px;margin-top:10px;display:flex;gap:10px}
+    .economia-item{flex:1;text-align:center}
+    .economia-val{font-size:1.1rem;font-weight:900}
+    .economia-lbl{font-size:.6rem;opacity:.8}
+
+    /* Filtros */
+    .filter-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+    .f-btn{padding:6px 12px;border-radius:8px;background:#f1f5f9;color:#475569;font-size:.7rem;font-weight:700;cursor:pointer;border:1.5px solid #e2e8f0;transition:.12s}
+    .f-btn.ativo{background:#dcfce7;color:#166534;border-color:#86efac}
+
+    /* Card de medicamento */
+    .med-row{background:#fff;border-radius:12px;border:1.5px solid #e2e8f0;padding:11px 13px;margin-bottom:8px}
+    .med-row-top{display:flex;align-items:center;gap:8px}
+    .med-nome-r{font-size:.82rem;font-weight:800;color:#0f172a;flex:1}
+    .fp-badge{font-size:.58rem;font-weight:800;padding:2px 7px;border-radius:5px;background:#dcfce7;color:#166534;flex-shrink:0}
+    .gen-badge{font-size:.58rem;font-weight:800;padding:2px 7px;border-radius:5px;background:#eff6ff;color:#1e40af;flex-shrink:0;margin-left:4px}
+    .pbm-badge{font-size:.58rem;font-weight:800;padding:2px 7px;border-radius:5px;background:#f5f3ff;color:#5b21b6;flex-shrink:0;margin-left:4px}
+    .med-row-mid{display:flex;align-items:center;gap:8px;margin-top:8px}
+    .preco-lbl{font-size:.63rem;color:#64748b;flex-shrink:0}
+    .preco-inp{border:1.5px solid #e2e8f0;border-radius:8px;padding:5px 9px;font-size:.82rem;width:90px;text-align:right}
+    .preco-mes{font-size:.7rem;color:#94a3b8;flex:1}
+    .fp-preco{font-size:.7rem;color:#166534;font-weight:700;flex-shrink:0}
+    .econ-row{font-size:.63rem;color:#16a34a;font-weight:700;margin-top:4px}
+
+    /* Tabela FP */
+    .fp-info{background:#f0fdf4;border:1px solid #86efac;border-radius:10px;padding:10px 12px;font-size:.7rem;color:#14532d;margin-bottom:10px;line-height:1.6}
+
+    .empty{text-align:center;padding:30px;color:#94a3b8;font-size:.78rem}
+
+    @media print{
+      .topbar,.pac-sel,.filter-row,nav{display:none!important}
+      body{background:#fff}
+      .resumo-card{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+      @page{size:A5;margin:8mm}
+    }
+  </style>
+</head>
+<body>
+<div class="topbar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <div style="flex:1">
+    <div class="topbar-title">💰 Custo do Tratamento</div>
+    <div class="topbar-sub">Farmácia Popular · PBM · Genérico · Economia</div>
+  </div>
+  <button style="background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:8px;padding:7px 10px;font-size:.72rem;font-weight:700;cursor:pointer" onclick="window.print()">🖨️</button>
+</div>
+<main>
+  <select class="pac-sel" id="sel-pac" onchange="init()"><option value="">Selecione o paciente...</option></select>
+
+  <div class="fp-info" id="fp-info" style="display:none"></div>
+  <div id="resumo-div"></div>
+
+  <div class="filter-row">
+    <button class="f-btn ativo" onclick="filtrar('todos',this)">Todos</button>
+    <button class="f-btn" onclick="filtrar('fp',this)">🌿 Farm. Popular</button>
+    <button class="f-btn" onclick="filtrar('gen',this)">💊 Tem genérico</button>
+    <button class="f-btn" onclick="filtrar('pbm',this)">🎫 PBM</button>
+  </div>
+
+  <div id="lista-div"></div>
+</main>
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+<script src="js/db.js"></script>
+<script src="js/utils.js"></script>
+<script>
+let _pid=null, _meds=[], _precos={}, _filtro='todos';
+
+/* ── Base de dados Farmácia Popular (gratuito/subsidiado) + genérico + PBM */
+const FP_DB=[
+  // Hipertensão (gratuitos)
+  {re:/captopril/i,       fp:true,fpPreco:0,    gen:true,pbm:false,ref:'Hipertensão — RENAME'},
+  {re:/enalapril/i,       fp:true,fpPreco:0,    gen:true,pbm:false,ref:'Hipertensão — RENAME'},
+  {re:/losartan/i,        fp:true,fpPreco:0,    gen:true,pbm:false,ref:'Hipertensão — RENAME'},
+  {re:/atenolol/i,        fp:true,fpPreco:0,    gen:true,pbm:false,ref:'Hipertensão — RENAME'},
+  {re:/propranolol/i,     fp:true,fpPreco:0,    gen:true,pbm:false,ref:'Hipertensão — RENAME'},
+  {re:/hidroclorotiazida/i,fp:true,fpPreco:0,   gen:true,pbm:false,ref:'Hipertensão — RENAME'},
+  {re:/anlodipino|amlodipino/i,fp:true,fpPreco:0,gen:true,pbm:false,ref:'Hipertensão — RENAME'},
+  {re:/carvedilol/i,      fp:true,fpPreco:0,    gen:true,pbm:false,ref:'Hipertensão — RENAME'},
+  {re:/furosemida/i,      fp:true,fpPreco:0,    gen:true,pbm:false,ref:'Hipertensão — RENAME'},
+  {re:/espironolactona/i, fp:true,fpPreco:0,    gen:true,pbm:false,ref:'Hipertensão — RENAME'},
+  {re:/metoprolol/i,      fp:true,fpPreco:0,    gen:true,pbm:false,ref:'Hipertensão — RENAME'},
+  {re:/bisoprolol/i,      fp:false,fpPreco:null,gen:true,pbm:true, ref:'PBM Farmácias'},
+  // Diabetes (gratuitos)
+  {re:/metformina/i,      fp:true,fpPreco:0,    gen:true,pbm:false,ref:'Diabetes — RENAME'},
+  {re:/glibenclamida/i,   fp:true,fpPreco:0,    gen:true,pbm:false,ref:'Diabetes — RENAME'},
+  {re:/insulina\s*(regular|nph|glargina|aspart|lispro)?/i,fp:true,fpPreco:0,gen:false,pbm:false,ref:'Diabetes — RENAME'},
+  {re:/gliclazida/i,      fp:false,fpPreco:null,gen:true,pbm:true, ref:'PBM'},
+  {re:/glipizida/i,       fp:false,fpPreco:null,gen:true,pbm:false,ref:''},
+  {re:/sitagliptina/i,    fp:false,fpPreco:null,gen:false,pbm:true,ref:'PBM Viva Saúde'},
+  {re:/dapagliflozina/i,  fp:false,fpPreco:null,gen:false,pbm:true,ref:'PBM Farxiga'},
+  {re:/empagliflozina/i,  fp:false,fpPreco:null,gen:false,pbm:true,ref:'PBM Jardiance'},
+  {re:/liraglutida|semaglutida/i,fp:false,fpPreco:null,gen:false,pbm:true,ref:'PBM fabricante'},
+  // Asma (gratuitos)
+  {re:/salbutamol/i,      fp:true,fpPreco:0,    gen:true,pbm:false,ref:'Asma — RENAME'},
+  {re:/beclometasona/i,   fp:true,fpPreco:0,    gen:true,pbm:false,ref:'Asma — RENAME'},
+  {re:/budesonida/i,      fp:false,fpPreco:null,gen:true,pbm:true, ref:'PBM'},
+  {re:/formoterol/i,      fp:false,fpPreco:null,gen:true,pbm:true, ref:'PBM'},
+  {re:/salmeterol/i,      fp:false,fpPreco:null,gen:true,pbm:true, ref:'PBM'},
+  {re:/montelucaste/i,    fp:false,fpPreco:null,gen:true,pbm:false,ref:''},
+  // Colesterol (subsidiados)
+  {re:/atorvastatina/i,   fp:true,fpPreco:1.5,  gen:true,pbm:false,ref:'Colesterol — FP 35% desc.'},
+  {re:/sinvastatina/i,    fp:true,fpPreco:1.5,  gen:true,pbm:false,ref:'Colesterol — FP 35% desc.'},
+  {re:/rosuvastatina/i,   fp:false,fpPreco:null,gen:true,pbm:true, ref:'PBM'},
+  // Mental (subsidiados)
+  {re:/fluoxetina/i,      fp:true,fpPreco:2.5,  gen:true,pbm:false,ref:'Saúde Mental — FP'},
+  {re:/amitriptilina/i,   fp:true,fpPreco:2.0,  gen:true,pbm:false,ref:'Saúde Mental — FP'},
+  {re:/sertralina/i,      fp:false,fpPreco:null,gen:true,pbm:true, ref:'PBM'},
+  {re:/venlafaxina/i,     fp:false,fpPreco:null,gen:true,pbm:true, ref:'PBM'},
+  {re:/escitalopram/i,    fp:false,fpPreco:null,gen:true,pbm:false,ref:''},
+  {re:/clonazepam/i,      fp:false,fpPreco:null,gen:true,pbm:false,ref:''},
+  {re:/haloperidol/i,     fp:true,fpPreco:2.0,  gen:true,pbm:false,ref:'Saúde Mental — FP'},
+  {re:/risperidona/i,     fp:true,fpPreco:3.0,  gen:true,pbm:false,ref:'Saúde Mental — FP'},
+  {re:/carbamazepina/i,   fp:true,fpPreco:2.5,  gen:true,pbm:false,ref:'Saúde Mental — FP'},
+  {re:/fenobarbital/i,    fp:true,fpPreco:1.0,  gen:true,pbm:false,ref:'Saúde Mental — FP'},
+  {re:/fenitoína|fenitoina/i,fp:true,fpPreco:2.0,gen:true,pbm:false,ref:'Saúde Mental — FP'},
+  {re:/lítio|litio|carbonato de lítio/i,fp:true,fpPreco:3.0,gen:true,pbm:false,ref:'Saúde Mental — FP'},
+  // Tireóide
+  {re:/levotiroxina/i,    fp:true,fpPreco:0,    gen:true,pbm:false,ref:'Tireoide — RENAME'},
+  // Outros
+  {re:/omeprazol/i,       fp:false,fpPreco:null,gen:true,pbm:false,ref:''},
+  {re:/pantoprazol/i,     fp:false,fpPreco:null,gen:true,pbm:false,ref:''},
+  {re:/ranitidina/i,      fp:false,fpPreco:null,gen:true,pbm:false,ref:''},
+  {re:/azitromicina/i,    fp:false,fpPreco:null,gen:true,pbm:false,ref:''},
+  {re:/amoxicilina/i,     fp:false,fpPreco:null,gen:true,pbm:false,ref:''},
+  {re:/dipirona/i,        fp:false,fpPreco:null,gen:true,pbm:false,ref:''},
+  {re:/paracetamol/i,     fp:false,fpPreco:null,gen:true,pbm:false,ref:''},
+  {re:/ibuprofeno/i,      fp:false,fpPreco:null,gen:true,pbm:false,ref:''},
+  {re:/varfarina|varfarin/i,fp:false,fpPreco:null,gen:true,pbm:false,ref:''},
+  {re:/rivaroxabana/i,    fp:false,fpPreco:null,gen:false,pbm:true,ref:'PBM Xarelto'},
+  {re:/apixabana/i,       fp:false,fpPreco:null,gen:false,pbm:true,ref:'PBM Eliquis'},
+  {re:/alendronato/i,     fp:false,fpPreco:null,gen:true,pbm:false,ref:''},
+  {re:/calcio|cálcio/i,   fp:false,fpPreco:null,gen:true,pbm:false,ref:''},
+  {re:/ácido fólico|acido folico/i,fp:false,fpPreco:null,gen:true,pbm:false,ref:''},
+  {re:/vitamina d|colecalciferol/i,fp:false,fpPreco:null,gen:true,pbm:false,ref:''},
+];
+
+function matchFp(nome){
+  const n=String(nome||'').toLowerCase();
+  for(const e of FP_DB){if(e.re.test(n)) return e;}
+  return null;
+}
+
+function filtrar(tipo,btn){
+  _filtro=tipo;
+  document.querySelectorAll('.f-btn').forEach(b=>b.classList.remove('ativo'));
+  btn.classList.add('ativo');
+  renderLista();
+}
+
+async function salvarPreco(id,val){
+  _precos[id]=parseFloat(val)||0;
+  await dbSetConfig('precos_'+_pid,_precos);
+  renderResumo();
+}
+
+function renderResumo(){
+  const medsComPreco=_meds.map(m=>({m,fp:matchFp(m.nome||m.medicamento||''),preco:_precos[m.id]||0}));
+  const total=medsComPreco.reduce((s,x)=>s+x.preco,0);
+  const econFp=medsComPreco.filter(x=>x.fp?.fp&&x.preco>0).reduce((s,x)=>s+(x.preco-(x.fp.fpPreco||0)),0);
+  const mFp=medsComPreco.filter(x=>x.fp?.fp).length;
+  const mGen=medsComPreco.filter(x=>x.fp?.gen).length;
+  const mPbm=medsComPreco.filter(x=>x.fp?.pbm).length;
+  const div=document.getElementById('resumo-div');
+  div.innerHTML=`<div class="resumo-card">
+    <div class="resumo-lbl">Custo mensal estimado</div>
+    <div class="resumo-total">R$ ${total.toFixed(2).replace('.',',')}</div>
+    <div class="resumo-lbl">${_meds.length} medicamento${_meds.length!==1?'s':''} em uso</div>
+    <div class="resumo-economia">
+      <div class="economia-item"><div class="economia-val">🌿 ${mFp}</div><div class="economia-lbl">Farm. Popular</div></div>
+      <div class="economia-item"><div class="economia-val">💊 ${mGen}</div><div class="economia-lbl">Tem genérico</div></div>
+      <div class="economia-item"><div class="economia-val">🎫 ${mPbm}</div><div class="economia-lbl">PBM disp.</div></div>
+      <div class="economia-item"><div class="economia-val">R$ ${econFp.toFixed(0)}</div><div class="economia-lbl">Econ. FP/mês</div></div>
+    </div>
+  </div>`;
+  // FP info
+  const fpMeds=medsComPreco.filter(x=>x.fp?.fp);
+  const fpInfo=document.getElementById('fp-info');
+  if(fpMeds.length){fpInfo.style.display='block';fpInfo.innerHTML='🌿 <strong>Farmácia Popular:</strong> '+fpMeds.map(x=>`${x.m.nome||x.m.medicamento} (${x.fp.ref||'gratuito'})`).join(' · ');}
+  else fpInfo.style.display='none';
+}
+
+function renderLista(){
+  renderResumo();
+  const meds=_filtro==='todos'?_meds:_filtro==='fp'?_meds.filter(m=>matchFp(m.nome||m.medicamento||'')?.fp):_filtro==='gen'?_meds.filter(m=>matchFp(m.nome||m.medicamento||'')?.gen):_meds.filter(m=>matchFp(m.nome||m.medicamento||'')?.pbm);
+  if(!meds.length){document.getElementById('lista-div').innerHTML='<div class="empty">Nenhum medicamento nesta categoria.</div>';return;}
+  document.getElementById('lista-div').innerHTML=meds.map(m=>{
+    const fp=matchFp(m.nome||m.medicamento||'');
+    const preco=_precos[m.id]||0;
+    const econFp=fp?.fp&&preco>0?preco-(fp.fpPreco||0):0;
+    return `<div class="med-row">
+      <div class="med-row-top">
+        <div class="med-nome-r">${esc(m.nome||m.medicamento||'—')} <span style="font-size:.62rem;color:#94a3b8">${esc(m.dose||'')}</span></div>
+        ${fp?.fp?`<div class="fp-badge">🌿 FP${fp.fpPreco===0?' gratuito':''}</div>`:''}
+        ${fp?.gen&&!fp?.fp?`<div class="gen-badge">💊 genérico</div>`:''}
+        ${fp?.pbm?`<div class="pbm-badge">🎫 PBM</div>`:''}
+      </div>
+      <div class="med-row-mid">
+        <div class="preco-lbl">Preço/mês R$</div>
+        <input class="preco-inp" type="number" min="0" step="0.01" value="${preco||''}" placeholder="0,00" onchange="salvarPreco(${m.id},this.value)">
+        ${fp?.fp&&fp.fpPreco===0?`<div class="fp-preco">🌿 Gratuito na FP</div>`:''}
+        ${fp?.fp&&fp.fpPreco>0?`<div class="fp-preco">🌿 ~R$ ${fp.fpPreco.toFixed(2).replace('.',',')} na FP</div>`:''}
+        ${fp?.ref&&!fp.fp?`<div class="preco-mes">${fp.ref}</div>`:''}
+      </div>
+      ${econFp>0?`<div class="econ-row">✅ Economia possível na FP: R$ ${econFp.toFixed(2).replace('.',',')} /mês</div>`:''}
+      ${fp?.pbm&&!fp.fp?`<div class="econ-row" style="color:#5b21b6">🎫 ${fp.ref} — solicitar cartão de desconto</div>`:''}
+    </div>`;
+  }).join('');
+}
+
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+
+async function init(){
+  _pid=parseInt(document.getElementById('sel-pac').value)||null;
+  if(!_pid){document.getElementById('lista-div').innerHTML='';document.getElementById('resumo-div').innerHTML='';return;}
+  [_meds,_precos]=await Promise.all([
+    dbGetByIndex('medicamentos','pacienteId',_pid),
+    dbGetConfig('precos_'+_pid)||Promise.resolve({}),
+  ]);
+  _meds=(_meds||[]).filter(m=>m.ativo!==false&&m.ativo!==0);
+  _precos=_precos||{};
+  renderLista();
+}
+
+document.addEventListener('DOMContentLoaded',async()=>{
+  const pacs=await dbGetAll('pacientes');
+  const sel=document.getElementById('sel-pac');
+  sel.innerHTML='<option value="">Selecione o paciente...</option>'+pacs.map(p=>`<option value="${p.id}">${esc(p.nome||'Paciente '+p.id)}</option>`).join('');
+  const pid=getActivePacienteId();
+  if(pid){sel.value=pid;await init();}
+});
+</script>
+</body>
+</html>

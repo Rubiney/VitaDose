@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>Receituário e Validade — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .topbar{display:flex;align-items:center;gap:10px;padding:12px 16px;background:#0f3460;position:sticky;top:0;z-index:100}
+    .back-btn{background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:8px;padding:6px 11px;cursor:pointer;font-size:1rem}
+    .topbar-title{font-size:.93rem;font-weight:800;color:#fff;flex:1}
+    .topbar-sub{font-size:.62rem;color:rgba(255,255,255,.7);margin-top:1px}
+    main{max-width:680px;margin:0 auto;padding:12px 14px 90px}
+    .pac-sel{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:12px;padding:11px 14px;font-size:.88rem;margin-bottom:10px;background:#fff}
+
+    /* Resumo */
+    .kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-bottom:12px}
+    .kpi{background:#fff;border-radius:12px;padding:10px 8px;text-align:center;border:1.5px solid #e2e8f0}
+    .kpi-val{font-size:1.3rem;font-weight:900}
+    .kpi-lbl{font-size:.55rem;color:#94a3b8;font-weight:700;margin-top:2px}
+
+    /* Legenda tipos */
+    .tipos-legend{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+    .tipo-tag{padding:4px 9px;border-radius:6px;font-size:.62rem;font-weight:800;cursor:pointer;border:1.5px solid transparent}
+
+    /* Card de medicamento */
+    .med-card{background:#fff;border-radius:13px;border:1.5px solid #e2e8f0;margin-bottom:9px;overflow:hidden}
+    .med-card-hdr{padding:11px 13px;display:flex;align-items:center;gap:10px;cursor:pointer}
+    .med-semaforo{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+    .med-nome{font-size:.83rem;font-weight:800;color:#0f172a;flex:1}
+    .med-badge{font-size:.58rem;font-weight:800;padding:2px 8px;border-radius:5px;flex-shrink:0}
+    .med-dias-left{font-size:.72rem;font-weight:800;flex-shrink:0}
+    .med-chevron{font-size:.7rem;color:#94a3b8;flex-shrink:0}
+    .med-card-body{display:none;padding:0 13px 13px;border-top:1px solid #f1f5f9}
+    .med-card-body.open{display:block}
+
+    label{font-size:.66rem;font-weight:700;color:#64748b;display:block;margin-bottom:3px;margin-top:9px}
+    input,select{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:9px;padding:8px 10px;font-size:.82rem;background:#fff}
+    .form-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .tipo-desc{font-size:.62rem;color:#64748b;background:#f8fafc;border-radius:7px;padding:7px 9px;margin-top:4px;line-height:1.5}
+    .save-med-btn{width:100%;padding:10px;background:#0f3460;color:#fff;border:none;border-radius:9px;font-size:.78rem;font-weight:800;cursor:pointer;margin-top:10px}
+    .renov-hist{font-size:.65rem;color:#64748b;margin-top:8px;line-height:1.8}
+    .add-renov-btn{padding:6px 12px;background:#e0f2fe;color:#0369a1;border:none;border-radius:7px;font-size:.68rem;font-weight:800;cursor:pointer;margin-top:6px}
+
+    .empty{text-align:center;padding:30px;color:#94a3b8;font-size:.78rem}
+
+    /* Info legal */
+    .info-legal{background:#f0f9ff;border:1px solid #bae6fd;border-radius:10px;padding:10px 12px;font-size:.68rem;color:#0369a1;margin-bottom:10px;line-height:1.6}
+
+    @media print{.topbar,.pac-sel,nav,.save-med-btn,.add-renov-btn{display:none!important}body{background:#fff}}
+  </style>
+</head>
+<body>
+<div class="topbar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <div style="flex:1">
+    <div class="topbar-title">📋 Receituário e Validade</div>
+    <div class="topbar-sub">Controle de receitas · Renovação · Portaria 344/98</div>
+  </div>
+  <button style="background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:8px;padding:7px 10px;font-size:.72rem;font-weight:700;cursor:pointer" onclick="window.print()">🖨️</button>
+</div>
+<main>
+  <select class="pac-sel" id="sel-pac" onchange="init()"><option value="">Selecione o paciente...</option></select>
+
+  <div class="info-legal">
+    📌 <strong>Validades legais (Portaria 344/98 / RDC 471/2021):</strong> Receita simples: 6 meses · Receita Azul (B1): 60 dias · Receita Amarela (A): 30 dias (uso único) · Notificação especial (B2, C1–C5): 30 dias
+  </div>
+
+  <div class="kpi-row" id="kpi-row" style="display:none"></div>
+  <div id="lista-div"></div>
+</main>
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+<script src="js/db.js"></script>
+<script src="js/utils.js"></script>
+<script>
+let _pid=null, _meds=[], _receitas={};
+
+const TIPOS={
+  simples:{lbl:'Receita Simples',cor:'#0369a1',bg:'#e0f2fe',dias:180,desc:'Válida por 6 meses. Uso para a maioria dos medicamentos sem controle especial.'},
+  azul:   {lbl:'Receita Azul (B1)',cor:'#7c3aed',bg:'#ede9fe',dias:60,desc:'Notificação de receita especial azul. Benzodiazepínicos, ansiolíticos. 60 dias de validade, 2 vias, dispensação por farmácia.'},
+  amarela:{lbl:'Receita Amarela (A)',cor:'#d97706',bg:'#fef3c7',dias:30,desc:'Entorpecentes e psicotrópicos de alta potência (morfina, codeína). 30 dias, uso único na dispensação.'},
+  branca: {lbl:'Receita Branca 2 vias (C1)',cor:'#64748b',bg:'#f1f5f9',dias:30,desc:'Psicotrópicos C1 (metilfenidato, anfetaminas). 30 dias, 2 vias.'},
+  b2:     {lbl:'Notif. Especial B2',cor:'#059669',bg:'#d1fae5',dias:180,desc:'Antirretrovirais. Validade 180 dias.'},
+  c2:     {lbl:'Receita Especial C2',cor:'#b45309',bg:'#fef3c7',dias:60,desc:'Retinoides (isotretinoína, acitretina). 60 dias, TCLE obrigatório.'},
+  c5:     {lbl:'Receita Especial C5',cor:'#9f1239',bg:'#ffe4e6',dias:60,desc:'Anabolizantes (testosterona, nandrolona). 60 dias.'},
+};
+
+// Detecta tipo provável pelo nome do medicamento
+function detectTipo(nome){
+  const n=(nome||'').toLowerCase();
+  if(/clonazepam|diazepam|alprazolam|lorazepam|midazolam|bromazepam|nitrazepam|flurazepam/.test(n)) return 'azul';
+  if(/morfina|codeína|codeina|fentanil|tramadol|oxicodona|metadona|buprenorfina/.test(n)) return 'amarela';
+  if(/metilfenidato|anfetamina|dexanfetamina|lisdexanfetamina/.test(n)) return 'branca';
+  if(/isotretinoína|isotretinoina|acitretina/.test(n)) return 'c2';
+  if(/testosterona|nandrolona|stanozolol|oxandrolona/.test(n)) return 'c5';
+  if(/zidovudina|efavirenz|tenofovir|lamivudina|nevirapina/.test(n)) return 'b2';
+  return 'simples';
+}
+
+function diasRestantes(rec){
+  if(!rec||!rec.data) return null;
+  const tipo=TIPOS[rec.tipo]||TIPOS.simples;
+  const exp=new Date(rec.data);
+  exp.setDate(exp.getDate()+tipo.dias);
+  return Math.ceil((exp-new Date())/86400000);
+}
+
+function semaforoDias(d){
+  if(d==null) return{cor:'#94a3b8',emoji:'⚪',cls:''};
+  if(d<0)    return{cor:'#dc2626',emoji:'🔴',cls:'venc'};
+  if(d<=7)   return{cor:'#dc2626',emoji:'🔴',cls:'crit'};
+  if(d<=30)  return{cor:'#f59e0b',emoji:'🟡',cls:'warn'};
+  return     {cor:'#22c55e',emoji:'🟢',cls:'ok'};
+}
+
+function toggle(id){
+  const b=document.getElementById('body-'+id);
+  if(b) b.classList.toggle('open');
+}
+
+async function salvarReceita(medId){
+  const tipo=document.getElementById('tipo-'+medId)?.value||'simples';
+  const obj={tipo,medico:document.getElementById('med-'+medId)?.value?.trim()||'',crm:document.getElementById('crm-'+medId)?.value?.trim()||'',data:document.getElementById('data-'+medId)?.value||'',obs:document.getElementById('obs-'+medId)?.value?.trim()||'',renovacoes:_receitas[medId]?.renovacoes||[]};
+  if(!obj.data){showToast('Informe a data da receita');return;}
+  _receitas[medId]=obj;
+  await dbSetConfig('receitas_'+_pid,_receitas);
+  renderLista();showToast('Receita salva!');
+}
+
+async function addRenovacao(medId){
+  if(!_receitas[medId]){showToast('Salve a receita primeiro');return;}
+  const data=prompt('Data da renovação (AAAA-MM-DD):',hoje());
+  if(!data) return;
+  _receitas[medId].renovacoes=_receitas[medId].renovacoes||[];
+  _receitas[medId].renovacoes.unshift({data,ts:Date.now()});
+  _receitas[medId].data=data;
+  await dbSetConfig('receitas_'+_pid,_receitas);
+  renderLista();showToast('Renovação registrada!');
+}
+
+function renderLista(){
+  if(!_meds.length){document.getElementById('lista-div').innerHTML='<div class="empty">Nenhum medicamento ativo cadastrado.</div>';return;}
+  let venc=0,crit=0,warn=0,ok=0;
+  const html=_meds.map(m=>{
+    const id=m.id;
+    const rec=_receitas[id];
+    const dias=diasRestantes(rec);
+    const s=semaforoDias(dias);
+    const tipo=rec?TIPOS[rec.tipo]||TIPOS.simples:null;
+    const tipoAuto=TIPOS[detectTipo(m.nome||m.medicamento||'')];
+    if(dias==null) {}
+    else if(dias<0) venc++;
+    else if(dias<=7) crit++;
+    else if(dias<=30) warn++;
+    else ok++;
+    return `<div class="med-card">
+      <div class="med-card-hdr" onclick="toggle(${id})">
+        <div class="med-semaforo" style="background:${s.cor}"></div>
+        <div class="med-nome">${esc(m.nome||m.medicamento||'—')} <span style="font-size:.65rem;color:#94a3b8">${esc(m.dose||'')}</span></div>
+        ${tipo?`<div class="med-badge" style="background:${tipo.bg};color:${tipo.cor}">${tipo.lbl}</div>`:''}
+        <div class="med-dias-left" style="color:${s.cor}">${dias==null?'—':dias<0?'VENCIDA':dias+'d'}</div>
+        <div class="med-chevron">▼</div>
+      </div>
+      <div class="med-card-body" id="body-${id}">
+        <label>Tipo de Receita</label>
+        <select id="tipo-${id}" onchange="atualizarDesc(${id})">
+          ${Object.entries(TIPOS).map(([k,v])=>`<option value="${k}" ${(rec?.tipo||detectTipo(m.nome||m.medicamento||''))===k?'selected':''}>${v.lbl}</option>`).join('')}
+        </select>
+        <div class="tipo-desc" id="desc-${id}">${(tipo||tipoAuto).desc}</div>
+        <div class="form-row">
+          <div><label>Médico / Prescritor</label><input type="text" id="med-${id}" value="${esc(rec?.medico||'')}" placeholder="Nome do médico"></div>
+          <div><label>CRM</label><input type="text" id="crm-${id}" value="${esc(rec?.crm||'')}" placeholder="CRM 000000/UF"></div>
+        </div>
+        <div class="form-row">
+          <div><label>Data da Receita *</label><input type="date" id="data-${id}" value="${rec?.data||''}"></div>
+          <div><label>Observações</label><input type="text" id="obs-${id}" value="${esc(rec?.obs||'')}" placeholder="Farmácia, via postal..."></div>
+        </div>
+        ${rec?.renovacoes?.length?`<div class="renov-hist"><strong>Renovações:</strong><br>${rec.renovacoes.map(r=>r.data.split('-').reverse().join('/')).join(' · ')}</div>`:''}
+        <button class="save-med-btn" onclick="salvarReceita(${id})">💾 Salvar receita</button>
+        ${rec?.data?`<button class="add-renov-btn" onclick="addRenovacao(${id})">🔄 Registrar renovação</button>`:''}
+      </div>
+    </div>`;
+  }).join('');
+  document.getElementById('lista-div').innerHTML=html;
+  // KPIs
+  document.getElementById('kpi-row').style.display='grid';
+  document.getElementById('kpi-row').innerHTML=`
+    <div class="kpi"><div class="kpi-val" style="color:#dc2626">${venc+crit}</div><div class="kpi-lbl">Vencida/Crítica</div></div>
+    <div class="kpi"><div class="kpi-val" style="color:#f59e0b">${warn}</div><div class="kpi-lbl">Vence ≤30 dias</div></div>
+    <div class="kpi"><div class="kpi-val" style="color:#22c55e">${ok}</div><div class="kpi-lbl">Em dia</div></div>
+    <div class="kpi"><div class="kpi-val" style="color:#94a3b8">${_meds.length-venc-crit-warn-ok}</div><div class="kpi-lbl">Sem receita</div></div>`;
+}
+
+function atualizarDesc(id){
+  const v=document.getElementById('tipo-'+id)?.value||'simples';
+  const el=document.getElementById('desc-'+id);
+  if(el) el.textContent=(TIPOS[v]||TIPOS.simples).desc;
+}
+
+function hoje(){return new Date().toISOString().slice(0,10);}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+
+async function init(){
+  _pid=parseInt(document.getElementById('sel-pac').value)||null;
+  if(!_pid){document.getElementById('lista-div').innerHTML='';document.getElementById('kpi-row').style.display='none';return;}
+  [_meds,_receitas]=await Promise.all([
+    dbGetByIndex('medicamentos','pacienteId',_pid),
+    dbGetConfig('receitas_'+_pid)||Promise.resolve({}),
+  ]);
+  _meds=(_meds||[]).filter(m=>m.ativo!==false&&m.ativo!==0);
+  _receitas=_receitas||{};
+  renderLista();
+}
+
+document.addEventListener('DOMContentLoaded',async()=>{
+  const pacs=await dbGetAll('pacientes');
+  const sel=document.getElementById('sel-pac');
+  sel.innerHTML='<option value="">Selecione o paciente...</option>'+pacs.map(p=>`<option value="${p.id}">${esc(p.nome||'Paciente '+p.id)}</option>`).join('');
+  const pid=getActivePacienteId();
+  if(pid){sel.value=pid;await init();}
+});
+</script>
+</body>
+</html>
