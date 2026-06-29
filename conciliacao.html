@@ -91,12 +91,15 @@
 <script src="js/utils.js"></script>
 <script>
 
-let _pid       = null;
-let _pac       = null;
-let _atual     = [];    // meds do VitaDose (lista atual)
-let _referencia= [];    // lista de referência (entrada manual ou do histórico)
-let _resultado = [];    // resultado da conciliação
-let _decisoes  = {};    // { idx: 'intencional'|'nao-intencional'|'pendente' }
+let _pid          = null;
+let _pac          = null;
+let _atual        = [];
+let _referencia   = [];
+let _resultado    = [];
+let _decisoes     = {};
+let _justificativas = {};
+let _pcne         = {};
+let _fonteLista   = '';
 
 const norm = s => (s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').trim();
 
@@ -125,6 +128,17 @@ function renderStep1() {
         Insira a <strong>lista de referência</strong> — medicamentos que o paciente deveria estar usando
         (prescrição anterior, receita, bula de alta hospitalar).
       </p>
+      <select id="sel-fonte" style="width:100%;border:1.5px solid #e2e8f0;border-radius:9px;padding:8px 10px;font-size:.82rem;color:#374151;margin-top:8px;background:#fff"
+        onchange="_fonteLista=this.value">
+        <option value="">Fonte da lista de referência...</option>
+        <option value="Alta hospitalar">Alta hospitalar</option>
+        <option value="Receita médica anterior">Receita médica anterior</option>
+        <option value="Farmácia / dispensação">Farmácia / dispensação</option>
+        <option value="UBS / APS">UBS / APS</option>
+        <option value="Informação do próprio paciente">Informação do próprio paciente</option>
+        <option value="Cuidador / familiar">Cuidador / familiar</option>
+        <option value="Prontuário eletrônico">Prontuário eletrônico</option>
+      </select>
     </div>
 
     <p class="sec-title">Lista de Referência (${_referencia.length} itens)</p>
@@ -318,50 +332,98 @@ function renderStep3() {
     alterado:   { label:'Dose alterada', cls:'tipo-alterado' },
   };
 
-  app.innerHTML = `
-    <div style="padding:8px 16px 4px">
-      <p style="font-size:.8rem;color:#64748b">Classifique cada discrepância como intencional (decisão clínica) ou não intencional (erro).</p>
-    </div>
+  const PCNE_CATS = [
+    { cod:'C1',  lbl:'C1 — Seleção do medicamento' },
+    { cod:'C2',  lbl:'C2 — Forma farmacêutica' },
+    { cod:'C3',  lbl:'C3 — Dose' },
+    { cod:'C4',  lbl:'C4 — Via / modo de administração' },
+    { cod:'C5',  lbl:'C5 — Frequência / horário' },
+    { cod:'C6',  lbl:'C6 — Duração do tratamento' },
+    { cod:'C9',  lbl:'C9 — Medicamento não prescrito / omissão' },
+    { cod:'C10', lbl:'C10 — Reconciliação incompleta' },
+  ];
 
-    <p class="sec-title">Discrepâncias (${discrepancias.length})</p>
-    <div class="card">
-      ${discrepancias.map(r => {
-        const tc = TIPOS[r.tipo];
-        const nome = r.ref?.nome || r.atual?.nome || '—';
-        const dec = _decisoes[r.idx] || '';
-        return `
-        <div class="conc-item">
-          <span class="conc-tipo ${tc.cls}">${tc.label}</span>
-          <p class="conc-nome">${nome}</p>
-          <div class="decisao-sel">
-            <button class="d-btn d-intencional ${dec==='intencional'?'sel':''}"
-              onclick="setDecisao(${r.idx},'intencional',this)">✅ Intencional</button>
-            <button class="d-btn d-nao-intencional ${dec==='nao-intencional'?'sel':''}"
-              onclick="setDecisao(${r.idx},'nao-intencional',this)">❌ Não intencional</button>
-            <button class="d-btn d-pendente ${dec==='pendente'?'sel':''}"
-              onclick="setDecisao(${r.idx},'pendente',this)">⏳ Pendente</button>
-          </div>
-        </div>`;
-      }).join('')}
-    </div>
+  let html = '<div style="padding:8px 16px 4px"><p style="font-size:.8rem;color:#64748b">Classifique cada discrepância. Para as não intencionais, indique a causa (PCNE) e registre a justificativa.</p></div>';
+  html += `<p class="sec-title">Discrepâncias (${discrepancias.length})</p><div class="card">`;
 
-    <div style="padding:0 16px 16px;display:flex;gap:8px">
-      <button class="btn-sm" style="background:#e2e8f0;color:#475569;flex:1;border-radius:12px;padding:13px" onclick="renderStep2()">← Voltar</button>
-      <button class="btn-sm btn-imprimir" style="background:#0f172a;color:#fff;flex:2;border-radius:12px;padding:13px;font-size:.88rem;font-weight:700" onclick="imprimirFinal()">
-        🖨️ Imprimir Conciliação
+  discrepancias.forEach(r => {
+    const tc   = TIPOS[r.tipo];
+    const nome = r.ref?.nome || r.atual?.nome || '—';
+    const dec  = _decisoes[r.idx] || '';
+    const pcneSel = _pcne[r.idx] || '';
+    const just = _justificativas[r.idx] || '';
+    const pcneOpts = PCNE_CATS.map(c => `<option value="${c.cod}"${pcneSel===c.cod?' selected':''}>${c.lbl}</option>`).join('');
+    html += `
+      <div class="conc-item">
+        <span class="conc-tipo ${tc.cls}">${tc.label}</span>
+        <p class="conc-nome">${nome}</p>
+        <div class="decisao-sel">
+          <button class="d-btn d-intencional${dec==='intencional'?' sel':''}"
+            onclick="setDecisao(${r.idx},'intencional',this)">✅ Intencional</button>
+          <button class="d-btn d-nao-intencional${dec==='nao-intencional'?' sel':''}"
+            onclick="setDecisao(${r.idx},'nao-intencional',this)">❌ Não intencional</button>
+          <button class="d-btn d-pendente${dec==='pendente'?' sel':''}"
+            onclick="setDecisao(${r.idx},'pendente',this)">⏳ Pendente</button>
+        </div>
+        <div id="pcne-blk-${r.idx}" style="margin-top:8px;${dec!=='nao-intencional'?'display:none':''}">
+          <select style="width:100%;border:1.5px solid #e2e8f0;border-radius:8px;padding:7px 9px;font-size:.75rem;color:#374151;background:#fff;margin-bottom:4px"
+            onchange="_pcne[${r.idx}]=this.value">
+            <option value="">Causa PCNE 9.1...</option>
+            ${pcneOpts}
+          </select>
+        </div>
+        <textarea placeholder="Justificativa / conduta clínica..."
+          style="width:100%;border:1.5px solid #e2e8f0;border-radius:8px;padding:7px 9px;font-size:.78rem;min-height:52px;resize:vertical;margin-top:6px;color:#1e293b;box-sizing:border-box"
+          onchange="_justificativas[${r.idx}]=this.value">${just}</textarea>
+      </div>`;
+  });
+
+  html += `</div>
+    <div style="padding:0 16px 16px">
+      <div style="display:flex;gap:8px;margin-bottom:8px">
+        <button class="btn-sm" style="background:#e2e8f0;color:#475569;flex:1;border-radius:12px;padding:13px" onclick="renderStep2()">← Voltar</button>
+        <button class="btn-sm" style="background:#16a34a;color:#fff;flex:2;border-radius:12px;padding:13px;font-size:.88rem;font-weight:700" onclick="salvarConciliacao()">💾 Salvar</button>
+      </div>
+      <button class="btn-sm btn-imprimir" style="background:#0f172a;color:#fff;width:100%;border-radius:12px;padding:13px;font-size:.88rem;font-weight:700" onclick="imprimirFinal()">
+        🖨️ Imprimir Documento
       </button>
-    </div>
-  `;
+    </div>`;
+
+  app.innerHTML = html;
 }
 
 function setDecisao(idx, decisao, btn) {
   _decisoes[idx] = decisao;
-  // Atualiza visual dos botões do grupo
   const grupo = btn.closest('.decisao-sel');
   grupo.querySelectorAll('.d-btn').forEach(b => {
-    const tipo = [...b.classList].find(c => c.startsWith('d-') && c !== 'd-btn');
-    b.classList.toggle('sel', tipo && b === btn);
+    b.classList.remove('sel');
   });
+  btn.classList.add('sel');
+  const blk = document.getElementById('pcne-blk-' + idx);
+  if (blk) blk.style.display = decisao === 'nao-intencional' ? '' : 'none';
+}
+
+async function salvarConciliacao() {
+  const disc = _resultado.filter(r => r.tipo !== 'mantido');
+  const dadosSalvos = {
+    data: new Date().toISOString().slice(0,10),
+    fonte: _fonteLista,
+    nMantido:    _resultado.filter(r=>r.tipo==='mantido').length,
+    nAdicionado: _resultado.filter(r=>r.tipo==='adicionado').length,
+    nOmitido:    _resultado.filter(r=>r.tipo==='omitido').length,
+    nAlterado:   _resultado.filter(r=>r.tipo==='alterado').length,
+    discrepancias: disc.map((r,i) => ({
+      tipo:     r.tipo,
+      nome:     r.ref?.nome || r.atual?.nome || '—',
+      doseRef:  r.ref?.dose  || '',
+      doseAtual:r.atual?.dose || '',
+      decisao:  _decisoes[r.idx]  || 'pendente',
+      pcne:     _pcne[r.idx]      || '',
+      justificativa: _justificativas[r.idx] || '',
+    })),
+  };
+  await dbSetConfig('conciliacao_' + _pid, dadosSalvos);
+  alert('✅ Conciliação salva com sucesso!');
 }
 
 function imprimirFinal() {

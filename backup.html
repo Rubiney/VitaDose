@@ -89,12 +89,12 @@
 <p class="sec-title">Exportar para Planilha (CSV)</p>
 <div class="card">
   <div class="action-row">
-    <div class="action-icon">🔬</div>
+    <div class="action-icon">👥</div>
     <div class="action-info">
-      <p class="action-title">Exames Laboratoriais</p>
-      <p class="action-desc">Todos os exames de todos os pacientes</p>
+      <p class="action-title">Pacientes</p>
+      <p class="action-desc">Dados demográficos, condições, alergias</p>
     </div>
-    <button class="action-btn azul" onclick="exportarCSVLab()">CSV</button>
+    <button class="action-btn azul" onclick="exportarCSVPacientes()">CSV</button>
   </div>
   <div class="action-row">
     <div class="action-icon">💊</div>
@@ -105,12 +105,36 @@
     <button class="action-btn azul" onclick="exportarCSVMeds()">CSV</button>
   </div>
   <div class="action-row">
+    <div class="action-icon">📊</div>
+    <div class="action-info">
+      <p class="action-title">Aderência — Doses</p>
+      <p class="action-desc">Registro de tomada por data e horário</p>
+    </div>
+    <button class="action-btn azul" onclick="exportarCSVDoses()">CSV</button>
+  </div>
+  <div class="action-row">
     <div class="action-icon">📋</div>
     <div class="action-info">
       <p class="action-title">Diário de Saúde</p>
       <p class="action-desc">PA, glicemia, peso por data</p>
     </div>
     <button class="action-btn azul" onclick="exportarCSVDiario()">CSV</button>
+  </div>
+  <div class="action-row">
+    <div class="action-icon">🔬</div>
+    <div class="action-info">
+      <p class="action-title">Exames Laboratoriais</p>
+      <p class="action-desc">Todos os exames de todos os pacientes</p>
+    </div>
+    <button class="action-btn azul" onclick="exportarCSVLab()">CSV</button>
+  </div>
+  <div class="action-row">
+    <div class="action-icon">🩺</div>
+    <div class="action-info">
+      <p class="action-title">Intervenções SFT</p>
+      <p class="action-desc">Condutas farmacêuticas, PRMs, aceitação</p>
+    </div>
+    <button class="action-btn azul" onclick="exportarCSVInterv()">CSV</button>
   </div>
 </div>
 
@@ -226,6 +250,63 @@ async function exportarCSVMeds() {
   );
   downloadCSV([header, ...rows].join('\n'), `vitadose-medicamentos-${today()}.csv`);
   showToast('✓ CSV de medicamentos exportado');
+}
+
+/* ── CSV Pacientes ── */
+async function exportarCSVPacientes() {
+  const pacs = await dbGetAll('pacientes');
+  const header = 'ID,Nome,Sexo,Nascimento,Idade,Peso (kg),Altura (cm),Tipo Sanguíneo,Condições,Alergias,Telefone';
+  const rows = pacs.map(p =>
+    [
+      p.id, p.nome||'', p.sexo||'', p.nascimento||'', p.idadePac||'',
+      p.pesoPac||'', p.alturaPac||'', p.tipoSanguineo||'',
+      (p.condicoes||[]).join('; '), p.alergias||'', p.telefone||'',
+    ].map(csvEsc).join(',')
+  );
+  downloadCSV([header, ...rows].join('\n'), `vitadose-pacientes-${today()}.csv`);
+  showToast('✓ CSV de pacientes exportado');
+}
+
+/* ── CSV Doses / Aderência ── */
+async function exportarCSVDoses() {
+  const doses = await dbGetAll('doses');
+  const meds  = await dbGetAll('medicamentos');
+  const pacs  = await dbGetAll('pacientes');
+  const nomePac = id => (pacs.find(p=>p.id===id)?.nome)||'Pac '+id;
+  const nomeMed = id => {
+    const m = meds.find(m=>m.id===id);
+    return m ? (m.nome||m.generico||'?') : 'Med '+id;
+  };
+  const header = 'Paciente,Medicamento,Data,Horário,Status,Registrado em';
+  const rows = doses.map(d => {
+    const med = meds.find(m=>m.id===d.medicamentoId);
+    const pid = med?.pacienteId;
+    return [
+      pid ? nomePac(pid) : '—', nomeMed(d.medicamentoId),
+      d.data||'', d.horario||'', d.status||'', d.timestamp||'',
+    ].map(csvEsc).join(',');
+  });
+  downloadCSV([header, ...rows].join('\n'), `vitadose-aderencia-${today()}.csv`);
+  showToast('✓ CSV de aderência exportado');
+}
+
+/* ── CSV Intervenções SFT ── */
+async function exportarCSVInterv() {
+  const pacs = await dbGetAll('pacientes');
+  const rows = [];
+  const header = 'Paciente,Data,Tipo Intervenção,Conduta,Resultado,Aceita';
+  for (const p of pacs) {
+    const ints = (await dbGetConfig('sft_int_'+p.id)) || [];
+    for (const i of ints) {
+      rows.push([
+        p.nome||'', i.data||'', i.tipo||'', i.conduta||'', i.resultado||'',
+        i.aceita===true?'Sim':i.aceita===false?'Não':'Pendente',
+      ].map(csvEsc).join(','));
+    }
+  }
+  if (!rows.length) { showToast('Nenhuma intervenção registrada'); return; }
+  downloadCSV([header, ...rows].join('\n'), `vitadose-intervencoes-${today()}.csv`);
+  showToast('✓ CSV de intervenções exportado');
 }
 
 /* ── CSV Diário ── */

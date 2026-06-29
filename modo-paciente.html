@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Meus Remédios — VitaDose</title>
+  <link rel="manifest" href="manifest.json">
+  <style>
+    * { box-sizing:border-box;margin:0;padding:0 }
+    body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f0fdf4;min-height:100vh;color:#1e293b }
+
+    /* Header */
+    .vp-header { background:#16a34a;padding:20px 20px 16px;position:sticky;top:0;z-index:10 }
+    .vp-hora { font-size:2.2rem;font-weight:900;color:#fff;line-height:1 }
+    .vp-data { font-size:.85rem;color:rgba(255,255,255,.8);margin-top:2px }
+    .vp-nome { font-size:1.1rem;font-weight:700;color:#fff;margin-top:10px }
+    .vp-progress-wrap { background:rgba(255,255,255,.25);border-radius:999px;height:8px;margin-top:10px }
+    .vp-progress-bar  { background:#fff;border-radius:999px;height:8px;transition:width .5s }
+    .vp-progress-lbl  { font-size:.72rem;color:rgba(255,255,255,.85);margin-top:4px }
+
+    /* Próxima dose */
+    .prox-card { background:#fff;border-radius:16px;margin:14px 16px 4px;padding:14px 16px;display:flex;align-items:center;gap:14px;box-shadow:0 2px 8px rgba(0,0,0,.08) }
+    .prox-icon { font-size:2rem }
+    .prox-info { flex:1 }
+    .prox-titulo { font-size:.72rem;font-weight:700;color:#16a34a;text-transform:uppercase;letter-spacing:.05em }
+    .prox-nome { font-size:1rem;font-weight:800;color:#1e293b }
+    .prox-detalhe { font-size:.8rem;color:#64748b;margin-top:1px }
+    .prox-time { font-size:1.5rem;font-weight:900;color:#16a34a;text-align:right }
+
+    /* Grupos de horário */
+    .grupo-titulo { font-size:.75rem;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.06em;padding:16px 16px 6px }
+
+    /* Cartão de medicamento */
+    .med-card { background:#fff;border-radius:16px;margin:0 16px 10px;padding:16px;box-shadow:0 1px 5px rgba(0,0,0,.07);transition:opacity .2s }
+    .med-card.tomado { opacity:.65 }
+    .med-card-top { display:flex;align-items:flex-start;gap:12px }
+    .med-hora-badge { background:#e0f2fe;color:#0369a1;border-radius:10px;padding:6px 10px;font-size:.9rem;font-weight:900;text-align:center;min-width:54px;flex-shrink:0 }
+    .med-hora-badge.passado { background:#f1f5f9;color:#94a3b8 }
+    .med-hora-badge.ativo   { background:#dcfce7;color:#16a34a }
+    .med-info { flex:1 }
+    .med-nome { font-size:1.05rem;font-weight:800;color:#1e293b;line-height:1.2 }
+    .med-dose { font-size:.85rem;color:#475569;margin-top:3px }
+    .med-obs  { font-size:.75rem;color:#94a3b8;margin-top:3px;line-height:1.4 }
+    .med-status { font-size:1.5rem;flex-shrink:0;margin-top:4px }
+
+    /* Botão Tomei */
+    .btn-tomei { width:100%;background:#16a34a;color:#fff;border:none;border-radius:12px;padding:16px;font-size:1rem;font-weight:800;cursor:pointer;margin-top:12px;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .15s }
+    .btn-tomei:hover { background:#15803d }
+    .btn-tomei:active { transform:scale(.97) }
+    .btn-tomei.ja-tomado { background:#dcfce7;color:#16a34a;cursor:default }
+    .btn-tomei-nao { background:none;border:1.5px solid #e2e8f0;color:#94a3b8;border-radius:12px;padding:10px;font-size:.82rem;font-weight:600;cursor:pointer;width:100%;margin-top:6px }
+
+    /* Tudo em dia */
+    .tudo-ok { text-align:center;padding:40px 20px }
+    .tudo-ok-icon { font-size:3.5rem }
+    .tudo-ok-txt { font-size:1.1rem;font-weight:800;color:#16a34a;margin-top:12px }
+    .tudo-ok-sub { font-size:.85rem;color:#64748b;margin-top:6px }
+
+    /* Rodapé */
+    .vp-footer { padding:20px 16px 36px;display:flex;gap:10px;flex-direction:column }
+    .btn-sos { background:#dc2626;color:#fff;border:none;border-radius:14px;padding:15px;font-size:1rem;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px }
+    .btn-farm { background:#f8fafc;border:1.5px solid #e2e8f0;color:#475569;border-radius:14px;padding:13px;font-size:.9rem;font-weight:700;cursor:pointer;text-align:center }
+
+    /* Toast */
+    .vp-toast { position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#1e293b;color:#fff;padding:12px 20px;border-radius:12px;font-size:.88rem;font-weight:600;z-index:999;pointer-events:none;transition:opacity .3s }
+  </style>
+</head>
+<body>
+
+<div class="vp-header">
+  <div style="display:flex;justify-content:space-between;align-items:flex-start">
+    <div>
+      <div class="vp-hora" id="vpHora">--:--</div>
+      <div class="vp-data" id="vpData"></div>
+    </div>
+    <a href="index.html" style="background:rgba(255,255,255,.2);color:#fff;border-radius:10px;padding:7px 12px;font-size:.75rem;font-weight:700;text-decoration:none">Modo Farmacêutico →</a>
+  </div>
+  <div class="vp-nome" id="vpNome">Carregando...</div>
+  <div class="vp-progress-wrap"><div class="vp-progress-bar" id="vpBar" style="width:0%"></div></div>
+  <div class="vp-progress-lbl" id="vpProgressLbl"></div>
+</div>
+
+<div id="vpProx"></div>
+<div id="vpLista"></div>
+<div class="vp-footer">
+  <button class="btn-sos" onclick="abrirSOS()">🆘 Emergência / SOS</button>
+  <button class="btn-farm" onclick="location.href='index.html'">👤 Área do Farmacêutico</button>
+</div>
+
+<div id="vpToast" class="vp-toast" style="opacity:0"></div>
+
+<script src="js/db.js"></script>
+<script src="js/utils.js"></script>
+<script>
+
+let _meds = [];
+let _pac  = null;
+
+const GRUPOS = [
+  { id:'manha',  label:'🌅 Manhã',          de: 0,  ate: 11 },
+  { id:'tarde',  label:'☀️ Tarde',           de: 12, ate: 17 },
+  { id:'noite',  label:'🌙 Noite',           de: 18, ate: 23 },
+];
+
+function grupoHora(hhmm) {
+  const h = parseInt(hhmm.split(':')[0]);
+  for (const g of GRUPOS) { if (h >= g.de && h <= g.ate) return g.id; }
+  return 'noite';
+}
+
+function nomeGrupo(id) { return GRUPOS.find(g=>g.id===id)?.label || id; }
+
+async function init() {
+  tick();
+  setInterval(tick, 30000);
+
+  const pid = getActivePacienteId();
+  if (!pid) {
+    document.getElementById('vpLista').innerHTML = '<div style="padding:30px;text-align:center;color:#94a3b8">Nenhum paciente ativo.<br><a href="pacientes.html" style="color:#16a34a;font-weight:700">Selecionar paciente</a></div>';
+    return;
+  }
+  _pac = await dbGet('pacientes', pid);
+  document.getElementById('vpNome').textContent = 'Olá, ' + (_pac?.nome?.split(' ')[0] || 'paciente') + '!';
+
+  const hj = hoje();
+  const [allMeds, allDoses] = await Promise.all([
+    dbGetByIndex('medicamentos','pacienteId',pid),
+    dbGetAll('doses'),
+  ]);
+
+  _meds = allMeds.filter(m => m.ativo !== false && (!m.dataFim || m.dataFim >= hj) && (m.horarios||[]).length);
+  const dosesHj = allDoses.filter(d => d.data === hj);
+
+  renderLista(_meds, dosesHj, hj);
+  renderProxima(_meds, dosesHj);
+}
+
+function tick() {
+  const agora = new Date();
+  document.getElementById('vpHora').textContent = agora.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+  document.getElementById('vpData').textContent = agora.toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'long'});
+}
+
+function renderProxima(meds, dosesHj) {
+  const agora = agoraHHMM();
+  const confirmSet = new Set(dosesHj.filter(d=>d.status==='tomado').map(d=>`${d.medicamentoId}-${d.horario}`));
+  const pendentes = [];
+  meds.forEach(m => {
+    (m.horarios||[]).forEach(h => {
+      if (!confirmSet.has(`${m.id}-${h}`) && h >= agora) {
+        pendentes.push({ m, h });
+      }
+    });
+  });
+  pendentes.sort((a,b) => a.h.localeCompare(b.h));
+  const prox = pendentes[0];
+  if (!prox) { document.getElementById('vpProx').innerHTML=''; return; }
+
+  const diff = diffMinutos(agora, prox.h);
+  const diffTxt = diff < 60 ? `em ${diff} min` : `às ${prox.h}`;
+  document.getElementById('vpProx').innerHTML = `
+    <div class="prox-card">
+      <div class="prox-icon">⏰</div>
+      <div class="prox-info">
+        <div class="prox-titulo">Próxima dose ${diffTxt}</div>
+        <div class="prox-nome">${esc(prox.m.nome)}</div>
+        <div class="prox-detalhe">${esc(prox.m.dose||'')}${prox.m.unidade?' '+esc(prox.m.unidade):''}</div>
+      </div>
+      <div class="prox-time">${prox.h}</div>
+    </div>`;
+}
+
+function diffMinutos(a, b) {
+  const [ah,am] = a.split(':').map(Number);
+  const [bh,bm] = b.split(':').map(Number);
+  return (bh*60+bm) - (ah*60+am);
+}
+
+function renderLista(meds, dosesHj, hj) {
+  const agora = agoraHHMM();
+  const confirmMap = {};
+  dosesHj.forEach(d => { if (d.status==='tomado') confirmMap[`${d.medicamentoId}-${d.horario}`] = d; });
+
+  // Monta todos os itens
+  const itens = [];
+  meds.forEach(m => {
+    (m.horarios||[]).forEach(h => {
+      itens.push({ m, h, key:`${m.id}-${h}`, grupo: grupoHora(h) });
+    });
+  });
+  itens.sort((a,b) => a.h.localeCompare(b.h));
+
+  // Calcula progresso
+  const total = itens.length;
+  const tomadas = itens.filter(i => confirmMap[i.key]).length;
+  const pct = total ? Math.round(tomadas/total*100) : 0;
+  document.getElementById('vpBar').style.width = pct+'%';
+  document.getElementById('vpProgressLbl').textContent = `${tomadas} de ${total} dose${total!==1?'s':''} tomada${total!==1?'s':''}`;
+
+  if (!total) {
+    document.getElementById('vpLista').innerHTML = '<div style="padding:40px 20px;text-align:center;color:#94a3b8;font-size:.9rem">Nenhum medicamento com horário cadastrado.</div>';
+    return;
+  }
+
+  if (tomadas === total) {
+    document.getElementById('vpLista').innerHTML = `
+      <div class="tudo-ok">
+        <div class="tudo-ok-icon">🎉</div>
+        <div class="tudo-ok-txt">Tudo em dia!</div>
+        <div class="tudo-ok-sub">Você tomou todos os remédios de hoje.</div>
+      </div>`;
+    return;
+  }
+
+  // Agrupa por período
+  const porGrupo = {};
+  itens.forEach(i => {
+    if (!porGrupo[i.grupo]) porGrupo[i.grupo] = [];
+    porGrupo[i.grupo].push(i);
+  });
+
+  let html = '';
+  for (const g of GRUPOS) {
+    const lista = porGrupo[g.id];
+    if (!lista?.length) continue;
+    html += `<div class="grupo-titulo">${g.label}</div>`;
+    lista.forEach(({ m, h, key }) => {
+      const tomado = !!confirmMap[key];
+      const passado = !tomado && h < agora;
+      const ativo  = !tomado && h >= agora && diffMinutos(agora, h) <= 15;
+      const horaCls = tomado ? '' : passado ? 'passado' : ativo ? 'ativo' : '';
+      const obs = m.observacoes || m.instrucoes || '';
+      html += `
+        <div class="med-card ${tomado?'tomado':''}" id="card-${key.replace(':','_')}">
+          <div class="med-card-top">
+            <div class="med-hora-badge ${horaCls}">${h}</div>
+            <div class="med-info">
+              <div class="med-nome">${esc(m.nome)}</div>
+              <div class="med-dose">${esc(m.dose||'')}${m.unidade?' '+esc(m.unidade):''}</div>
+              ${obs ? `<div class="med-obs">${esc(obs)}</div>` : ''}
+            </div>
+            <div class="med-status">${tomado ? '✅' : passado ? '❗' : ativo ? '⏰' : '⏳'}</div>
+          </div>
+          ${tomado
+            ? `<button class="btn-tomei ja-tomado" disabled>✅ Tomado às ${confirmMap[key]?.hora||h}</button>`
+            : `<button class="btn-tomei" onclick="confirmarDose(${m.id},'${h}',${JSON.stringify(m.nome)})">✓ Tomei agora!</button>
+               <button class="btn-tomei-nao" onclick="naoPude(${m.id},'${h}',${JSON.stringify(m.nome)})">Não pude tomar</button>`
+          }
+        </div>`;
+    });
+  }
+  document.getElementById('vpLista').innerHTML = html;
+}
+
+async function confirmarDose(medId, horario, medNome) {
+  const hj = hoje();
+  const agora = new Date();
+  const hora = agora.toTimeString().slice(0,5);
+  await dbAdd('doses', {
+    medicamentoId: medId, data: hj, horario, status:'tomado',
+    hora, timestamp: agora.toISOString(),
+  });
+  toast(`✅ ${medNome} — registrado!`);
+  await recarregar();
+}
+
+async function naoPude(medId, horario, medNome) {
+  const hj = hoje();
+  await dbAdd('doses', {
+    medicamentoId: medId, data: hj, horario, status:'pulado',
+    timestamp: new Date().toISOString(),
+  });
+  toast(`❌ ${medNome} — marcado como não tomado`);
+  await recarregar();
+}
+
+async function recarregar() {
+  const pid = getActivePacienteId();
+  if (!pid) return;
+  const hj = hoje();
+  const [allMeds, allDoses] = await Promise.all([
+    dbGetByIndex('medicamentos','pacienteId',pid),
+    dbGetAll('doses'),
+  ]);
+  _meds = allMeds.filter(m => m.ativo !== false && (!m.dataFim || m.dataFim >= hj) && (m.horarios||[]).length);
+  const dosesHj = allDoses.filter(d => d.data === hj);
+  renderLista(_meds, dosesHj, hj);
+  renderProxima(_meds, dosesHj);
+}
+
+function abrirSOS() {
+  const pac = _pac;
+  const alerg = pac?.alergias ? `⚠️ Alergia: ${pac.alergias}` : '';
+  const cond  = (pac?.condicoes||[]).join(', ');
+  const medsStr = _meds.map(m=>`${m.nome} ${m.dose||''}`).join(', ');
+  const txt = `🆘 EMERGÊNCIA\n${pac?.nome||'Paciente'}, ${pac?.idadePac||'?'} anos\n${alerg}\nCondições: ${cond||'—'}\nMedicamentos: ${medsStr||'—'}`;
+  if (navigator.share) {
+    navigator.share({ title:'SOS — VitaDose', text: txt }).catch(()=>{});
+  } else {
+    window.open('https://wa.me/?text='+encodeURIComponent(txt),'_blank');
+  }
+}
+
+function toast(msg) {
+  const el = document.getElementById('vpToast');
+  el.textContent = msg;
+  el.style.opacity = '1';
+  setTimeout(() => { el.style.opacity='0'; }, 2400);
+}
+
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
