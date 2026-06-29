@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>Importar Medicamentos (CSV) — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .topbar{display:flex;align-items:center;gap:10px;padding:12px 16px;background:#5b21b6;position:sticky;top:0;z-index:100}
+    .back-btn{background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:8px;padding:6px 11px;cursor:pointer;font-size:1rem}
+    .topbar-title{font-size:.93rem;font-weight:800;color:#fff;flex:1}
+    .topbar-sub{font-size:.62rem;color:rgba(255,255,255,.7);margin-top:1px}
+    main{max-width:680px;margin:0 auto;padding:12px 14px 90px}
+    .pac-sel,.sel-inp{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:12px;padding:11px 14px;font-size:.88rem;margin-bottom:10px;background:#fff}
+
+    /* Passos */
+    .step-bar{display:flex;gap:0;margin-bottom:16px}
+    .step{flex:1;text-align:center;font-size:.62rem;font-weight:700;padding:8px 4px;border-bottom:3px solid #e2e8f0;color:#94a3b8;transition:.2s}
+    .step.ativo{border-bottom-color:#5b21b6;color:#5b21b6}
+    .step.done{border-bottom-color:#22c55e;color:#22c55e}
+
+    /* Abas de conteúdo */
+    .step-content{display:none}
+    .step-content.ativo{display:block}
+
+    /* Zona de upload */
+    .upload-zone{border:2px dashed #c4b5fd;border-radius:14px;padding:32px 20px;text-align:center;background:#faf5ff;cursor:pointer;margin-bottom:12px;transition:.2s}
+    .upload-zone:hover{background:#f5f3ff;border-color:#7c3aed}
+    .upload-zone.drag{background:#ede9fe;border-color:#5b21b6}
+    .upload-icon{font-size:2.4rem;margin-bottom:8px}
+    .upload-txt{font-size:.82rem;color:#5b21b6;font-weight:700}
+    .upload-sub{font-size:.68rem;color:#94a3b8;margin-top:4px}
+    #file-input{display:none}
+
+    /* Templates */
+    .template-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+    .tpl-btn{padding:6px 12px;border-radius:8px;background:#ede9fe;border:1px solid #c4b5fd;color:#5b21b6;font-size:.68rem;font-weight:700;cursor:pointer;transition:.12s}
+    .tpl-btn:hover{background:#ddd6fe}
+
+    /* Área de colar */
+    .paste-area{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:10px;padding:10px 12px;font-size:.72rem;font-family:monospace;resize:none;height:100px;background:#f8fafc}
+    .parse-btn{width:100%;padding:12px;background:#5b21b6;color:#fff;border:none;border-radius:10px;font-size:.83rem;font-weight:800;cursor:pointer;margin-top:8px}
+
+    /* Mapeamento */
+    .sep-detect{font-size:.68rem;background:#f0fdf4;border:1px solid #86efac;border-radius:8px;padding:6px 10px;color:#166534;font-weight:700;margin-bottom:10px}
+    .map-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+    .map-item{background:#fff;border-radius:10px;border:1.5px solid #e2e8f0;padding:10px 12px}
+    .map-lbl{font-size:.65rem;font-weight:800;color:#5b21b6;margin-bottom:6px}
+    .map-sub{font-size:.6rem;color:#94a3b8;margin-bottom:6px}
+    select.map-sel{width:100%;border:1.5px solid #e2e8f0;border-radius:8px;padding:7px 10px;font-size:.75rem;background:#fff}
+
+    /* Preview */
+    .preview-table-wrap{overflow-x:auto;margin-bottom:12px;border-radius:10px;border:1px solid #e2e8f0}
+    .preview-table{width:100%;border-collapse:collapse;font-size:.68rem}
+    .preview-table th{background:#5b21b6;color:#fff;padding:7px 8px;text-align:left;white-space:nowrap}
+    .preview-table td{padding:6px 8px;border-bottom:1px solid #f1f5f9;vertical-align:top}
+    .preview-table tr:last-child td{border:none}
+    .preview-table tr:nth-child(even){background:#faf5ff}
+    .row-check{accent-color:#5b21b6;width:14px;height:14px;cursor:pointer}
+    .sel-all-btn{background:#ede9fe;border:none;color:#5b21b6;border-radius:6px;padding:4px 10px;font-size:.65rem;font-weight:700;cursor:pointer;margin-bottom:6px}
+
+    /* Resultado */
+    .result-card{background:#dcfce7;border:1px solid #86efac;border-radius:12px;padding:14px;margin-bottom:10px}
+    .result-title{font-size:.85rem;font-weight:800;color:#166534;margin-bottom:8px}
+    .result-list{font-size:.72rem;color:#14532d;line-height:1.8}
+
+    /* Info box */
+    .info-box{background:#f5f3ff;border:1px solid #ddd6fe;border-radius:10px;padding:10px 12px;font-size:.72rem;color:#4c1d95;margin-bottom:10px;line-height:1.5}
+
+    label{font-size:.68rem;font-weight:700;color:#64748b;display:block;margin-bottom:3px}
+    input[type=text]{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:9px;padding:9px 11px;font-size:.83rem;background:#fff;margin-bottom:8px}
+    .nav-btn-row{display:flex;gap:8px;margin-top:10px}
+    .nav-btn{flex:1;padding:12px;border:none;border-radius:10px;font-size:.82rem;font-weight:800;cursor:pointer}
+    .btn-back2{background:#f1f5f9;color:#475569}
+    .btn-next{background:#5b21b6;color:#fff}
+    .btn-import{background:#22c55e;color:#fff}
+
+    @media print{body{background:#fff}}
+  </style>
+</head>
+<body>
+<div class="topbar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <div style="flex:1">
+    <div class="topbar-title">📥 Importar Medicamentos</div>
+    <div class="topbar-sub">CSV · Alpha7 · Excel · Qualquer farmácia</div>
+  </div>
+</div>
+<main>
+  <select class="pac-sel" id="sel-pac"><option value="">Selecione o paciente...</option></select>
+
+  <!-- Passos -->
+  <div class="step-bar">
+    <div class="step ativo" id="st-1">1 · Arquivo</div>
+    <div class="step" id="st-2">2 · Colunas</div>
+    <div class="step" id="st-3">3 · Revisar</div>
+    <div class="step" id="st-4">4 · Concluído</div>
+  </div>
+
+  <!-- PASSO 1 -->
+  <div class="step-content ativo" id="sc-1">
+    <div class="info-box">
+      💡 Exporte o histórico de compras do paciente no <strong>Alpha7 / A7Pharma</strong> (Relatório → Histórico de Compras → Exportar CSV) ou de qualquer outro sistema farmacêutico. Cole o conteúdo ou envie o arquivo.
+    </div>
+
+    <div class="upload-zone" id="upload-zone" onclick="document.getElementById('file-input').click()"
+         ondragover="ev.preventDefault();this.classList.add('drag')"
+         ondragleave="this.classList.remove('drag')"
+         ondrop="onDrop(event)">
+      <div class="upload-icon">📄</div>
+      <div class="upload-txt">Clique para selecionar arquivo CSV / TXT / Excel</div>
+      <div class="upload-sub">ou arraste o arquivo aqui</div>
+    </div>
+    <input type="file" id="file-input" accept=".csv,.txt,.tsv,.xls,.xlsx" onchange="onFileChange(event)">
+
+    <div style="text-align:center;font-size:.72rem;color:#94a3b8;margin:10px 0">— ou cole o conteúdo diretamente —</div>
+    <textarea class="paste-area" id="paste-area" placeholder="Cole aqui o conteúdo copiado do Alpha7, planilha Excel ou qualquer sistema..."></textarea>
+
+    <div style="margin-top:10px">
+      <div style="font-size:.65rem;font-weight:800;color:#94a3b8;text-transform:uppercase;margin-bottom:6px">Templates de exemplo</div>
+      <div class="template-row">
+        <button class="tpl-btn" onclick="usarTemplate('alpha7')">Alpha7 (A7Pharma)</button>
+        <button class="tpl-btn" onclick="usarTemplate('generico')">Genérico / Excel</button>
+        <button class="tpl-btn" onclick="usarTemplate('simples')">Lista simples</button>
+      </div>
+    </div>
+
+    <button class="parse-btn" onclick="parsear()">Continuar →</button>
+  </div>
+
+  <!-- PASSO 2 -->
+  <div class="step-content" id="sc-2">
+    <div class="sep-detect" id="sep-detect"></div>
+    <div style="font-size:.72rem;color:#475569;margin-bottom:10px">Diga qual coluna do arquivo corresponde a cada campo do VitaDose:</div>
+    <div class="map-grid" id="map-grid"></div>
+    <div class="nav-btn-row">
+      <button class="nav-btn btn-back2" onclick="irPasso(1)">← Voltar</button>
+      <button class="nav-btn btn-next" onclick="gerarPreview()">Ver prévia →</button>
+    </div>
+  </div>
+
+  <!-- PASSO 3 -->
+  <div class="step-content" id="sc-3">
+    <div style="font-size:.72rem;color:#475569;margin-bottom:8px">Selecione os medicamentos que deseja importar:</div>
+    <button class="sel-all-btn" onclick="selecionarTodos()">Selecionar todos</button>
+    <div class="preview-table-wrap" id="preview-wrap"></div>
+    <div class="nav-btn-row">
+      <button class="nav-btn btn-back2" onclick="irPasso(2)">← Voltar</button>
+      <button class="nav-btn btn-import" onclick="importar()">✅ Importar selecionados</button>
+    </div>
+  </div>
+
+  <!-- PASSO 4 -->
+  <div class="step-content" id="sc-4">
+    <div class="result-card" id="result-card"></div>
+    <div class="nav-btn-row">
+      <button class="nav-btn btn-back2" onclick="location.href='index.html'">🏠 Ir ao início</button>
+      <button class="nav-btn btn-next" onclick="reiniciar()">📥 Nova importação</button>
+    </div>
+  </div>
+</main>
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="farmacia-parceira.html" class="nav-item">🏪<span>Farmácia</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+<script src="js/db.js"></script>
+<script src="js/utils.js"></script>
+<script>
+let _linhas=[], _headers=[], _sep=',', _mapeamento={}, _pid=null;
+
+const CAMPOS=[
+  {id:'nome',lbl:'Nome do Medicamento',req:true,sub:'Ex: coluna "Produto" ou "Descrição"'},
+  {id:'dose',lbl:'Dose / Concentração',req:false,sub:'Ex: coluna "Apresentação" ou "Dose"'},
+  {id:'forma',lbl:'Forma Farmacêutica',req:false,sub:'Ex: comprimido, cápsula, solução'},
+  {id:'frequencia',lbl:'Posologia / Frequência',req:false,sub:'Ex: 1x ao dia, de 8/8h'},
+  {id:'qtd',lbl:'Quantidade',req:false,sub:'Ex: coluna "Qtd" ou "Quantidade"'},
+  {id:'indicacao',lbl:'Indicação / Uso',req:false,sub:'Ex: hipertensão, diabetes'},
+];
+
+const TEMPLATES={
+  alpha7:`Produto;Apresentação;Quantidade;Laboratório;Valor;Data\nMetformina 500mg;Comprimido;60;EMS;R$ 12,00;2026-06-01\nLosartan 50mg;Comprimido;30;Eurofarma;R$ 8,50;2026-06-01\nAtorvastatina 20mg;Comprimido;30;Germed;R$ 15,00;2026-06-01`,
+  generico:`Nome,Dose,Forma,Frequencia,Quantidade\nMetformina,500mg,Comprimido,2x ao dia,60\nLosartan,50mg,Comprimido,1x ao dia,30\nAtorvastatina,20mg,Comprimido,1x ao dia,30`,
+  simples:`Medicamento\nMetformina 500mg\nLosartan 50mg\nAtorvastatina 20mg\nAAS 100mg`,
+};
+
+function usarTemplate(t){document.getElementById('paste-area').value=TEMPLATES[t]||'';}
+
+function detectSep(txt){
+  const l=txt.split('\n')[0]||'';
+  const c={',':((l.match(/,/g)||[]).length),';':((l.match(/;/g)||[]).length),'\t':((l.match(/\t/g)||[]).length),'|':((l.match(/\|/g)||[]).length)};
+  return Object.keys(c).reduce((a,b)=>c[a]>c[b]?a:b);
+}
+
+function parseCSVLine(line,sep){
+  const res=[];let cur='',inQ=false;
+  for(let i=0;i<line.length;i++){
+    if(line[i]==='"'){inQ=!inQ;}
+    else if(line[i]===sep&&!inQ){res.push(cur.trim());cur='';}
+    else cur+=line[i];
+  }
+  res.push(cur.trim());
+  return res;
+}
+
+function parsearTexto(txt){
+  _sep=detectSep(txt);
+  const linhas=txt.split('\n').map(l=>l.trim()).filter(l=>l);
+  if(!linhas.length) return false;
+  _headers=parseCSVLine(linhas[0],_sep).map(h=>h.replace(/^["']|["']$/g,''));
+  _linhas=linhas.slice(1).map(l=>parseCSVLine(l,_sep));
+  return true;
+}
+
+function onFileChange(e){
+  const f=e.target.files[0];
+  if(!f) return;
+  const r=new FileReader();
+  r.onload=ev=>{document.getElementById('paste-area').value=ev.target.result;};
+  r.readAsText(f,'UTF-8');
+}
+
+function onDrop(e){
+  e.preventDefault();
+  document.getElementById('upload-zone').classList.remove('drag');
+  const f=e.dataTransfer.files[0];
+  if(!f) return;
+  const r=new FileReader();
+  r.onload=ev=>{document.getElementById('paste-area').value=ev.target.result;};
+  r.readAsText(f,'UTF-8');
+}
+
+function parsear(){
+  const txt=document.getElementById('paste-area').value.trim();
+  if(!txt){showToast('Cole ou carregue um arquivo primeiro');return;}
+  if(!parsearTexto(txt)){showToast('Não foi possível interpretar o arquivo');return;}
+  const sepLabel={',':'vírgula',';':'ponto e vírgula','\t':'tabulação','|':'pipe'}[_sep]||_sep;
+  document.getElementById('sep-detect').textContent=`✅ Separador detectado: ${sepLabel} · ${_headers.length} colunas · ${_linhas.length} linhas encontradas`;
+  renderMapGrid();
+  irPasso(2);
+}
+
+function renderMapGrid(){
+  const opts='<option value="">— não importar —</option>'+_headers.map((h,i)=>`<option value="${i}">${esc(h)}</option>`).join('');
+  // Auto-mapeamento por nome
+  const autoMap={nome:['produto','descrição','descricao','medicamento','nome','drug','item'],dose:['dose','apresentação','apresentacao','concentração','concentracao'],forma:['forma','tipo','formafarma'],frequencia:['posologia','frequencia','frequência','intervalo'],qtd:['qtd','quantidade','qty','amount'],indicacao:['indicação','indicacao','uso','diagnóstico','diagnostico']};
+  document.getElementById('map-grid').innerHTML=CAMPOS.map(c=>{
+    const lh=_headers.map(h=>h.toLowerCase());
+    const auto=(autoMap[c.id]||[]).reduce((found,kw)=>{if(found>=0) return found;const i=lh.findIndex(h=>h.includes(kw));return i>=0?i:-1;},-1);
+    return `<div class="map-item">
+      <div class="map-lbl">${c.req?'* ':''} ${c.lbl}</div>
+      <div class="map-sub">${c.sub}</div>
+      <select class="map-sel" id="map-${c.id}">
+        ${opts.replace(`value="${auto}"`,`value="${auto}" selected`)}
+      </select>
+    </div>`;
+  }).join('');
+}
+
+function gerarPreview(){
+  CAMPOS.forEach(c=>{_mapeamento[c.id]=parseInt(document.getElementById('map-${c.id}')?.value??'-1')||parseInt(document.getElementById('map-'+c.id)?.value);});
+  // Corrected approach:
+  CAMPOS.forEach(c=>{
+    const el=document.getElementById('map-'+c.id);
+    _mapeamento[c.id]=el?parseInt(el.value):-1;
+  });
+  if(_mapeamento.nome<0){showToast('Mapeie pelo menos o campo "Nome do Medicamento"');return;}
+  let html=`<table class="preview-table"><thead><tr><th><input type="checkbox" id="chk-all" onchange="toggleAll(this)" checked></th><th>#</th><th>Nome</th><th>Dose</th><th>Forma</th><th>Frequência</th><th>Qtd</th></tr></thead><tbody>`;
+  _linhas.slice(0,50).forEach((row,i)=>{
+    const get=idx=>idx>=0?(row[idx]||'').trim():'—';
+    const nome=get(_mapeamento.nome);
+    if(!nome||nome==='—') return;
+    html+=`<tr>
+      <td><input type="checkbox" class="row-check" data-i="${i}" checked></td>
+      <td style="color:#94a3b8">${i+1}</td>
+      <td style="font-weight:700">${esc(nome)}</td>
+      <td>${esc(get(_mapeamento.dose))}</td>
+      <td>${esc(get(_mapeamento.forma))}</td>
+      <td>${esc(get(_mapeamento.frequencia))}</td>
+      <td>${esc(get(_mapeamento.qtd))}</td>
+    </tr>`;
+  });
+  html+='</tbody></table>';
+  document.getElementById('preview-wrap').innerHTML=html;
+  irPasso(3);
+}
+
+function selecionarTodos(){document.querySelectorAll('.row-check').forEach(c=>c.checked=true);}
+function toggleAll(cb){document.querySelectorAll('.row-check').forEach(c=>c.checked=cb.checked);}
+
+async function importar(){
+  _pid=parseInt(document.getElementById('sel-pac').value)||null;
+  if(!_pid){showToast('Selecione o paciente antes de importar');return;}
+  const selecionados=[...document.querySelectorAll('.row-check:checked')].map(c=>parseInt(c.dataset.i));
+  if(!selecionados.length){showToast('Selecione pelo menos um medicamento');return;}
+  const get=(row,idx)=>idx>=0?(row[idx]||'').trim():'';
+  let importados=0;
+  for(const i of selecionados){
+    const row=_linhas[i];
+    const nome=get(row,_mapeamento.nome);
+    if(!nome) continue;
+    const med={
+      pacienteId:_pid,
+      nome,
+      dose:get(row,_mapeamento.dose)||'',
+      formaFarma:get(row,_mapeamento.forma)||'',
+      frequencia:get(row,_mapeamento.frequencia)||'',
+      estoqueAtual:parseFloat(get(row,_mapeamento.qtd))||null,
+      indicacao:get(row,_mapeamento.indicacao)||'',
+      ativo:1,
+      origem:'CSV Import',
+      ts:Date.now(),
+    };
+    await dbAdd('medicamentos',med);
+    importados++;
+  }
+  document.getElementById('result-card').innerHTML=`<div class="result-title">✅ ${importados} medicamento${importados!==1?'s':''} importado${importados!==1?'s':''}!</div>
+  <div class="result-list">Os medicamentos foram adicionados ao cadastro do paciente. Revise cada um para complementar posologia e horários.</div>
+  <div style="margin-top:10px;display:flex;gap:8px">
+    <a href="index.html" style="flex:1;padding:10px;background:#dcfce7;border-radius:8px;text-align:center;font-size:.78rem;font-weight:700;color:#166534;text-decoration:none">Ver medicamentos</a>
+    <a href="lista-reabastecimento.html" style="flex:1;padding:10px;background:#eff6ff;border-radius:8px;text-align:center;font-size:.78rem;font-weight:700;color:#1e40af;text-decoration:none">📦 Reabastecimento</a>
+  </div>`;
+  irPasso(4);
+}
+
+function reiniciar(){
+  document.getElementById('paste-area').value='';
+  _linhas=[];_headers=[];_mapeamento={};
+  irPasso(1);
+}
+
+function irPasso(n){
+  [1,2,3,4].forEach(i=>{
+    document.getElementById('sc-'+i).classList.toggle('ativo',i===n);
+    const st=document.getElementById('st-'+i);
+    st.classList.remove('ativo','done');
+    if(i===n) st.classList.add('ativo');
+    else if(i<n) st.classList.add('done');
+  });
+}
+
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+
+document.addEventListener('DOMContentLoaded',async()=>{
+  const pacs=await dbGetAll('pacientes');
+  const sel=document.getElementById('sel-pac');
+  sel.innerHTML='<option value="">Selecione o paciente...</option>'+pacs.map(p=>`<option value="${p.id}">${esc(p.nome||'Paciente '+p.id)}</option>`).join('');
+  const pid=getActivePacienteId();
+  if(pid) sel.value=pid;
+});
+</script>
+</body>
+</html>

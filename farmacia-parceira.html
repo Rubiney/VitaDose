@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>Farmácia Parceira — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .topbar{display:flex;align-items:center;gap:10px;padding:12px 16px;background:#0f766e;position:sticky;top:0;z-index:100}
+    .back-btn{background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:8px;padding:6px 11px;cursor:pointer;font-size:1rem}
+    .topbar-title{font-size:.93rem;font-weight:800;color:#fff;flex:1}
+    .topbar-sub{font-size:.62rem;color:rgba(255,255,255,.7);margin-top:1px}
+    main{max-width:680px;margin:0 auto;padding:12px 14px 90px}
+    .pac-sel{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:12px;padding:11px 14px;font-size:.88rem;margin-bottom:10px;background:#fff}
+
+    /* Cards */
+    .farm-card{background:#fff;border-radius:14px;border:1.5px solid #e2e8f0;margin-bottom:10px;overflow:hidden;box-shadow:0 1px 6px rgba(0,0,0,.06)}
+    .farm-card-hdr{background:linear-gradient(135deg,#0f766e,#0d9488);padding:12px 14px;display:flex;align-items:center;gap:10px}
+    .farm-ico{font-size:1.5rem;flex-shrink:0}
+    .farm-nome{font-size:.92rem;font-weight:800;color:#fff;flex:1}
+    .farm-sw{font-size:.62rem;background:rgba(255,255,255,.2);color:#fff;border-radius:6px;padding:2px 8px;font-weight:700}
+    .farm-badge-principal{font-size:.58rem;background:#fef08a;color:#713f12;border-radius:6px;padding:2px 7px;font-weight:800}
+    .farm-body{padding:11px 14px}
+    .farm-row{display:flex;gap:6px;align-items:center;font-size:.73rem;color:#475569;padding:3px 0;border-bottom:1px solid #f8fafc}
+    .farm-row:last-child{border:none}
+    .farm-row-ico{font-size:.85rem;flex-shrink:0;width:20px;text-align:center}
+    .farm-actions{display:flex;gap:6px;padding:10px 14px;background:#f8fafc;flex-wrap:wrap}
+    .fa-btn{flex:1;padding:8px;border:none;border-radius:8px;font-size:.72rem;font-weight:800;cursor:pointer;text-align:center;text-decoration:none;display:block;min-width:80px}
+    .fa-ligar{background:#dcfce7;color:#166534}
+    .fa-wpp{background:#d1fae5;color:#065f46}
+    .fa-lista{background:#eff6ff;color:#1e40af}
+    .fa-edit{background:#f1f5f9;color:#475569}
+    .fa-del{background:#fee2e2;color:#991b1b}
+
+    /* Form */
+    .form-card{background:#fff;border-radius:14px;border:1.5px solid #e2e8f0;padding:14px;margin-bottom:10px}
+    .form-card-title{font-size:.78rem;font-weight:800;color:#0f766e;margin-bottom:12px;display:flex;align-items:center;gap:6px}
+    label{font-size:.68rem;font-weight:700;color:#64748b;display:block;margin-bottom:3px;margin-top:8px}
+    input,select,textarea{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:9px;padding:9px 11px;font-size:.83rem;background:#fff;margin-bottom:2px}
+    textarea{resize:none;height:60px}
+    .form-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .sw-chips{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0}
+    .sw-chip{padding:5px 11px;border-radius:8px;background:#f1f5f9;color:#475569;font-size:.68rem;font-weight:700;cursor:pointer;border:1.5px solid transparent;transition:.15s}
+    .sw-chip.sel{background:#ccfbf1;color:#0f766e;border-color:#5eead4}
+    .save-btn{width:100%;padding:13px;background:#0f766e;color:#fff;border:none;border-radius:10px;font-size:.85rem;font-weight:800;cursor:pointer;margin-top:10px}
+    .add-btn{width:100%;padding:12px;background:#ccfbf1;color:#0f766e;border:1.5px solid #5eead4;border-radius:12px;font-size:.82rem;font-weight:800;cursor:pointer;margin-bottom:10px}
+    .empty{text-align:center;padding:40px;color:#94a3b8;font-size:.78rem}
+  </style>
+</head>
+<body>
+<div class="topbar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <div style="flex:1">
+    <div class="topbar-title">🏪 Farmácia Parceira</div>
+    <div class="topbar-sub">Vincule farmácias ao paciente · Alpha7 · integração</div>
+  </div>
+</div>
+<main>
+  <select class="pac-sel" id="sel-pac" onchange="carregar()"><option value="">Selecione o paciente...</option></select>
+
+  <div id="lista-div"></div>
+  <button class="add-btn" id="add-btn" style="display:none" onclick="abrirForm(null)">+ Cadastrar nova farmácia parceira</button>
+
+  <!-- Formulário -->
+  <div class="form-card" id="form-card" style="display:none">
+    <div class="form-card-title">🏪 <span id="form-titulo">Nova farmácia</span></div>
+    <input type="hidden" id="form-id">
+    <label>Nome da Farmácia *</label>
+    <input type="text" id="f-nome" placeholder="Ex: Farmácia São João">
+    <div class="form-row">
+      <div>
+        <label>CNPJ</label>
+        <input type="text" id="f-cnpj" placeholder="00.000.000/0001-00">
+      </div>
+      <div>
+        <label>Telefone / WhatsApp</label>
+        <input type="tel" id="f-tel" placeholder="(11) 99999-9999">
+      </div>
+    </div>
+    <label>Endereço</label>
+    <input type="text" id="f-ende" placeholder="Rua, número, bairro, cidade">
+    <label>Farmacêutico(a) Responsável</label>
+    <input type="text" id="f-farm" placeholder="Nome do farmacêutico">
+    <label>Software de Gestão</label>
+    <div class="sw-chips" id="sw-chips">
+      <div class="sw-chip" onclick="selSw(this,'Alpha7')">Alpha7</div>
+      <div class="sw-chip" onclick="selSw(this,'TOTVS Backoffice')">TOTVS</div>
+      <div class="sw-chip" onclick="selSw(this,'MaisFarma')">MaisFarma</div>
+      <div class="sw-chip" onclick="selSw(this,'Trier')">Trier</div>
+      <div class="sw-chip" onclick="selSw(this,'Mitra')">Mitra</div>
+      <div class="sw-chip" onclick="selSw(this,'Outro')">Outro</div>
+    </div>
+    <input type="hidden" id="f-sw" value="">
+    <label>Observações</label>
+    <textarea id="f-obs" placeholder="Ex: farmácia de manipulação, entrega em domicílio, crédito..."></textarea>
+    <div style="display:flex;gap:6px;margin-top:6px">
+      <label style="display:flex;align-items:center;gap:6px;margin:0;font-size:.75rem;font-weight:700;cursor:pointer">
+        <input type="checkbox" id="f-principal" style="width:auto;margin:0;accent-color:#0f766e"> Marcar como farmácia principal
+      </label>
+    </div>
+    <button class="save-btn" onclick="salvar()">💾 Salvar farmácia</button>
+    <button onclick="fecharForm()" style="width:100%;padding:10px;background:#f1f5f9;color:#64748b;border:none;border-radius:9px;font-size:.78rem;font-weight:700;cursor:pointer;margin-top:6px">Cancelar</button>
+  </div>
+</main>
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="lista-reabastecimento.html" class="nav-item">📦<span>Reabast.</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+<script src="js/db.js"></script>
+<script src="js/utils.js"></script>
+<script>
+let _pid=null, _farmacias=[];
+
+function selSw(el,val){
+  document.querySelectorAll('.sw-chip').forEach(c=>c.classList.remove('sel'));
+  el.classList.add('sel');
+  document.getElementById('f-sw').value=val;
+}
+
+async function carregar(){
+  _pid=parseInt(document.getElementById('sel-pac').value)||null;
+  if(!_pid){document.getElementById('lista-div').innerHTML='';document.getElementById('add-btn').style.display='none';return;}
+  _farmacias=await dbGetConfig('farmacias_pac_'+_pid)||[];
+  renderLista();
+  document.getElementById('add-btn').style.display='block';
+}
+
+function renderLista(){
+  if(!_farmacias.length){
+    document.getElementById('lista-div').innerHTML='<div class="empty">Nenhuma farmácia cadastrada para este paciente.<br>Cadastre a farmácia onde ele retira os medicamentos.</div>';
+    return;
+  }
+  document.getElementById('lista-div').innerHTML=_farmacias.map((f,i)=>`
+  <div class="farm-card">
+    <div class="farm-card-hdr">
+      <div class="farm-ico">🏪</div>
+      <div class="farm-nome">${esc(f.nome)}</div>
+      ${f.sw?`<div class="farm-sw">${esc(f.sw)}</div>`:''}
+      ${f.principal?'<div class="farm-badge-principal">⭐ Principal</div>':''}
+    </div>
+    <div class="farm-body">
+      ${f.farm?`<div class="farm-row"><div class="farm-row-ico">👨‍⚕️</div><div>${esc(f.farm)}</div></div>`:''}
+      ${f.tel?`<div class="farm-row"><div class="farm-row-ico">📱</div><div>${esc(f.tel)}</div></div>`:''}
+      ${f.ende?`<div class="farm-row"><div class="farm-row-ico">📍</div><div>${esc(f.ende)}</div></div>`:''}
+      ${f.cnpj?`<div class="farm-row"><div class="farm-row-ico">📄</div><div>CNPJ: ${esc(f.cnpj)}</div></div>`:''}
+      ${f.obs?`<div class="farm-row"><div class="farm-row-ico">📝</div><div>${esc(f.obs)}</div></div>`:''}
+    </div>
+    <div class="farm-actions">
+      ${f.tel?`<a class="fa-btn fa-ligar" href="tel:${esc(f.tel)}">📞 Ligar</a>`:'' }
+      ${f.tel?`<a class="fa-btn fa-wpp" href="https://wa.me/55${f.tel.replace(/\D/g,'')}" target="_blank">💬 WhatsApp</a>`:''}
+      <a class="fa-btn fa-lista" href="lista-reabastecimento.html">📦 Reabastecimento</a>
+      <button class="fa-btn fa-edit" onclick="abrirForm(${i})">✏️ Editar</button>
+      <button class="fa-btn fa-del" onclick="deletar(${i})">🗑️</button>
+    </div>
+  </div>`).join('');
+}
+
+function abrirForm(idx){
+  fecharForm();
+  const f=idx!=null?_farmacias[idx]:null;
+  document.getElementById('form-id').value=idx!=null?idx:'';
+  document.getElementById('form-titulo').textContent=f?'Editar farmácia':'Nova farmácia';
+  document.getElementById('f-nome').value=f?.nome||'';
+  document.getElementById('f-cnpj').value=f?.cnpj||'';
+  document.getElementById('f-tel').value=f?.tel||'';
+  document.getElementById('f-ende').value=f?.ende||'';
+  document.getElementById('f-farm').value=f?.farm||'';
+  document.getElementById('f-obs').value=f?.obs||'';
+  document.getElementById('f-principal').checked=f?.principal||false;
+  document.getElementById('f-sw').value=f?.sw||'';
+  document.querySelectorAll('.sw-chip').forEach(c=>{c.classList.toggle('sel',c.textContent===(f?.sw||''));});
+  document.getElementById('form-card').style.display='block';
+  document.getElementById('form-card').scrollIntoView({behavior:'smooth'});
+}
+
+function fecharForm(){document.getElementById('form-card').style.display='none';}
+
+async function salvar(){
+  const nome=document.getElementById('f-nome').value.trim();
+  if(!nome){showToast('Informe o nome da farmácia');return;}
+  const idx=document.getElementById('form-id').value;
+  const obj={nome,cnpj:document.getElementById('f-cnpj').value.trim(),tel:document.getElementById('f-tel').value.trim(),ende:document.getElementById('f-ende').value.trim(),farm:document.getElementById('f-farm').value.trim(),sw:document.getElementById('f-sw').value,obs:document.getElementById('f-obs').value.trim(),principal:document.getElementById('f-principal').checked,ts:Date.now()};
+  if(obj.principal) _farmacias.forEach(f=>f.principal=false);
+  if(idx!=='') _farmacias[parseInt(idx)]=obj;
+  else _farmacias.push(obj);
+  await dbSetConfig('farmacias_pac_'+_pid,_farmacias);
+  fecharForm();
+  renderLista();
+  showToast('Farmácia salva com sucesso!');
+}
+
+async function deletar(idx){
+  if(!confirm('Remover esta farmácia?')) return;
+  _farmacias.splice(idx,1);
+  await dbSetConfig('farmacias_pac_'+_pid,_farmacias);
+  renderLista();
+}
+
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+
+document.addEventListener('DOMContentLoaded',async()=>{
+  const pacs=await dbGetAll('pacientes');
+  const sel=document.getElementById('sel-pac');
+  sel.innerHTML='<option value="">Selecione o paciente...</option>'+pacs.map(p=>`<option value="${p.id}">${esc(p.nome||'Paciente '+p.id)}</option>`).join('');
+  const pid=getActivePacienteId();
+  if(pid){sel.value=pid;await carregar();}
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>Lista de Reabastecimento — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .topbar{display:flex;align-items:center;gap:10px;padding:12px 16px;background:#c2410c;position:sticky;top:0;z-index:100}
+    .back-btn{background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:8px;padding:6px 11px;cursor:pointer;font-size:1rem}
+    .topbar-title{font-size:.93rem;font-weight:800;color:#fff;flex:1}
+    .topbar-sub{font-size:.62rem;color:rgba(255,255,255,.7);margin-top:1px}
+    main{max-width:680px;margin:0 auto;padding:12px 14px 90px}
+    .pac-sel{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:12px;padding:11px 14px;font-size:.88rem;margin-bottom:10px;background:#fff}
+
+    /* KPIs */
+    .kpi-row{display:flex;gap:8px;margin-bottom:12px}
+    .kpi{flex:1;background:#fff;border-radius:12px;padding:10px;text-align:center;border:1.5px solid #e2e8f0}
+    .kpi-val{font-size:1.5rem;font-weight:900}
+    .kpi-lbl{font-size:.6rem;color:#94a3b8;font-weight:700;margin-top:2px}
+    .kpi.crit .kpi-val{color:#dc2626}
+    .kpi.warn .kpi-val{color:#d97706}
+    .kpi.ok .kpi-val{color:#16a34a}
+
+    /* Farmácia selector */
+    .farm-sel-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+    .farm-sel-btn{padding:7px 13px;border-radius:9px;background:#f1f5f9;color:#475569;font-size:.7rem;font-weight:700;cursor:pointer;border:1.5px solid #e2e8f0;transition:.15s}
+    .farm-sel-btn.ativo{background:#fff7ed;color:#c2410c;border-color:#fb923c}
+    .farm-sel-btn.todos{background:#fff;border-color:#c2410c;color:#c2410c}
+
+    /* Med card */
+    .med-item{background:#fff;border-radius:12px;border:1.5px solid #e2e8f0;margin-bottom:8px;overflow:hidden;transition:.15s}
+    .med-item.crit{border-left:4px solid #dc2626}
+    .med-item.warn{border-left:4px solid #d97706}
+    .med-item.ok{border-left:4px solid #16a34a}
+    .med-item.pedido{opacity:.5}
+    .med-hdr{display:flex;align-items:center;gap:10px;padding:11px 13px}
+    .med-semaforo{font-size:1.2rem;flex-shrink:0}
+    .med-info{flex:1}
+    .med-nome{font-size:.82rem;font-weight:800;color:#0f172a}
+    .med-det{font-size:.65rem;color:#94a3b8;margin-top:2px}
+    .med-dias{font-size:.78rem;font-weight:900;text-align:right;flex-shrink:0}
+    .med-body{padding:0 13px 11px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+    .qtd-lbl{font-size:.65rem;color:#64748b;font-weight:700;flex-shrink:0}
+    .qtd-inp{border:1.5px solid #e2e8f0;border-radius:8px;padding:5px 9px;font-size:.8rem;width:70px;background:#fff;text-align:center}
+    .unid-lbl{font-size:.65rem;color:#94a3b8;flex:1}
+    .marcar-btn{padding:6px 12px;border-radius:8px;background:#dcfce7;border:none;color:#166534;font-size:.68rem;font-weight:800;cursor:pointer;flex-shrink:0}
+    .marcar-btn.feito{background:#fee2e2;color:#991b1b}
+
+    /* Grupo farmácia */
+    .grupo-hdr{background:linear-gradient(135deg,#0f766e,#0d9488);border-radius:12px;padding:10px 14px;margin-bottom:8px;display:flex;align-items:center;gap:8px;color:#fff}
+    .grupo-nome{font-size:.83rem;font-weight:800;flex:1}
+    .grupo-sw{font-size:.6rem;background:rgba(255,255,255,.2);padding:2px 8px;border-radius:6px;font-weight:700}
+    .grupo-tel{font-size:.65rem;opacity:.8}
+
+    /* Ações */
+    .actions-bar{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+    .action-btn{flex:1;padding:11px;border:none;border-radius:11px;font-size:.78rem;font-weight:800;cursor:pointer;min-width:120px}
+    .btn-wpp{background:#dcfce7;color:#166534}
+    .btn-print{background:#eff6ff;color:#1e40af}
+    .btn-copy{background:#f5f3ff;color:#5b21b6}
+
+    .empty{text-align:center;padding:40px;color:#94a3b8;font-size:.78rem}
+    .tip{background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:10px 12px;font-size:.7rem;color:#9a3412;margin-bottom:10px;line-height:1.5}
+
+    @media print{
+      .topbar,.pac-sel,.actions-bar,.farm-sel-row,.marcar-btn,nav{display:none!important}
+      .med-item.pedido{display:none}
+      body{background:#fff}
+      @page{size:A5;margin:8mm}
+    }
+  </style>
+</head>
+<body>
+<div class="topbar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <div style="flex:1">
+    <div class="topbar-title">📦 Lista de Reabastecimento</div>
+    <div class="topbar-sub">Medicamentos acabando · envie à farmácia parceira</div>
+  </div>
+</div>
+<main>
+  <select class="pac-sel" id="sel-pac" onchange="carregar()"><option value="">Selecione o paciente...</option></select>
+
+  <div id="kpi-row" class="kpi-row" style="display:none"></div>
+  <div class="actions-bar" id="actions-bar" style="display:none">
+    <button class="action-btn btn-wpp" onclick="compartilharWpp()">💬 Enviar p/ farmácia</button>
+    <button class="action-btn btn-copy" onclick="copiarLista()">📋 Copiar lista</button>
+    <button class="action-btn btn-print" onclick="window.print()">🖨️ Imprimir</button>
+  </div>
+
+  <div id="farm-sel-row" class="farm-sel-row"></div>
+  <div id="lista-div"></div>
+</main>
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="farmacia-parceira.html" class="nav-item">🏪<span>Farmácia</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+<script src="js/db.js"></script>
+<script src="js/utils.js"></script>
+<script>
+let _pid=null, _pac=null, _meds=[], _estoques={}, _farmacias=[], _filtroFarm='todos', _pedidos={};
+
+async function carregar(){
+  _pid=parseInt(document.getElementById('sel-pac').value)||null;
+  if(!_pid){document.getElementById('lista-div').innerHTML='';document.getElementById('kpi-row').style.display='none';document.getElementById('actions-bar').style.display='none';return;}
+  [_pac,_meds,_farmacias]=await Promise.all([
+    dbGet('pacientes',_pid),
+    dbGetByIndex('medicamentos','pacienteId',_pid),
+    dbGetConfig('farmacias_pac_'+_pid)||Promise.resolve([]),
+  ]);
+  _farmacias=_farmacias||[];
+  _meds=(_meds||[]).filter(m=>m.ativo!==false&&m.ativo!==0);
+  _estoques=await dbGetConfig('estoques_'+_pid)||{};
+  _pedidos=JSON.parse(localStorage.getItem('pedidos_'+_pid)||'{}');
+  renderFarmSel();
+  renderLista();
+  document.getElementById('actions-bar').style.display='flex';
+}
+
+function renderFarmSel(){
+  const row=document.getElementById('farm-sel-row');
+  if(!_farmacias.length){row.innerHTML='';return;}
+  row.innerHTML=`<button class="farm-sel-btn todos ativo" onclick="filtrFarm('todos',this)">🏪 Todas</button>`+
+    _farmacias.map((f,i)=>`<button class="farm-sel-btn" onclick="filtrFarm(${i},this)">${esc(f.nome)}</button>`).join('');
+}
+
+function filtrFarm(idx,btn){
+  _filtroFarm=idx;
+  document.querySelectorAll('.farm-sel-btn').forEach(b=>b.classList.remove('ativo'));
+  btn.classList.add('ativo');
+  renderLista();
+}
+
+function diasRestantes(med){
+  const est=_estoques[med.id];
+  if(est&&est.qtdAtual!=null){
+    const doses=parseFq(med.frequencia||med.intervalo||'1x');
+    if(!doses) return null;
+    return Math.floor(est.qtdAtual/doses);
+  }
+  if(med.estoqueAtual!=null&&med.estoqueAtual>0){
+    const doses=parseFq(med.frequencia||med.intervalo||'1x');
+    if(!doses) return null;
+    return Math.floor(med.estoqueAtual/doses);
+  }
+  return null;
+}
+
+function parseFq(f){
+  if(!f) return 1;
+  const s=String(f).toLowerCase();
+  if(/(\d+)x\s*ao\s*dia/.test(s)||/(\d+)x\/dia/.test(s)) return parseInt(RegExp.$1)||1;
+  const m=s.match(/de\s*(\d+)\s*[eh]m\s*(\d+)\s*h/);
+  if(m) return 24/parseInt(m[1]||m[2])||1;
+  if(/2x|2\s*vez/.test(s)) return 2;
+  if(/3x|3\s*vez/.test(s)) return 3;
+  if(/4x|4\s*vez/.test(s)) return 4;
+  if(/1x|1\s*vez|1\s*ao\s*dia|diário|diario/.test(s)) return 1;
+  if(/semanal/.test(s)) return 1/7;
+  return 1;
+}
+
+function qtdSugerida(med, dias){
+  const doses=parseFq(med.frequencia||med.intervalo||'1x');
+  return Math.ceil(doses*30); // 30 dias
+}
+
+function semaforo(dias){
+  if(dias==null) return {cor:'#94a3b8',bg:'',emoji:'⚪',cls:'',label:'Sem estoque'};
+  if(dias<=7)   return {cor:'#dc2626',bg:'fee2e2',emoji:'🔴',cls:'crit',label:dias+' dias'};
+  if(dias<=14)  return {cor:'#d97706',bg:'fef3c7',emoji:'🟡',cls:'warn',label:dias+' dias'};
+  return {cor:'#16a34a',bg:'dcfce7',emoji:'🟢',cls:'ok',label:dias+' dias'};
+}
+
+function renderLista(){
+  const criticos=[], aviso=[], ok=[];
+  _meds.forEach(m=>{
+    const dias=diasRestantes(m);
+    const s=semaforo(dias);
+    if(s.cls==='crit') criticos.push({m,dias,s});
+    else if(s.cls==='warn') aviso.push({m,dias,s});
+    else ok.push({m,dias,s});
+  });
+  const todos=[...criticos,...aviso,...ok];
+
+  // KPIs
+  document.getElementById('kpi-row').style.display='flex';
+  document.getElementById('kpi-row').innerHTML=`
+    <div class="kpi crit"><div class="kpi-val">${criticos.length}</div><div class="kpi-lbl">Críticos (≤7d)</div></div>
+    <div class="kpi warn"><div class="kpi-val">${aviso.length}</div><div class="kpi-lbl">Aviso (8–14d)</div></div>
+    <div class="kpi ok"><div class="kpi-val">${ok.filter(x=>x.dias!=null).length}</div><div class="kpi-lbl">OK (>14d)</div></div>`;
+
+  const precisam=[...criticos,...aviso];
+  if(!precisam.length){
+    document.getElementById('lista-div').innerHTML='<div class="empty">✅ Nenhum medicamento precisa de reposição urgente.<br>Tudo com estoque para mais de 14 dias.</div>';
+    return;
+  }
+
+  // Se há farmácias cadastradas, agrupar por farmácia
+  if(_farmacias.length&&_filtroFarm!=='todos'){
+    const f=_farmacias[_filtroFarm];
+    renderGrupo(f,precisam);
+  } else if(_farmacias.length&&_filtroFarm==='todos'){
+    _farmacias.forEach((f,i)=>renderGrupo(f,precisam,i));
+    // Sem farmácia definida
+    const semFarm=precisam; // mostra todos abaixo
+    if(!_farmacias.length) renderItens(semFarm);
+  } else {
+    renderItens(precisam);
+  }
+}
+
+function renderGrupo(f,items,idx){
+  const tel=f.tel?`<div class="grupo-tel">📱 ${esc(f.tel)}</div>`:'';
+  let html=`<div class="grupo-hdr">
+    <div style="flex:1"><div class="grupo-nome">🏪 ${esc(f.nome)}</div>${tel}</div>
+    ${f.sw?`<div class="grupo-sw">${esc(f.sw)}</div>`:''}
+  </div>`;
+  html+=itemsHtml(items);
+  document.getElementById('lista-div').innerHTML+=html;
+}
+
+function renderItens(items){
+  document.getElementById('lista-div').innerHTML=itemsHtml(items);
+}
+
+function itemsHtml(items){
+  return items.map(({m,dias,s})=>{
+    const pedido=_pedidos[m.id];
+    const qtd=qtdSugerida(m,dias);
+    return `<div class="med-item ${s.cls} ${pedido?'pedido':''}" id="mi-${m.id}">
+      <div class="med-hdr">
+        <div class="med-semaforo">${s.emoji}</div>
+        <div class="med-info">
+          <div class="med-nome">${esc(m.nome||m.medicamento||'—')}</div>
+          <div class="med-det">${esc(m.dose||'')} ${esc(m.formaFarma||'')} · ${esc(m.frequencia||m.intervalo||'')}</div>
+        </div>
+        <div class="med-dias" style="color:${s.cor}">${dias!=null?dias+'d':'—'}</div>
+      </div>
+      <div class="med-body">
+        <div class="qtd-lbl">Comprar:</div>
+        <input class="qtd-inp" type="number" min="1" value="${qtd}" id="qtd-${m.id}" onchange="salvarQtd(${m.id},this.value)">
+        <div class="unid-lbl">${m.formaFarma?esc(m.formaFarma)+'s':'unidades'}</div>
+        <button class="marcar-btn ${pedido?'feito':''}" onclick="togglePedido(${m.id},this)">
+          ${pedido?'↩ Desfazer':'✅ Pedido feito'}
+        </button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function salvarQtd(id,val){
+  const inp=document.getElementById('qtd-'+id);
+  if(inp) inp.value=Math.max(1,parseInt(val)||1);
+}
+
+function togglePedido(id,btn){
+  _pedidos[id]=!_pedidos[id];
+  localStorage.setItem('pedidos_'+_pid,JSON.stringify(_pedidos));
+  const card=document.getElementById('mi-'+id);
+  if(card) card.classList.toggle('pedido',!!_pedidos[id]);
+  btn.classList.toggle('feito',!!_pedidos[id]);
+  btn.textContent=_pedidos[id]?'↩ Desfazer':'✅ Pedido feito';
+}
+
+function gerarTexto(){
+  const pacNome=_pac?.nome||'Paciente';
+  const farm=_filtroFarm!=='todos'&&_farmacias[_filtroFarm]?_farmacias[_filtroFarm]:null;
+  const data=new Date().toLocaleDateString('pt-BR');
+  let txt=`*Lista de Reabastecimento — VitaDose*\n`;
+  txt+=`Paciente: ${pacNome}\nData: ${data}\n`;
+  if(farm) txt+=`Farmácia: ${farm.nome}\n`;
+  txt+=`\n`;
+  const criticos=[], aviso=[];
+  _meds.forEach(m=>{
+    if(_pedidos[m.id]) return;
+    const dias=diasRestantes(m);
+    const s=semaforo(dias);
+    const qtd=parseInt(document.getElementById('qtd-'+m.id)?.value)||qtdSugerida(m,dias);
+    const item=`• ${m.nome||m.medicamento||'—'}${m.dose?' '+m.dose:''} — ${qtd} ${m.formaFarma||'unid'} (${dias!=null?dias+'d restantes':'sem estoque'})`;
+    if(s.cls==='crit') criticos.push(item);
+    else if(s.cls==='warn') aviso.push(item);
+  });
+  if(criticos.length){txt+=`🔴 *Urgente (≤7 dias):*\n${criticos.join('\n')}\n\n`;}
+  if(aviso.length){txt+=`🟡 *Reposição necessária (8-14 dias):*\n${aviso.join('\n')}\n\n`;}
+  txt+=`_Gerado pelo VitaDose_`;
+  return txt;
+}
+
+function compartilharWpp(){
+  const farm=_filtroFarm!=='todos'&&_farmacias[_filtroFarm]?_farmacias[_filtroFarm]:null;
+  const txt=gerarTexto();
+  const tel=farm?.tel?'55'+farm.tel.replace(/\D/g,''):'';
+  const url='https://wa.me/'+tel+'?text='+encodeURIComponent(txt);
+  window.open(url,'_blank');
+}
+
+function copiarLista(){
+  navigator.clipboard.writeText(gerarTexto()).then(()=>showToast('Lista copiada!')).catch(()=>showToast('Erro ao copiar'));
+}
+
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+
+document.addEventListener('DOMContentLoaded',async()=>{
+  const pacs=await dbGetAll('pacientes');
+  const sel=document.getElementById('sel-pac');
+  sel.innerHTML='<option value="">Selecione o paciente...</option>'+pacs.map(p=>`<option value="${p.id}">${esc(p.nome||'Paciente '+p.id)}</option>`).join('');
+  const pid=getActivePacienteId();
+  if(pid){sel.value=pid;await carregar();}
+});
+</script>
+</body>
+</html>
