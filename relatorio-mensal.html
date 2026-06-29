@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>Relatório Mensal — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .topbar { display:flex;align-items:center;gap:10px;padding:12px 16px;background:#1e3a5f;position:sticky;top:0;z-index:100 }
+    .back-btn { background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:8px;padding:6px 11px;cursor:pointer;font-size:1rem }
+    .topbar-title { font-size:.93rem;font-weight:800;color:#fff;flex:1 }
+    .btn-top { background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:8px;padding:7px 11px;font-size:.72rem;font-weight:700;cursor:pointer;margin-left:4px }
+
+    main { max-width:620px;margin:0 auto;padding:12px 14px 90px }
+
+    /* Period tabs */
+    .period-tabs { display:flex;gap:6px;margin-bottom:12px;overflow-x:auto }
+    .ptab { padding:7px 14px;border-radius:999px;border:1.5px solid #e2e8f0;background:#f8fafc;font-size:.76rem;font-weight:700;color:#64748b;cursor:pointer;white-space:nowrap }
+    .ptab.active { background:#1e3a5f;color:#fff;border-color:#1e3a5f }
+
+    /* KPI */
+    .kpi-row { display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:12px }
+    .kpi { background:#fff;border-radius:12px;padding:12px 8px;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,.07) }
+    .kpi-n { font-size:1.6rem;font-weight:900;line-height:1 }
+    .kpi-l { font-size:.58rem;color:#64748b;font-weight:700;text-transform:uppercase;margin-top:3px;line-height:1.3 }
+
+    /* Card */
+    .card { background:#fff;border-radius:14px;padding:14px 16px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.07) }
+    .card-title { font-size:.65rem;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px }
+
+    /* SVG chart */
+    .chart-wrap { width:100%;overflow-x:auto }
+    svg.chart { display:block;min-width:320px }
+
+    /* Tabela */
+    table.mt { width:100%;border-collapse:collapse;font-size:.78rem }
+    table.mt th { background:#f8fafc;padding:7px 8px;text-align:center;font-size:.62rem;color:#64748b;border-bottom:1.5px solid #e2e8f0;font-weight:700 }
+    table.mt th:first-child { text-align:left }
+    table.mt td { padding:7px 8px;border-bottom:1px solid #f8fafc;text-align:center;vertical-align:middle }
+    table.mt td:first-child { text-align:left;font-weight:700;color:#1e293b }
+    table.mt tr:last-child td { border:none }
+    table.mt tfoot td { background:#f1f5f9;font-weight:800 }
+
+    /* Tendência badge */
+    .tend { font-size:.68rem;font-weight:700;margin-left:4px }
+    .tend-up  { color:#16a34a }
+    .tend-dn  { color:#dc2626 }
+    .tend-eq  { color:#94a3b8 }
+
+    /* Barra legenda */
+    .legenda { display:flex;gap:12px;font-size:.68rem;color:#64748b;margin-top:8px;flex-wrap:wrap }
+    .leg-dot { width:10px;height:10px;border-radius:3px;display:inline-block;margin-right:4px }
+
+    /* Badge mensal destaque */
+    .mes-destaque { font-size:.72rem;color:#94a3b8;text-align:center;margin-top:8px }
+
+    @media print {
+      .topbar,.btn-top,.period-tabs,nav { display:none!important }
+      body { background:#fff }
+      main { padding:0;max-width:none }
+    }
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <div style="flex:1">
+    <div class="topbar-title">📊 Relatório Mensal do Serviço</div>
+  </div>
+  <button class="btn-top" onclick="window.print()">🖨️</button>
+  <button class="btn-top" onclick="exportarCSV()">📥 CSV</button>
+</div>
+
+<main>
+  <div class="period-tabs">
+    <button class="ptab active" onclick="setPeriodo(3,this)">Últimos 3m</button>
+    <button class="ptab" onclick="setPeriodo(6,this)">Últimos 6m</button>
+    <button class="ptab" onclick="setPeriodo(12,this)">Último ano</button>
+  </div>
+
+  <div class="kpi-row" id="kpi-row">
+    <div class="kpi"><div class="kpi-n" style="color:#94a3b8">—</div><div class="kpi-l">Consultas</div></div>
+    <div class="kpi"><div class="kpi-n" style="color:#94a3b8">—</div><div class="kpi-l">Intervenções</div></div>
+    <div class="kpi"><div class="kpi-n" style="color:#94a3b8">—</div><div class="kpi-l">PRMs resolv.</div></div>
+    <div class="kpi"><div class="kpi-n" style="color:#94a3b8">—</div><div class="kpi-l">Aceit. int.</div></div>
+  </div>
+
+  <div id="charts-area"></div>
+  <div id="tabela-area"></div>
+</main>
+
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+
+<script src="js/db.js"></script>
+<script src="js/utils.js"></script>
+<script>
+
+let _periodoMeses = 3;
+let _dadosMensais = [];  // [{ mes:'YYYY-MM', label:'Jun/24', soaps, ints, intsAceitas, prmsAbertos, prmsResolvidos, adhMedia }]
+
+async function init() {
+  const pacs = await dbGetAll('pacientes');
+  const allDoses = await dbGetAll('doses');
+  const allMeds  = await dbGetAll('medicamentos');
+
+  // Mapeia medId → pacId
+  const medPac = {};
+  allMeds.forEach(m=>{ medPac[m.id]=m.pacienteId; });
+
+  // Carrega dados por paciente
+  const dadosPac = await Promise.all(pacs.map(async p => {
+    const [soaps, ints, plano] = await Promise.all([
+      dbGetConfig('soap_'          + p.id),
+      dbGetConfig('sft_int_'       + p.id),
+      dbGetConfig('plano_cuidados_'+ p.id),
+    ]);
+    const doses = allDoses.filter(d=>medPac[d.medicamentoId]===p.id);
+    return { p, soaps:soaps||[], ints:ints||[], plano:plano||{}, doses };
+  }));
+
+  // Gera meses retroativos
+  const meses = [];
+  const agora = new Date();
+  for (let i=11; i>=0; i--) {
+    const d = new Date(agora.getFullYear(), agora.getMonth()-i, 1);
+    const mm = d.toISOString().slice(0,7);
+    const label = d.toLocaleDateString('pt-BR',{month:'short',year:'2-digit'}).replace('. ','/'). replace('.','');
+    meses.push({ mes:mm, label });
+  }
+
+  // Agrega por mês
+  _dadosMensais = meses.map(({ mes, label }) => {
+    let soaps=0, ints=0, intsAceitas=0, prmsAbertos=0, prmsResolvidos=0;
+    const adhArr = [];
+
+    dadosPac.forEach(d => {
+      soaps += d.soaps.filter(s=>(s.data||s.dt||'').startsWith(mes)).length;
+      const intsMes = d.ints.filter(i=>(i.data||i.dt||'').startsWith(mes));
+      ints         += intsMes.length;
+      intsAceitas  += intsMes.filter(i=>i.aceita===true||i.aceita==='sim').length;
+      prmsAbertos  += (d.plano.problemas||[]).filter(p=>(p.data||'').startsWith(mes)).length;
+      prmsResolvidos+=(d.plano.problemas||[]).filter(p=>(p.desfechoData||'').startsWith(mes)).length;
+
+      // Aderência do mês
+      const dosesMes = d.doses.filter(x=>(x.data||'').startsWith(mes));
+      const tomadas  = dosesMes.filter(x=>x.status==='tomado').length;
+      if (dosesMes.length) adhArr.push(tomadas/dosesMes.length);
+    });
+
+    const adhMedia = adhArr.length ? Math.round(adhArr.reduce((a,b)=>a+b,0)/adhArr.length*100) : null;
+    const taxaAc   = ints ? Math.round(intsAceitas/ints*100) : null;
+    return { mes, label, soaps, ints, intsAceitas, taxaAc, prmsAbertos, prmsResolvidos, adhMedia };
+  });
+
+  renderPeriodo();
+}
+
+function setPeriodo(n, btn) {
+  _periodoMeses = n;
+  document.querySelectorAll('.ptab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderPeriodo();
+}
+
+function renderPeriodo() {
+  const dados = _dadosMensais.slice(-_periodoMeses);
+  renderKPI(dados);
+  renderCharts(dados);
+  renderTabela(dados);
+}
+
+function renderKPI(dados) {
+  const totSoaps = dados.reduce((s,d)=>s+d.soaps,0);
+  const totInts  = dados.reduce((s,d)=>s+d.ints,0);
+  const totIntsAc= dados.reduce((s,d)=>s+d.intsAceitas,0);
+  const totPRMres= dados.reduce((s,d)=>s+d.prmsResolvidos,0);
+  const taxaAcGl = totInts ? Math.round(totIntsAc/totInts*100) : null;
+
+  document.getElementById('kpi-row').innerHTML = `
+    <div class="kpi"><div class="kpi-n" style="color:#1e3a5f">${totSoaps}</div><div class="kpi-l">Consultas</div></div>
+    <div class="kpi"><div class="kpi-n" style="color:#7c3aed">${totInts}</div><div class="kpi-l">Intervenções</div></div>
+    <div class="kpi"><div class="kpi-n" style="color:#16a34a">${totPRMres}</div><div class="kpi-l">PRMs resolv.</div></div>
+    <div class="kpi"><div class="kpi-n" style="color:${taxaAcGl>=70?'#16a34a':taxaAcGl>=50?'#d97706':'#dc2626'}">${taxaAcGl!==null?taxaAcGl+'%':'—'}</div><div class="kpi-l">Aceit. int.</div></div>`;
+}
+
+function renderCharts(dados) {
+  const maxSoap = Math.max(...dados.map(d=>d.soaps), 1);
+  const maxInt  = Math.max(...dados.map(d=>d.ints), 1);
+  const maxPRM  = Math.max(...dados.map(d=>Math.max(d.prmsAbertos,d.prmsResolvidos)), 1);
+  const W = 56, GAP = 6, PAD = 30, H = 120, BOTTOM = 20;
+
+  function barChart(title, series, colors, maxVal) {
+    const nSer = series.length;
+    const bW = Math.floor((W - GAP*(nSer-1)) / nSer);
+    const totalW = dados.length * (W + GAP) - GAP + PAD*2;
+    let svg = `<svg class="chart" width="${totalW}" height="${H+BOTTOM+10}" viewBox="0 0 ${totalW} ${H+BOTTOM+10}">`;
+    // Grid lines
+    for (let i=1;i<=4;i++) {
+      const y = PAD + (H-PAD) * (1-i/4);
+      svg += `<line x1="${PAD}" y1="${y}" x2="${totalW-10}" y2="${y}" stroke="#f1f5f9" stroke-width="1"/>`;
+      svg += `<text x="${PAD-4}" y="${y+4}" text-anchor="end" font-size="9" fill="#94a3b8">${Math.round(maxVal*i/4)}</text>`;
+    }
+    dados.forEach((d, di) => {
+      const x0 = PAD + di*(W+GAP);
+      series.forEach((key, si) => {
+        const val = d[key]||0;
+        const bh = Math.max(2, val/maxVal*(H-PAD));
+        const bx = x0 + si*(bW+2);
+        const by = H - bh + 10;
+        svg += `<rect x="${bx}" y="${by}" width="${bW}" height="${bh}" rx="3" fill="${colors[si]}" opacity=".85"/>`;
+        if (val>0) svg += `<text x="${bx+bW/2}" y="${by-3}" text-anchor="middle" font-size="9" fill="${colors[si]}" font-weight="700">${val}</text>`;
+      });
+      svg += `<text x="${x0+W/2}" y="${H+BOTTOM}" text-anchor="middle" font-size="10" fill="#94a3b8">${d.label}</text>`;
+    });
+    svg += '</svg>';
+    return svg;
+  }
+
+  // Aderência line chart
+  const adhDados = dados.filter(d=>d.adhMedia!==null);
+  const totalW2  = dados.length*(W+GAP)-GAP+PAD*2;
+  let adhSvg = `<svg class="chart" width="${totalW2}" height="${H+BOTTOM+10}" viewBox="0 0 ${totalW2} ${H+BOTTOM+10}">`;
+  for (let i=1;i<=4;i++) {
+    const y = PAD + (H-PAD)*(1-i/4);
+    adhSvg += `<line x1="${PAD}" y1="${y}" x2="${totalW2-10}" y2="${y}" stroke="#f1f5f9" stroke-width="1"/>`;
+    adhSvg += `<text x="${PAD-4}" y="${y+4}" text-anchor="end" font-size="9" fill="#94a3b8">${Math.round(100*i/4)}%</text>`;
+  }
+  const pts = dados.map((d,i)=>({ x: PAD+i*(W+GAP)+W/2, y: d.adhMedia!==null ? H+10 - (d.adhMedia/100*(H-PAD)) : null, v:d.adhMedia }));
+  const validPts = pts.filter(p=>p.y!==null);
+  if (validPts.length>1) {
+    adhSvg += `<polyline points="${validPts.map(p=>`${p.x},${p.y}`).join(' ')}" fill="none" stroke="#16a34a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>`;
+    const fill = `M${validPts[0].x},${H+10} ` + validPts.map(p=>`L${p.x},${p.y}`).join(' ') + ` L${validPts[validPts.length-1].x},${H+10} Z`;
+    adhSvg += `<path d="${fill}" fill="#16a34a" opacity=".1"/>`;
+  }
+  pts.forEach(p => {
+    if (p.y===null) return;
+    adhSvg += `<circle cx="${p.x}" cy="${p.y}" r="4" fill="#16a34a"/>`;
+    adhSvg += `<text x="${p.x}" y="${p.y-8}" text-anchor="middle" font-size="9" fill="#16a34a" font-weight="700">${p.v}%</text>`;
+  });
+  dados.forEach((d,i) => {
+    const x = PAD+i*(W+GAP)+W/2;
+    adhSvg += `<text x="${x}" y="${H+BOTTOM}" text-anchor="middle" font-size="10" fill="#94a3b8">${d.label}</text>`;
+  });
+  adhSvg += '</svg>';
+
+  document.getElementById('charts-area').innerHTML = `
+  <div class="card">
+    <div class="card-title">📋 Consultas SOAP por mês</div>
+    <div class="chart-wrap">${barChart('soaps',['soaps'],['#1e3a5f'], maxSoap)}</div>
+    <div class="legenda"><span><span class="leg-dot" style="background:#1e3a5f"></span>Consultas SOAP</span></div>
+  </div>
+  <div class="card">
+    <div class="card-title">🩺 Intervenções farmacêuticas</div>
+    <div class="chart-wrap">${barChart('',['ints','intsAceitas'],['#7c3aed','#16a34a'], maxInt)}</div>
+    <div class="legenda">
+      <span><span class="leg-dot" style="background:#7c3aed"></span>Total</span>
+      <span><span class="leg-dot" style="background:#16a34a"></span>Aceitas</span>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">🎯 PRMs — Abertos vs Resolvidos</div>
+    <div class="chart-wrap">${barChart('',['prmsAbertos','prmsResolvidos'],['#dc2626','#16a34a'], maxPRM)}</div>
+    <div class="legenda">
+      <span><span class="leg-dot" style="background:#dc2626"></span>Abertos</span>
+      <span><span class="leg-dot" style="background:#16a34a"></span>Resolvidos</span>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">💊 Aderência média da carteira (%)</div>
+    <div class="chart-wrap">${adhSvg}</div>
+  </div>`;
+}
+
+function renderTabela(dados) {
+  const totSoaps = dados.reduce((s,d)=>s+d.soaps,0);
+  const totInts  = dados.reduce((s,d)=>s+d.ints,0);
+  const totAc    = dados.reduce((s,d)=>s+d.intsAceitas,0);
+  const totPRMab = dados.reduce((s,d)=>s+d.prmsAbertos,0);
+  const totPRMrs = dados.reduce((s,d)=>s+d.prmsResolvidos,0);
+  const adhArr   = dados.filter(d=>d.adhMedia!==null).map(d=>d.adhMedia);
+  const adhGeral = adhArr.length ? Math.round(adhArr.reduce((a,b)=>a+b,0)/adhArr.length) : null;
+
+  function tend(arr, i) {
+    if (i===0) return '';
+    const delta = arr[i]-arr[i-1];
+    return delta>0?`<span class="tend tend-up">↑${delta}</span>`:delta<0?`<span class="tend tend-dn">↓${Math.abs(delta)}</span>`:`<span class="tend tend-eq">═</span>`;
+  }
+
+  document.getElementById('tabela-area').innerHTML = `
+  <div class="card">
+    <div class="card-title">Tabela consolidada</div>
+    <div style="overflow-x:auto">
+    <table class="mt">
+      <thead><tr><th>Mês</th><th>SOAPs</th><th>Interv.</th><th>Aceitas</th><th>%Ac</th><th>PRMs+</th><th>PRMs✓</th><th>Ader.</th></tr></thead>
+      <tbody>${dados.map((d,i)=>`<tr>
+        <td>${d.label}</td>
+        <td>${d.soaps}${tend(dados.map(x=>x.soaps),i)}</td>
+        <td>${d.ints}${tend(dados.map(x=>x.ints),i)}</td>
+        <td>${d.intsAceitas}</td>
+        <td>${d.taxaAc!==null?d.taxaAc+'%':'—'}</td>
+        <td>${d.prmsAbertos}</td>
+        <td>${d.prmsResolvidos}</td>
+        <td>${d.adhMedia!==null?d.adhMedia+'%':'—'}</td>
+      </tr>`).join('')}</tbody>
+      <tfoot><tr>
+        <td>TOTAL</td><td>${totSoaps}</td><td>${totInts}</td><td>${totAc}</td>
+        <td>${totInts?Math.round(totAc/totInts*100)+'%':'—'}</td>
+        <td>${totPRMab}</td><td>${totPRMrs}</td><td>${adhGeral!==null?adhGeral+'%':'—'}</td>
+      </tr></tfoot>
+    </table>
+    </div>
+  </div>`;
+}
+
+function exportarCSV() {
+  const dados = _dadosMensais.slice(-_periodoMeses);
+  const rows  = [['Mês','Consultas SOAP','Intervenções','Aceitas','% Aceitação','PRMs Abertos','PRMs Resolvidos','Aderência Média (%)']];
+  dados.forEach(d=>rows.push([d.label,d.soaps,d.ints,d.intsAceitas,d.taxaAc!==null?d.taxaAc+'%':'—',d.prmsAbertos,d.prmsResolvidos,d.adhMedia!==null?d.adhMedia:'—']));
+  const csv = rows.map(r=>r.map(c=>'"'+String(c||'').replace(/"/g,'""')+'"').join(',')).join('\n');
+  const a = document.createElement('a'); a.href='data:text/csv;charset=utf-8,﻿'+encodeURIComponent(csv);
+  a.download='vitadose-relatorio-mensal-'+hoje()+'.csv'; a.click();
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>

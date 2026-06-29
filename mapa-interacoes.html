@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>Mapa de Interações — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .topbar { display:flex;align-items:center;gap:10px;padding:12px 16px;background:#7c1d1d;position:sticky;top:0;z-index:100 }
+    .back-btn { background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:8px;padding:6px 11px;cursor:pointer;font-size:1rem }
+    .topbar-title { font-size:.93rem;font-weight:800;color:#fff;flex:1 }
+    .topbar-sub { font-size:.62rem;color:rgba(255,255,255,.7);margin-top:1px }
+
+    main { max-width:580px;margin:0 auto;padding:12px 14px 90px }
+
+    .pac-sel { width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:12px;padding:11px 14px;font-size:.88rem;margin-bottom:10px;background:#fff }
+
+    /* Legenda */
+    .legenda { display:flex;gap:12px;flex-wrap:wrap;font-size:.72rem;color:#374151;margin-bottom:10px;padding:10px 14px;background:#fff;border-radius:12px;box-shadow:0 1px 4px rgba(0,0,0,.07) }
+    .leg-item { display:flex;align-items:center;gap:5px }
+    .leg-line { height:3px;width:22px;border-radius:2px }
+
+    /* Canvas SVG */
+    .mapa-wrap { background:#fff;border-radius:16px;padding:12px;box-shadow:0 1px 6px rgba(0,0,0,.08);position:relative;overflow:hidden }
+    #svg-mapa { display:block;width:100%;height:auto;touch-action:none }
+
+    /* Tooltip */
+    .tooltip { position:absolute;background:#1e293b;color:#fff;border-radius:10px;padding:10px 12px;font-size:.76rem;pointer-events:none;z-index:50;max-width:240px;box-shadow:0 4px 12px rgba(0,0,0,.25);display:none;line-height:1.5 }
+    .tt-nivel { font-size:.65rem;font-weight:800;text-transform:uppercase;margin-bottom:4px }
+    .tt-grave  { color:#fca5a5 }
+    .tt-moder  { color:#fde68a }
+    .tt-leve   { color:#86efac }
+    .tt-msg    { color:#e2e8f0 }
+
+    /* Painel lateral de detalhes */
+    .detalhe-card { background:#fff;border-radius:14px;padding:14px;margin-top:10px;box-shadow:0 1px 4px rgba(0,0,0,.07);display:none }
+    .det-title { font-size:.75rem;font-weight:800;color:#94a3b8;text-transform:uppercase;margin-bottom:10px }
+    .det-item { padding:10px 0;border-bottom:1px solid #f8fafc }
+    .det-item:last-child { border:none }
+    .det-nivel { font-size:.65rem;font-weight:800;border-radius:6px;padding:2px 8px;display:inline-block;margin-bottom:4px }
+    .nv-grave { background:#fee2e2;color:#991b1b }
+    .nv-moder { background:#fef3c7;color:#92400e }
+    .nv-leve  { background:#f0fdf4;color:#166534 }
+    .det-par  { font-size:.84rem;font-weight:700;color:#1e293b;margin-bottom:3px }
+    .det-msg  { font-size:.76rem;color:#374151;line-height:1.5 }
+
+    /* Resumo */
+    .resumo-strip { display:flex;gap:6px;margin-bottom:10px }
+    .res-item { flex:1;background:#fff;border-radius:10px;padding:10px 8px;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,.07) }
+    .res-n { font-size:1.5rem;font-weight:900 }
+    .res-l { font-size:.6rem;color:#64748b;font-weight:700;text-transform:uppercase;margin-top:2px }
+
+    .empty { text-align:center;padding:40px 20px;color:#94a3b8 }
+    .empty-icon { font-size:2.5rem }
+    .empty-txt  { font-size:.85rem;margin-top:8px;font-weight:700 }
+    .empty-sub  { font-size:.75rem;margin-top:4px }
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <div style="flex:1">
+    <div class="topbar-title">🕸️ Mapa de Interações</div>
+    <div class="topbar-sub">Visualização gráfica das interações medicamentosas</div>
+  </div>
+</div>
+
+<main>
+  <select class="pac-sel" id="sel-pac" onchange="init()"><option value="">Selecione o paciente...</option></select>
+
+  <div id="conteudo"><p class="empty"><span class="empty-icon">🕸️</span><br><span class="empty-txt">Selecione um paciente</span><br><span class="empty-sub">O mapa de interações será gerado automaticamente.</span></p></div>
+</main>
+
+<div class="tooltip" id="tooltip">
+  <div class="tt-nivel" id="tt-nivel"></div>
+  <div class="tt-msg" id="tt-msg"></div>
+</div>
+
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+
+<script src="js/db.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/interacoes.js"></script>
+<script>
+const COR  = { grave:'#dc2626', moderada:'#d97706', leve:'#16a34a', informativo:'#94a3b8' };
+const COR_NODE = { grave:'#fee2e2', moderada:'#fef3c7', leve:'#f0fdf4', none:'#f8fafc' };
+const COR_BORD = { grave:'#fca5a5', moderada:'#fde68a', leve:'#86efac', none:'#e2e8f0' };
+const LABEL = { grave:'⛔ Grave', moderada:'⚠️ Moderada', leve:'ℹ️ Leve', informativo:'ℹ️ Informativo' };
+
+async function init() {
+  const pid = parseInt(document.getElementById('sel-pac').value);
+  if (!pid) return;
+
+  const hj   = hoje();
+  const pac  = await dbGet('pacientes', pid);
+  const allMeds = await dbGetByIndex('medicamentos','pacienteId',pid);
+  const meds = allMeds.filter(m=>m.ativo!==false&&(!m.dataFim||m.dataFim>=hj));
+
+  if (!meds.length) {
+    document.getElementById('conteudo').innerHTML = `<div class="empty"><span class="empty-icon">💊</span><br><span class="empty-txt">Nenhum medicamento ativo</span></div>`;
+    return;
+  }
+
+  // Gera alertas
+  let alertas = [];
+  if (typeof gerarAlertas==='function') alertas = gerarAlertas(meds);
+
+  // Normaliza nível
+  alertas = alertas.map(a=>({...a, nivel:(a.nivel||'informativo').toLowerCase()}));
+
+  // Identifica quais meds estão em pares de interação
+  const medNomes = meds.map(m=>(m.nome||m.generico||'').toLowerCase());
+
+  // Constrói arestas: tenta identificar pares pelo campo 'par' ou pela msg
+  const arestas = [];
+  alertas.forEach(a => {
+    let nA=null, nB=null;
+
+    // Tenta campo par (ex: "Warfarina + AAS")
+    if (a.par) {
+      const partes = a.par.split(/\s*\+\s*|,\s*/).map(s=>s.trim().toLowerCase());
+      if (partes.length>=2) { nA=partes[0]; nB=partes[1]; }
+    }
+
+    // Fallback: busca nomes dos meds na msg
+    if (!nA || !nB) {
+      const msg = (a.msg||a.descricao||'').toLowerCase();
+      const found = medNomes.filter(n=>n.length>3&&msg.includes(n.split(' ')[0]));
+      if (found.length>=2) { nA=found[0]; nB=found[1]; }
+    }
+
+    if (!nA || !nB) return;
+
+    // Encontra índices nos meds
+    const idxA = meds.findIndex(m=>(m.nome||'').toLowerCase().includes(nA.split(' ')[0])||(nA.includes((m.nome||'').toLowerCase().split(' ')[0])));
+    const idxB = meds.findIndex(m=>(m.nome||'').toLowerCase().includes(nB.split(' ')[0])||(nB.includes((m.nome||'').toLowerCase().split(' ')[0])));
+
+    if (idxA>=0 && idxB>=0 && idxA!==idxB) {
+      arestas.push({ a:idxA, b:idxB, nivel:a.nivel, msg:a.msg||a.descricao||a.par||'', par:a.par||'' });
+    }
+  });
+
+  // Nível de risco máximo por nó
+  const nivelNos = meds.map(()=>'none');
+  arestas.forEach(e=>{
+    const ordem = ['grave','moderada','leve','informativo','none'];
+    if (ordem.indexOf(e.nivel) < ordem.indexOf(nivelNos[e.a])) nivelNos[e.a]=e.nivel;
+    if (ordem.indexOf(e.nivel) < ordem.indexOf(nivelNos[e.b])) nivelNos[e.b]=e.nivel;
+  });
+
+  renderMapa(pac, meds, arestas, nivelNos, alertas);
+}
+
+function renderMapa(pac, meds, arestas, nivelNos, alertas) {
+  const nGrave = arestas.filter(e=>e.nivel==='grave').length;
+  const nModer = arestas.filter(e=>e.nivel==='moderada').length;
+  const nLeve  = arestas.filter(e=>e.nivel==='leve'||e.nivel==='informativo').length;
+
+  // Posiciona nós em círculo (ou grade para muitos meds)
+  const N = meds.length;
+  const SIZE = Math.min(480, window.innerWidth - 60);
+  const CX = SIZE/2, CY = SIZE/2;
+  const R  = N <= 2 ? SIZE*0.25 : N<=4 ? SIZE*0.32 : N<=8 ? SIZE*0.36 : SIZE*0.40;
+
+  const nos = meds.map((m,i) => {
+    const angle = (2*Math.PI*i/N) - Math.PI/2;
+    return { x: CX + R*Math.cos(angle), y: CY + R*Math.sin(angle), nome: m.nome||m.generico||'?', nivel:nivelNos[i] };
+  });
+
+  // SVG
+  let svg = `<svg id="svg-mapa" viewBox="0 0 ${SIZE} ${SIZE}" xmlns="http://www.w3.org/2000/svg">`;
+
+  // Definições (gradiente central, sombras)
+  svg += `<defs>
+    <radialGradient id="bg-grad" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#f8fafc"/>
+      <stop offset="100%" stop-color="#f1f5f9"/>
+    </radialGradient>
+    ${arestas.length===0&&meds.length>1?`<circle cx="${CX}" cy="${CY}" r="${R}" fill="none" stroke="#f1f5f9" stroke-width="1" stroke-dasharray="4,4"/>`:''}
+  </defs>`;
+  svg += `<rect width="${SIZE}" height="${SIZE}" rx="12" fill="url(#bg-grad)"/>`;
+
+  // Círculo guia
+  if (N>1) svg += `<circle cx="${CX}" cy="${CY}" r="${R}" fill="none" stroke="#e2e8f0" stroke-width="1" stroke-dasharray="4,4" opacity="0.5"/>`;
+
+  // Arestas (interações)
+  arestas.forEach((e,i) => {
+    const nA = nos[e.a], nB = nos[e.b];
+    const cor = COR[e.nivel] || '#94a3b8';
+    const sw  = e.nivel==='grave'?3:e.nivel==='moderada'?2:1.5;
+    const da  = e.nivel==='leve'||e.nivel==='informativo'?'5,4':'none';
+    const mid = { x:(nA.x+nB.x)/2, y:(nA.y+nB.y)/2 };
+
+    // Linha
+    svg += `<line x1="${nA.x}" y1="${nA.y}" x2="${nB.x}" y2="${nB.y}" stroke="${cor}" stroke-width="${sw}" stroke-dasharray="${da}" opacity="0.7" class="aresta" data-idx="${i}" style="cursor:pointer"/>`;
+
+    // Ícone no meio
+    const icone = e.nivel==='grave'?'⛔':e.nivel==='moderada'?'⚠️':'ℹ️';
+    svg += `<g class="aresta-label" data-idx="${i}" style="cursor:pointer">
+      <circle cx="${mid.x}" cy="${mid.y}" r="10" fill="white" stroke="${cor}" stroke-width="1.5" opacity="0.9"/>
+      <text x="${mid.x}" y="${mid.y+4}" text-anchor="middle" font-size="10">${icone}</text>
+    </g>`;
+  });
+
+  // Nós (medicamentos)
+  const rN = N<=4?38:N<=8?32:26;
+  nos.forEach((n,i) => {
+    const bgClr  = COR_NODE[n.nivel];
+    const bdClr  = COR_BORD[n.nivel];
+    const txtClr = n.nivel==='none'?'#475569':'#1e293b';
+
+    // Trunca nome em 2 linhas
+    const nome = n.nome.split(' ');
+    const l1 = nome.slice(0,2).join(' ');
+    const l2 = nome.length>2 ? nome.slice(2,4).join(' ') : '';
+
+    svg += `<g class="no" data-idx="${i}" style="cursor:pointer">
+      <circle cx="${n.x}" cy="${n.y}" r="${rN}" fill="${bgClr}" stroke="${bdClr}" stroke-width="2"/>
+      <text x="${n.x}" y="${n.y + (l2?-4:4)}" text-anchor="middle" font-size="${N>10?9:10}" font-weight="700" fill="${txtClr}">${esc(l1)}</text>
+      ${l2?`<text x="${n.x}" y="${n.y+12}" text-anchor="middle" font-size="${N>10?8:9}" fill="${txtClr}">${esc(l2)}</text>`:''}
+    </g>`;
+  });
+
+  // Nó central se sem interações
+  if (arestas.length===0 && N>0) {
+    svg += `<text x="${CX}" y="${CY}" text-anchor="middle" dominant-baseline="middle" font-size="13" fill="#94a3b8">✅ Sem interações</text>`;
+  }
+
+  svg += '</svg>';
+
+  // Detalhes de interações
+  const detalhesHTML = alertas.length ? `
+    <div class="detalhe-card" id="card-detalhe" style="display:block">
+      <div class="det-title">Interações detectadas (${alertas.length})</div>
+      ${alertas.sort((a,b)=>{const o=['grave','moderada','leve','informativo'];return o.indexOf(a.nivel)-o.indexOf(b.nivel);}).map(a=>`
+        <div class="det-item">
+          <div><span class="det-nivel nv-${a.nivel}">${LABEL[a.nivel]||a.nivel}</span></div>
+          ${a.par?`<div class="det-par">${esc(a.par)}</div>`:''}
+          <div class="det-msg">${esc(a.msg||a.descricao||'Interação identificada')}</div>
+        </div>`).join('')}
+    </div>` : '';
+
+  document.getElementById('conteudo').innerHTML = `
+    <div class="resumo-strip">
+      <div class="res-item"><div class="res-n" style="color:${nGrave?'#dc2626':'#94a3b8'}">${nGrave}</div><div class="res-l">Graves</div></div>
+      <div class="res-item"><div class="res-n" style="color:${nModer?'#d97706':'#94a3b8'}">${nModer}</div><div class="res-l">Moderadas</div></div>
+      <div class="res-item"><div class="res-n" style="color:${nLeve?'#16a34a':'#94a3b8'}">${nLeve}</div><div class="res-l">Leves/Info</div></div>
+      <div class="res-item"><div class="res-n" style="color:#1e3a5f">${meds.length}</div><div class="res-l">Medicamentos</div></div>
+    </div>
+
+    <div class="legenda">
+      <div class="leg-item"><div class="leg-line" style="background:#dc2626"></div> Grave</div>
+      <div class="leg-item"><div class="leg-line" style="background:#d97706;height:2px"></div> Moderada</div>
+      <div class="leg-item"><div class="leg-line" style="background:#16a34a;height:1.5px;border:none;border-top:1.5px dashed #16a34a;background:none"></div> Leve/Info</div>
+      <div class="leg-item" style="margin-left:auto;font-size:.65rem;color:#94a3b8">Clique num ícone para detalhes</div>
+    </div>
+
+    <div class="mapa-wrap">${svg}</div>
+    ${detalhesHTML}`;
+
+  // Eventos de clique nas arestas
+  setTimeout(() => {
+    document.querySelectorAll('.aresta, .aresta-label').forEach(el => {
+      el.addEventListener('click', e => {
+        const idx = parseInt(el.dataset.idx);
+        const ar  = arestas[idx];
+        if (!ar) return;
+        mostrarTooltipFixo(ar);
+      });
+    });
+    document.querySelectorAll('.no').forEach(el => {
+      el.addEventListener('click', e => {
+        const idx = parseInt(el.dataset.idx);
+        const med = meds[idx];
+        const aresMe = arestas.filter(a=>a.a===idx||a.b===idx);
+        if (!aresMe.length) { showToast(med.nome+' — sem interações detectadas'); return; }
+        // Destaca as arestas deste medicamento na lista
+        const card = document.getElementById('card-detalhe');
+        if (card) card.scrollIntoView({behavior:'smooth'});
+      });
+    });
+  }, 100);
+}
+
+function mostrarTooltipFixo(ar) {
+  const cor = COR[ar.nivel]||'#94a3b8';
+  const lbl = LABEL[ar.nivel]||ar.nivel;
+  // Mostra no card de detalhes como destaque
+  const card = document.getElementById('card-detalhe');
+  if (card) {
+    const items = card.querySelectorAll('.det-item');
+    items.forEach(item => item.style.background='');
+    card.scrollIntoView({behavior:'smooth'});
+  }
+  showToast(lbl + (ar.par?' — '+ar.par:''));
+}
+
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') }
+
+document.addEventListener('DOMContentLoaded', async () => {
+  const pacs = await dbGetAll('pacientes');
+  const sel  = document.getElementById('sel-pac');
+  sel.innerHTML = '<option value="">Selecione o paciente...</option>' +
+    pacs.map(p=>`<option value="${p.id}">${esc(p.nome||'Paciente '+p.id)}</option>`).join('');
+  const pid = getActivePacienteId();
+  if (pid) { sel.value = pid; await init(); }
+});
+</script>
+</body>
+</html>

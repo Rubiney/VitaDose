@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>Home Farmacêutico — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    * { box-sizing:border-box }
+    body { background:#f1f5f9;font-family:inherit }
+
+    /* ── Header ── */
+    .farm-header { background:linear-gradient(135deg,#0f172a 0%,#1e3a5f 100%);padding:20px 16px 24px;position:relative }
+    .farm-back { position:absolute;top:14px;left:14px;background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:8px;padding:6px 11px;cursor:pointer;font-size:.9rem }
+    .farm-saudacao { font-size:.75rem;color:rgba(255,255,255,.6);font-weight:600;margin-bottom:2px }
+    .farm-nome { font-size:1.3rem;font-weight:900;color:#fff;margin-bottom:2px }
+    .farm-data { font-size:.72rem;color:rgba(255,255,255,.55) }
+    .farm-crf  { font-size:.65rem;color:rgba(255,255,255,.4);margin-top:2px }
+
+    /* Inbox badge hero */
+    .inbox-hero { background:rgba(255,255,255,.1);border:1.5px solid rgba(255,255,255,.2);border-radius:14px;padding:14px 16px;margin-top:16px;display:flex;align-items:center;gap:14px;cursor:pointer;text-decoration:none }
+    .inbox-hero:hover { background:rgba(255,255,255,.18) }
+    .inbox-n { font-size:2.4rem;font-weight:900;color:#fbbf24;line-height:1 }
+    .inbox-zero { color:#86efac }
+    .inbox-lbl { color:#fff }
+    .inbox-lbl-title { font-size:.88rem;font-weight:800 }
+    .inbox-lbl-sub { font-size:.7rem;opacity:.7;margin-top:2px }
+    .inbox-arr { color:rgba(255,255,255,.5);font-size:1.2rem;margin-left:auto }
+
+    main { max-width:560px;margin:0 auto;padding:14px 14px 90px }
+
+    /* ── Cards ── */
+    .card { background:#fff;border-radius:14px;padding:14px 16px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.07) }
+    .card-title { font-size:.65rem;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center }
+    .card-link { font-size:.7rem;font-weight:700;color:#1e3a5f;text-decoration:none }
+
+    /* KPI strip */
+    .kpi-strip { display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px }
+    .kpi { background:#fff;border-radius:12px;padding:12px 8px;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,.07) }
+    .kpi-n { font-size:1.6rem;font-weight:900;line-height:1 }
+    .kpi-l { font-size:.58rem;color:#64748b;font-weight:700;text-transform:uppercase;margin-top:3px;line-height:1.2 }
+
+    /* Retornos */
+    .ret-item { display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid #f8fafc }
+    .ret-item:last-child { border:none }
+    .ret-dot  { width:8px;height:8px;border-radius:50%;flex-shrink:0 }
+    .ret-info { flex:1 }
+    .ret-pac  { font-size:.84rem;font-weight:700;color:#1e293b }
+    .ret-det  { font-size:.7rem;color:#64748b;margin-top:1px }
+    .ret-data { font-size:.7rem;font-weight:700;color:#475569;white-space:nowrap;flex-shrink:0 }
+    .btn-mini { background:#1e3a5f;color:#fff;border:none;border-radius:7px;padding:5px 10px;font-size:.68rem;font-weight:700;cursor:pointer;flex-shrink:0 }
+
+    /* Quick tools */
+    .tools-grid { display:grid;grid-template-columns:repeat(3,1fr);gap:8px }
+    .tool-btn { background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:12px;padding:14px 10px;text-align:center;text-decoration:none;display:block;transition:all .15s }
+    .tool-btn:hover { background:#e0f2fe;border-color:#0891b2 }
+    .tool-icon { font-size:1.5rem;display:block;margin-bottom:5px }
+    .tool-lbl  { font-size:.7rem;font-weight:700;color:#374151;line-height:1.3 }
+
+    /* Atividade recente */
+    .act-item { display:flex;gap:10px;padding:9px 0;border-bottom:1px solid #f8fafc }
+    .act-item:last-child { border:none }
+    .act-dot  { width:28px;height:28px;border-radius:8px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:.85rem }
+    .act-body { flex:1 }
+    .act-tit  { font-size:.82rem;font-weight:700;color:#1e293b }
+    .act-pac  { font-size:.7rem;color:#64748b }
+    .act-dt   { font-size:.65rem;color:#94a3b8;flex-shrink:0;white-space:nowrap }
+
+    /* Pacientes em prioridade */
+    .prior-item { display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #f8fafc }
+    .prior-item:last-child { border:none }
+    .prior-avatar { width:34px;height:34px;border-radius:50%;background:#1e3a5f;color:#fff;display:flex;align-items:center;justify-content:center;font-size:.88rem;font-weight:900;flex-shrink:0 }
+    .prior-info { flex:1 }
+    .prior-nome { font-size:.84rem;font-weight:700;color:#1e293b }
+    .prior-det  { font-size:.7rem;color:#64748b;margin-top:1px }
+    .badge { display:inline-block;padding:2px 7px;border-radius:999px;font-size:.6rem;font-weight:700 }
+    .b-red { background:#fee2e2;color:#dc2626 }
+    .b-warn{ background:#fef3c7;color:#92400e }
+    .b-ok  { background:#dcfce7;color:#16a34a }
+
+    @media print { nav,.farm-back { display:none!important } }
+  </style>
+</head>
+<body>
+
+<!-- Header do farmacêutico -->
+<div class="farm-header">
+  <button class="farm-back" onclick="history.back()">←</button>
+  <div style="text-align:center">
+    <div class="farm-saudacao" id="saudacao">Bem-vindo(a) ao VitaDose Clínico</div>
+    <div class="farm-nome" id="farm-nome">Farmacêutico(a)</div>
+    <div class="farm-data" id="farm-data"></div>
+    <div class="farm-crf" id="farm-crf"></div>
+  </div>
+
+  <a href="inbox-clinico.html" class="inbox-hero" id="inbox-hero">
+    <div class="inbox-n inbox-zero" id="inbox-n">…</div>
+    <div class="inbox-lbl">
+      <div class="inbox-lbl-title" id="inbox-title">Carregando pendências...</div>
+      <div class="inbox-lbl-sub" id="inbox-sub">Verificando todos os pacientes</div>
+    </div>
+    <div class="inbox-arr">→</div>
+  </a>
+</div>
+
+<main>
+
+  <!-- KPIs da carteira -->
+  <div class="kpi-strip" id="kpi-strip">
+    <div class="kpi"><div class="kpi-n" style="color:#94a3b8">—</div><div class="kpi-l">Pacientes</div></div>
+    <div class="kpi"><div class="kpi-n" style="color:#94a3b8">—</div><div class="kpi-l">PRMs abertos</div></div>
+    <div class="kpi"><div class="kpi-n" style="color:#94a3b8">—</div><div class="kpi-l">Ader. média</div></div>
+    <div class="kpi"><div class="kpi-n" style="color:#94a3b8">—</div><div class="kpi-l">Consultas/mês</div></div>
+  </div>
+
+  <!-- Retornos de hoje e próximos -->
+  <div class="card" id="card-retornos">
+    <div class="card-title">📅 Retornos <a href="agenda-retornos.html" class="card-link">Ver todos →</a></div>
+    <div id="lista-retornos"><div style="color:#94a3b8;font-size:.8rem;text-align:center;padding:10px">Carregando...</div></div>
+  </div>
+
+  <!-- Pacientes com mais pendências -->
+  <div class="card" id="card-prior" style="display:none">
+    <div class="card-title">🚨 Atenção prioritária <a href="inbox-clinico.html" class="card-link">Inbox →</a></div>
+    <div id="lista-prior"></div>
+  </div>
+
+  <!-- Acesso rápido às ferramentas -->
+  <div class="card">
+    <div class="card-title">⚡ Ferramentas clínicas</div>
+    <div class="tools-grid">
+      <a href="consulta-rapida.html"  class="tool-btn"><span class="tool-icon">⚡</span><span class="tool-lbl">Consulta Rápida</span></a>
+      <a href="relatorio-sft.html"    class="tool-btn"><span class="tool-icon">🩺</span><span class="tool-lbl">Relatório SFT</span></a>
+      <a href="dashboard-clinico.html" class="tool-btn"><span class="tool-icon">🗂️</span><span class="tool-lbl">Dashboard</span></a>
+      <a href="plano-cuidados.html"   class="tool-btn"><span class="tool-icon">🎯</span><span class="tool-lbl">Plano Cuidados</span></a>
+      <a href="nota-intervencao.html" class="tool-btn"><span class="tool-icon">📝</span><span class="tool-lbl">Intervenção</span></a>
+      <a href="desfechos.html"        class="tool-btn"><span class="tool-icon">🏁</span><span class="tool-lbl">Desfechos</span></a>
+      <a href="extrato-pesquisa.html" class="tool-btn"><span class="tool-icon">🔬</span><span class="tool-lbl">Pesquisa/TCC</span></a>
+      <a href="relatorio-mensal.html" class="tool-btn"><span class="tool-icon">📊</span><span class="tool-lbl">Rel. Mensal</span></a>
+      <a href="pacientes.html"        class="tool-btn"><span class="tool-icon">👥</span><span class="tool-lbl">Pacientes</span></a>
+    </div>
+  </div>
+
+  <!-- Atividade recente -->
+  <div class="card">
+    <div class="card-title">🕐 Atividade recente <a href="relatorio-mensal.html" class="card-link">Mensal →</a></div>
+    <div id="lista-atividade"><div style="color:#94a3b8;font-size:.8rem;text-align:center;padding:10px">Carregando...</div></div>
+  </div>
+
+</main>
+
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+
+<script src="js/db.js"></script>
+<script src="js/utils.js"></script>
+<script>
+
+const HJ = hoje();
+const MES_ATUAL = HJ.slice(0,7);
+
+async function init() {
+  const farm = (await dbGetConfig('farmaceutico_cfg')) || {};
+  const pacs = await dbGetAll('pacientes');
+
+  // Saudação
+  const h = new Date().getHours();
+  const sauda = h<12?'Bom dia':'h<18'?'Boa tarde':'Boa noite';
+  document.getElementById('saudacao').textContent = h<12?'☀️ Bom dia':'h<18'?'🌤️ Boa tarde':'🌙 Boa noite';
+  document.getElementById('farm-nome').textContent = farm.nome || 'Farmacêutico(a)';
+  document.getElementById('farm-crf').textContent  = farm.crf ? 'CRF: ' + farm.crf : '';
+  document.getElementById('farm-data').textContent =
+    new Date().toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
+
+  // Carrega dados de todos os pacientes
+  const dadosPac = await Promise.all(pacs.map(async p => {
+    const [plano, notasInt, rams, planoSeg, agendaRet, ints, soaps, allDoses, allMeds] = await Promise.all([
+      dbGetConfig('plano_cuidados_' + p.id),
+      dbGetConfig('nota_int_'       + p.id),
+      dbGetConfig('ram_'            + p.id),
+      dbGetConfig('plano_seg_'      + p.id),
+      dbGetConfig('agenda_ret_'     + p.id),
+      dbGetConfig('sft_int_'        + p.id),
+      dbGetConfig('soap_'           + p.id),
+      dbGetAll('doses'),
+      dbGetByIndex('medicamentos','pacienteId', p.id),
+    ]);
+    const medIds = new Set(allMeds.map(m=>m.id));
+    const doses  = allDoses.filter(d=>medIds.has(d.medicamentoId));
+    return { p, plano:plano||{}, notasInt:notasInt||[], rams:rams||[], planoSeg:planoSeg||{}, agendaRet:agendaRet||[], ints:ints||[], soaps:soaps||[], doses };
+  }));
+
+  renderKPI(dadosPac);
+  renderRetornos(dadosPac);
+  renderPrioridade(dadosPac);
+  renderAtividade(dadosPac);
+  await renderInbox(dadosPac);
+}
+
+function renderKPI(dadosPac) {
+  const N = dadosPac.length;
+  const prmsAbertos = dadosPac.reduce((s,d)=>s+(d.plano.problemas||[]).filter(p=>!p.desfecho&&p.status!=='resolvido').length,0);
+  const adhArr = dadosPac.map(d=>{
+    const t=d.doses.length; const ok=d.doses.filter(x=>x.status==='tomado').length;
+    return t ? ok/t : null;
+  }).filter(x=>x!==null);
+  const adhMean = adhArr.length ? Math.round(adhArr.reduce((a,b)=>a+b,0)/adhArr.length*100) : null;
+  const soapsEste = dadosPac.reduce((s,d)=>s+d.soaps.filter(x=>(x.data||x.dt||'').startsWith(MES_ATUAL)).length,0);
+
+  document.getElementById('kpi-strip').innerHTML = `
+    <div class="kpi"><div class="kpi-n" style="color:#1e3a5f">${N}</div><div class="kpi-l">Pacientes</div></div>
+    <div class="kpi"><div class="kpi-n" style="color:${prmsAbertos?'#dc2626':'#16a34a'}">${prmsAbertos}</div><div class="kpi-l">PRMs abertos</div></div>
+    <div class="kpi"><div class="kpi-n" style="color:${adhMean===null?'#94a3b8':adhMean>=80?'#16a34a':adhMean>=60?'#d97706':'#dc2626'}">${adhMean!==null?adhMean+'%':'—'}</div><div class="kpi-l">Ader. média</div></div>
+    <div class="kpi"><div class="kpi-n" style="color:#0891b2">${soapsEste}</div><div class="kpi-l">Consultas/mês</div></div>`;
+}
+
+function renderRetornos(dadosPac) {
+  const retornos = [];
+  dadosPac.forEach(d => {
+    (d.agendaRet||[]).filter(r=>!r.feito&&r.data>=HJ).forEach(r => {
+      retornos.push({ pid:d.p.id, pac:d.p.nome||'?', data:r.data, obs:r.obs||'', status: r.data===HJ?'hoje':'proximo' });
+    });
+    if (d.planoSeg?.retorno && d.planoSeg.retorno >= HJ && !retornos.some(r=>r.pid===d.p.id&&r.data===d.planoSeg.retorno)) {
+      retornos.push({ pid:d.p.id, pac:d.p.nome||'?', data:d.planoSeg.retorno, obs:d.planoSeg.plano||'Retorno SFT', status: d.planoSeg.retorno===HJ?'hoje':'proximo' });
+    }
+  });
+  retornos.sort((a,b)=>a.data>b.data?1:-1);
+  const proximos = retornos.slice(0,5);
+
+  if (!proximos.length) {
+    document.getElementById('lista-retornos').innerHTML = '<div style="color:#94a3b8;font-size:.8rem;text-align:center;padding:8px">Nenhum retorno agendado nos próximos dias.</div>';
+    return;
+  }
+  document.getElementById('lista-retornos').innerHTML = proximos.map(r => {
+    const dt = new Date(r.data+'T12:00').toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'short'});
+    const cor = r.status==='hoje'?'#16a34a':'#0891b2';
+    const lbl = r.status==='hoje'?'HOJE':dt;
+    return `<div class="ret-item">
+      <div class="ret-dot" style="background:${cor}"></div>
+      <div class="ret-info">
+        <div class="ret-pac">${esc(r.pac)}</div>
+        <div class="ret-det">${esc(r.obs.slice(0,40))}</div>
+      </div>
+      <div class="ret-data" style="color:${cor}">${lbl}</div>
+      <button class="btn-mini" onclick="irPara('relatorio-sft.html',${r.pid})">SFT →</button>
+    </div>`;
+  }).join('');
+}
+
+function renderPrioridade(dadosPac) {
+  const comPend = dadosPac.map(d => {
+    const prms = (d.plano.problemas||[]).filter(p=>!p.desfecho&&p.status!=='resolvido').length;
+    const retAtras = (d.agendaRet||[]).filter(r=>!r.feito&&r.data<HJ).length + (d.planoSeg?.retorno&&d.planoSeg.retorno<HJ?1:0);
+    const notasPend = d.notasInt.filter(n=>!n.resposta||n.resposta==='pendente').length;
+    const total = prms*2 + retAtras*3 + notasPend;
+    return { ...d, prms, retAtras, notasPend, priorScore: total };
+  }).filter(d=>d.priorScore>0).sort((a,b)=>b.priorScore-a.priorScore).slice(0,4);
+
+  if (!comPend.length) { document.getElementById('card-prior').style.display='none'; return; }
+  document.getElementById('card-prior').style.display='block';
+  document.getElementById('lista-prior').innerHTML = comPend.map(d => {
+    const ini = (d.p.nome||'?').charAt(0).toUpperCase();
+    const tags = [];
+    if (d.retAtras) tags.push(`<span class="badge b-red">${d.retAtras} retorno${d.retAtras>1?'s':''} atrasado${d.retAtras>1?'s':''}</span>`);
+    if (d.prms)     tags.push(`<span class="badge b-warn">${d.prms} PRM${d.prms>1?'s':''} aberto${d.prms>1?'s':''}</span>`);
+    if (d.notasPend)tags.push(`<span class="badge b-warn">${d.notasPend} nota${d.notasPend>1?'s':''} pend.</span>`);
+    return `<div class="prior-item">
+      <div class="prior-avatar">${ini}</div>
+      <div class="prior-info">
+        <div class="prior-nome">${esc(d.p.nome||'?')}</div>
+        <div style="margin-top:3px">${tags.join(' ')}</div>
+      </div>
+      <button class="btn-mini" onclick="irPara('dashboard-clinico.html',${d.p.id})">Ver →</button>
+    </div>`;
+  }).join('');
+}
+
+function renderAtividade(dadosPac) {
+  const atividades = [];
+  dadosPac.forEach(d => {
+    d.soaps.slice(-2).forEach(s => atividades.push({ tipo:'soap', pac:d.p.nome||'?', pid:d.p.id, dt:s.data||s.dt||'', desc:'Consulta SOAP registrada', cor:'#0891b2', icone:'🩺' }));
+    d.ints.slice(-2).forEach(i => atividades.push({ tipo:'int', pac:d.p.nome||'?', pid:d.p.id, dt:i.data||i.dt||'', desc:(i.tipo||'Intervenção SFT').slice(0,40), cor:'#7c3aed', icone:'💊' }));
+  });
+  atividades.sort((a,b)=>(b.dt||'')>(a.dt||'')?1:-1);
+  const recentes = atividades.slice(0,6);
+  if (!recentes.length) {
+    document.getElementById('lista-atividade').innerHTML = '<div style="color:#94a3b8;font-size:.8rem;text-align:center;padding:8px">Nenhuma atividade registrada.</div>';
+    return;
+  }
+  document.getElementById('lista-atividade').innerHTML = recentes.map(a => `
+    <div class="act-item" style="cursor:pointer" onclick="irPara('relatorio-sft.html',${a.pid})">
+      <div class="act-dot" style="background:${a.cor}22">${a.icone}</div>
+      <div class="act-body">
+        <div class="act-tit">${esc(a.desc)}</div>
+        <div class="act-pac">👤 ${esc(a.pac)}</div>
+      </div>
+      <div class="act-dt">${a.dt}</div>
+    </div>`).join('');
+}
+
+async function renderInbox(dadosPac) {
+  let total = 0;
+  dadosPac.forEach(d => {
+    const retAtras = (d.agendaRet||[]).filter(r=>!r.feito&&r.data<HJ).length + (d.planoSeg?.retorno&&d.planoSeg.retorno<HJ?1:0);
+    const prms = (d.plano.problemas||[]).filter(p=>!p.desfecho&&p.status!=='resolvido').length;
+    const notas = d.notasInt.filter(n=>!n.resposta||n.resposta==='pendente').length;
+    const metas = (d.plano.metas||[]).filter(m=>m.status==='nao_atingida').length;
+    const ramsNar= d.rams.filter(r=>r.naranjoScore===undefined).length;
+    total += retAtras + prms + notas + metas + ramsNar;
+  });
+  const el = document.getElementById('inbox-n');
+  const title = document.getElementById('inbox-title');
+  const sub   = document.getElementById('inbox-sub');
+  el.textContent = total;
+  el.className   = 'inbox-n ' + (total===0?'inbox-zero':'');
+  title.textContent = total===0 ? '✅ Nenhuma pendência clínica' : `${total} pendência${total!==1?'s':''} clínica${total!==1?'s':''}`;
+  sub.textContent   = total===0 ? 'Todos os pacientes estão em dia' : 'Clique para ver e resolver';
+}
+
+function irPara(href, pid) {
+  if (pid) localStorage.setItem('vd_active', pid);
+  window.location.href = href;
+}
+
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') }
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
