@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>SARC-F — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .topbar{display:flex;align-items:center;gap:10px;padding:12px 16px;background:#b45309;position:sticky;top:0;z-index:100}
+    .back-btn{background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:8px;padding:6px 11px;cursor:pointer;font-size:1rem}
+    .topbar-title{font-size:.93rem;font-weight:800;color:#fff;flex:1}
+    .topbar-sub{font-size:.62rem;color:rgba(255,255,255,.7);margin-top:1px}
+    .btn-top{background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:8px;padding:7px 11px;font-size:.72rem;font-weight:700;cursor:pointer;margin-left:4px}
+    main{max-width:600px;margin:0 auto;padding:12px 14px 90px}
+    .pac-sel{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:12px;padding:11px 14px;font-size:.88rem;margin-bottom:10px;background:#fff}
+
+    /* Score */
+    .score-hero{border-radius:16px;padding:20px;text-align:center;margin-bottom:12px;color:#fff}
+    .score-hero.negativo{background:linear-gradient(135deg,#166534,#15803d)}
+    .score-hero.positivo{background:linear-gradient(135deg,#b45309,#d97706)}
+    .score-hero.nd{background:linear-gradient(135deg,#475569,#64748b)}
+    .score-n{font-size:4rem;font-weight:900;line-height:1}
+    .score-lbl{font-size:1rem;font-weight:800;margin-top:4px}
+    .score-sub{font-size:.75rem;opacity:.75;margin-top:4px}
+    .barra-prog{height:10px;background:rgba(255,255,255,.2);border-radius:8px;overflow:hidden;margin-top:12px}
+    .barra-fill{height:100%;border-radius:8px;background:#fff;transition:width .5s}
+
+    /* Questões */
+    .card{background:#fff;border-radius:14px;padding:14px 16px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.07)}
+    .card-title{font-size:.65rem;font-weight:800;color:#94a3b8;text-transform:uppercase;margin-bottom:12px}
+    .q-item{padding:12px 0;border-bottom:1px solid #f8fafc}
+    .q-item:last-child{border:none}
+    .q-header{display:flex;gap:10px;align-items:flex-start;margin-bottom:8px}
+    .q-icon{font-size:1.6rem;flex-shrink:0;margin-top:2px}
+    .q-body{flex:1}
+    .q-num{font-size:.62rem;font-weight:800;color:#b45309;margin-bottom:2px}
+    .q-txt{font-size:.85rem;font-weight:700;color:#1e293b;line-height:1.4;margin-bottom:4px}
+    .q-subtxt{font-size:.73rem;color:#64748b;line-height:1.4}
+    .opt-row{display:flex;flex-direction:column;gap:6px}
+    .opt-btn{border:1.5px solid #e2e8f0;border-radius:8px;padding:9px 12px;font-size:.78rem;cursor:pointer;background:#f8fafc;font-weight:600;color:#475569;text-align:left;transition:.12s;display:flex;justify-content:space-between;align-items:center}
+    .opt-btn .pontos{font-size:.65rem;color:#94a3b8;font-weight:700;background:#f1f5f9;border-radius:6px;padding:2px 6px}
+    .opt-btn.sel0{background:#dcfce7;border-color:#4ade80;color:#166534}
+    .opt-btn.sel0 .pontos{background:#bbf7d0;color:#166534}
+    .opt-btn.sel1{background:#fef3c7;border-color:#fbbf24;color:#92400e}
+    .opt-btn.sel1 .pontos{background:#fde68a;color:#92400e}
+    .opt-btn.sel2{background:#fee2e2;border-color:#f87171;color:#991b1b}
+    .opt-btn.sel2 .pontos{background:#fecaca;color:#991b1b}
+
+    /* Campos opcionais */
+    .opc-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .opc-inp{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:8px;padding:8px 10px;font-size:.82rem;background:#fff}
+    .opc-lbl{font-size:.68rem;font-weight:700;color:#64748b;margin-bottom:3px}
+
+    /* Interpretação */
+    .interp-card{border-radius:14px;padding:16px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.07)}
+    .interp-card.pos{background:#fef3c7;border:1.5px solid #fbbf24}
+    .interp-card.neg{background:#dcfce7;border:1.5px solid #4ade80}
+    .interp-title{font-size:.8rem;font-weight:800;margin-bottom:8px}
+    .interp-txt{font-size:.76rem;line-height:1.6}
+    .conduta-item{display:flex;gap:8px;align-items:flex-start;margin-top:6px;font-size:.75rem}
+    .conduta-icon{flex-shrink:0}
+
+    /* Perfil geriátrico integrado */
+    .geri-strip{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px}
+    .geri-item{background:#fff;border-radius:10px;padding:10px 8px;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,.07)}
+    .geri-n{font-size:1.2rem;font-weight:900}
+    .geri-l{font-size:.58rem;color:#64748b;font-weight:700;text-transform:uppercase;margin-top:2px}
+
+    .ref-box{background:#fff7ed;border:1.5px solid #fed7aa;border-radius:10px;padding:10px 12px;font-size:.73rem;color:#92400e;line-height:1.8;margin-top:10px}
+
+    @media print{.topbar,.pac-sel,.btn-top,nav,.opt-btn{display:none!important}body{background:#fff}main{padding:0;max-width:none}}
+  </style>
+</head>
+<body>
+<div class="topbar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <div style="flex:1">
+    <div class="topbar-title">💪 SARC-F — Rastreio de Sarcopenia</div>
+    <div class="topbar-sub">Malmstrom TJ et al., 2013 · versão em português</div>
+  </div>
+  <button class="btn-top" onclick="salvar()">💾</button>
+  <button class="btn-top" onclick="window.print()">🖨️</button>
+</div>
+<main>
+  <select class="pac-sel" id="sel-pac" onchange="init()"><option value="">Selecione o paciente...</option></select>
+  <div id="conteudo"></div>
+</main>
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+<script src="js/db.js"></script>
+<script src="js/utils.js"></script>
+<script>
+const QS = [
+  { id:'forca',  icon:'🏋️', num:1,
+    lbl:'Força',
+    txt:'Qual a dificuldade que você tem para levantar ou carregar 4,5 kg (aproximadamente um galão de água)?',
+    sub:'Ex: levantar sacola pesada, galão de água, caixas.',
+    opts:[
+      {lbl:'Nenhuma dificuldade',pts:0},
+      {lbl:'Alguma dificuldade',pts:1},
+      {lbl:'Muita dificuldade ou incapaz',pts:2},
+    ]},
+  { id:'caminhada', icon:'🚶', num:2,
+    lbl:'Assistência para Caminhar',
+    txt:'Qual a dificuldade que você tem para atravessar um cômodo caminhando?',
+    sub:'Ex: sala, corredor, espaço de aproximadamente 4 metros.',
+    opts:[
+      {lbl:'Nenhuma dificuldade',pts:0},
+      {lbl:'Alguma dificuldade',pts:1},
+      {lbl:'Muita dificuldade, usa auxílio ou incapaz',pts:2},
+    ]},
+  { id:'levantar', icon:'🪑', num:3,
+    lbl:'Levantar da Cadeira',
+    txt:'Qual a dificuldade que você tem para se levantar de uma cadeira ou cama?',
+    sub:'Sem apoio dos braços.',
+    opts:[
+      {lbl:'Nenhuma dificuldade',pts:0},
+      {lbl:'Alguma dificuldade',pts:1},
+      {lbl:'Muita dificuldade ou necessita de ajuda',pts:2},
+    ]},
+  { id:'escada', icon:'🪜', num:4,
+    lbl:'Subir Escadas',
+    txt:'Qual a dificuldade que você tem para subir um lance de 10 degraus?',
+    sub:'Sem se apoiar no corrimão.',
+    opts:[
+      {lbl:'Nenhuma dificuldade',pts:0},
+      {lbl:'Alguma dificuldade',pts:1},
+      {lbl:'Muita dificuldade ou incapaz',pts:2},
+    ]},
+  { id:'quedas', icon:'🩹', num:5,
+    lbl:'Quedas',
+    txt:'Quantas vezes você caiu no último ano?',
+    sub:'',
+    opts:[
+      {lbl:'Nenhuma queda',pts:0},
+      {lbl:'1 a 3 quedas',pts:1},
+      {lbl:'4 quedas ou mais',pts:2},
+    ]},
+];
+
+let _resp={}, _grip=null, _marcha=null, _pid=null;
+
+async function init(){
+  _pid=parseInt(document.getElementById('sel-pac').value)||null;
+  if(!_pid){document.getElementById('conteudo').innerHTML='';return;}
+  const saved=await dbGetConfig('sarcf_'+_pid)||{};
+  _resp=saved.resp||{};
+  _grip=saved.grip||null;
+  _marcha=saved.marcha||null;
+  render();
+}
+
+function calcScore(){
+  const vals=QS.map(q=>_resp[q.id]);
+  if(vals.some(v=>v===undefined)) return {total:null,n:vals.filter(v=>v!==undefined).length};
+  return {total:vals.reduce((a,b)=>a+b,0),n:5};
+}
+
+function render(){
+  const {total,n}=calcScore();
+  const positivo=total!==null&&total>=4;
+  const heroCls=total===null?'nd':positivo?'positivo':'negativo';
+  const nivel=total===null?'—':positivo?'Positivo (Risco)':'Negativo';
+  const corN=total===null?'#fff':positivo?'#fff':'#fff';
+
+  let html=`
+    <div class="score-hero ${heroCls}">
+      <div class="score-n">${total!==null?total:'—'}</div>
+      <div class="score-lbl">SARC-F ${nivel}</div>
+      <div class="score-sub">${n}/5 questões respondidas · Score máximo: 10</div>
+      <div class="barra-prog"><div class="barra-fill" style="width:${total!==null?total/10*100:0}%"></div></div>
+    </div>`;
+
+  // Perfil geriátrico integrado (lidos de forma assíncrona já foi feito no init)
+  html+=`<div id="geri-strip-wrap"></div>`;
+
+  // Questões
+  html+=`<div class="card"><div class="card-title">Questões SARC-F</div>`;
+  QS.forEach(q=>{
+    const val=_resp[q.id];
+    html+=`<div class="q-item">
+      <div class="q-header">
+        <div class="q-icon">${q.icon}</div>
+        <div class="q-body">
+          <div class="q-num">Questão ${q.num} — ${q.lbl}</div>
+          <div class="q-txt">${esc(q.txt)}</div>
+          ${q.sub?`<div class="q-subtxt">${esc(q.sub)}</div>`:''}
+        </div>
+      </div>
+      <div class="opt-row">
+        ${q.opts.map(op=>{
+          const sel=val===op.pts;
+          return `<button class="opt-btn ${sel?'sel'+op.pts:''}" onclick="setResp('${q.id}',${op.pts},this)">
+            <span>${esc(op.lbl)}</span>
+            <span class="pontos">${op.pts} pt${op.pts!==1?'s':''}</span>
+          </button>`;
+        }).join('')}
+      </div>
+    </div>`;
+  });
+  html+=`</div>`;
+
+  // Medidas complementares (opcionais)
+  html+=`<div class="card">
+    <div class="card-title">📏 Medidas Complementares (opcionais)</div>
+    <p style="font-size:.75rem;color:#64748b;margin-bottom:10px;line-height:1.5">
+      Força de preensão (dinamometria) e velocidade de marcha confirmam o diagnóstico de sarcopenia quando o SARC-F é positivo (critérios EWGSOP2, 2019).
+    </p>
+    <div class="opc-grid">
+      <div>
+        <div class="opc-lbl">Força de Preensão (kgf)</div>
+        <input class="opc-inp" type="number" id="grip" min="0" max="80" step="0.1"
+          value="${_grip||''}" placeholder="Ex: 24,5" oninput="setGrip(this.value)">
+        <div style="font-size:.65rem;color:#94a3b8;margin-top:3px">Baixa: ♂ &lt;27 kgf / ♀ &lt;16 kgf</div>
+      </div>
+      <div>
+        <div class="opc-lbl">Velocidade de Marcha (m/s)</div>
+        <input class="opc-inp" type="number" id="marcha" min="0" max="5" step="0.01"
+          value="${_marcha||''}" placeholder="Ex: 0,85" oninput="setMarcha(this.value)">
+        <div style="font-size:.65rem;color:#94a3b8;margin-top:3px">Baixa: &lt;0,8 m/s (teste dos 4 m)</div>
+      </div>
+    </div>
+  </div>`;
+
+  // Interpretação clínica
+  if(total!==null){
+    if(positivo){
+      // Avalia dinamometria
+      const gripBaixa=_grip!==null&&(_grip<27); // simplificado
+      const marchaBaixa=_marcha!==null&&(_marcha<0.8);
+      const confirma=gripBaixa||marchaBaixa;
+      html+=`<div class="interp-card pos">
+        <div class="interp-title">⚠️ SARC-F Positivo (Score ${total}/10 ≥ 4) — Rastreio para Sarcopenia</div>
+        <div class="interp-txt">
+          ${confirma?'<strong>Sarcopenia provável confirmada</strong> pelos critérios EWGSOP2 (força de preensão ou velocidade de marcha reduzidas).'
+          :'Rastreio positivo. Confirmar sarcopenia com dinamometria (força de preensão) e/ou velocidade de marcha.'}
+        </div>
+        <div class="conduta-item"><span class="conduta-icon">🏋️</span><span>Encaminhar para <strong>fisioterapia</strong> para avaliação e exercícios de resistência (treino de força)</span></div>
+        <div class="conduta-item"><span class="conduta-icon">🥩</span><span>Encaminhar para <strong>nutrição</strong>: suplementação proteica (1,2–1,5 g/kg/dia), vitamina D se deficiência</span></div>
+        <div class="conduta-item"><span class="conduta-icon">💊</span><span>Revisar medicamentos que contribuem: corticoides, estatinas (miopatia), diuréticos (hipocalemia), benzodiazepínicos</span></div>
+        <div class="conduta-item"><span class="conduta-icon">🩺</span><span>Solicitar avaliação médica para exclusão de causas secundárias (hipogonadismo, hipotireoidismo, ICC, neoplasia)</span></div>
+        <div class="conduta-item"><span class="conduta-icon">🛡️</span><span>Avaliar risco de quedas: Escala de Morse e dispositivos de auxílio à marcha</span></div>
+      </div>`;
+    } else {
+      html+=`<div class="interp-card neg">
+        <div class="interp-title">✅ SARC-F Negativo (Score ${total}/10 &lt; 4) — Sem Indicação de Rastreio Adicional</div>
+        <div class="interp-txt">
+          Rastreio negativo para sarcopenia. Repetir anualmente ou se houver mudança clínica significativa (perda de peso, hospitalização, piora funcional).
+        </div>
+        <div class="conduta-item"><span class="conduta-icon">🏃</span><span>Encorajar atividade física regular: 150 min/semana de atividade moderada + exercícios de força 2×/semana</span></div>
+        <div class="conduta-item"><span class="conduta-icon">🥗</span><span>Orientar ingestão proteica adequada: 1,0–1,2 g/kg/dia para idosos</span></div>
+      </div>`;
+    }
+  }
+
+  html+=`<div class="ref-box">
+    <strong>Critérios diagnósticos (EWGSOP2, 2019):</strong><br>
+    Passo 1: SARC-F ≥4 → suspeita de sarcopenia<br>
+    Passo 2: Força de preensão ♂ &lt;27 kgf / ♀ &lt;16 kgf → confirma sarcopenia<br>
+    Passo 3: Velocidade de marcha &lt;0,8 m/s → sarcopenia grave<br><br>
+    <strong>Referências:</strong> Malmstrom TJ, Morley JE. <em>J Am Med Dir Assoc</em>. 2013;14(8):531-532.
+    Cruz-Jentoft AJ, et al. (EWGSOP2). <em>Age Ageing</em>. 2019;48(1):16-31.
+  </div>`;
+
+  document.getElementById('conteudo').innerHTML=html;
+  carregarGerilStip();
+}
+
+async function carregarGerilStip(){
+  if(!_pid)return;
+  const [frail,morse,mrciHist]=await Promise.all([
+    dbGetConfig('frail_'+_pid),
+    dbGetConfig('morse_'+_pid),
+    dbGetConfig('mrci_hist_'+_pid),
+  ]);
+  const {total}=calcScore();
+  const sarcScore=total!==null?total:null;
+  const frailScore=frail?.score!=null?frail.score:null;
+  const morseScore=morse?.score!=null?morse.score:null;
+  const mrciScore=mrciHist?.at(-1)?.score??null;
+
+  document.getElementById('geri-strip-wrap').innerHTML=`
+    <div class="geri-strip">
+      <div class="geri-item">
+        <div class="geri-n" style="color:${sarcScore===null?'#94a3b8':sarcScore>=4?'#d97706':'#16a34a'}">${sarcScore!==null?sarcScore:'N/A'}</div>
+        <div class="geri-l">SARC-F (/10)</div>
+      </div>
+      <div class="geri-item">
+        <div class="geri-n" style="color:${frailScore===null?'#94a3b8':frailScore>=3?'#dc2626':frailScore>=1?'#d97706':'#16a34a'}">${frailScore!==null?frailScore:'N/A'}</div>
+        <div class="geri-l">FRAIL (/5)</div>
+      </div>
+      <div class="geri-item">
+        <div class="geri-n" style="color:${morseScore===null?'#94a3b8':morseScore>=45?'#dc2626':morseScore>=25?'#d97706':'#16a34a'}">${morseScore!==null?morseScore:'N/A'}</div>
+        <div class="geri-l">Morse Quedas</div>
+      </div>
+    </div>`;
+}
+
+function setResp(qid, pts, btn){
+  _resp[qid]=pts;
+  const row=btn.closest('.opt-row');
+  row.querySelectorAll('.opt-btn').forEach(b=>{ b.className='opt-btn'; });
+  btn.className='opt-btn sel'+pts;
+  atualizarScore();
+}
+
+function setGrip(v){ _grip=v?parseFloat(v):null; }
+function setMarcha(v){ _marcha=v?parseFloat(v):null; }
+
+function atualizarScore(){
+  const {total}=calcScore();
+  const positivo=total!==null&&total>=4;
+  const heroCls=total===null?'nd':positivo?'positivo':'negativo';
+  const el=document.querySelector('.score-hero');
+  if(el){el.className='score-hero '+heroCls; el.querySelector('.score-n').textContent=total!==null?total:'—'; el.querySelector('.score-lbl').textContent='SARC-F '+(total===null?'—':positivo?'Positivo (Risco)':'Negativo'); if(total!==null) el.querySelector('.barra-fill').style.width=total/10*100+'%';}
+}
+
+async function salvar(){
+  if(!_pid){showToast('Selecione um paciente');return;}
+  const {total,n}=calcScore();
+  if(n<5){showToast('Responda todas as 5 questões antes de salvar');return;}
+  const positivo=total>=4;
+  await dbSetConfig('sarcf_'+_pid,{resp:{..._resp},grip:_grip,marcha:_marcha,score:total,positivo,data:hoje()});
+  const hist=(await dbGetConfig('sarcf_hist_'+_pid))||[];
+  hist.push({data:hoje(),score:total,positivo});
+  await dbSetConfig('sarcf_hist_'+_pid,hist);
+  showToast('✅ SARC-F salvo — Score: '+total+'/10 ('+(positivo?'Positivo':'Negativo')+')');
+}
+
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+
+document.addEventListener('DOMContentLoaded',async()=>{
+  const pacs=await dbGetAll('pacientes');
+  const sel=document.getElementById('sel-pac');
+  sel.innerHTML='<option value="">Selecione o paciente...</option>'+pacs.map(p=>`<option value="${p.id}">${esc(p.nome||'Paciente '+p.id)}</option>`).join('');
+  const pid=getActivePacienteId();
+  if(pid){sel.value=pid;await init();}
+});
+</script>
+</body>
+</html>

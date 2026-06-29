@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>Carta ao Médico — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .topbar{display:flex;align-items:center;gap:10px;padding:12px 16px;background:#1e3a5f;position:sticky;top:0;z-index:100}
+    .back-btn{background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:8px;padding:6px 11px;cursor:pointer;font-size:1rem}
+    .topbar-title{font-size:.93rem;font-weight:800;color:#fff;flex:1}
+    .topbar-sub{font-size:.62rem;color:rgba(255,255,255,.7);margin-top:1px}
+    .btn-top{background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:8px;padding:7px 11px;font-size:.72rem;font-weight:700;cursor:pointer;margin-left:4px}
+    main{max-width:640px;margin:0 auto;padding:12px 14px 90px}
+    .pac-sel,.inp{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:10px;padding:9px 12px;font-size:.85rem;background:#fff;margin-bottom:8px}
+    .cfg-card{background:#fff;border-radius:14px;padding:14px 16px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.07)}
+    .cfg-title{font-size:.65rem;font-weight:800;color:#94a3b8;text-transform:uppercase;margin-bottom:10px}
+    .cfg-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .inp-lbl{font-size:.7rem;color:#64748b;margin-bottom:3px;font-weight:700}
+    textarea.inp{min-height:70px;resize:vertical}
+    .btn-gerar{width:100%;background:#1e3a5f;color:#fff;border:none;border-radius:10px;padding:11px;font-size:.85rem;font-weight:800;cursor:pointer;margin-bottom:12px}
+
+    /* CARTA */
+    .carta{background:#fff;border-radius:16px;padding:28px 28px 24px;box-shadow:0 2px 12px rgba(0,0,0,.09);font-family:Georgia,serif;font-size:.87rem;color:#1a1a2e;line-height:1.8;display:none}
+    .carta-header{border-bottom:2px solid #1e3a5f;padding-bottom:14px;margin-bottom:18px}
+    .farm-nome{font-size:1.15rem;font-weight:700;color:#1e3a5f}
+    .farm-sub{font-size:.75rem;color:#64748b;margin-top:2px}
+    .carta-local-data{text-align:right;font-size:.8rem;color:#475569;margin-bottom:12px}
+    .carta-dest{margin-bottom:16px;font-size:.85rem}
+    .carta-assunto{background:#f0f6ff;border-left:4px solid #1e3a5f;padding:8px 12px;border-radius:4px;margin-bottom:18px;font-size:.83rem;font-weight:700;color:#1e3a5f}
+    .carta-saudacao{margin-bottom:14px}
+    .carta-section{margin-bottom:16px}
+    .carta-section-title{font-size:.78rem;font-weight:700;color:#1e3a5f;text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid #e2e8f0;padding-bottom:4px;margin-bottom:10px}
+    table.ct{width:100%;border-collapse:collapse;font-size:.8rem;margin-top:6px}
+    table.ct th{background:#f8fafc;padding:6px 8px;text-align:left;font-size:.7rem;font-weight:700;color:#64748b;border:1px solid #e2e8f0}
+    table.ct td{padding:6px 8px;border:1px solid #e2e8f0;vertical-align:top}
+    .nivel-grave{color:#dc2626;font-weight:700}
+    .nivel-mod{color:#d97706;font-weight:700}
+    .outcome-ok{color:#166534;font-weight:700}
+    .carta-assinatura{border-top:1px solid #e2e8f0;padding-top:18px;margin-top:20px}
+    .ass-linha{border-bottom:1px solid #1a1a2e;width:220px;margin:22px 0 4px;display:inline-block}
+    .ass-lbl{font-size:.75rem;color:#475569}
+    .carta-rodape{font-size:.7rem;color:#94a3b8;text-align:center;margin-top:16px;border-top:1px solid #f1f5f9;padding-top:10px}
+
+    @media print{
+      .topbar,.cfg-card,.btn-gerar,.pac-sel,nav{display:none!important}
+      body{background:#fff}
+      main{padding:0;max-width:none}
+      .carta{display:block!important;box-shadow:none;border-radius:0;padding:20mm 18mm}
+    }
+  </style>
+</head>
+<body>
+<div class="topbar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <div style="flex:1">
+    <div class="topbar-title">✉️ Carta Farmacêutica ao Médico</div>
+    <div class="topbar-sub">Sumário Clínico do Acompanhamento Farmacoterapêutico</div>
+  </div>
+  <button class="btn-top" onclick="window.print()">🖨️</button>
+  <button class="btn-top" onclick="compartilhar()">💬</button>
+</div>
+<main>
+  <select class="pac-sel" id="sel-pac" onchange="onPac()"><option value="">Selecione o paciente...</option></select>
+
+  <div class="cfg-card" id="cfg-form" style="display:none">
+    <div class="cfg-title">⚙️ Dados para a Carta</div>
+    <div class="cfg-grid">
+      <div>
+        <div class="inp-lbl">Destinatário (Dr./Dra.)</div>
+        <input class="inp" id="dest-nome" placeholder="Nome do médico">
+      </div>
+      <div>
+        <div class="inp-lbl">Especialidade</div>
+        <input class="inp" id="dest-esp" placeholder="Cardiologia, Clínica Geral…">
+      </div>
+      <div>
+        <div class="inp-lbl">Serviço / Instituição</div>
+        <input class="inp" id="dest-inst" placeholder="UBS, Hospital, Consultório…">
+      </div>
+      <div>
+        <div class="inp-lbl">Cidade / Estado</div>
+        <input class="inp" id="dest-cidade" placeholder="Cidade — UF">
+      </div>
+    </div>
+    <div class="inp-lbl">Nome do Farmacêutico</div>
+    <input class="inp" id="farm-nome" placeholder="Ex: João da Silva">
+    <div class="cfg-grid">
+      <div>
+        <div class="inp-lbl">CRF</div>
+        <input class="inp" id="farm-crf" placeholder="CRF/UF-00000">
+      </div>
+      <div>
+        <div class="inp-lbl">Serviço Farmacêutico</div>
+        <input class="inp" id="farm-servico" placeholder="Ex: Farmácia Clínica">
+      </div>
+    </div>
+    <div class="inp-lbl">Recomendações finais (texto livre)</div>
+    <textarea class="inp" id="recomendacoes" placeholder="Solicito avaliação de… Sugiro revisão de… Proponho ajuste de…"></textarea>
+    <button class="btn-gerar" onclick="gerar()">📄 Gerar Carta</button>
+  </div>
+
+  <div class="carta" id="carta"></div>
+</main>
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+<script src="js/db.js"></script>
+<script src="js/utils.js"></script>
+<script>
+let _pid=null,_pac=null;
+
+async function onPac(){
+  _pid=parseInt(document.getElementById('sel-pac').value)||null;
+  document.getElementById('cfg-form').style.display=_pid?'block':'none';
+  document.getElementById('carta').style.display='none';
+  if(!_pid)return;
+  _pac=await dbGet('pacientes',_pid);
+  // Pré-preenche dados do farmacêutico do config
+  const cfg=await dbGetConfig('farmaceutico_cfg')||{};
+  if(cfg.nome) document.getElementById('farm-nome').value=cfg.nome;
+  if(cfg.crf)  document.getElementById('farm-crf').value=cfg.crf;
+  if(cfg.servico) document.getElementById('farm-servico').value=cfg.servico;
+}
+
+async function gerar(){
+  if(!_pid)return;
+  const destNome  = document.getElementById('dest-nome').value||'____________________';
+  const destEsp   = document.getElementById('dest-esp').value;
+  const destInst  = document.getElementById('dest-inst').value;
+  const destCidade= document.getElementById('dest-cidade').value;
+  const farmNome  = document.getElementById('farm-nome').value||'____________________';
+  const farmCrf   = document.getElementById('farm-crf').value||'CRF/UF-_______';
+  const farmServ  = document.getElementById('farm-servico').value||'Serviço de Farmácia Clínica';
+  const recoms    = document.getElementById('recomendacoes').value;
+
+  // Salva dados do farmacêutico
+  await dbSetConfig('farmaceutico_cfg',{nome:farmNome,crf:farmCrf,servico:farmServ});
+
+  // Carrega dados
+  const hj=hoje();
+  const [allMeds,plano,soaps,sftInts,rams,mmas8Hist,mrciHist,eq5dHist,diarios,allLabs,concil,anamnese]=await Promise.all([
+    dbGetByIndex('medicamentos','pacienteId',_pid),
+    dbGetConfig('plano_cuidados_'+_pid),
+    dbGetConfig('soap_'+_pid),
+    dbGetConfig('sft_int_'+_pid),
+    dbGetConfig('ram_'+_pid),
+    dbGetConfig('mmas8_hist_'+_pid),
+    dbGetConfig('mrci_hist_'+_pid),
+    dbGetConfig('eq5d_hist_'+_pid),
+    dbGetByIndex('diario','pacienteId',_pid),
+    dbGetAll('laboratorio'),
+    dbGetConfig('conciliacao_'+_pid),
+    dbGetConfig('anamnese_sft_'+_pid),
+  ]);
+
+  const meds=allMeds.filter(m=>m.ativo!==false&&(!m.dataFim||m.dataFim>=hj));
+  const probs=(plano?.problemas)||[];
+  const ints=(sftInts||[]);
+  const soapsArr=(soaps||[]);
+  const labsDoPac=(allLabs||[]).filter(l=>l.pacienteId===_pid||l.pid===_pid);
+  const mmasCurr=mmas8Hist?.at(-1);
+  const mrciCurr=mrciHist?.at(-1);
+  const eq5dCurr=eq5dHist?.at(-1);
+  const diarioRecente=diarios?.sort((a,b)=>(b.data||'').localeCompare(a.data||''))[0];
+
+  // Cálculos
+  const intsComResult=ints.filter(i=>i.resultado||i.result);
+  const intsAceitas=intsComResult.filter(i=>(i.resultado||i.result)==='aceita');
+  const txAceit=intsComResult.length?Math.round(intsAceitas.length/intsComResult.length*100):null;
+  const probsResol=probs.filter(p=>p.desfecho==='Resolvido');
+  const probsNR=probs.filter(p=>p.desfecho==='Não resolvido'||!p.desfecho);
+  const primeiraConsulta=soapsArr.length?soapsArr.reduce((a,b)=>(a.data||'')<(b.data||'')?a:b).data:null;
+  const idadeNum=calcIdade(_pac?.dataNascimento||_pac?.nascimento||null);
+  const fmtDt=d=>d?(d.split('-').reverse().join('/')):'—';
+
+  // Lab mais recente por tipo
+  function ultLab(tipo){
+    const c=labsDoPac.filter(l=>(l.tipo||l.exame||'').toLowerCase().includes(tipo)).sort((a,b)=>(b.data||'').localeCompare(a.data||''));
+    return c[0]?{val:c[0].resultado||c[0].valor,data:c[0].data}:null;
+  }
+  const labHba1c=ultLab('hba1c')||ultLab('hemoglobin');
+  const labLdl=ultLab('ldl');
+  const labCr=ultLab('creat');
+  const labPas=diarioRecente?.pas||diarioRecente?.pressao;
+  const labGlic=diarioRecente?.glicemia;
+  const labPeso=diarioRecente?.peso;
+
+  const dataHj=hj.split('-').reverse().join('/');
+  const cidade=destCidade||'_________________';
+
+  // Nível de risco aderência
+  const mmasNivel=mmasCurr?`${mmasCurr.score.toFixed(1)} (${mmasCurr.nivel} aderência)`:'Não avaliado';
+  const mrciNivel=mrciCurr?`${mrciCurr.score.toFixed(1)} pts — ${mrciCurr.nivel} complexidade`:'Não calculado';
+  const eq5dNivel=eq5dCurr?`${eq5dCurr.util.toFixed(3)} (EVA: ${eq5dCurr.eva}/100)`:'Não avaliado';
+
+  // PRMs por categoria
+  const prmGrave=probs.filter(p=>p.gravidade==='Grave'||(p.pcne||'').startsWith('P3'));
+  const alertasAtivos=probsNR.length;
+
+  const el=document.getElementById('carta');
+  el.style.display='block';
+  el.innerHTML=`
+    <div class="carta-header">
+      <div class="farm-nome">${esc(farmNome)}</div>
+      <div class="farm-sub">Farmacêutico Clínico · ${esc(farmCrf)} · ${esc(farmServ)}</div>
+    </div>
+
+    <div class="carta-local-data">${esc(cidade)}, ${dataHj}</div>
+
+    <div class="carta-dest">
+      <strong>Ilmo(a). Dr(a). ${esc(destNome)}</strong><br>
+      ${destEsp?esc(destEsp)+'<br>':''}
+      ${destInst?esc(destInst):''}
+    </div>
+
+    <div class="carta-assunto">
+      Ref.: Sumário Clínico do Acompanhamento Farmacoterapêutico —
+      ${esc(_pac?.nome||'Paciente')}${idadeNum?' ('+idadeNum+' anos)':''}
+    </div>
+
+    <p class="carta-saudacao">Prezado(a) Dr(a). ${esc(destNome)},</p>
+
+    <p>Encaminho o sumário clínico do acompanhamento farmacoterapêutico pelo método Dáder/SFT do(a) paciente <strong>${esc(_pac?.nome||'—')}</strong>
+    ${idadeNum?', '+idadeNum+' anos':''}, ${_pac?.sexo?(_pac.sexo==='M'?'sexo masculino':'sexo feminino'):''},
+    ${_pac?.dataNascimento?'nascido(a) em '+fmtDt(_pac.dataNascimento)+', ':''}acompanhado(a) neste serviço
+    ${primeiraConsulta?'desde '+fmtDt(primeiraConsulta):'recentemente'}.
+    Ao todo foram realizadas <strong>${soapsArr.length} consulta(s) farmacêutica(s)</strong>.</p>
+
+    ${_pac?.doencas?.length?`<div class="carta-section">
+      <div class="carta-section-title">Condições Clínicas</div>
+      <p>${esc(Array.isArray(_pac.doencas)?_pac.doencas.join(', '):_pac.doencas)}</p>
+    </div>`:''}
+
+    <div class="carta-section">
+      <div class="carta-section-title">Farmacoterapia em Uso (${meds.length} medicamento${meds.length!==1?'s':''})</div>
+      <table class="ct">
+        <thead><tr><th>Medicamento</th><th>Dose</th><th>Frequência</th><th>Indicação</th></tr></thead>
+        <tbody>${meds.map(m=>`<tr>
+          <td>${esc(m.nome||m.generico||'?')}</td>
+          <td>${esc(m.dosagem||'—')}</td>
+          <td>${esc(m.frequencia||'—')}</td>
+          <td>${esc(m.indicacao||m.condicao||'—')}</td>
+        </tr>`).join('')}</tbody>
+      </table>
+    </div>
+
+    ${probs.length?`<div class="carta-section">
+      <div class="carta-section-title">Problemas Relacionados a Medicamentos — PRMs (PCNE v9.1)</div>
+      <table class="ct">
+        <thead><tr><th>#</th><th>PRM</th><th>Medicamento</th><th>Desfecho</th></tr></thead>
+        <tbody>${probs.map((p,i)=>`<tr>
+          <td>${i+1}</td>
+          <td>${esc(p.pcne||p.tipo||'—')} — ${esc(p.descricao||p.problema||'')}</td>
+          <td>${esc(p.medicamento||'—')}</td>
+          <td class="${p.desfecho==='Resolvido'?'outcome-ok':p.desfecho==='Não resolvido'?'nivel-grave':''}">${esc(p.desfecho||'Pendente')}</td>
+        </tr>`).join('')}</tbody>
+      </table>
+      <p style="margin-top:6px;font-size:.78rem">
+        Total: <strong>${probs.length} PRMs</strong> identificados ·
+        <span class="outcome-ok">${probsResol.length} resolvidos</span> ·
+        <span class="${alertasAtivos?'nivel-grave':''}">${alertasAtivos} pendentes</span>
+        ${txAceit!==null?' · Taxa de aceitação de intervenções: '+txAceit+'%':''}
+      </p>
+    </div>`:''}
+
+    ${ints.length?`<div class="carta-section">
+      <div class="carta-section-title">Intervenções Farmacêuticas Realizadas</div>
+      <table class="ct">
+        <thead><tr><th>Data</th><th>Tipo</th><th>Conduta</th><th>Resultado</th></tr></thead>
+        <tbody>${ints.slice(-8).map(i=>`<tr>
+          <td>${fmtDt(i.data||'')}</td>
+          <td>${esc(i.tipo||i.categoria||'—')}</td>
+          <td>${esc(i.conduta||i.acao||'—')}</td>
+          <td>${esc(i.resultado||i.result||'Pendente')}</td>
+        </tr>`).join('')}</tbody>
+      </table>
+    </div>`:''}
+
+    <div class="carta-section">
+      <div class="carta-section-title">Desfechos Clínicos e Parâmetros de Monitoramento</div>
+      <table class="ct">
+        <thead><tr><th>Parâmetro</th><th>Valor</th><th>Data / Referência</th></tr></thead>
+        <tbody>
+          ${labPas?`<tr><td>Pressão Arterial Sistólica</td><td>${labPas} mmHg</td><td>${fmtDt(diarioRecente?.data||'')}</td></tr>`:''}
+          ${labGlic?`<tr><td>Glicemia</td><td>${labGlic} mg/dL</td><td>${fmtDt(diarioRecente?.data||'')}</td></tr>`:''}
+          ${labPeso?`<tr><td>Peso</td><td>${labPeso} kg</td><td>${fmtDt(diarioRecente?.data||'')}</td></tr>`:''}
+          ${labHba1c?`<tr><td>HbA1c</td><td>${labHba1c.val}%</td><td>${fmtDt(labHba1c.data)}</td></tr>`:''}
+          ${labLdl?`<tr><td>LDL-colesterol</td><td>${labLdl.val} mg/dL</td><td>${fmtDt(labLdl.data)}</td></tr>`:''}
+          ${labCr?`<tr><td>Creatinina sérica</td><td>${labCr.val} mg/dL</td><td>${fmtDt(labCr.data)}</td></tr>`:''}
+          <tr><td>Aderência (MMAS-8)</td><td>${mmasNivel}</td><td>Instrumento validado</td></tr>
+          <tr><td>Complexidade (MRCI)</td><td>${mrciNivel}</td><td>George et al., 2004</td></tr>
+          <tr><td>Qualidade de Vida (EQ-5D-3L)</td><td>${eq5dNivel}</td><td>EuroQol, 1990</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    ${rams?.length?`<div class="carta-section">
+      <div class="carta-section-title">Reações Adversas a Medicamentos (RAMs) Identificadas</div>
+      <table class="ct">
+        <thead><tr><th>RAM</th><th>Medicamento suspeito</th><th>Naranjo</th><th>Causalidade</th></tr></thead>
+        <tbody>${rams.map(r=>`<tr>
+          <td>${esc(r.reacao||r.descricao||'—')}</td>
+          <td>${esc(r.medicamento||'—')}</td>
+          <td>${r.naranjoScore!=null?r.naranjoScore:'N/A'}</td>
+          <td>${r.naranjoScore!=null?(r.naranjoScore>=9?'Definida':r.naranjoScore>=5?'Provável':r.naranjoScore>=1?'Possível':'Duvidosa'):'Não avaliada'}</td>
+        </tr>`).join('')}</tbody>
+      </table>
+    </div>`:''}
+
+    <div class="carta-section">
+      <div class="carta-section-title">Recomendações e Solicitações</div>
+      ${recoms?`<p>${esc(recoms).replace(/\n/g,'<br>')}</p>`:
+      `<p>Com base no acompanhamento realizado, solicito gentilmente a avaliação dos itens acima descritos e, se pertinente, a consideração das intervenções propostas. Coloco-me à disposição para discussão do caso clínico.</p>`}
+    </div>
+
+    <p>Atenciosamente,</p>
+    <div class="carta-assinatura">
+      <div><span class="ass-linha"></span></div>
+      <div class="ass-lbl">${esc(farmNome)}</div>
+      <div class="ass-lbl">${esc(farmCrf)}</div>
+      <div class="ass-lbl">${esc(farmServ)}</div>
+    </div>
+
+    <div class="carta-rodape">
+      Documento gerado pelo VitaDose — Sistema de Acompanhamento Farmacoterapêutico · ${dataHj}<br>
+      Metodologia: Dáder/SFT · PRMs classificados pela PCNE v9.1 · MMAS-8: Morisky et al. 2008 · EQ-5D-3L: EuroQol 1990
+    </div>`;
+
+  el.scrollIntoView({behavior:'smooth'});
+}
+
+function calcIdade(nasc){
+  if(!nasc)return null;
+  const d=new Date(nasc),hj2=new Date();
+  let a=hj2.getFullYear()-d.getFullYear();
+  const m=hj2.getMonth()-d.getMonth();
+  if(m<0||(m===0&&hj2.getDate()<d.getDate()))a--;
+  return a>0?a:null;
+}
+
+function compartilhar(){
+  const carta=document.getElementById('carta');
+  if(!carta||carta.style.display==='none'){showToast('Gere a carta primeiro');return;}
+  const txt=carta.innerText.substring(0,3000);
+  window.open('https://api.whatsapp.com/send?text='+encodeURIComponent(txt),'_blank');
+}
+
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+
+document.addEventListener('DOMContentLoaded',async()=>{
+  const pacs=await dbGetAll('pacientes');
+  const sel=document.getElementById('sel-pac');
+  sel.innerHTML='<option value="">Selecione o paciente...</option>'+pacs.map(p=>`<option value="${p.id}">${esc(p.nome||'Paciente '+p.id)}</option>`).join('');
+  const pid=getActivePacienteId();
+  if(pid){sel.value=pid;await onPac();}
+});
+</script>
+</body>
+</html>

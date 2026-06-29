@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>Calendário Posológico — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .topbar{display:flex;align-items:center;gap:10px;padding:12px 16px;background:#7c3aed;position:sticky;top:0;z-index:100}
+    .back-btn{background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:8px;padding:6px 11px;cursor:pointer;font-size:1rem}
+    .topbar-title{font-size:.93rem;font-weight:800;color:#fff;flex:1}
+    .topbar-sub{font-size:.62rem;color:rgba(255,255,255,.7);margin-top:1px}
+    .btn-top{background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:8px;padding:7px 11px;font-size:.72rem;font-weight:700;cursor:pointer;margin-left:4px}
+    main{max-width:680px;margin:0 auto;padding:12px 14px 90px}
+    .pac-sel{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:12px;padding:11px 14px;font-size:.88rem;margin-bottom:10px;background:#fff}
+
+    .ctrl-card{background:#fff;border-radius:14px;padding:12px 14px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.07);display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    .ctrl-card select,.ctrl-card input{border:1.5px solid #e2e8f0;border-radius:8px;padding:7px 10px;font-size:.8rem;background:#fff}
+    .ctrl-lbl{font-size:.7rem;font-weight:700;color:#64748b}
+    .btn-gerar{background:#7c3aed;color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:.78rem;font-weight:700;cursor:pointer}
+
+    /* ── CALENDÁRIO ── */
+    .cal-wrap{background:#fff;border-radius:16px;padding:14px;box-shadow:0 1px 6px rgba(0,0,0,.08);overflow-x:auto}
+    .cal-title{font-size:.95rem;font-weight:800;color:#1e293b;margin-bottom:4px}
+    .cal-sub{font-size:.72rem;color:#64748b;margin-bottom:14px}
+
+    /* VISTA SEMANAL */
+    table.cal{border-collapse:collapse;width:100%;min-width:520px}
+    table.cal th{background:#7c3aed;color:#fff;font-size:.65rem;font-weight:800;padding:7px 6px;text-align:center;border:1px solid #6d28d9}
+    table.cal th.med-th{background:#1e293b;text-align:left;padding:7px 8px;min-width:130px}
+    table.cal td{border:1px solid #e2e8f0;padding:5px 6px;text-align:center;vertical-align:middle;font-size:.7rem;color:#475569}
+    table.cal td.med-nm{text-align:left;background:#f8fafc;font-weight:700;color:#1e293b;font-size:.74rem;vertical-align:top;padding:6px 8px}
+    table.cal td.med-sub{font-size:.62rem;color:#94a3b8;font-weight:400;display:block;margin-top:1px}
+    .cell-horario{font-size:.68rem;font-weight:700;color:#7c3aed;display:block;margin-bottom:2px}
+    .cell-circle{width:18px;height:18px;border:1.5px solid #cbd5e1;border-radius:50%;display:inline-block;margin:2px}
+    .cell-circle.ativo{background:#ede9fe;border-color:#7c3aed}
+    .sem-dose{color:#e2e8f0;font-size:.85rem}
+
+    /* VISTA MENSAL */
+    table.cal-mes{border-collapse:collapse;font-size:.65rem;width:100%}
+    table.cal-mes th{background:#7c3aed;color:#fff;padding:5px 3px;text-align:center;border:1px solid #6d28d9;font-size:.6rem}
+    table.cal-mes th.med-col{background:#1e293b;text-align:left;min-width:110px;padding:5px 6px}
+    table.cal-mes td{border:1px solid #f1f5f9;padding:3px;text-align:center;height:22px}
+    table.cal-mes td.med-col{text-align:left;background:#f8fafc;font-weight:700;color:#1e293b;padding:4px 6px;font-size:.65rem}
+    table.cal-mes td.med-sub-col{font-size:.56rem;color:#94a3b8;font-weight:400}
+    .dot-dia{width:14px;height:14px;border:1px solid #c4b5fd;border-radius:3px;display:inline-block;background:#f5f3ff}
+    .dot-dia.ativo{background:#ede9fe;border-color:#7c3aed}
+
+    /* LEGENDA */
+    .legenda-strip{display:flex;gap:14px;margin-top:10px;font-size:.7rem;color:#64748b;flex-wrap:wrap}
+    .leg{display:flex;align-items:center;gap:5px}
+
+    /* Orientações */
+    .obs-card{background:#fff;border-radius:14px;padding:14px;margin-top:10px;box-shadow:0 1px 4px rgba(0,0,0,.07)}
+    .obs-title{font-size:.65rem;font-weight:800;color:#94a3b8;text-transform:uppercase;margin-bottom:10px}
+    .obs-item{padding:8px 0;border-bottom:1px solid #f8fafc;font-size:.78rem}
+    .obs-item:last-child{border:none}
+    .obs-med{font-weight:700;color:#1e293b}
+    .obs-txt{color:#475569;margin-top:2px}
+
+    .empty{text-align:center;padding:40px;color:#94a3b8}
+    @media print{
+      .topbar,.pac-sel,.ctrl-card,.btn-top,nav{display:none!important}
+      body{background:#fff}
+      main{padding:4mm;max-width:none}
+      .cal-wrap{box-shadow:none;padding:0;border-radius:0}
+      .obs-card{box-shadow:none}
+      @page{size:A4 landscape;margin:10mm}
+    }
+  </style>
+</head>
+<body>
+<div class="topbar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <div style="flex:1">
+    <div class="topbar-title">📅 Calendário Posológico</div>
+    <div class="topbar-sub">Grade imprimível de horários de medicamentos</div>
+  </div>
+  <button class="btn-top" onclick="window.print()">🖨️</button>
+</div>
+<main>
+  <select class="pac-sel" id="sel-pac" onchange="init()"><option value="">Selecione o paciente...</option></select>
+
+  <div class="ctrl-card" id="ctrl-card" style="display:none">
+    <div><div class="ctrl-lbl">Visualização</div>
+      <select id="vista" onchange="gerar()">
+        <option value="semana">Semanal</option>
+        <option value="mes">Mensal</option>
+      </select>
+    </div>
+    <div><div class="ctrl-lbl">Mês / Ano</div>
+      <input type="month" id="mes-ano" onchange="gerar()">
+    </div>
+    <button class="btn-gerar" onclick="gerar()">Gerar</button>
+  </div>
+
+  <div id="conteudo"></div>
+</main>
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+<script src="js/db.js"></script>
+<script src="js/utils.js"></script>
+<script>
+let _meds=[], _pid=null;
+const DIAS_SEM=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+const PERIODOS=[
+  {id:'manha',   lbl:'Manhã',   icon:'🌅', range:[6,11]},
+  {id:'almoco',  lbl:'Almoço',  icon:'☀️', range:[11,14]},
+  {id:'tarde',   lbl:'Tarde',   icon:'🌤️', range:[14,18]},
+  {id:'noite',   lbl:'Noite',   icon:'🌙', range:[18,23]},
+  {id:'dormir',  lbl:'Ao dormir',icon:'😴',range:[23,6]},
+];
+
+async function init(){
+  _pid=parseInt(document.getElementById('sel-pac').value)||null;
+  document.getElementById('conteudo').innerHTML='';
+  document.getElementById('ctrl-card').style.display=_pid?'flex':'none';
+  if(!_pid)return;
+  const hj=hoje();
+  const all=await dbGetByIndex('medicamentos','pacienteId',_pid);
+  _meds=all.filter(m=>m.ativo!==false&&(!m.dataFim||m.dataFim>=hj));
+  // Pré-seleciona mês atual
+  document.getElementById('mes-ano').value=hj.slice(0,7);
+  await gerar();
+}
+
+function horarioParaPeriodo(h){
+  const hora=parseInt((h||'').split(':')[0]);
+  if(isNaN(hora)) return null;
+  for(const p of PERIODOS){
+    if(p.range[0]<p.range[1]){if(hora>=p.range[0]&&hora<p.range[1])return p.id;}
+    else{if(hora>=p.range[0]||hora<p.range[1])return p.id;}
+  }
+  return 'manha';
+}
+
+function freqParaDias(freq){
+  const f=(freq||'').toLowerCase();
+  if(f.includes('semanal'))return 1;
+  if(f.includes('8h')||f.includes('3x'))return 3;
+  if(f.includes('12h')||f.includes('2x'))return 2;
+  if(f.includes('6h')||f.includes('4x'))return 4;
+  if(f.includes('6x')||f.includes('4h'))return 6;
+  return 1;
+}
+
+function medParaPeriodos(m){
+  // Tenta usar horários cadastrados
+  if(m.horarios&&m.horarios.length>0){
+    return m.horarios.map(h=>horarioParaPeriodo(h)).filter(Boolean);
+  }
+  // Fallback: converte frequência em períodos
+  const n=freqParaDias(m.frequencia);
+  const base=['manha','noite','almoco','tarde','dormir'];
+  return base.slice(0,n);
+}
+
+async function gerar(){
+  if(!_meds.length){document.getElementById('conteudo').innerHTML='<div class="empty">Nenhum medicamento ativo</div>';return;}
+  const vista=document.getElementById('vista').value;
+  const mesAno=document.getElementById('mes-ano').value||hoje().slice(0,7);
+  const [ano,mes]=mesAno.split('-').map(Number);
+  const pac=await dbGet('pacientes',_pid);
+
+  if(vista==='semana') renderSemana(pac,ano,mes);
+  else renderMes(pac,ano,mes);
+}
+
+function renderSemana(pac,ano,mes){
+  const nDias=new Date(ano,mes,0).getDate();
+  const nomeMes=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'][mes-1];
+  // Gera semana 1 (dias 1-7), semana 2 (8-14), semana 3 (15-21), semana 4 (22-nDias)
+  const semanas=[
+    {lbl:'Semana 1',dias:Array.from({length:7},(_,i)=>({d:i+1,dow:new Date(ano,mes-1,i+1).getDay()}))},
+    {lbl:'Semana 2',dias:Array.from({length:7},(_,i)=>({d:i+8,dow:new Date(ano,mes-1,i+8).getDay()}))},
+    {lbl:'Semana 3',dias:Array.from({length:7},(_,i)=>({d:i+15,dow:new Date(ano,mes-1,i+15).getDay()}))},
+    {lbl:'Semana 4+',dias:Array.from({length:nDias-21},(_,i)=>({d:i+22,dow:new Date(ano,mes-1,i+22).getDay()}))},
+  ];
+
+  let html=`<div class="cal-wrap">
+    <div class="cal-title">📅 Calendário Posológico — ${nomeMes}/${ano}</div>
+    <div class="cal-sub">Paciente: <strong>${esc(pac?.nome||'—')}</strong> · ${_meds.length} medicamento(s) ativo(s)</div>`;
+
+  semanas.forEach(sem=>{
+    if(!sem.dias.length)return;
+    html+=`<div style="margin-bottom:18px">
+      <div style="font-size:.7rem;font-weight:800;color:#7c3aed;margin-bottom:6px">${sem.lbl} (${sem.dias[0].d}–${sem.dias.at(-1).d} de ${nomeMes})</div>
+      <table class="cal"><thead><tr>
+        <th class="med-th">Medicamento</th>
+        ${sem.dias.map(d=>`<th>${DIAS_SEM[d.dow]}<br>${d.d}</th>`).join('')}
+      </tr></thead><tbody>`;
+
+    _meds.forEach(m=>{
+      const periodos=medParaPeriodos(m);
+      const isFreqSemanal=(m.frequencia||'').toLowerCase().includes('seman');
+      html+=`<tr>
+        <td class="med-nm">
+          ${esc(m.nome||'?')}
+          <span class="med-sub">${esc(m.dosagem||'')}${m.frequencia?' · '+m.frequencia:''}</span>
+        </td>
+        ${sem.dias.map(d=>{
+          if(isFreqSemanal&&d.dow!==1)return`<td class="sem-dose">—</td>`;
+          const circles=PERIODOS.filter(p=>periodos.includes(p.id)).map(p=>`<div><span class="cell-horario">${p.icon} ${p.lbl}</span><span class="cell-circle ativo"></span></div>`).join('');
+          return`<td>${circles||'<span class="sem-dose">—</span>'}</td>`;
+        }).join('')}
+      </tr>`;
+    });
+    html+=`</tbody></table></div>`;
+  });
+
+  // Legenda + orientações especiais
+  const mcsComObs=_meds.filter(m=>m.instrucoes||m.observacoes||m.orientacao);
+  html+=`<div class="legenda-strip">
+    <div class="leg"><span class="cell-circle ativo" style="display:inline-block"></span> Horário de dose</div>
+    <div class="leg"><span class="cell-circle" style="display:inline-block"></span> Marque ✓ quando tomar</div>
+  </div></div>`;
+
+  if(mcsComObs.length){
+    html+=`<div class="obs-card"><div class="obs-title">⚠️ Orientações Especiais</div>`;
+    mcsComObs.forEach(m=>{
+      html+=`<div class="obs-item"><div class="obs-med">${esc(m.nome||'?')} ${m.dosagem||''}</div><div class="obs-txt">${esc(m.instrucoes||m.observacoes||m.orientacao||'')}</div></div>`;
+    });
+    html+=`</div>`;
+  }
+
+  // Rodapé imprimível
+  html+=`<div style="text-align:center;font-size:.65rem;color:#94a3b8;margin-top:12px;padding-top:8px;border-top:1px solid #f1f5f9">
+    Calendário gerado pelo VitaDose · Farmacêutico: _________________ CRF: ___________ · Data: ${hoje().split('-').reverse().join('/')}
+  </div>`;
+
+  document.getElementById('conteudo').innerHTML=html;
+}
+
+function renderMes(pac,ano,mes){
+  const nDias=new Date(ano,mes,0).getDate();
+  const nomeMes=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'][mes-1];
+  const dias=Array.from({length:nDias},(_,i)=>i+1);
+
+  let html=`<div class="cal-wrap">
+    <div class="cal-title">📅 Calendário Posológico — ${nomeMes} ${ano}</div>
+    <div class="cal-sub">Paciente: <strong>${esc(pac?.nome||'—')}</strong> · ${_meds.length} medicamento(s)</div>
+    <table class="cal-mes"><thead><tr>
+      <th class="med-col">Medicamento / Horário</th>
+      ${dias.map(d=>`<th>${d}</th>`).join('')}
+    </tr></thead><tbody>`;
+
+  _meds.forEach(m=>{
+    const periodos=medParaPeriodos(m);
+    const isFreqSemanal=(m.frequencia||'').toLowerCase().includes('seman');
+    html+=`<tr>
+      <td class="med-col">${esc(m.nome||'?')}<br><span class="med-sub-col">${esc(m.dosagem||'')} · ${esc(m.frequencia||'')}</span></td>
+      ${dias.map(d=>{
+        const isAtivo=!isFreqSemanal||(new Date(ano,mes-1,d).getDay()===1);
+        return`<td>${isAtivo?`<div class="dot-dia ${periodos.length?'ativo':''}"></div>`:'<span style="color:#f1f5f9">·</span>'}</td>`;
+      }).join('')}
+    </tr>`;
+  });
+
+  html+=`</tbody></table>
+    <div class="legenda-strip">
+      <div class="leg"><div class="dot-dia ativo"></div> Dia de uso — marque ao tomar</div>
+      <div class="leg"><div class="dot-dia"></div> Sem medicamento</div>
+    </div>
+  </div>`;
+
+  // Orientações
+  const mcsComObs=_meds.filter(m=>m.instrucoes||m.observacoes||m.orientacao);
+  if(mcsComObs.length){
+    html+=`<div class="obs-card"><div class="obs-title">⚠️ Orientações Especiais</div>`;
+    mcsComObs.forEach(m=>{ html+=`<div class="obs-item"><div class="obs-med">${esc(m.nome||'?')}</div><div class="obs-txt">${esc(m.instrucoes||m.observacoes||m.orientacao||'')}</div></div>`; });
+    html+=`</div>`;
+  }
+
+  html+=`<div style="text-align:center;font-size:.65rem;color:#94a3b8;margin-top:12px;padding-top:8px;border-top:1px solid #f1f5f9">
+    Calendário gerado pelo VitaDose · Farmacêutico: _________________ CRF: ___________ · Data: ${hoje().split('-').reverse().join('/')}
+  </div>`;
+
+  document.getElementById('conteudo').innerHTML=html;
+}
+
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+
+document.addEventListener('DOMContentLoaded',async()=>{
+  const pacs=await dbGetAll('pacientes');
+  const sel=document.getElementById('sel-pac');
+  sel.innerHTML='<option value="">Selecione o paciente...</option>'+pacs.map(p=>`<option value="${p.id}">${esc(p.nome||'Paciente '+p.id)}</option>`).join('');
+  const pid=getActivePacienteId();
+  if(pid){sel.value=pid;await init();}
+});
+</script>
+</body>
+</html>
