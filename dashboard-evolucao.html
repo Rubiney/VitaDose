@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>Evolução Clínica — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .topbar{display:flex;align-items:center;gap:10px;padding:12px 16px;background:#1e3a5f;position:sticky;top:0;z-index:100}
+    .back-btn{background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:8px;padding:6px 11px;cursor:pointer;font-size:1rem}
+    .topbar-title{font-size:.93rem;font-weight:800;color:#fff;flex:1}
+    .topbar-sub{font-size:.62rem;color:rgba(255,255,255,.7);margin-top:1px}
+    .btn-top{background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:8px;padding:7px 11px;font-size:.72rem;font-weight:700;cursor:pointer;margin-left:4px}
+    main{max-width:680px;margin:0 auto;padding:12px 14px 90px}
+    .pac-sel{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:12px;padding:11px 14px;font-size:.88rem;margin-bottom:10px;background:#fff}
+
+    .ctrl-bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
+    .ctrl-bar label{font-size:.7rem;font-weight:700;color:#64748b}
+    .ctrl-bar select,.ctrl-bar input{border:1.5px solid #e2e8f0;border-radius:8px;padding:6px 9px;font-size:.78rem;background:#fff}
+
+    /* KPI strip (último valor vs meta) */
+    .kpi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px}
+    @media(min-width:480px){.kpi-grid{grid-template-columns:repeat(4,1fr)}}
+    .kpi-mini{background:#fff;border-radius:10px;padding:10px 8px;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,.07);border-top:3px solid}
+    .kpi-mini-val{font-size:1.1rem;font-weight:900;margin-bottom:2px}
+    .kpi-mini-lbl{font-size:.58rem;color:#64748b;font-weight:700;text-transform:uppercase}
+    .kpi-mini-delta{font-size:.62rem;margin-top:3px;font-weight:700}
+
+    /* Gráfico container */
+    .graf-card{background:#fff;border-radius:14px;padding:14px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.07)}
+    .graf-title{font-size:.75rem;font-weight:800;color:#1e293b;margin-bottom:4px;display:flex;align-items:center;gap:6px}
+    .graf-meta{font-size:.65rem;color:#94a3b8;margin-bottom:8px}
+    svg.grafico{display:block;width:100%;overflow:visible}
+    .graf-vazio{font-size:.75rem;color:#94a3b8;text-align:center;padding:20px 0}
+
+    .empty{text-align:center;padding:40px;color:#94a3b8}
+    @media print{.topbar,.pac-sel,.btn-top,.ctrl-bar,nav{display:none!important}body{background:#fff}main{padding:0}}
+  </style>
+</head>
+<body>
+<div class="topbar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <div style="flex:1">
+    <div class="topbar-title">📈 Dashboard de Evolução Clínica</div>
+    <div class="topbar-sub">Séries temporais com metas terapêuticas</div>
+  </div>
+  <button class="btn-top" onclick="window.print()">🖨️</button>
+</div>
+<main>
+  <select class="pac-sel" id="sel-pac" onchange="init()"><option value="">Selecione o paciente...</option></select>
+  <div class="ctrl-bar" id="ctrl-bar" style="display:none">
+    <label>Período:</label>
+    <select id="periodo" onchange="render()">
+      <option value="90">3 meses</option>
+      <option value="180" selected>6 meses</option>
+      <option value="365">12 meses</option>
+      <option value="9999">Tudo</option>
+    </select>
+    <label>Meta PA:</label>
+    <input type="number" id="meta-pas" value="130" style="width:60px"> mmHg
+    <label>Meta HbA1c:</label>
+    <input type="number" id="meta-hba1c" value="7" step="0.1" style="width:50px"> %
+  </div>
+  <div id="conteudo"></div>
+</main>
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+<script src="js/db.js"></script>
+<script src="js/utils.js"></script>
+<script>
+let _diarios=[], _labs=[], _pid=null;
+
+async function init(){
+  _pid=parseInt(document.getElementById('sel-pac').value)||null;
+  if(!_pid){document.getElementById('conteudo').innerHTML='';document.getElementById('ctrl-bar').style.display='none';return;}
+  _diarios=(await dbGetByIndex('diario','pacienteId',_pid)||[]).sort((a,b)=>(a.data||'').localeCompare(b.data||''));
+  const allLabs=await dbGetAll('laboratorio');
+  _labs=allLabs.filter(l=>(l.pacienteId===_pid||l.pid===_pid)).sort((a,b)=>(a.data||'').localeCompare(b.data||''));
+  document.getElementById('ctrl-bar').style.display=_diarios.length||_labs.length?'flex':'none';
+  render();
+}
+
+function render(){
+  const dias=parseInt(document.getElementById('periodo').value)||180;
+  const metaPas=parseFloat(document.getElementById('meta-pas').value)||130;
+  const metaHba1c=parseFloat(document.getElementById('meta-hba1c').value)||7;
+  const cutoff=new Date(); cutoff.setDate(cutoff.getDate()-dias);
+  const cutStr=cutoff.toISOString().slice(0,10);
+
+  const diariosFilt=_diarios.filter(d=>(d.data||'')>=cutStr);
+  const labsFilt=_labs.filter(l=>(l.data||'')>=cutStr);
+
+  if(!diariosFilt.length&&!labsFilt.length){
+    document.getElementById('conteudo').innerHTML='<div class="empty">Nenhum dado registrado no período selecionado.<br>Adicione registros no Diário e/ou Laboratório.</div>';
+    return;
+  }
+
+  // Agrupa por parâmetro
+  function extrairDiario(chave){
+    return diariosFilt.filter(d=>d[chave]!=null&&d[chave]!=='')
+      .map(d=>({data:d.data,val:parseFloat(d[chave])}))
+      .filter(d=>!isNaN(d.val));
+  }
+  function extrairLab(termos){
+    return labsFilt.filter(l=>{
+      const t=(l.tipo||l.exame||'').toLowerCase();
+      return termos.some(k=>t.includes(k));
+    }).map(l=>({data:l.data,val:parseFloat(l.resultado||l.valor||'')}))
+      .filter(d=>!isNaN(d.val))
+      .sort((a,b)=>a.data.localeCompare(b.data));
+  }
+
+  const PARAMS=[
+    {id:'pas',lbl:'PA Sistólica',unid:'mmHg',cor:'#dc2626',meta:metaPas,metaDir:'<',dados:extrairDiario('pas'),icone:'❤️'},
+    {id:'pad',lbl:'PA Diastólica',unid:'mmHg',cor:'#f97316',meta:80,metaDir:'<',dados:extrairDiario('pad'),icone:'❤️'},
+    {id:'fc',lbl:'Frequência Cardíaca',unid:'bpm',cor:'#ec4899',meta:null,dados:extrairDiario('fc'),icone:'💓'},
+    {id:'glicemia',lbl:'Glicemia Capilar',unid:'mg/dL',cor:'#8b5cf6',meta:130,metaDir:'<',dados:extrairDiario('glicemia'),icone:'🍬'},
+    {id:'peso',lbl:'Peso Corporal',unid:'kg',cor:'#0ea5e9',meta:null,dados:extrairDiario('peso'),icone:'⚖️'},
+    {id:'hba1c',lbl:'HbA1c',unid:'%',cor:'#7c3aed',meta:metaHba1c,metaDir:'<',dados:extrairLab(['hba1c','hemoglobina glicada','a1c']),icone:'🩸'},
+    {id:'ldl',lbl:'LDL-colesterol',unid:'mg/dL',cor:'#ea580c',meta:70,metaDir:'<',dados:extrairLab(['ldl']),icone:'🫀'},
+    {id:'creatinina',lbl:'Creatinina',unid:'mg/dL',cor:'#0369a1',meta:1.4,metaDir:'<',dados:extrairLab(['creatinina','creat']),icone:'🔬'},
+    {id:'potassio',lbl:'Potássio (K⁺)',unid:'mEq/L',cor:'#059669',meta:null,dados:extrairLab(['potassio','k+']),icone:'⚗️'},
+    {id:'tsh',lbl:'TSH',unid:'μUI/mL',cor:'#0891b2',meta:null,dados:extrairLab(['tsh']),icone:'🦋'},
+    {id:'inr',lbl:'INR',unid:'',cor:'#dc2626',meta:null,dados:extrairLab(['inr','raz']),icone:'🩸'},
+  ].filter(p=>p.dados.length>=1);
+
+  if(!PARAMS.length){
+    document.getElementById('conteudo').innerHTML='<div class="empty">Nenhum parâmetro clínico registrado no período.<br>Registre dados no Diário e Laboratório.</div>';
+    return;
+  }
+
+  // KPI strip com últimos valores
+  let html=`<div class="kpi-grid">`;
+  PARAMS.forEach(p=>{
+    const ult=p.dados.at(-1);
+    const prim=p.dados[0];
+    const delta=prim&&ult&&p.dados.length>1?ult.val-prim.val:null;
+    const metaOk=p.meta?((p.metaDir==='<'?ult.val<=p.meta:ult.val>=p.meta)):null;
+    const corBorda=metaOk===null?'#e2e8f0':metaOk?'#22c55e':'#ef4444';
+    const deltaStr=delta!==null?(delta>=0?'+':'')+delta.toFixed(1)+' '+p.unid:'';
+    const deltaCor=delta===null?'#94a3b8':((p.metaDir==='<'?delta<=0:delta>=0)?'#16a34a':'#dc2626');
+    html+=`<div class="kpi-mini" style="border-top-color:${corBorda}">
+      <div class="kpi-mini-val" style="color:${corBorda}">${ult.val.toFixed(p.unid==='%'?1:0)} <span style="font-size:.6rem;font-weight:400">${p.unid}</span></div>
+      <div class="kpi-mini-lbl">${p.icone} ${p.lbl}</div>
+      ${delta!==null?`<div class="kpi-mini-delta" style="color:${deltaCor}">${deltaStr}</div>`:''}
+    </div>`;
+  });
+  html+=`</div>`;
+
+  // Gráficos
+  PARAMS.forEach(p=>{
+    if(p.dados.length<1) return;
+    html+=`<div class="graf-card">
+      <div class="graf-title">${p.icone} ${esc(p.lbl)}</div>
+      <div class="graf-meta">${p.meta?'Meta: '+p.metaDir+' '+p.meta+' '+p.unid+' &nbsp;·&nbsp;':''} ${p.dados.length} registro(s)</div>
+      ${svgGrafico(p)}
+    </div>`;
+  });
+
+  document.getElementById('conteudo').innerHTML=html;
+}
+
+function svgGrafico(p){
+  const dados=p.dados;
+  if(!dados.length) return `<div class="graf-vazio">Sem dados</div>`;
+
+  const W=500,H=110,px=36,py=14;
+  const vals=dados.map(d=>d.val);
+  const vMin=Math.min(...vals)*(p.meta&&p.meta<Math.min(...vals)?1:0.95);
+  const vMax=Math.max(...vals,p.meta||0)*1.05;
+  const range=vMax-vMin||1;
+
+  function sx(i){return px+(W-2*px)*i/(Math.max(dados.length-1,1));}
+  function sy(v){return py+(H-2*py)*(1-(v-vMin)/range);}
+
+  const pts=dados.map((d,i)=>`${sx(i)},${sy(d.val)}`).join(' ');
+  const fill=`${sx(0)},${H-py} ${pts} ${sx(dados.length-1)},${H-py}`;
+
+  // Datas para eixo X (máx 5 labels)
+  const step=Math.max(1,Math.floor(dados.length/5));
+  const xLabels=dados.filter((_,i)=>i%step===0||i===dados.length-1);
+
+  let svg=`<svg class="grafico" viewBox="0 0 ${W} ${H}">
+    <polygon points="${fill}" fill="${p.cor}" opacity=".08"/>`;
+
+  // Linha de meta
+  if(p.meta){
+    const my=sy(p.meta);
+    svg+=`<line x1="${px}" y1="${my}" x2="${W-px}" y2="${my}" stroke="${p.meta>=Math.min(...vals)&&p.meta<=Math.max(...vals)?p.cor:'#94a3b8'}" stroke-width="1.5" stroke-dasharray="6,3" opacity=".6"/>
+      <text x="${W-px+2}" y="${my+4}" font-size="9" fill="${p.cor}" opacity=".8">${p.meta}</text>`;
+  }
+
+  // Linha de dados
+  svg+=`<polyline points="${pts}" fill="none" stroke="${p.cor}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>`;
+
+  // Pontos e valores
+  dados.forEach((d,i)=>{
+    const x=sx(i),y=sy(d.val);
+    const acimaMeta=p.meta&&p.metaDir==='<'&&d.val>p.meta;
+    const abaixoMeta=p.meta&&p.metaDir==='>'&&d.val<p.meta;
+    const foraMeta=acimaMeta||abaixoMeta;
+    const cor=foraMeta?'#dc2626':p.cor;
+    svg+=`<circle cx="${x}" cy="${y}" r="${dados.length>20?2.5:4}" fill="${cor}" stroke="white" stroke-width="1.5"/>`;
+    if(dados.length<=12) svg+=`<text x="${x}" y="${y-8}" text-anchor="middle" font-size="9" fill="${cor}" font-weight="700">${d.val.toFixed(p.unid==='%'?1:0)}</text>`;
+  });
+
+  // Eixo X (datas)
+  xLabels.forEach((d,i)=>{
+    const idx=dados.indexOf(d);
+    const x=sx(idx);
+    const lbl=d.data?d.data.slice(5).split('-').join('/'):'-';
+    svg+=`<text x="${x}" y="${H-1}" text-anchor="middle" font-size="8" fill="#94a3b8">${lbl}</text>`;
+  });
+
+  // Eixo Y (min e max)
+  svg+=`<text x="${px-2}" y="${py+4}" text-anchor="end" font-size="8" fill="#94a3b8">${vMax.toFixed(1)}</text>`;
+  svg+=`<text x="${px-2}" y="${H-py}" text-anchor="end" font-size="8" fill="#94a3b8">${vMin.toFixed(1)}</text>`;
+  svg+=`<line x1="${px}" y1="${py}" x2="${px}" y2="${H-py}" stroke="#e2e8f0" stroke-width="1"/>`;
+  svg+=`<line x1="${px}" y1="${H-py}" x2="${W-px}" y2="${H-py}" stroke="#e2e8f0" stroke-width="1"/>`;
+
+  svg+=`</svg>`;
+  return svg;
+}
+
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+
+document.addEventListener('DOMContentLoaded',async()=>{
+  const pacs=await dbGetAll('pacientes');
+  const sel=document.getElementById('sel-pac');
+  sel.innerHTML='<option value="">Selecione o paciente...</option>'+pacs.map(p=>`<option value="${p.id}">${esc(p.nome||'Paciente '+p.id)}</option>`).join('');
+  const pid=getActivePacienteId();
+  if(pid){sel.value=pid;await init();}
+});
+</script>
+</body>
+</html>

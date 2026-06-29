@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>Desprescrição — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .topbar{display:flex;align-items:center;gap:10px;padding:12px 16px;background:#7f1d1d;position:sticky;top:0;z-index:100}
+    .back-btn{background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:8px;padding:6px 11px;cursor:pointer;font-size:1rem}
+    .topbar-title{font-size:.93rem;font-weight:800;color:#fff;flex:1}
+    .topbar-sub{font-size:.62rem;color:rgba(255,255,255,.7);margin-top:1px}
+    .btn-top{background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:8px;padding:7px 11px;font-size:.72rem;font-weight:700;cursor:pointer;margin-left:4px}
+    main{max-width:640px;margin:0 auto;padding:12px 14px 90px}
+    .pac-sel{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:12px;padding:11px 14px;font-size:.88rem;margin-bottom:10px;background:#fff}
+
+    .resumo-strip{display:flex;gap:6px;margin-bottom:10px}
+    .res-item{flex:1;background:#fff;border-radius:10px;padding:10px 8px;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,.07)}
+    .res-n{font-size:1.5rem;font-weight:900}.res-l{font-size:.58rem;color:#64748b;font-weight:700;text-transform:uppercase;margin-top:2px}
+
+    .cand-card{background:#fff;border-radius:14px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.07);overflow:hidden}
+    .cand-header{padding:12px 14px;display:flex;align-items:center;gap:10px;cursor:pointer}
+    .cand-prioridade{font-size:.65rem;font-weight:800;border-radius:6px;padding:2px 8px}
+    .pr-alta{background:#fee2e2;color:#991b1b}.pr-media{background:#fef3c7;color:#92400e}.pr-baixa{background:#f0fdf4;color:#166534}
+    .cand-nome{font-size:.88rem;font-weight:800;color:#1e293b;flex:1}
+    .cand-dose{font-size:.7rem;color:#94a3b8;margin-top:1px}
+    .cand-chevron{font-size:.85rem;color:#94a3b8;transition:.2s}
+    .cand-body{display:none;padding:0 14px 14px;border-top:1px solid #f8fafc}
+    .cand-body.aberto{display:block}
+
+    .razao-pill{display:inline-block;font-size:.65rem;font-weight:700;border-radius:6px;padding:2px 8px;margin:2px;background:#fee2e2;color:#991b1b}
+    .razao-pill.beers{background:#fef3c7;color:#92400e}
+    .razao-pill.stopp{background:#ffe4e6;color:#9f1239}
+    .razao-pill.anticolin{background:#f3e8ff;color:#6b21a8}
+    .razao-pill.regra{background:#f0f9ff;color:#0369a1}
+
+    .estrategia{background:#f8fafc;border-radius:10px;padding:10px 12px;margin:10px 0;font-size:.78rem}
+    .est-titulo{font-weight:800;color:#1e293b;margin-bottom:6px;font-size:.76rem}
+    .est-tipo{display:inline-block;font-size:.65rem;font-weight:800;border-radius:6px;padding:2px 8px;margin-bottom:6px}
+    .tipo-abrupto{background:#dcfce7;color:#166534}
+    .tipo-desmame{background:#fef3c7;color:#92400e}
+    .tipo-reducao{background:#dbeafe;color:#1e40af}
+    .tipo-subst{background:#f3e8ff;color:#6b21a8}
+    .est-passo{display:flex;gap:8px;margin-bottom:5px;font-size:.75rem;color:#374151}
+    .est-n{font-size:.7rem;font-weight:800;color:#7f1d1d;flex-shrink:0;width:18px;text-align:center}
+
+    .decisao-row{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+    .dec-btn{flex:1;border:1.5px solid #e2e8f0;border-radius:8px;padding:8px 6px;font-size:.72rem;font-weight:700;cursor:pointer;background:#f8fafc;color:#475569;text-align:center;min-width:80px}
+    .dec-btn.sel-sim{background:#dcfce7;border-color:#4ade80;color:#166534}
+    .dec-btn.sel-nao{background:#fee2e2;border-color:#f87171;color:#991b1b}
+    .dec-btn.sel-pend{background:#fef3c7;border-color:#fbbf24;color:#92400e}
+    .obs-inp{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:8px;padding:7px 10px;font-size:.78rem;margin-top:6px;background:#fff}
+
+    .vazio{text-align:center;padding:30px;color:#16a34a;background:#f0fdf4;border-radius:14px;margin-bottom:10px}
+    .vazio-icon{font-size:2.5rem}.vazio-txt{font-size:.9rem;font-weight:800;margin-top:8px}.vazio-sub{font-size:.75rem;margin-top:4px;color:#15803d}
+    .ref-box{background:#fff7ed;border:1.5px solid #fed7aa;border-radius:10px;padding:10px 12px;font-size:.72rem;color:#92400e;line-height:1.8;margin-top:10px}
+    @media print{.topbar,.pac-sel,.btn-top,.dec-btn,nav,.obs-inp{display:none!important}body{background:#fff}main{padding:0}}
+  </style>
+</head>
+<body>
+<div class="topbar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <div style="flex:1">
+    <div class="topbar-title">🔻 Protocolo de Desprescrição</div>
+    <div class="topbar-sub">Candidatos a retirada com estratégia de desmame</div>
+  </div>
+  <button class="btn-top" onclick="salvarDecisoes()">💾</button>
+  <button class="btn-top" onclick="window.print()">🖨️</button>
+</div>
+<main>
+  <select class="pac-sel" id="sel-pac" onchange="init()"><option value="">Selecione o paciente...</option></select>
+  <div id="conteudo"></div>
+</main>
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+<script src="js/db.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/beers.js"></script>
+<script src="js/anticolin.js"></script>
+<script src="js/stopp_start.js"></script>
+<script>
+// Estratégias de desprescrição baseadas em Scott IA et al., Can Fam Physician 2015
+// e Reeve E et al., Ther Adv Drug Saf 2015
+const DESP_DB = [
+  { pattern:/benzo|diazep|alpraz|clonaz|lorazep|midazol|triazol|nitrazep|flunitrazep/i,
+    grupo:'Benzodiazepínico', prioridade:'alta',
+    razao:'Risco de quedas, sedação excessiva e dependência em idosos (Critério de Beers)',
+    tipo:'desmame',
+    passos:[
+      'Reduza 25% da dose a cada 2 semanas',
+      'Substitua por benzodiazepínico de meia-vida curta se necessário',
+      'Ofereça TCC-I para insônia; buspirona ou ISRS para ansiedade',
+      'Monitore: sintomas de abstinência (agitação, sudorese, tremor)',
+    ]},
+  { pattern:/ibupro|diclofenac|naprox|cetoprofeno|piroxicam|meloxicam|indometac|nimesul|celecox/i,
+    grupo:'AINE', prioridade:'alta',
+    razao:'Risco gastrointestinal, renal e cardiovascular; uso crônico sem proteção gástrica',
+    tipo:'abrupto',
+    passos:[
+      'Pode ser suspenso abruptamente em maioria dos casos',
+      'Substitua por paracetamol (até 3 g/dia) para dor leve-moderada',
+      'Para dor inflamatória persistente: discuta com prescritor',
+      'Monitore: recorrência da dor, função renal 30 dias após',
+    ]},
+  { pattern:/omepraz|esomepraz|pantopraz|lansopraz|rabepraz/i,
+    grupo:'Inibidor de Bomba de Prótons (IBP)', prioridade:'media',
+    razao:'Uso prolongado sem indicação documentada; risco de hipomagnesemia, déficit de B12 e infecção por C. diff',
+    tipo:'reducao',
+    passos:[
+      'Avalie indicação: se profilaxia sem AINE/anticoagulante → candidato a retirada',
+      'Reduza dose pela metade por 2 semanas, depois use em demanda',
+      'Oriente sobre rebote de acidez nas primeiras 2–4 semanas (esperado)',
+      'Substitua por antiácido conforme necessidade',
+    ]},
+  { pattern:/sinvastatin|sinvastat|atorvastatin|rosuvastat|pravastat|fluvastat|lovastat/i,
+    grupo:'Estatina', prioridade:'baixa',
+    razao:'Considere desprescrição em pacientes com expectativa de vida limitada, fragilidade grave (FRAIL ≥3) ou ausência de benefício documentado',
+    tipo:'abrupto',
+    passos:[
+      'Discuta relação risco-benefício com paciente e prescritor',
+      'Em prevenção primária + fragilidade ≥3: benefício questionável',
+      'Pode ser suspenso abruptamente (sem efeito rebote)',
+      'Monitore: ocorrência de evento cardiovascular nos 6 meses seguintes',
+    ]},
+  { pattern:/glibenclamid|glipizid|glimepirid|clorpropamid|tolbutamid|glicazid/i,
+    grupo:'Sulfonilureia', prioridade:'alta',
+    razao:'Risco de hipoglicemia grave em idosos; hipoglicemia aumenta risco de queda e evento cardiovascular',
+    tipo:'reducao',
+    passos:[
+      'Reduza dose em 50% e reavalhe glicemia em 2 semanas',
+      'Meta glicêmica menos restritiva em idosos frágeis: HbA1c 7,5–8,5%',
+      'Substitua por metformina (se TFG>45) ou inibidor DPP-4 (menor risco hipoglicemia)',
+      'Monitore: glicemia capilar diária durante a redução',
+    ]},
+  { pattern:/antidepressivo|amitriptilin|nortriptilin|imipramina|doxepin|clomipramina/i,
+    grupo:'Antidepressivo tricíclico', prioridade:'alta',
+    razao:'Alta carga anticolinérgica; risco de queda, retenção urinária, constipação e delirium em idosos',
+    tipo:'desmame',
+    passos:[
+      'Substitua por ISRS ou IRSN (menor carga anticolinérgica) se depressão ativa',
+      'Reduza 10–25 mg a cada 2 semanas',
+      'Se uso para dor neuropática: considere duloxetina ou gabapentina',
+      'Monitore: humor, qualidade do sono, sintomas de abstinência',
+    ]},
+  { pattern:/haloperidol|risperidona|quetiapina|olanzapina|clozapina|ziprazidona/i,
+    grupo:'Antipsicótico', prioridade:'alta',
+    razao:'Risco de eventos cerebrovasculares, mortalidade e síndrome metabólica em idosos com demência',
+    tipo:'desmame',
+    passos:[
+      'Avalie se indicação original ainda persiste',
+      'Reduza 25% da dose a cada 4 semanas',
+      'Tente suspensão após 3 meses de estabilidade comportamental',
+      'Monitore: recorrência de agitação ou psicose, sintomas extrapiramidais',
+    ]},
+  { pattern:/difenidramin|prometazin|hidroxizin|clorfeniramina|bronfeniramina|dexclorfeniram/i,
+    grupo:'Anti-histamínico 1ª geração', prioridade:'media',
+    razao:'Alta carga anticolinérgica; risco de sedação, confusão e retenção urinária',
+    tipo:'abrupto',
+    passos:[
+      'Pode ser suspenso abruptamente',
+      'Substitua por anti-histamínico de 2ª geração (loratadina, cetirizina, fexofenadina)',
+      'Para insônia: não usar. Considere higiene do sono e melatonina',
+    ]},
+  { pattern:/metoclopramid/i,
+    grupo:'Metoclopramida', prioridade:'media',
+    razao:'Risco de discinesia tardia com uso >12 semanas; contraindicado em Parkinson',
+    tipo:'abrupto',
+    passos:[
+      'Limite uso a ciclos agudos (máx. 12 semanas)',
+      'Substitua por domperidona se motilidade necessária',
+      'Monitore: movimentos involuntários (lingua, face, membros)',
+    ]},
+  { pattern:/digoxina|digoxin|lanitop/i,
+    grupo:'Digoxina', prioridade:'media',
+    razao:'Janela terapêutica estreita; benefício em IC com FA controverso; risco de toxicidade em idosos e IRC',
+    tipo:'desmame',
+    passos:[
+      'Reavalie indicação: se em RS e FEVE>40% sem benefício documentado → candidato',
+      'Reduza dose gradualmente; monitore FC e digoxinemia',
+      'Verifique interações (amiodarona, quinidina, espironolactona aumentam níveis)',
+      'Monitore: FC, náuseas, distúrbios visuais, ECG',
+    ]},
+];
+
+let _candidatos=[], _decisoes={}, _pid=null;
+
+async function init(){
+  _pid=parseInt(document.getElementById('sel-pac').value)||null;
+  if(!_pid){document.getElementById('conteudo').innerHTML='';return;}
+  const pac=await dbGet('pacientes',_pid);
+  const hj=hoje();
+  const allMeds=await dbGetByIndex('medicamentos','pacienteId',_pid);
+  const meds=allMeds.filter(m=>m.ativo!==false&&(!m.dataFim||m.dataFim>=hj));
+  _decisoes=(await dbGetConfig('desp_dec_'+_pid))||{};
+
+  // Analisa candidatos
+  _candidatos=[];
+  const cargaAnticolin=(typeof calcularCargaAnticolin==='function')?calcularCargaAnticolin(meds):null;
+  const stoppAlerts=(typeof verificarSTOPP==='function')?verificarSTOPP(meds,pac):[];
+
+  meds.forEach(m=>{
+    const nome=(m.nome||m.generico||'').toLowerCase();
+    const razoes=[];
+
+    // Verifica Beers
+    if(typeof buscarBeers==='function'){
+      const beers=buscarBeers(m.nome||'');
+      if(beers&&beers.length>0){
+        beers.forEach(b=>razoes.push({tipo:'beers',txt:'Beers: '+( b.criterio||b.razao||b.alternativa||'Medicamento potencialmente inapropriado')}));
+      }
+    }
+
+    // Verifica STOPP
+    stoppAlerts.forEach(s=>{
+      if((s.med||s.medicamento||'').toLowerCase().includes(nome.split(' ')[0])||
+         (s.msg||s.criterio||'').toLowerCase().includes(nome.split(' ')[0])){
+        razoes.push({tipo:'stopp',txt:'STOPP: '+(s.msg||s.criterio||s.descricao||'Critério STOPP positivo')});
+      }
+    });
+
+    // Verifica base de desprescrição
+    let estrategia=null;
+    for(const d of DESP_DB){
+      if(d.pattern.test(m.nome||'')||d.pattern.test(m.generico||'')){
+        estrategia=d;
+        if(!razoes.find(r=>r.tipo==='regra')) razoes.push({tipo:'regra',txt:d.razao});
+        break;
+      }
+    }
+
+    // Carga anticolinérgica alta
+    if(cargaAnticolin&&cargaAnticolin.total>=3){
+      const contrib=cargaAnticolin.meds?.find(x=>(x.nome||'').toLowerCase().includes(nome.split(' ')[0]));
+      if(contrib&&contrib.pts>=1){
+        razoes.push({tipo:'anticolin',txt:'Carga anticolinérgica: '+contrib.pts+' pt(s) — contribui para carga total de '+cargaAnticolin.total});
+      }
+    }
+
+    if(razoes.length>0){
+      _candidatos.push({med:m,razoes,estrategia,prioridade:estrategia?.prioridade||'media'});
+    }
+  });
+
+  // Ordena por prioridade
+  const ordem={alta:0,media:1,baixa:2};
+  _candidatos.sort((a,b)=>ordem[a.prioridade]-ordem[b.prioridade]);
+
+  render(meds.length);
+}
+
+function render(nTotal){
+  const nAlta=_candidatos.filter(c=>c.prioridade==='alta').length;
+  const nMedia=_candidatos.filter(c=>c.prioridade==='media').length;
+  const nBaixa=_candidatos.filter(c=>c.prioridade==='baixa').length;
+  const nAprov=Object.values(_decisoes).filter(d=>d.decisao==='sim').length;
+
+  let html=`<div class="resumo-strip">
+    <div class="res-item"><div class="res-n" style="color:#dc2626">${nAlta}</div><div class="res-l">Alta Prioridade</div></div>
+    <div class="res-item"><div class="res-n" style="color:#d97706">${nMedia}</div><div class="res-l">Média Prioridade</div></div>
+    <div class="res-item"><div class="res-n" style="color:#16a34a">${nBaixa}</div><div class="res-l">Baixa Prioridade</div></div>
+    <div class="res-item"><div class="res-n" style="color:#1e3a5f">${nAprov}</div><div class="res-l">Aprovadas</div></div>
+  </div>`;
+
+  if(!_candidatos.length){
+    html+=`<div class="vazio"><div class="vazio-icon">✅</div><div class="vazio-txt">Nenhum candidato identificado</div><div class="vazio-sub">Os ${nTotal} medicamentos ativos não atendem a critérios de desprescrição nas bases consultadas (Beers, STOPP, carga anticolinérgica).</div></div>`;
+  } else {
+    _candidatos.forEach((c,i)=>{
+      const mid=c.med.id;
+      const dec=_decisoes[mid]||{};
+      const e=c.estrategia;
+      html+=`<div class="cand-card">
+        <div class="cand-header" onclick="toggleCard(${i})">
+          <div>
+            <div style="display:flex;gap:6px;align-items:center;margin-bottom:4px">
+              <span class="cand-prioridade pr-${c.prioridade}">${c.prioridade.toUpperCase()}</span>
+              ${c.razoes.map(r=>`<span class="razao-pill ${r.tipo}">${r.tipo.toUpperCase()}</span>`).join('')}
+            </div>
+            <div class="cand-nome">${esc(c.med.nome||'?')}</div>
+            <div class="cand-dose">${esc(c.med.dosagem||'')} ${c.med.frequencia?'· '+c.med.frequencia:''}</div>
+          </div>
+          <div id="chev-${i}" class="cand-chevron">▼</div>
+        </div>
+        <div class="cand-body ${i===0?'aberto':''}" id="body-${i}">
+          <div style="margin-bottom:10px">
+            ${c.razoes.map(r=>`<div style="font-size:.76rem;color:#374151;padding:4px 0;border-bottom:1px solid #f8fafc">• ${esc(r.txt)}</div>`).join('')}
+          </div>
+          ${e?`<div class="estrategia">
+            <div class="est-titulo">Estratégia de Desprescrição — ${esc(e.grupo)}</div>
+            <div class="est-tipo tipo-${e.tipo}">${e.tipo==='abrupto'?'⚡ Parada Abrupta Segura':e.tipo==='desmame'?'📉 Desmame Gradual':e.tipo==='reducao'?'↘️ Redução de Dose':'🔄 Substituição'}</div>
+            ${e.passos.map((p,pi)=>`<div class="est-passo"><span class="est-n">${pi+1}.</span><span>${esc(p)}</span></div>`).join('')}
+          </div>`:''}
+          <div style="font-size:.72rem;font-weight:700;color:#64748b;margin-top:10px">Decisão (após discussão com prescritor):</div>
+          <div class="decisao-row">
+            <button class="dec-btn ${dec.decisao==='sim'?'sel-sim':''}" onclick="setDec(${mid},'sim',this)">✅ Aprovada</button>
+            <button class="dec-btn ${dec.decisao==='nao'?'sel-nao':''}" onclick="setDec(${mid},'nao',this)">❌ Não indicada</button>
+            <button class="dec-btn ${dec.decisao==='pend'?'sel-pend':''}" onclick="setDec(${mid},'pend',this)">⏳ Pendente</button>
+          </div>
+          <input class="obs-inp" placeholder="Observações / data de início / nome do prescritor..." value="${esc(dec.obs||'')}" oninput="setObs(${mid},this.value)">
+        </div>
+      </div>`;
+    });
+  }
+
+  html+=`<div class="ref-box">
+    <strong>Referências:</strong><br>
+    Scott IA, et al. <em>Can Fam Physician</em>. 2015;61(8):670-6 — Critérios de desprescrição<br>
+    Reeve E, et al. <em>Ther Adv Drug Saf</em>. 2015;6(2):37-45 — Algoritmo de desprescrição<br>
+    American Geriatrics Society. Beers Criteria 2023 · STOPP/START v3 (2023)
+  </div>`;
+
+  document.getElementById('conteudo').innerHTML=html;
+  if(_candidatos.length>0){
+    document.querySelectorAll('.cand-header').forEach((h,i)=>h.addEventListener('click',()=>toggleCard(i)));
+  }
+}
+
+function toggleCard(i){
+  const body=document.getElementById('body-'+i);
+  const chev=document.getElementById('chev-'+i);
+  const aberto=body.classList.contains('aberto');
+  document.querySelectorAll('.cand-body').forEach(b=>b.classList.remove('aberto'));
+  document.querySelectorAll('.cand-chevron').forEach(c=>c.textContent='▼');
+  if(!aberto){body.classList.add('aberto');chev.textContent='▲';}
+}
+
+function setDec(mid,val,btn){
+  if(!_decisoes[mid]) _decisoes[mid]={};
+  _decisoes[mid].decisao=val;
+  const row=btn.closest('.decisao-row');
+  row.querySelectorAll('.dec-btn').forEach(b=>b.className='dec-btn');
+  btn.className='dec-btn sel-'+val;
+}
+
+function setObs(mid,val){
+  if(!_decisoes[mid]) _decisoes[mid]={};
+  _decisoes[mid].obs=val;
+}
+
+async function salvarDecisoes(){
+  if(!_pid){showToast('Selecione um paciente');return;}
+  Object.keys(_decisoes).forEach(k=>{ _decisoes[k].data=hoje(); });
+  await dbSetConfig('desp_dec_'+_pid,_decisoes);
+  const aprovadas=Object.values(_decisoes).filter(d=>d.decisao==='sim').length;
+  showToast('✅ Decisões salvas — '+aprovadas+' desprescrição(ões) aprovada(s)');
+}
+
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+
+document.addEventListener('DOMContentLoaded',async()=>{
+  const pacs=await dbGetAll('pacientes');
+  const sel=document.getElementById('sel-pac');
+  sel.innerHTML='<option value="">Selecione o paciente...</option>'+pacs.map(p=>`<option value="${p.id}">${esc(p.nome||'Paciente '+p.id)}</option>`).join('');
+  const pid=getActivePacienteId();
+  if(pid){sel.value=pid;await init();}
+});
+</script>
+</body>
+</html>

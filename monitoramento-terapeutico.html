@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>Monitoramento Terapêutico — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .topbar{display:flex;align-items:center;gap:10px;padding:12px 16px;background:#0369a1;position:sticky;top:0;z-index:100}
+    .back-btn{background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:8px;padding:6px 11px;cursor:pointer;font-size:1rem}
+    .topbar-title{font-size:.93rem;font-weight:800;color:#fff;flex:1}
+    .topbar-sub{font-size:.62rem;color:rgba(255,255,255,.7);margin-top:1px}
+    .btn-top{background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:8px;padding:7px 11px;font-size:.72rem;font-weight:700;cursor:pointer;margin-left:4px}
+    main{max-width:640px;margin:0 auto;padding:12px 14px 90px}
+    .pac-sel{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:12px;padding:11px 14px;font-size:.88rem;margin-bottom:10px;background:#fff}
+
+    .resumo-strip{display:flex;gap:6px;margin-bottom:10px}
+    .res-item{flex:1;background:#fff;border-radius:10px;padding:10px 8px;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,.07)}
+    .res-n{font-size:1.5rem;font-weight:900}.res-l{font-size:.58rem;color:#64748b;font-weight:700;text-transform:uppercase;margin-top:2px}
+
+    /* Card de medicamento */
+    .med-card{background:#fff;border-radius:14px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.07);overflow:hidden}
+    .med-hdr{padding:12px 14px;border-bottom:1px solid #f1f5f9}
+    .med-nm{font-size:.88rem;font-weight:800;color:#1e293b}
+    .med-dose{font-size:.7rem;color:#94a3b8;margin-top:2px}
+    .sem-monitor{font-size:.74rem;color:#94a3b8;padding:10px 14px;font-style:italic}
+
+    /* Linha de parâmetro */
+    .param-row{display:flex;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid #f8fafc}
+    .param-row:last-child{border:none}
+    .param-icon{font-size:1.3rem;width:30px;text-align:center;flex-shrink:0}
+    .param-body{flex:1;min-width:0}
+    .param-nm{font-size:.8rem;font-weight:700;color:#1e293b}
+    .param-alvo{font-size:.68rem;color:#64748b;margin-top:1px}
+    .param-freq{font-size:.64rem;color:#94a3b8;margin-top:2px}
+    .param-right{text-align:right;flex-shrink:0;min-width:90px}
+    .param-val{font-size:.88rem;font-weight:800}
+    .param-data{font-size:.62rem;color:#94a3b8;margin-top:2px}
+    .status-badge{font-size:.62rem;font-weight:800;border-radius:6px;padding:2px 7px;display:inline-block;margin-top:3px}
+    .st-ok{background:#dcfce7;color:#166534}
+    .st-warn{background:#fef3c7;color:#92400e}
+    .st-venc{background:#fee2e2;color:#991b1b}
+    .st-nd{background:#f1f5f9;color:#94a3b8}
+
+    /* Tabs filtro */
+    .tabs{display:flex;gap:6px;margin-bottom:10px}
+    .tab{flex:1;border:none;border-radius:10px;padding:8px 4px;font-size:.75rem;font-weight:700;cursor:pointer;background:#e2e8f0;color:#64748b}
+    .tab.ativo{background:#0369a1;color:#fff}
+
+    .ref-box{background:#f0f9ff;border:1.5px solid #bae6fd;border-radius:10px;padding:10px 12px;font-size:.72rem;color:#0369a1;line-height:1.8;margin-top:10px}
+    .empty{text-align:center;padding:40px;color:#94a3b8}
+    @media print{.topbar,.pac-sel,.btn-top,.tabs,nav{display:none!important}body{background:#fff}main{padding:0}}
+  </style>
+</head>
+<body>
+<div class="topbar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <div style="flex:1">
+    <div class="topbar-title">🔬 Monitoramento Terapêutico</div>
+    <div class="topbar-sub">Parâmetros por medicamento · semáforo de status</div>
+  </div>
+  <button class="btn-top" onclick="window.print()">🖨️</button>
+</div>
+<main>
+  <select class="pac-sel" id="sel-pac" onchange="init()"><option value="">Selecione o paciente...</option></select>
+  <div class="tabs" id="tabs" style="display:none">
+    <button class="tab ativo" onclick="setTab('todos',this)">Todos</button>
+    <button class="tab" onclick="setTab('atencao',this)">⚠️ Atenção</button>
+    <button class="tab" onclick="setTab('vencido',this)">❌ Vencido</button>
+    <button class="tab" onclick="setTab('ok',this)">✅ Em dia</button>
+  </div>
+  <div id="conteudo"></div>
+</main>
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+<script src="js/db.js"></script>
+<script src="js/utils.js"></script>
+<script>
+// Base de monitoramento farmacoterapêutico
+// freq_dias: frequência recomendada de monitoramento em dias
+// chaves_lab: termos para buscar nos registros de laboratorio
+// chaves_vital: campos no diário
+const MONITOR_DB = [
+  { pattern:/warfar|varfar|coumadin/i, reqs:[
+    {param:'INR',icone:'🩸',alvo:'2,0–3,0 (FA/TEV) ou 2,5–3,5 (prótese mecânica)',freq_dias:30,chaves_lab:['inr','raz'],unid:''},
+  ]},
+  {pattern:/digoxin|digoxina|lanitop|digotab/i, reqs:[
+    {param:'Digoxinemia',icone:'💊',alvo:'0,5–0,9 ng/mL',freq_dias:90,chaves_lab:['digoxin','digoxinemias'],unid:'ng/mL'},
+    {param:'Potássio (K⁺)',icone:'⚗️',alvo:'3,5–5,0 mEq/L',freq_dias:60,chaves_lab:['potassio','potássio','k+','kalemia'],unid:'mEq/L'},
+    {param:'Creatinina sérica',icone:'🔬',alvo:'< 1,5 mg/dL',freq_dias:90,chaves_lab:['creatinina','creat'],unid:'mg/dL'},
+  ]},
+  {pattern:/lítio|litio|lithium|carbolitio/i, reqs:[
+    {param:'Litemia',icone:'⚗️',alvo:'0,6–1,2 mEq/L (agudo) / 0,5–0,8 (manutenção)',freq_dias:90,chaves_lab:['litemia','litio','lithio'],unid:'mEq/L'},
+    {param:'Creatinina / TFG',icone:'🔬',alvo:'TFG > 30 mL/min',freq_dias:180,chaves_lab:['creatinina','tfg','ckd'],unid:''},
+    {param:'TSH',icone:'🦋',alvo:'0,4–4,0 μUI/mL',freq_dias:180,chaves_lab:['tsh','tireo'],unid:'μUI/mL'},
+  ]},
+  {pattern:/metformin|metformina|glucofor|glifagem/i, reqs:[
+    {param:'Creatinina / TFG',icone:'🔬',alvo:'TFG > 45 mL/min (manutenção) / >30 (dose reduzida)',freq_dias:180,chaves_lab:['creatinina','tfg'],unid:''},
+    {param:'Vitamina B12',icone:'💉',alvo:'> 200 pg/mL',freq_dias:365,chaves_lab:['vitamina b12','b12','cobalamina'],unid:'pg/mL'},
+    {param:'HbA1c',icone:'🩸',alvo:'< 7,0% (geral) / < 7,5% (idosos)',freq_dias:90,chaves_lab:['hba1c','hemoglobina glicada','a1c'],unid:'%'},
+  ]},
+  {pattern:/insulina|insulin|glargina|lispro|aspart|glulisina|detemir|degludec/i, reqs:[
+    {param:'HbA1c',icone:'🩸',alvo:'< 7,0% (geral)',freq_dias:90,chaves_lab:['hba1c','hemoglobina glicada'],unid:'%'},
+    {param:'Glicemia capilar',icone:'🍬',alvo:'Jejum: 80–130 mg/dL / Pós-prandial: < 180 mg/dL',freq_dias:7,chaves_vital:['glicemia'],unid:'mg/dL'},
+  ]},
+  {pattern:/amiodarona|cordarone/i, reqs:[
+    {param:'TSH',icone:'🦋',alvo:'0,4–4,0 μUI/mL (risco hipo/hiperti)',freq_dias:180,chaves_lab:['tsh'],unid:'μUI/mL'},
+    {param:'Transaminases (TGO/TGP)',icone:'🫀',alvo:'< 3× LSN',freq_dias:180,chaves_lab:['tgo','tgp','transaminase','ast','alt'],unid:''},
+    {param:'Creatinina',icone:'🔬',alvo:'< 1,5 mg/dL',freq_dias:180,chaves_lab:['creatinina'],unid:''},
+  ]},
+  {pattern:/sinvastatin|atorvastatin|rosuvastat|pravastat|fluvastat/i, reqs:[
+    {param:'LDL-colesterol',icone:'🫀',alvo:'< 70 mg/dL (alto risco CV) / < 100 (moderado)',freq_dias:90,chaves_lab:['ldl'],unid:'mg/dL'},
+    {param:'CPK (miopatia)',icone:'💪',alvo:'< 10× LSN (sintomático)',freq_dias:365,chaves_lab:['cpk','ck','creatinoquinase'],unid:'U/L'},
+  ]},
+  {pattern:/spironolatona|espironolactona|aldactone/i, reqs:[
+    {param:'Potássio (K⁺)',icone:'⚗️',alvo:'3,5–5,5 mEq/L',freq_dias:30,chaves_lab:['potassio','potássio','k+'],unid:'mEq/L'},
+    {param:'Creatinina',icone:'🔬',alvo:'< 2,0 mg/dL',freq_dias:90,chaves_lab:['creatinina'],unid:'mg/dL'},
+  ]},
+  {pattern:/ieca|captopril|enalapril|lisinopril|ramipril|perindopril|fosinopril|benazepril/i, reqs:[
+    {param:'Potássio (K⁺)',icone:'⚗️',alvo:'3,5–5,0 mEq/L',freq_dias:90,chaves_lab:['potassio','k+'],unid:'mEq/L'},
+    {param:'Creatinina',icone:'🔬',alvo:'Aumento < 30% aceitável',freq_dias:90,chaves_lab:['creatinina'],unid:'mg/dL'},
+    {param:'PA sistólica',icone:'❤️',alvo:'< 130 mmHg',freq_dias:14,chaves_vital:['pas','pressao'],unid:'mmHg'},
+  ]},
+  {pattern:/losartana|valsartana|irbesartana|candesartana|olmesartana|telmisartana/i, reqs:[
+    {param:'Potássio (K⁺)',icone:'⚗️',alvo:'3,5–5,0 mEq/L',freq_dias:90,chaves_lab:['potassio','k+'],unid:'mEq/L'},
+    {param:'Creatinina',icone:'🔬',alvo:'Aumento < 30% aceitável',freq_dias:90,chaves_lab:['creatinina'],unid:'mg/dL'},
+  ]},
+  {pattern:/furosemida|lasix|torsemida/i, reqs:[
+    {param:'Potássio (K⁺)',icone:'⚗️',alvo:'3,5–5,0 mEq/L',freq_dias:30,chaves_lab:['potassio','k+'],unid:'mEq/L'},
+    {param:'Creatinina',icone:'🔬',alvo:'Monitorar desidratação e função renal',freq_dias:90,chaves_lab:['creatinina'],unid:'mg/dL'},
+    {param:'PA / Peso',icone:'⚖️',alvo:'Controle de volemia',freq_dias:7,chaves_vital:['pas','peso'],unid:''},
+  ]},
+  {pattern:/levotiroxin|synthroid|puran|euthyrox/i, reqs:[
+    {param:'TSH',icone:'🦋',alvo:'0,4–4,0 μUI/mL (hipotireoidismo) / 0,1–0,5 (oncológico)',freq_dias:90,chaves_lab:['tsh'],unid:'μUI/mL'},
+    {param:'T4 livre',icone:'🦋',alvo:'0,8–1,8 ng/dL',freq_dias:180,chaves_lab:['t4','tiroxina'],unid:'ng/dL'},
+  ]},
+  {pattern:/tacrolimo|ciclosporina|micofenolato|sirolimo|everolimo/i, reqs:[
+    {param:'Nível sérico do imunossupressor',icone:'💊',alvo:'Conforme protocolo do transplante',freq_dias:30,chaves_lab:['tacrolimo','ciclosporin','micofenolato','sirolimo','everolimo'],unid:'ng/mL'},
+    {param:'Creatinina / TFG',icone:'🔬',alvo:'Monitorar nefrotoxicidade',freq_dias:30,chaves_lab:['creatinina','tfg'],unid:''},
+  ]},
+  {pattern:/metotrexato|methotrexate|rheumatrex/i, reqs:[
+    {param:'Hemograma completo',icone:'🩸',alvo:'Leucócitos > 3.000/mm³ · Plaquetas > 100.000/mm³',freq_dias:30,chaves_lab:['hemograma','leucocit','plaqueta'],unid:''},
+    {param:'Transaminases (TGO/TGP)',icone:'🫀',alvo:'< 3× LSN',freq_dias:90,chaves_lab:['tgo','tgp','ast','alt'],unid:''},
+    {param:'Creatinina',icone:'🔬',alvo:'< 1,5 mg/dL',freq_dias:90,chaves_lab:['creatinina'],unid:''},
+  ]},
+  {pattern:/fenitoina|phenytoin|hidantal/i, reqs:[
+    {param:'Fenitoína sérica',icone:'💊',alvo:'10–20 μg/mL',freq_dias:90,chaves_lab:['fenitoina','phenytoin','dilantin'],unid:'μg/mL'},
+    {param:'Hemograma',icone:'🩸',alvo:'Excluir discrasias sanguíneas',freq_dias:180,chaves_lab:['hemograma'],unid:''},
+  ]},
+  {pattern:/ácido valpro|valproato|valproic|depakote/i, reqs:[
+    {param:'Valproato sérico',icone:'💊',alvo:'50–100 μg/mL',freq_dias:90,chaves_lab:['valproato','vpa','valproic'],unid:'μg/mL'},
+    {param:'Transaminases',icone:'🫀',alvo:'< 3× LSN',freq_dias:90,chaves_lab:['tgo','tgp','ast','alt'],unid:''},
+  ]},
+  {pattern:/rivaroxaban|apixaban|dabigatran|edoxaban/i, reqs:[
+    {param:'Creatinina / TFG',icone:'🔬',alvo:'TFG > 30 mL/min (rivaroxabana/apixabana) / >30 dabigatrana',freq_dias:180,chaves_lab:['creatinina','tfg','ckd'],unid:''},
+    {param:'Hemograma (sangramento)',icone:'🩸',alvo:'Hb > 9 g/dL',freq_dias:180,chaves_lab:['hemoglobina','hb','hemograma'],unid:''},
+  ]},
+  {pattern:/heparin|enoxaparin|clexane|fraxiparin/i, reqs:[
+    {param:'Plaquetas',icone:'🩸',alvo:'> 100.000/mm³ (TIH: redução > 50%)',freq_dias:3,chaves_lab:['plaqueta','plaquetopia'],unid:'/mm³'},
+    {param:'Anti-Xa (HBPM)',icone:'💉',alvo:'0,6–1,0 UI/mL (dose terapêutica)',freq_dias:7,chaves_lab:['anti-xa','antifator'],unid:'UI/mL'},
+  ]},
+  {pattern:/prednisona|prednisolona|dexametasona|hidrocortisona|betametasona|triancinolona/i, reqs:[
+    {param:'Glicemia / HbA1c',icone:'🍬',alvo:'< 180 mg/dL (pós-prandial)',freq_dias:14,chaves_lab:['glicemia','hba1c'],chaves_vital:['glicemia'],unid:'mg/dL'},
+    {param:'PA',icone:'❤️',alvo:'< 140/90 mmHg',freq_dias:14,chaves_vital:['pas'],unid:'mmHg'},
+    {param:'Densidade mineral óssea (DEXA)',icone:'🦴',alvo:'T-score > -2,5 se uso > 3 meses',freq_dias:365,chaves_lab:['dexa','densitometria','t-score'],unid:''},
+  ]},
+];
+
+let _view='todos', _pid=null, _resultados=[];
+
+async function init(){
+  _pid=parseInt(document.getElementById('sel-pac').value)||null;
+  if(!_pid){document.getElementById('conteudo').innerHTML='';document.getElementById('tabs').style.display='none';return;}
+  const hj=hoje();
+  const allMeds=await dbGetByIndex('medicamentos','pacienteId',_pid);
+  const meds=allMeds.filter(m=>m.ativo!==false&&(!m.dataFim||m.dataFim>=hj));
+  const allLabs=await dbGetAll('laboratorio');
+  const labs=allLabs.filter(l=>l.pacienteId===_pid||l.pid===_pid);
+  const diarios=await dbGetByIndex('diario','pacienteId',_pid);
+
+  _resultados=[];
+
+  meds.forEach(m=>{
+    const match=MONITOR_DB.find(d=>d.pattern.test(m.nome||'')||d.pattern.test(m.generico||''));
+    if(!match) return;
+
+    const params=match.reqs.map(req=>{
+      // Busca no lab
+      let ultimoVal=null, ultimaData=null;
+
+      if(req.chaves_lab){
+        const candidatos=labs.filter(l=>{
+          const tipo=(l.tipo||l.exame||'').toLowerCase();
+          return req.chaves_lab.some(k=>tipo.includes(k));
+        }).sort((a,b)=>(b.data||'').localeCompare(a.data||''));
+        if(candidatos[0]){
+          ultimoVal=candidatos[0].resultado||candidatos[0].valor||null;
+          ultimaData=candidatos[0].data||null;
+        }
+      }
+
+      // Busca no diário se não encontrou no lab
+      if(!ultimoVal&&req.chaves_vital){
+        const diariosOrd=diarios.slice().sort((a,b)=>(b.data||'').localeCompare(a.data||''));
+        for(const d of diariosOrd){
+          for(const k of req.chaves_vital){
+            if(d[k]!=null&&d[k]!==''){ultimoVal=d[k];ultimaData=d.data||null;break;}
+          }
+          if(ultimoVal) break;
+        }
+      }
+
+      // Status
+      let status='nd', diasDesde=null;
+      if(ultimaData){
+        diasDesde=Math.round((new Date()-new Date(ultimaData))/864e5);
+        if(diasDesde<=req.freq_dias*1.2) status='ok';
+        else if(diasDesde<=req.freq_dias*2) status='warn';
+        else status='venc';
+      }
+
+      return {req, ultimoVal, ultimaData, status, diasDesde};
+    });
+
+    const piorsStatus=params.reduce((acc,p)=>{
+      const ord={venc:0,warn:1,ok:2,nd:3};
+      return ord[p.status]<ord[acc]?p.status:acc;
+    },'nd');
+
+    _resultados.push({med:m, params, piorsStatus});
+  });
+
+  document.getElementById('tabs').style.display='flex';
+  render();
+}
+
+function setTab(v,btn){
+  _view=v;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('ativo'));
+  btn.classList.add('ativo');
+  render();
+}
+
+function render(){
+  let itens=_resultados;
+  if(_view==='atencao') itens=_resultados.filter(r=>r.piorsStatus==='warn');
+  else if(_view==='vencido') itens=_resultados.filter(r=>r.piorsStatus==='venc');
+  else if(_view==='ok') itens=_resultados.filter(r=>r.piorsStatus==='ok');
+
+  const nVenc=_resultados.filter(r=>r.piorsStatus==='venc').length;
+  const nWarn=_resultados.filter(r=>r.piorsStatus==='warn').length;
+  const nOk  =_resultados.filter(r=>r.piorsStatus==='ok').length;
+  const nSem =_resultados.length? _resultados.filter(r=>r.params.length===0).length:0;
+
+  let html=`<div class="resumo-strip">
+    <div class="res-item"><div class="res-n" style="color:#dc2626">${nVenc}</div><div class="res-l">❌ Vencido</div></div>
+    <div class="res-item"><div class="res-n" style="color:#d97706">${nWarn}</div><div class="res-l">⚠️ Atenção</div></div>
+    <div class="res-item"><div class="res-n" style="color:#16a34a">${nOk}</div><div class="res-l">✅ Em dia</div></div>
+    <div class="res-item"><div class="res-n" style="color:#94a3b8">${_resultados.length}</div><div class="res-l">Com monitor.</div></div>
+  </div>`;
+
+  if(!itens.length){
+    html+=`<div class="empty">Nenhum medicamento ${_view==='todos'?'com parâmetros de monitoramento cadastrados':_view==='ok'?'com monitoramento em dia':_view==='atencao'?'em atenção':'com monitoramento vencido'}.</div>`;
+  } else {
+    itens.forEach(r=>{
+      html+=`<div class="med-card">
+        <div class="med-hdr">
+          <div class="med-nm">${esc(r.med.nome||'?')}</div>
+          <div class="med-dose">${esc(r.med.dosagem||'')} ${r.med.frequencia?'· '+r.med.frequencia:''}</div>
+        </div>`;
+      r.params.forEach(p=>{
+        const fmtData=p.ultimaData?p.ultimaData.split('-').reverse().join('/'):'—';
+        const statusLabel={ok:'✅ Em dia',warn:'⚠️ '+p.diasDesde+'d (freq: '+p.req.freq_dias+'d)',venc:'❌ '+p.diasDesde+'d (vencido)',nd:'⬜ Sem registro'}[p.status];
+        const statusCls={ok:'st-ok',warn:'st-warn',venc:'st-venc',nd:'st-nd'}[p.status];
+        html+=`<div class="param-row">
+          <div class="param-icon">${p.req.icone||'🔬'}</div>
+          <div class="param-body">
+            <div class="param-nm">${esc(p.req.param)}</div>
+            <div class="param-alvo">Alvo: ${esc(p.req.alvo)}</div>
+            <div class="param-freq">Frequência recomendada: a cada ${p.req.freq_dias} dias</div>
+          </div>
+          <div class="param-right">
+            <div class="param-val" style="color:${p.status==='ok'?'#16a34a':p.status==='warn'?'#d97706':p.status==='venc'?'#dc2626':'#94a3b8'}">${p.ultimoVal||'—'} ${p.ultimoVal&&p.req.unid?p.req.unid:''}</div>
+            <div class="param-data">${fmtData}</div>
+            <div><span class="status-badge ${statusCls}">${statusLabel}</span></div>
+          </div>
+        </div>`;
+      });
+      html+=`</div>`;
+    });
+  }
+
+  html+=`<div class="ref-box">
+    <strong>Bases utilizadas:</strong> Micromedex · UpToDate · ANVISA · SBC · SBD · SBN · Conselho Federal de Farmácia<br>
+    Os intervalos de monitoramento são recomendações gerais — adapte conforme estabilidade clínica e protocolos institucionais.
+  </div>`;
+
+  document.getElementById('conteudo').innerHTML=html;
+}
+
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+
+document.addEventListener('DOMContentLoaded',async()=>{
+  const pacs=await dbGetAll('pacientes');
+  const sel=document.getElementById('sel-pac');
+  sel.innerHTML='<option value="">Selecione o paciente...</option>'+pacs.map(p=>`<option value="${p.id}">${esc(p.nome||'Paciente '+p.id)}</option>`).join('');
+  const pid=getActivePacienteId();
+  if(pid){sel.value=pid;await init();}
+});
+</script>
+</body>
+</html>
