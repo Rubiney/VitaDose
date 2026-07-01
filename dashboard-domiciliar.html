@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>Dashboard Domiciliar — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .topbar{display:flex;align-items:center;gap:10px;padding:12px 16px;background:linear-gradient(135deg,#0f172a,#1e3a5f);position:sticky;top:0;z-index:100}
+    .back-btn{background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:8px;padding:6px 11px;cursor:pointer;font-size:1rem}
+    .topbar-title{font-size:.93rem;font-weight:800;color:#fff;flex:1}
+    .topbar-sub{font-size:.62rem;color:rgba(255,255,255,.7);margin-top:1px}
+    .refresh-btn{background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:8px;padding:7px 11px;font-size:.72rem;font-weight:700;cursor:pointer}
+    main{max-width:680px;margin:0 auto;padding:12px 14px 90px}
+    .pac-sel{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:12px;padding:11px 14px;font-size:.88rem;margin-bottom:10px;background:#fff}
+
+    /* Cabeçalho do paciente */
+    .pac-hdr{background:linear-gradient(135deg,#0f172a,#1e293b);border-radius:14px;padding:14px 16px;display:flex;gap:12px;align-items:center;margin-bottom:12px}
+    .pac-foto{width:52px;height:52px;border-radius:12px;background:#334155;display:flex;align-items:center;justify-content:center;font-size:1.6rem;flex-shrink:0;overflow:hidden;border:2px solid rgba(255,255,255,.15)}
+    .pac-foto img{width:100%;height:100%;object-fit:cover}
+    .pac-nome{font-size:.95rem;font-weight:900;color:#fff}
+    .pac-det{font-size:.63rem;color:rgba(255,255,255,.6);margin-top:3px;line-height:1.5}
+    .upd-lbl{font-size:.55rem;color:rgba(255,255,255,.4);margin-top:5px}
+
+    /* Alertas */
+    .alertas-sec{margin-bottom:10px}
+    .alerta-item{border-radius:10px;padding:9px 12px;font-size:.73rem;font-weight:700;margin-bottom:5px;display:flex;gap:8px;align-items:center;text-decoration:none}
+    .alerta-item.crit{background:#fee2e2;color:#991b1b;border:1px solid #fca5a5}
+    .alerta-item.warn{background:#fff7ed;color:#9a3412;border:1px solid #fed7aa}
+    .alerta-item.info{background:#eff6ff;color:#1e40af;border:1px solid #bfdbfe}
+
+    /* Seção */
+    .sec-title{font-size:.62rem;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.05em;margin:12px 0 6px}
+
+    /* Grid de vitais */
+    .vitais-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
+    .vital-card{background:#fff;border-radius:13px;border:1.5px solid #e2e8f0;padding:12px 13px;text-decoration:none;display:block;transition:.15s}
+    .vital-card:hover{border-color:#93c5fd;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+    .vc-ico{font-size:1.1rem;margin-bottom:4px}
+    .vc-val{font-size:1.2rem;font-weight:900;color:#0f172a;line-height:1.1}
+    .vc-cls{font-size:.64rem;font-weight:800;margin-top:3px}
+    .vc-det{font-size:.58rem;color:#94a3b8;margin-top:2px}
+    .vc-none{font-size:.65rem;color:#cbd5e1;font-style:italic}
+
+    /* Escores */
+    .scores-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:8px}
+    .score-card{background:#fff;border-radius:11px;border:1.5px solid #e2e8f0;padding:9px 8px;text-align:center;text-decoration:none;display:block;transition:.15s}
+    .score-card:hover{border-color:#93c5fd}
+    .sc-val{font-size:1rem;font-weight:900}
+    .sc-lbl{font-size:.55rem;color:#94a3b8;font-weight:700;margin-top:1px}
+    .sc-date{font-size:.5rem;color:#cbd5e1}
+
+    /* Row 2 cards */
+    .row2{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin-bottom:8px}
+    .r2-card{background:#fff;border-radius:12px;border:1.5px solid #e2e8f0;padding:10px 10px;text-decoration:none;display:block;transition:.15s}
+    .r2-card:hover{border-color:#93c5fd}
+    .r2-val{font-size:.95rem;font-weight:900;color:#0f172a}
+    .r2-lbl{font-size:.56rem;color:#94a3b8;font-weight:700;margin-top:2px}
+    .r2-sub{font-size:.55rem;color:#cbd5e1;margin-top:1px}
+
+    /* Links rápidos */
+    .links-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:8px}
+    .link-btn{background:#f8fafc;border-radius:10px;border:1.5px solid #e2e8f0;padding:9px 4px;text-align:center;text-decoration:none;display:block;transition:.12s}
+    .link-btn:hover{background:#eff6ff;border-color:#93c5fd}
+    .lb-ico{font-size:1.1rem}
+    .lb-lbl{font-size:.52rem;color:#475569;font-weight:700;margin-top:3px;display:block}
+
+    .empty{text-align:center;padding:40px;color:#94a3b8;font-size:.78rem}
+  </style>
+</head>
+<body>
+<div class="topbar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <div style="flex:1">
+    <div class="topbar-title">🖥️ Dashboard Domiciliar</div>
+    <div class="topbar-sub">Visão consolidada · tempo real · todos os dados</div>
+  </div>
+  <button class="refresh-btn" onclick="init()">↻</button>
+</div>
+<main>
+  <select class="pac-sel" id="sel-pac" onchange="init()"><option value="">Selecione o paciente...</option></select>
+  <div id="dash-div"></div>
+</main>
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+<script src="js/db.js"></script>
+<script src="js/utils.js"></script>
+<script>
+let _pid=null;
+
+function last(arr){return arr&&arr.length?arr.sort((a,b)=>new Date(b.data+' '+(b.hora||'00:00'))-new Date(a.data+' '+(a.hora||'00:00')))[0]:null;}
+function lastByTs(arr){return arr&&arr.length?arr.sort((a,b)=>(b.ts||0)-(a.ts||0))[0]:null;}
+function ago(data,hora){
+  if(!data) return '—';
+  const d=new Date(data+' '+(hora||'00:00')),n=new Date(),diff=Math.floor((n-d)/60000);
+  if(diff<60) return diff+'min';
+  if(diff<1440) return Math.floor(diff/60)+'h';
+  return Math.floor(diff/1440)+'d';
+}
+function fmtD(d){return d?String(d).slice(0,10).split('-').reverse().join('/'):'—';}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+// Classificações
+function clsPA(s,d){
+  if(s>180||d>120) return{cls:'Crise Hipertensiva',cor:'#7f1d1d'};
+  if(s>=180||d>=110) return{cls:'HTN Grau 3',cor:'#991b1b'};
+  if(s>=160||d>=100) return{cls:'HTN Grau 2',cor:'#ef4444'};
+  if(s>=140||d>=90)  return{cls:'HTN Grau 1',cor:'#f97316'};
+  if(s>=130||d>=85)  return{cls:'Limítrofe',cor:'#f59e0b'};
+  return{cls:'Normal/Ótima',cor:'#22c55e'};
+}
+function clsGlic(v,ctx){
+  const jejum=(ctx||'').toLowerCase().includes('jejum');
+  if(v<70)  return{cls:'Hipoglicemia',cor:'#dc2626'};
+  if(jejum&&v>130) return{cls:'Alterada (jejum)',cor:'#f97316'};
+  if(!jejum&&v>180) return{cls:'Hiperglicemia',cor:'#f97316'};
+  return{cls:'Controlada',cor:'#22c55e'};
+}
+function clsSpo2(v){
+  if(v>=95) return{cls:'Normal',cor:'#22c55e'};
+  if(v>=90) return{cls:'Atenção',cor:'#f59e0b'};
+  return{cls:'Crítico',cor:'#dc2626'};
+}
+function clsInr(v,lo=2,hi=3){
+  if(v>=lo&&v<=hi) return{cls:'Terapêutico',cor:'#22c55e'};
+  if(v>hi&&v<4)    return{cls:'Supra',cor:'#f59e0b'};
+  if(v>=4)         return{cls:'Muito elevado',cor:'#dc2626'};
+  return{cls:'Subterapêutico',cor:'#f97316'};
+}
+
+async function init(){
+  _pid=parseInt(document.getElementById('sel-pac').value)||null;
+  if(!_pid){document.getElementById('dash-div').innerHTML='<div class="empty">Selecione um paciente para ver o dashboard.</div>';return;}
+
+  const [pac,meds,labAll]=await Promise.all([
+    dbGet('pacientes',_pid),
+    dbGetByIndex('medicamentos','pacienteId',_pid),
+    dbGetAll('laboratorio'),
+  ]);
+  const medsAtivos=(meds||[]).filter(m=>m.ativo!==false&&m.ativo!==0);
+
+  const [paHist,gHist,pesoHist,spo2Hist,inrHist,
+    mmasHist,barthelHist,meemHist,frailHist,zaritHist,charlsonHist,sarcfHist,
+    agendaData,estoquesData,receitasData,dispensData]=await Promise.all([
+    dbGetConfig('pa_registros_'+_pid)||Promise.resolve([]),
+    dbGetConfig('glicemia_'+_pid)||Promise.resolve([]),
+    dbGetConfig('peso_hist_'+_pid)||Promise.resolve([]),
+    dbGetConfig('spo2_hist_'+_pid)||Promise.resolve([]),
+    dbGetConfig('inr_hist_'+_pid)||Promise.resolve([]),
+    dbGetConfig('mmas8_hist_'+_pid)||Promise.resolve([]),
+    dbGetConfig('barthel_hist_'+_pid)||Promise.resolve([]),
+    dbGetConfig('meem_hist_'+_pid)||Promise.resolve([]),
+    dbGetConfig('frail_hist_'+_pid)||Promise.resolve([]),
+    dbGetConfig('zarit_hist_'+_pid)||Promise.resolve([]),
+    dbGetConfig('charlson_hist_'+_pid)||Promise.resolve([]),
+    dbGetConfig('sarcf_hist_'+_pid)||Promise.resolve([]),
+    dbGetConfig('agenda_'+_pid)||Promise.resolve([]),
+    dbGetConfig('estoques_'+_pid)||Promise.resolve({}),
+    dbGetConfig('receitas_'+_pid)||Promise.resolve({}),
+    dbGetConfig('dispensacoes_'+_pid)||Promise.resolve({}),
+  ]);
+
+  const paU=last(paHist||[]);
+  const gU=last(gHist||[]);
+  const pesoU=last(pesoHist||[]);
+  const spo2U=last(spo2Hist||[]);
+  const inrU=lastByTs(inrHist||[]);
+  const mmasU=lastByTs(mmasHist||[]);
+  const barthelU=lastByTs(barthelHist||[]);
+  const meemU=lastByTs(meemHist||[]);
+  const frailU=lastByTs(frailHist||[]);
+  const zaritU=lastByTs(zaritHist||[]);
+  const charlsonU=lastByTs(charlsonHist||[]);
+  const sarcfU=lastByTs(sarcfHist||[]);
+  const labPac=(labAll||[]).filter(l=>l.pacienteId===_pid).sort((a,b)=>new Date(b.data)-new Date(a.data));
+
+  // Alertas
+  const alertas=[];
+  if(paU){const c=clsPA(paU.s,paU.d);if(c.cor==='#7f1d1d'||c.cor==='#991b1b') alertas.push({txt:`PA ${paU.s}/${paU.d} mmHg — ${c.cls}`,lvl:'crit',href:'diario-pa.html'});}
+  if(gU){const c=clsGlic(gU.val,gU.ctx||'');if(c.cor==='#dc2626') alertas.push({txt:`Glicemia ${gU.val} mg/dL — ${c.cls}`,lvl:'crit',href:'perfil-glicemico.html'});}
+  if(spo2U&&spo2U.spo2<90) alertas.push({txt:`SpO₂ ${spo2U.spo2}% — Hipoxemia crítica`,lvl:'crit',href:'oximetria.html'});
+  if(inrU&&(inrU.inr>=4||inrU.inr<1.5)) alertas.push({txt:`INR ${inrU.inr} — ${inrU.inr>=4?'Risco de sangramento':'Risco trombótico'}`,lvl:'crit',href:'diario-inr.html'});
+  if(pesoU){const hist2=[...(pesoHist||[])].sort((a,b)=>new Date(b.data)-new Date(a.data));const ant=hist2[1];if(ant&&Math.abs(pesoU.peso-ant.peso)>=2) alertas.push({txt:`Variação de peso: ${(pesoU.peso-ant.peso)>0?'+':''}${(pesoU.peso-ant.peso).toFixed(1)} kg desde ${fmtD(ant.data)}`,lvl:'warn',href:'controle-peso.html'});}
+  // Estoque crítico
+  const estoques=estoquesData||{};
+  medsAtivos.filter(m=>{const e=estoques[m.id];return e&&e.qtdAtual!=null&&e.qtdAtual<14;}).slice(0,2).forEach(m=>{alertas.push({txt:`⚠️ Estoque baixo: ${m.nome||m.medicamento} (${estoques[m.id].qtdAtual} unid.)`,lvl:'warn',href:'estoque-inteligente.html'});});
+  // Receitas vencendo
+  const receitas=receitasData||{};
+  const TIPOS_DIAS={simples:180,azul:60,amarela:30,branca:30,b2:180,c2:60,c5:60};
+  Object.values(receitas).filter(r=>r.data).forEach(r=>{
+    const exp=new Date(r.data);exp.setDate(exp.getDate()+(TIPOS_DIAS[r.tipo]||180));
+    const d=Math.ceil((exp-new Date())/86400000);
+    if(d>=0&&d<=14) alertas.push({txt:`Receita vence em ${d}d`,lvl:'info',href:'receitas-validade.html'});
+    else if(d<0) alertas.push({txt:`Receita vencida há ${-d}d`,lvl:'warn',href:'receitas-validade.html'});
+  });
+  // Próxima agenda
+  const agenda=(agendaData||[]).filter(e=>e.status==='pendente'&&e.data>=hoje());
+  const proxEvento=agenda.sort((a,b)=>a.data.localeCompare(b.data))[0]||null;
+
+  // MPR/PDC global
+  const dispens=dispensData||{};
+  const mprs=medsAtivos.map(m=>{
+    const disps=dispens[m.id]||[];if(!disps.length) return null;
+    const periodo=30;const hoje_d=new Date();hoje_d.setHours(0,0,0,0);const ini=new Date(hoje_d);ini.setDate(ini.getDate()-periodo);
+    const noPer=disps.filter(d=>new Date(d.data)>=ini);
+    const totalDias=noPer.reduce((s,d)=>s+(d.dias||30),0);
+    return Math.min(100,Math.round(totalDias/periodo*100));
+  }).filter(v=>v!=null);
+  const mprMed=mprs.length?Math.round(mprs.reduce((a,b)=>a+b,0)/mprs.length):null;
+
+  // Render
+  const idade=pac?.dataNascimento?calcIdade(pac.dataNascimento)+'a':'';
+  const foto=pac?.foto?`<img src="${pac.foto}" alt="foto">`:'👤';
+  let html=`<div class="pac-hdr">
+    <div class="pac-foto">${foto}</div>
+    <div style="flex:1">
+      <div class="pac-nome">${esc(pac?.nome||'Paciente')}</div>
+      <div class="pac-det">${idade} ${pac?.dataNascimento?'· '+fmtD(pac.dataNascimento):''} · ${medsAtivos.length} medicamentos ativos</div>
+      <div class="upd-lbl">Atualizado ${new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}</div>
+    </div>
+    <a href="emergencias-domiciliares.html" style="background:#dc2626;color:#fff;border-radius:10px;padding:8px 10px;font-size:.65rem;font-weight:800;text-decoration:none;text-align:center;flex-shrink:0">🆘<br>Emerg.</a>
+  </div>`;
+
+  // Alertas
+  if(alertas.length){
+    html+=`<div class="alertas-sec">`+alertas.map(a=>`<a href="${a.href}" class="alerta-item ${a.lvl}">⚡ ${esc(a.txt)}</a>`).join('')+`</div>`;
+  }
+
+  // Vitais
+  html+=`<div class="sec-title">📊 Sinais Vitais</div>
+  <div class="vitais-grid">`;
+  // PA
+  if(paU){const c=clsPA(paU.s,paU.d);html+=`<a href="diario-pa.html" class="vital-card"><div class="vc-ico">💙</div><div class="vc-val">${paU.s}/${paU.d}</div><div class="vc-cls" style="color:${c.cor}">${c.cls}</div><div class="vc-det">FC: ${paU.fc||'—'} bpm · ${ago(paU.data,paU.hora)} atrás</div></a>`;}
+  else html+=`<a href="diario-pa.html" class="vital-card"><div class="vc-ico">💙</div><div class="vc-val vc-none">Pressão Arterial</div><div class="vc-det">Sem registros</div></a>`;
+  // Glicemia
+  if(gU){const c=clsGlic(gU.val,gU.ctx||'');html+=`<a href="perfil-glicemico.html" class="vital-card"><div class="vc-ico">🩸</div><div class="vc-val">${gU.val} <span style="font-size:.65rem">mg/dL</span></div><div class="vc-cls" style="color:${c.cor}">${c.cls}</div><div class="vc-det">${esc(gU.ctx||'')} · ${ago(gU.data,'')} atrás</div></a>`;}
+  else html+=`<a href="perfil-glicemico.html" class="vital-card"><div class="vc-ico">🩸</div><div class="vc-val vc-none">Glicemia</div><div class="vc-det">Sem registros</div></a>`;
+  // Peso
+  if(pesoU){html+=`<a href="controle-peso.html" class="vital-card"><div class="vc-ico">⚖️</div><div class="vc-val">${pesoU.peso.toFixed(1)} <span style="font-size:.65rem">kg</span></div><div class="vc-cls" style="color:#0369a1">IMC ${pesoU.imc?pesoU.imc.toFixed(1):'—'} · Edema ${pesoU.edema||'0'}</div><div class="vc-det">${ago(pesoU.data,'')} atrás</div></a>`;}
+  else html+=`<a href="controle-peso.html" class="vital-card"><div class="vc-ico">⚖️</div><div class="vc-val vc-none">Peso / IMC</div><div class="vc-det">Sem registros</div></a>`;
+  // SpO2
+  if(spo2U){const c=clsSpo2(spo2U.spo2);html+=`<a href="oximetria.html" class="vital-card"><div class="vc-ico">🫁</div><div class="vc-val">${spo2U.spo2}<span style="font-size:.65rem">%</span></div><div class="vc-cls" style="color:${c.cor}">${c.cls}</div><div class="vc-det">FC: ${spo2U.fc||'—'} · ${ago(spo2U.data,spo2U.hora||'')} atrás</div></a>`;}
+  else html+=`<a href="oximetria.html" class="vital-card"><div class="vc-ico">🫁</div><div class="vc-val vc-none">SpO₂</div><div class="vc-det">Sem registros</div></a>`;
+  html+=`</div>`;
+
+  // INR + Adesão + Agenda
+  html+=`<div class="row2">`;
+  if(inrU){const c=clsInr(inrU.inr);html+=`<a href="diario-inr.html" class="r2-card"><div class="r2-val" style="color:${c.cor}">${inrU.inr.toFixed(1)}</div><div class="r2-lbl">INR · ${c.cls}</div><div class="r2-sub">${fmtD(inrU.data)}</div></a>`;}
+  else html+=`<a href="diario-inr.html" class="r2-card"><div class="r2-val" style="color:#94a3b8">—</div><div class="r2-lbl">INR</div><div class="r2-sub">Sem dados</div></a>`;
+  html+=`<a href="adesao-dispensacao.html" class="r2-card"><div class="r2-val" style="color:${mprMed==null?'#94a3b8':mprMed>=80?'#22c55e':mprMed>=50?'#f59e0b':'#dc2626'}">${mprMed!=null?mprMed+'%':'—'}</div><div class="r2-lbl">Adesão (MPR 30d)</div><div class="r2-sub">${mprs.length} medicamentos</div></a>`;
+  html+=proxEvento?`<a href="agenda-clinica.html" class="r2-card"><div class="r2-val" style="color:#1e40af;font-size:.8rem">${esc(proxEvento.titulo).slice(0,20)}</div><div class="r2-lbl">Próx. evento</div><div class="r2-sub">${fmtD(proxEvento.data)}</div></a>`:`<a href="agenda-clinica.html" class="r2-card"><div class="r2-val" style="color:#94a3b8">—</div><div class="r2-lbl">Próx. evento</div><div class="r2-sub">Sem agenda</div></a>`;
+  html+=`</div>`;
+
+  // Escores clínicos
+  const SCORES=[
+    {lbl:'MEEM',u:meemU,get:e=>e.total,max:30,ok:v=>v>=25,warn:v=>v>=18,href:'meem.html'},
+    {lbl:'Barthel',u:barthelU,get:e=>e.total,max:100,ok:v=>v>=85,warn:v=>v>=60,href:'barthel.html'},
+    {lbl:'MMAS-8',u:mmasU,get:e=>e.score??e.total,max:8,ok:v=>v>=6,warn:v=>v>=4,href:'mmas8.html'},
+    {lbl:'FRAIL',u:frailU,get:e=>e.total??e.score,max:5,ok:v=>v===0,warn:v=>v<=2,href:'escala-fragilidade.html'},
+    {lbl:'Zarit',u:zaritU,get:e=>e.total,max:88,ok:v=>v<=20,warn:v=>v<=40,href:'zarit.html'},
+    {lbl:'Charlson',u:charlsonU,get:e=>e.total??e.score,max:15,ok:v=>v<=1,warn:v=>v<=3,href:'charlson.html'},
+  ];
+  const scoresHtml=SCORES.map(s=>{
+    if(!s.u) return `<a href="${s.href}" class="score-card"><div class="sc-val" style="color:#cbd5e1">—</div><div class="sc-lbl">${s.lbl}</div><div class="sc-date">sem dados</div></a>`;
+    const v=s.get(s.u);const cor=s.ok(v)?'#22c55e':s.warn(v)?'#f59e0b':'#dc2626';
+    return `<a href="${s.href}" class="score-card" style="border-top:3px solid ${cor}"><div class="sc-val" style="color:${cor}">${v}</div><div class="sc-lbl">${s.lbl} /${s.max}</div><div class="sc-date">${fmtD(s.u.data)}</div></a>`;
+  }).join('');
+  html+=`<div class="sec-title">🔬 Avaliações Clínicas</div><div class="scores-grid">${scoresHtml}</div>`;
+
+  // Lab recentes
+  if(labPac.length){
+    const labMap={};labPac.forEach(l=>{if(!labMap[l.parametro]) labMap[l.parametro]={val:l.valor,unit:l.unidade||'',data:l.data};});
+    const labItems=Object.entries(labMap).slice(0,6);
+    if(labItems.length){html+=`<div class="sec-title">🧪 Últimos Exames</div><div class="scores-grid">`+labItems.map(([k,v])=>`<a href="laboratorio.html" class="score-card"><div class="sc-val" style="font-size:.78rem;color:#0f172a">${esc(v.val)} <span style="font-size:.5rem">${esc(v.unit)}</span></div><div class="sc-lbl">${esc(k)}</div><div class="sc-date">${fmtD(v.data)}</div></a>`).join('')+`</div>`;}
+  }
+
+  // Links rápidos
+  const LINKS=[
+    {ico:'💊',lbl:'Medicamentos',href:'index.html'},
+    {ico:'🏪',lbl:'Farmácia',href:'farmacia-parceira.html'},
+    {ico:'📦',lbl:'Estoque',href:'estoque-inteligente.html'},
+    {ico:'📋',lbl:'Receituário',href:'receitas-validade.html'},
+    {ico:'💰',lbl:'Custo',href:'custo-tratamento.html'},
+    {ico:'🪪',lbl:'Cartão',href:'cartao-resumo.html'},
+    {ico:'🩺',lbl:'Retorno',href:'retorno-farmaceutico.html'},
+    {ico:'📄',lbl:'Rel. RCF',href:'relatorio-rcf.html'},
+  ];
+  html+=`<div class="sec-title">🔗 Acesso Rápido</div><div class="links-grid">`+LINKS.map(l=>`<a href="${l.href}" class="link-btn"><div class="lb-ico">${l.ico}</div><span class="lb-lbl">${l.lbl}</span></a>`).join('')+`</div>`;
+
+  document.getElementById('dash-div').innerHTML=html;
+}
+
+function calcIdade(dn){const d=new Date(dn),n=new Date();let a=n.getFullYear()-d.getFullYear();if(n.getMonth()<d.getMonth()||(n.getMonth()===d.getMonth()&&n.getDate()<d.getDate())) a--;return a;}
+function hoje(){return new Date().toISOString().slice(0,10);}
+
+document.addEventListener('DOMContentLoaded',async()=>{
+  const pacs=await dbGetAll('pacientes');
+  const sel=document.getElementById('sel-pac');
+  sel.innerHTML='<option value="">Selecione o paciente...</option>'+pacs.map(p=>`<option value="${p.id}">${esc(p.nome||'Paciente '+p.id)}</option>`).join('');
+  const pid=getActivePacienteId();
+  if(pid){sel.value=pid;await init();}
+});
+</script>
+</body>
+</html>

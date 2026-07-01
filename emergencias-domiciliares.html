@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>Emergências Domiciliares — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .topbar{display:flex;align-items:center;gap:10px;padding:12px 16px;background:#7f1d1d;position:sticky;top:0;z-index:100}
+    .back-btn{background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:8px;padding:6px 11px;cursor:pointer;font-size:1rem}
+    .topbar-title{font-size:.93rem;font-weight:800;color:#fff;flex:1}
+    .topbar-sub{font-size:.62rem;color:rgba(255,255,255,.7);margin-top:1px}
+    main{max-width:680px;margin:0 auto;padding:12px 14px 90px}
+    .pac-sel{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:12px;padding:11px 14px;font-size:.88rem;margin-bottom:10px;background:#fff}
+
+    /* SAMU banner */
+    .samu-banner{background:linear-gradient(135deg,#dc2626,#991b1b);border-radius:14px;padding:14px 16px;display:flex;gap:12px;align-items:center;margin-bottom:14px}
+    .samu-num{font-size:2.2rem;font-weight:900;color:#fff;line-height:1}
+    .samu-txt{color:#fecaca;font-size:.72rem;line-height:1.5;flex:1}
+    .samu-btn{background:#fff;color:#dc2626;border:none;border-radius:10px;padding:10px 14px;font-size:.82rem;font-weight:900;cursor:pointer;flex-shrink:0;text-decoration:none;display:block}
+
+    /* Card de emergência */
+    .emerg-card{border-radius:14px;margin-bottom:10px;overflow:hidden;border:2px solid transparent}
+    .emerg-hdr{padding:12px 14px;display:flex;align-items:center;gap:10px;cursor:pointer}
+    .emerg-emoji{font-size:1.5rem;flex-shrink:0}
+    .emerg-titulo{font-size:.88rem;font-weight:900;flex:1}
+    .emerg-tag{font-size:.58rem;font-weight:800;padding:2px 8px;border-radius:5px;background:rgba(255,255,255,.3);flex-shrink:0}
+    .emerg-chevron{font-size:.7rem;opacity:.7;flex-shrink:0}
+    .emerg-body{display:none;background:#fff;padding:12px 14px}
+    .emerg-body.open{display:block}
+    .sinais-sec{margin-bottom:10px}
+    .sinais-title{font-size:.6rem;font-weight:800;text-transform:uppercase;letter-spacing:.04em;color:#94a3b8;margin-bottom:5px}
+    .sinais-list{font-size:.72rem;color:#374151;line-height:1.8;padding-left:14px}
+    .acoes-list{font-size:.73rem;color:#0f172a;line-height:1;padding:0}
+    .acao-item{display:flex;gap:8px;align-items:flex-start;padding:6px 0;border-bottom:1px solid #f8fafc}
+    .acao-item:last-child{border:none}
+    .acao-num{background:#0f172a;color:#fff;border-radius:50%;width:18px;height:18px;font-size:.62rem;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+    .acao-txt{font-size:.73rem;flex:1;line-height:1.4}
+    .ligar192-btn{display:flex;align-items:center;gap:8px;background:#dc2626;color:#fff;border:none;border-radius:9px;padding:10px 14px;width:100%;font-size:.78rem;font-weight:800;cursor:pointer;margin-top:10px;text-decoration:none;justify-content:center}
+
+    /* Contatos do paciente */
+    .contatos-card{background:#fff;border-radius:12px;border:1.5px solid #e2e8f0;padding:12px 14px;margin-bottom:10px}
+    .ct-title{font-size:.7rem;font-weight:800;color:#7f1d1d;margin-bottom:8px}
+    .ct-item{display:flex;gap:8px;align-items:center;padding:5px 0;border-bottom:1px solid #f8fafc;font-size:.72rem}
+    .ct-item:last-child{border:none}
+    .ct-nome{font-weight:700;flex:1}
+    .ct-tel{color:#0369a1;font-size:.68rem}
+    .ct-ligar{background:#dcfce7;border:none;color:#166534;border-radius:7px;padding:4px 10px;font-size:.63rem;font-weight:800;cursor:pointer;text-decoration:none}
+
+    .pac-strip{background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:9px 12px;margin-bottom:10px;font-size:.7rem;color:#991b1b;line-height:1.5}
+    .emerg-sec-title{font-size:.62rem;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.04em;margin:14px 0 6px}
+
+    @media print{
+      .topbar,.pac-sel,nav,.ligar192-btn{display:none!important}
+      .emerg-body{display:block!important}
+      body{background:#fff}
+      .emerg-card{break-inside:avoid}
+      @page{size:A4;margin:10mm}
+    }
+  </style>
+</head>
+<body>
+<div class="topbar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <div style="flex:1">
+    <div class="topbar-title">🆘 Emergências Domiciliares</div>
+    <div class="topbar-sub">Protocolos personalizados · Imprima e deixe à vista</div>
+  </div>
+  <button style="background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:8px;padding:7px 10px;font-size:.72rem;font-weight:700;cursor:pointer" onclick="window.print()">🖨️</button>
+</div>
+<main>
+  <select class="pac-sel" id="sel-pac" onchange="init()"><option value="">Selecione o paciente...</option></select>
+
+  <!-- SAMU fixo -->
+  <div class="samu-banner">
+    <div>
+      <div style="font-size:.6rem;color:rgba(255,255,255,.7);font-weight:700">EMERGÊNCIA</div>
+      <div class="samu-num">192</div>
+      <div style="font-size:.55rem;color:rgba(255,255,255,.6)">SAMU</div>
+    </div>
+    <div class="samu-txt"><strong>Ligue 192 (SAMU)</strong> para qualquer emergência médica.<br>Bombeiros: <strong>193</strong> · Polícia: <strong>190</strong></div>
+    <a href="tel:192" class="samu-btn">📞 Ligar 192</a>
+  </div>
+
+  <div id="pac-strip"></div>
+  <div id="contatos-div"></div>
+  <div id="lista-div"></div>
+</main>
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+<script src="js/db.js"></script>
+<script src="js/utils.js"></script>
+<script>
+let _pid=null;
+
+const EMERG_DB=[
+  {id:'pcr',titulo:'Parada Cardiorrespiratória (PCR)',emoji:'🫀',cor:'#7f1d1d',bg:'#fef2f2',sempre:true,
+   sinais:['Pessoa não responde ao chamado e toque','Sem respiração ou respiração com engasgos esporádicos','Sem pulso detectável no pescoço'],
+   acoes:['Ligue 192 imediatamente — informe endereço completo','Deite a vítima em superfície rígida (chão)','Entrelace as mãos no centro do peito e pressione forte e rápido: 5-6 cm de profundidade, 100-120 compressões/min','Se treinado: após 30 compressões, faça 2 ventilações boca a boca','Continue sem parar até o SAMU chegar ou a vítima respirar']},
+  {id:'avc',titulo:'AVC / Derrame (Teste RÁPIDO)',emoji:'🧠',cor:'#6d28d9',bg:'#f5f3ff',sempre:true,
+   sinais:['R — Rosto torto: peça para sorrir (um lado não sobe?)',
+           'Á — Braço caindo: levante os dois braços (um cai?)',
+           'P — Palavra: peça para repetir "o céu é azul" (fala enrolada?)',
+           'I — Imediatamente ligue 192 se houver qualquer um dos anteriores'],
+   acoes:['Ligue 192 imediatamente — AVC tem janela de 4,5h para tratamento','Anote a hora exata do início dos sintomas','Não dê água, alimento ou remédio pela boca','Mantenha a pessoa deitada com a cabeça levemente elevada','Não deixe a pessoa dormir até o socorro chegar']},
+  {id:'hipoglicemia',titulo:'Hipoglicemia (Glicemia Baixa)',emoji:'🍬',cor:'#b45309',bg:'#fffbeb',
+   meds:/insulina|glibenclamida|glipizida|gliclazida|glimepirida/i,
+   condicoes:/diabetes|dm\b/i,
+   sinais:['Tremor, sudorese, palidez','Fraqueza, tontura, confusão','Fome intensa, palpitações','Nos casos graves: desmaio, convulsão'],
+   acoes:['Se CONSCIENTE: ofereça 15g de carboidrato de ação rápida — 1 copo de suco de laranja, ou 3 balas, ou 1 colher de mel, ou 1 copo de refrigerante comum (não diet)','Aguarde 15 minutos e verifique a glicemia','Se ainda <70 mg/dL: repita a dose de carboidrato','Após melhora: ofereça um lanche com carboidrato complexo (biscoito + queijo)','Se INCONSCIENTE: NÃO dê nada pela boca — ligue 192']},
+  {id:'hiperglicemia',titulo:'Hiperglicemia / Cetoacidose',emoji:'💉',cor:'#dc2626',bg:'#fef2f2',
+   meds:/insulina|metformina|glibenclamida/i,
+   condicoes:/diabetes|dm\b/i,
+   sinais:['Glicemia >300 mg/dL','Sede intensa, urina frequente','Cansaço extremo, náusea, vômito','Hálito adocicado (cheiro de fruta)','Respiração rápida e profunda (sinal grave)'],
+   acoes:['Ofereça água (se consciente e sem vômitos)','Verifique se tomou insulina ou medicamento','NÃO aumente a dose de insulina por conta própria','Se glicemia >400 mg/dL ou sintomas graves: ligue 192','Leve ao pronto-socorro com lista de medicamentos em uso']},
+  {id:'crise-hta',titulo:'Crise Hipertensiva',emoji:'💢',cor:'#b91c1c',bg:'#fef2f2',
+   meds:/captopril|enalapril|losartan|amlodipino|anlodipino|hidroclorotiazida|furosemida|carvedilol|metoprolol|atenolol|bisoprolol|clonidina/i,
+   condicoes:/hipertensão|hta\b|pressão alta/i,
+   sinais:['PA ≥180/120 mmHg','Dor de cabeça intensa na nuca','Visão borrada, pontos piscantes','Dor no peito, falta de ar','Confusão mental, sangramento nasal'],
+   acoes:['Sente ou deite a pessoa — posição confortável','Verifique se tomou todos os medicamentos hoje','Se houver captopril 25mg comprimido SL prescrito pelo médico: use conforme orientação prévia','NÃO dê medicamentos adicionais sem orientação médica','Se PA >180/120 + sintomas: ligue 192 — pode ser emergência hipertensiva','Repita a medição após 10 minutos em repouso']},
+  {id:'dispneia',titulo:'Crise Respiratória / Dispneia',emoji:'🫁',cor:'#0369a1',bg:'#eff6ff',
+   meds:/salbutamol|formoterol|salmeterol|budesonida|beclometasona|ipratrópio|tiotrópio|aminofilina|teofilina/i,
+   condicoes:/asma|dpoc|insuficiência cardíaca|ic\b|bronquite/i,
+   sinais:['Falta de ar súbita, dificuldade para respirar','SpO₂ <92%','Respiração ruidosa (chiado/sibilância)','Lábios ou ponta dos dedos azulados (cianose)','Incapacidade de falar frases completas'],
+   acoes:['Sente a pessoa erguida, inclinada levemente para frente','Se tiver broncodilatador (salbutamol) prescrito: 2-4 jatos com espaçador, aguarde 20 min, repita se necessário','Remova roupas apertadas','Não deixe a pessoa deitar de costas','SpO₂ <90% ou sem melhora em 15 min: ligue 192']},
+  {id:'queda',titulo:'Queda / Trauma',emoji:'🩹',cor:'#92400e',bg:'#fffbeb',sempre:true,
+   sinais:['Dor intensa no local do impacto','Deformidade no membro (osso quebrado?)','Incapacidade de levantar ou mover o membro','Perda de consciência (mesmo que breve)','Corte profundo com sangramento intenso'],
+   acoes:['NÃO mova a pessoa se suspeitar de fratura ou lesão de coluna','Imobilize o local com o que tiver: tala improvisada, rolos de pano','Para sangramento: pressione com pano limpo firmemente por 10 minutos sem tirar','Se dor na cabeça, pescoço ou costas: NÃO mova — ligue 192','Se consciente e sem suspeita de fratura grave: ajude a sentar lentamente','Monitore por 24h: dor de cabeça crescente, vômito, confusão = ida ao pronto-socorro']},
+  {id:'anafilaxia',titulo:'Reação Alérgica Grave (Anafilaxia)',emoji:'⚠️',cor:'#7c2d12',bg:'#fff7ed',
+   sinais:['Urticária súbita, coceira intensa em todo o corpo','Inchaço nos lábios, língua ou garganta','Dificuldade súbita para respirar ou engolir','Queda brusca da pressão, tontura, desmaio','Início em minutos após contato com alérgeno'],
+   acoes:['Ligue 192 imediatamente — anafilaxia é emergência','Deite a pessoa com as pernas elevadas (exceto se falta de ar)','Se tiver adrenalina autoinjetável (epipen) prescrita: aplique na face lateral da coxa','Anote o que causou a reação (alimento, medicamento, picada de inseto)','NÃO dê anti-histamínico oral em anafilaxia grave — não é suficiente','Continue com RCP se houver parada cardiorrespiratória']},
+  {id:'convulsao',titulo:'Convulsão',emoji:'⚡',cor:'#5b21b6',bg:'#f5f3ff',
+   meds:/fenitoína|fenitoina|carbamazepina|valproato|levetiracetam|fenobarbital|clonazepam/i,
+   condicoes:/epilepsia|convulsão|crise convulsiva/i,
+   sinais:['Movimentos involuntários e rítmicos dos membros','Perda de consciência súbita','Olhos revirados','Saliva na boca, possível mordida de língua','Confusão e sonolência após a convulsão'],
+   acoes:['NÃO segure a pessoa para parar os movimentos','Afaste objetos que possam machucar','Coloque algo macio embaixo da cabeça','Posição lateral de segurança após parar os movimentos (evita aspiração)','NÃO coloque nada na boca — não há risco de engolir a língua','Cronometrar a duração — se >5 minutos ou se houver segunda convulsão: ligue 192','A maioria das crises para sozinha em 2-3 minutos']},
+  {id:'sangramento-anticoag',titulo:'Sangramento em Paciente Anticoagulado',emoji:'🩸',cor:'#9f1239',bg:'#fff1f2',
+   meds:/varfarina|varfarin|rivaroxabana|apixabana|dabigatrana|heparina/i,
+   sinais:['Sangramento que não para com pressão após 10-15 min','Sangue na urina (urina rosada ou vermelha)','Fezes pretas ou com sangue vivo','Vômito com sangue','Hematoma extenso e crescendo rapidamente'],
+   acoes:['Pressione o local de sangramento com pano limpo firmemente por 15 minutos sem tirar','NÃO tome nova dose de anticoagulante sem orientação médica','Vá ao pronto-socorro levando a lista completa de medicamentos e o valor do último INR','Em sangramento intenso ou sinais de AVC hemorrágico (dor de cabeça súbita + anticoagulante): ligue 192']},
+  {id:'intox-digo',titulo:'Suspeita de Intoxicação por Digoxina',emoji:'💊',cor:'#065f46',bg:'#ecfdf5',
+   meds:/digoxina/i,
+   sinais:['Náusea, vômito, perda de apetite','Visão amarelada ou com halos coloridos','Batimento cardíaco irregular (muito lento ou rápido)','Confusão mental, tontura'],
+   acoes:['NÃO dê a próxima dose de digoxina','Leve ao pronto-socorro ou ligue 192 com a lista de medicamentos','Informe o nível do último exame de digoxinemia se disponível','Monitorize o pulso a cada 10 minutos']},
+  {id:'sedacao',titulo:'Sedação Excessiva / Depressão Respiratória',emoji:'😴',cor:'#1e3a5f',bg:'#eff6ff',
+   meds:/clonazepam|diazepam|alprazolam|lorazepam|midazolam|morfina|tramadol|oxicodona|fentanil/i,
+   sinais:['Sonolência extrema, impossível acordar','Respiração lenta (<10 movimentos/min) ou pausas longas','Lábios azulados','Pupilas muito contraídas (opioides)'],
+   acoes:['Ligue 192 imediatamente','Mantenha as vias aéreas livres: incline a cabeça para trás e levante o queixo','Se parar de respirar: inicie RCP','NÃO administre mais nenhum medicamento','Informe ao SAMU quais sedativos/opioides foram tomados e quando']},
+];
+
+function toggle(id){document.getElementById('emerg-body-'+id)?.classList.toggle('open');}
+
+async function init(){
+  _pid=parseInt(document.getElementById('sel-pac').value)||null;
+  const stripEl=document.getElementById('pac-strip');
+  const contEl=document.getElementById('contatos-div');
+  const listaEl=document.getElementById('lista-div');
+  if(!_pid){stripEl.innerHTML='';contEl.innerHTML='';listaEl.innerHTML='';return;}
+  const [pac,meds]=await Promise.all([dbGet('pacientes',_pid),dbGetByIndex('medicamentos','pacienteId',_pid)]);
+  const medsAtivos=(meds||[]).filter(m=>m.ativo!==false&&m.ativo!==0);
+  const nomeMeds=medsAtivos.map(m=>m.nome||m.medicamento||'').join(' ');
+  const condicoes=[...(pac?.condicoes||pac?.doencas||[])].join(' ');
+  const alergias=pac?.alergias||'';
+
+  // Strip do paciente
+  stripEl.innerHTML=`<div class="pac-strip">
+    👤 <strong>${esc(pac?.nome||'Paciente')}</strong>${pac?.dataNascimento?' · '+calcIdade(pac.dataNascimento)+'a':''}
+    ${alergias?` · ⚠️ Alergias: <strong>${esc(alergias)}</strong>`:''}
+    ${pac?.tipoSangue||pac?.grupoSanguineo?' · 🩸 '+esc(pac.tipoSangue||pac.grupoSanguineo):''}
+  </div>`;
+
+  // Contatos
+  const cuidador=pac?.cuidador||'';const telCuidador=pac?.telefoneCuidador||pac?.telefoneEmergencia||'';
+  const medico=pac?.medico||'';const telMedico=pac?.telefoneMedico||'';
+  if(cuidador||medico){
+    contEl.innerHTML=`<div class="contatos-card"><div class="ct-title">📞 Contatos de Emergência</div>`+
+      (cuidador?`<div class="ct-item"><div class="ct-nome">🧡 ${esc(cuidador)}</div><div class="ct-tel">${esc(telCuidador)}</div>${telCuidador?`<a class="ct-ligar" href="tel:${esc(telCuidador)}">Ligar</a>`:''}</div>`:'')+
+      (medico?`<div class="ct-item"><div class="ct-nome">👨‍⚕️ ${esc(medico)}</div><div class="ct-tel">${esc(telMedico)}</div>${telMedico?`<a class="ct-ligar" href="tel:${esc(telMedico)}">Ligar</a>`:''}</div>`:'')+
+      `</div>`;
+  } else contEl.innerHTML='';
+
+  // Filtra emergências relevantes
+  const relevantes=EMERG_DB.filter(e=>{
+    if(e.sempre) return true;
+    if(e.meds&&e.meds.test(nomeMeds)) return true;
+    if(e.condicoes&&e.condicoes.test(condicoes)) return true;
+    return false;
+  });
+
+  listaEl.innerHTML=`<div class="emerg-sec-title">Protocolos ativos para este paciente (${relevantes.length})</div>`+
+    relevantes.map(e=>`<div class="emerg-card" style="background:${e.bg};border-color:${e.cor}20">
+      <div class="emerg-hdr" onclick="toggle('${e.id}')" style="background:${e.bg}">
+        <div class="emerg-emoji">${e.emoji}</div>
+        <div class="emerg-titulo" style="color:${e.cor}">${esc(e.titulo)}</div>
+        ${e.sempre?'<span class="emerg-tag" style="background:'+e.cor+';color:#fff">Sempre</span>':''}
+        <div class="emerg-chevron" style="color:${e.cor}">▼</div>
+      </div>
+      <div class="emerg-body" id="emerg-body-${e.id}">
+        <div class="sinais-sec">
+          <div class="sinais-title">Como reconhecer</div>
+          <ul class="sinais-list">${e.sinais.map(s=>`<li>${esc(s)}</li>`).join('')}</ul>
+        </div>
+        <div class="sinais-title">O que fazer agora</div>
+        <div class="acoes-list">${e.acoes.map((a,i)=>`<div class="acao-item"><div class="acao-num">${i+1}</div><div class="acao-txt">${esc(a)}</div></div>`).join('')}</div>
+        <a href="tel:192" class="ligar192-btn">📞 Ligar 192 — SAMU</a>
+      </div>
+    </div>`).join('');
+}
+
+function calcIdade(dn){const d=new Date(dn),n=new Date();let a=n.getFullYear()-d.getFullYear();if(n.getMonth()<d.getMonth()||(n.getMonth()===d.getMonth()&&n.getDate()<d.getDate()))a--;return a;}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+document.addEventListener('DOMContentLoaded',async()=>{
+  const pacs=await dbGetAll('pacientes');
+  const sel=document.getElementById('sel-pac');
+  sel.innerHTML='<option value="">Selecione o paciente...</option>'+pacs.map(p=>`<option value="${p.id}">${esc(p.nome||'Paciente '+p.id)}</option>`).join('');
+  const pid=getActivePacienteId();
+  if(pid){sel.value=pid;await init();}
+});
+</script>
+</body>
+</html>

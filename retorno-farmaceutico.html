@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>Retorno Farmacêutico — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .topbar{display:flex;align-items:center;gap:10px;padding:12px 16px;background:#0f3460;position:sticky;top:0;z-index:100}
+    .back-btn{background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:8px;padding:6px 11px;cursor:pointer;font-size:1rem}
+    .topbar-title{font-size:.93rem;font-weight:800;color:#fff;flex:1}
+    .topbar-sub{font-size:.62rem;color:rgba(255,255,255,.7);margin-top:1px}
+    .tab-btn{background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:8px;padding:7px 10px;font-size:.7rem;font-weight:700;cursor:pointer}
+    .tab-btn.ativo{background:rgba(255,255,255,.35)}
+    main{max-width:680px;margin:0 auto;padding:12px 14px 90px}
+    .pac-sel{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:12px;padding:11px 14px;font-size:.88rem;margin-bottom:10px;background:#fff}
+
+    /* Abas */
+    .view{display:none}.view.ativo{display:block}
+
+    /* Domínio */
+    .dominio{background:#fff;border-radius:14px;border:1.5px solid #e2e8f0;padding:13px 14px;margin-bottom:10px}
+    .dom-title{font-size:.75rem;font-weight:900;color:#0f3460;display:flex;align-items:center;gap:7px;margin-bottom:10px}
+    .dom-num{background:#0f3460;color:#fff;border-radius:50%;width:20px;height:20px;font-size:.65rem;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+
+    /* Chips de sintomas */
+    .chips-wrap{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px}
+    .chip{padding:5px 11px;border-radius:8px;background:#f1f5f9;color:#475569;font-size:.68rem;font-weight:700;cursor:pointer;border:1.5px solid transparent;transition:.12s;user-select:none}
+    .chip.sel{background:#dbeafe;color:#1e40af;border-color:#93c5fd}
+    .chip.sel.vermelho{background:#fee2e2;color:#991b1b;border-color:#fca5a5}
+
+    /* Adesão slider */
+    .ades-row{display:flex;gap:10px;align-items:center}
+    .ades-dias{font-size:1.4rem;font-weight:900;color:#0f3460;width:30px;text-align:center}
+    input[type=range]{flex:1;accent-color:#0f3460}
+    .ades-lbl{font-size:.65rem;font-weight:700;padding:3px 8px;border-radius:6px}
+
+    label{font-size:.66rem;font-weight:700;color:#64748b;display:block;margin-bottom:3px;margin-top:8px}
+    input[type=text],select,textarea{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:9px;padding:9px 11px;font-size:.83rem;background:#fff}
+    textarea{resize:none;height:60px}
+    .form-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+
+    /* Situação clínica */
+    .situacao-chips{display:flex;gap:8px;margin-bottom:8px}
+    .sit-chip{flex:1;padding:10px 8px;border-radius:10px;background:#f1f5f9;color:#475569;font-size:.7rem;font-weight:800;cursor:pointer;text-align:center;border:2px solid transparent;transition:.12s}
+    .sit-chip.sel.melhora{background:#dcfce7;color:#166534;border-color:#86efac}
+    .sit-chip.sel.estavel{background:#dbeafe;color:#1e40af;border-color:#93c5fd}
+    .sit-chip.sel.piora{background:#fee2e2;color:#991b1b;border-color:#fca5a5}
+
+    /* Conduta */
+    .conduta-chips{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px}
+    .cc{padding:6px 12px;border-radius:8px;background:#f1f5f9;color:#475569;font-size:.68rem;font-weight:700;cursor:pointer;border:1.5px solid transparent;transition:.12s}
+    .cc.sel{background:#f5f3ff;color:#5b21b6;border-color:#c4b5fd}
+
+    .save-btn{width:100%;padding:13px;background:#0f3460;color:#fff;border:none;border-radius:10px;font-size:.85rem;font-weight:800;cursor:pointer;margin-top:10px}
+    .nota-preview{background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px;font-size:.72rem;color:#334155;margin-top:10px;white-space:pre-wrap;font-family:monospace;line-height:1.6;display:none}
+    .copy-btn{width:100%;padding:10px;background:#e0f2fe;color:#0369a1;border:1.5px solid #7dd3fc;border-radius:9px;font-size:.78rem;font-weight:800;cursor:pointer;margin-top:6px}
+
+    /* Histórico */
+    .hist-item{background:#fff;border-radius:12px;border:1.5px solid #e2e8f0;padding:12px 14px;margin-bottom:8px;cursor:pointer;transition:.12s}
+    .hist-item:hover{border-color:#93c5fd}
+    .hi-hdr{display:flex;gap:8px;align-items:center;margin-bottom:6px}
+    .hi-data{font-size:.72rem;font-weight:800;color:#0f3460}
+    .hi-sit{font-size:.62rem;font-weight:800;padding:2px 8px;border-radius:5px}
+    .hi-farm{font-size:.62rem;color:#94a3b8;flex:1}
+    .hi-nota{font-size:.68rem;color:#475569;line-height:1.5;white-space:pre-wrap;font-family:monospace;display:none}
+    .hi-nota.open{display:block}
+    .hi-del{background:#fee2e2;border:none;color:#dc2626;border-radius:6px;padding:3px 8px;font-size:.6rem;cursor:pointer}
+
+    .empty{text-align:center;padding:30px;color:#94a3b8;font-size:.78rem}
+    .ctx-strip{background:#f0f9ff;border:1px solid #bae6fd;border-radius:9px;padding:8px 12px;font-size:.68rem;color:#0369a1;margin-bottom:10px;line-height:1.5;display:none}
+  </style>
+</head>
+<body>
+<div class="topbar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <div style="flex:1">
+    <div class="topbar-title">🩺 Retorno Farmacêutico</div>
+    <div class="topbar-sub">Consulta de seguimento estruturada · 5–10 min</div>
+  </div>
+  <button class="tab-btn ativo" id="tab-nova" onclick="mudarTab('nova')">Nova</button>
+  <button class="tab-btn" id="tab-hist" onclick="mudarTab('hist')">Histórico</button>
+</div>
+<main>
+  <select class="pac-sel" id="sel-pac" onchange="init()"><option value="">Selecione o paciente...</option></select>
+  <div class="ctx-strip" id="ctx-strip"></div>
+
+  <!-- ABA NOVA -->
+  <div class="view ativo" id="view-nova">
+
+    <!-- 1. Sintomas -->
+    <div class="dominio">
+      <div class="dom-title"><div class="dom-num">1</div>Sintomas desta semana</div>
+      <div class="chips-wrap" id="chips-sintomas">
+        <div class="chip" data-val="Dor">Dor</div>
+        <div class="chip" data-val="Tontura">Tontura</div>
+        <div class="chip" data-val="Cefaleia">Cefaleia</div>
+        <div class="chip" data-val="Náusea">Náusea</div>
+        <div class="chip" data-val="Vômito">Vômito</div>
+        <div class="chip" data-val="Diarreia">Diarreia</div>
+        <div class="chip" data-val="Dispneia">Dispneia</div>
+        <div class="chip" data-val="Edema">Edema</div>
+        <div class="chip" data-val="Insônia">Insônia</div>
+        <div class="chip" data-val="Ansiedade">Ansiedade</div>
+        <div class="chip" data-val="Confusão">Confusão</div>
+        <div class="chip" data-val="Queda">Queda</div>
+        <div class="chip" data-val="Febre">Febre</div>
+        <div class="chip" data-val="Constipação">Constipação</div>
+        <div class="chip" data-val="Fraqueza">Fraqueza</div>
+        <div class="chip" data-val="Palpitações">Palpitações</div>
+      </div>
+      <label>Outros sintomas (texto livre)</label>
+      <input type="text" id="sint-outros" placeholder="Descreva outros sintomas se necessário">
+    </div>
+
+    <!-- 2. Adesão -->
+    <div class="dominio">
+      <div class="dom-title"><div class="dom-num">2</div>Adesão auto-referida</div>
+      <label>Quantos dias na última semana tomou <strong>todos</strong> os medicamentos como prescrito?</label>
+      <div class="ades-row" style="margin-top:8px">
+        <input type="range" id="ades-slider" min="0" max="7" value="7" oninput="updateAdes()">
+        <div class="ades-dias" id="ades-val">7</div>
+        <div class="ades-lbl" id="ades-cls">Boa</div>
+      </div>
+      <label style="margin-top:10px">Motivo de falha (se houver)</label>
+      <div class="chips-wrap" id="chips-ades">
+        <div class="chip" data-val="Esquecimento">Esquecimento</div>
+        <div class="chip" data-val="Efeito adverso">Efeito adverso</div>
+        <div class="chip" data-val="Falta do medicamento">Falta do medicamento</div>
+        <div class="chip" data-val="Custo">Custo</div>
+        <div class="chip" data-val="Muitos comprimidos">Muitos comprimidos</div>
+        <div class="chip" data-val="Sentiu-se bem e parou">Sentiu-se bem e parou</div>
+        <div class="chip" data-val="Decisão própria">Decisão própria</div>
+      </div>
+    </div>
+
+    <!-- 3. Efeitos adversos -->
+    <div class="dominio">
+      <div class="dom-title"><div class="dom-num">3</div>Efeitos adversos suspeitos</div>
+      <div class="chips-wrap" id="chips-ea">
+        <div class="chip vermelho" data-val="Boca seca">Boca seca</div>
+        <div class="chip vermelho" data-val="Sonolência">Sonolência</div>
+        <div class="chip vermelho" data-val="Tontura postural">Tontura postural</div>
+        <div class="chip vermelho" data-val="Náusea">Náusea</div>
+        <div class="chip vermelho" data-val="Constipação">Constipação</div>
+        <div class="chip vermelho" data-val="Tremor">Tremor</div>
+        <div class="chip vermelho" data-val="Ganho de peso">Ganho de peso</div>
+        <div class="chip vermelho" data-val="Perda de peso">Perda de peso</div>
+        <div class="chip vermelho" data-val="Rash cutâneo">Rash cutâneo</div>
+        <div class="chip vermelho" data-val="Hipoglicemia">Hipoglicemia</div>
+        <div class="chip vermelho" data-val="Insônia">Insônia</div>
+        <div class="chip vermelho" data-val="Palpitações">Palpitações</div>
+      </div>
+      <label>Descrever (medicamento suspeito + efeito)</label>
+      <input type="text" id="ea-detalhe" placeholder="Ex: metformina causando diarreia há 3 dias">
+    </div>
+
+    <!-- 4. Dúvidas -->
+    <div class="dominio">
+      <div class="dom-title"><div class="dom-num">4</div>Dúvidas sobre medicamentos</div>
+      <textarea id="duvidas" placeholder="Registre dúvidas levantadas pelo paciente/cuidador sobre uso, horários, interações, validade..."></textarea>
+    </div>
+
+    <!-- 5. Situação clínica -->
+    <div class="dominio">
+      <div class="dom-title"><div class="dom-num">5</div>Situação clínica geral</div>
+      <div class="situacao-chips" id="sit-chips">
+        <div class="sit-chip melhora" onclick="selSit(this,'melhora')">✅ Melhora</div>
+        <div class="sit-chip estavel sel estavel" onclick="selSit(this,'estavel')">➡️ Estável</div>
+        <div class="sit-chip piora" onclick="selSit(this,'piora')">⚠️ Piora</div>
+      </div>
+      <input type="hidden" id="situacao" value="estavel">
+      <textarea id="sit-obs" placeholder="Observações sobre a evolução clínica, comparação com consulta anterior..."></textarea>
+    </div>
+
+    <!-- 6. Conduta -->
+    <div class="dominio">
+      <div class="dom-title"><div class="dom-num">6</div>Conduta do farmacêutico</div>
+      <div class="conduta-chips" id="chips-conduta">
+        <div class="cc" data-val="Sem intervenção — manter conduta">✅ Sem intervenção</div>
+        <div class="cc" data-val="Orientação ao paciente/cuidador">💬 Orientação</div>
+        <div class="cc" data-val="Contato com médico assistente">📞 Contato médico</div>
+        <div class="cc" data-val="Ajuste de horário/técnica de uso">⏰ Ajuste horário</div>
+        <div class="cc" data-val="Encaminhamento a outro profissional">🔀 Encaminh.</div>
+        <div class="cc" data-val="Suspensão temporária — aguardando avaliação médica">⛔ Suspensão</div>
+      </div>
+      <label>Detalhamento da conduta</label>
+      <textarea id="conduta-detalhe" placeholder="Descreva a intervenção realizada, orientações fornecidas, próximos passos..."></textarea>
+      <div class="form-row" style="margin-top:8px">
+        <div><label>Data do retorno</label><input type="date" id="inp-data" value=""></div>
+        <div><label>Próximo contato agendado</label><input type="date" id="inp-prox"></div>
+      </div>
+      <label>Farmacêutico responsável</label>
+      <input type="text" id="inp-farm" placeholder="Nome do farmacêutico (CRF)">
+
+      <button class="save-btn" onclick="gerarNota()">📄 Gerar nota de retorno</button>
+      <div class="nota-preview" id="nota-preview"></div>
+      <button class="copy-btn" id="copy-btn" style="display:none" onclick="copiarNota()">📋 Copiar nota</button>
+      <button class="save-btn" id="salvar-btn" style="display:none;background:#166534;margin-top:6px" onclick="salvar()">💾 Salvar no histórico</button>
+    </div>
+  </div>
+
+  <!-- ABA HISTÓRICO -->
+  <div class="view" id="view-hist">
+    <div id="hist-div"></div>
+  </div>
+</main>
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+<script src="js/db.js"></script>
+<script src="js/utils.js"></script>
+<script>
+let _pid=null, _hist=[], _notaAtual='', _farmSalvo='';
+
+function mudarTab(t){
+  ['nova','hist'].forEach(n=>{
+    document.getElementById('view-'+n)?.classList.toggle('ativo',n===t);
+    document.getElementById('tab-'+n)?.classList.toggle('ativo',n===t);
+  });
+  if(t==='hist') renderHist();
+}
+
+// Chips genérico
+function initChips(containerId, multi=true, vermelho=false){
+  document.getElementById(containerId)?.querySelectorAll('.chip').forEach(c=>{
+    c.addEventListener('click',()=>{
+      if(!multi){document.getElementById(containerId).querySelectorAll('.chip').forEach(x=>x.classList.remove('sel'));}
+      c.classList.toggle('sel');
+    });
+  });
+}
+function getChips(containerId){
+  return [...(document.getElementById(containerId)?.querySelectorAll('.chip.sel')||[])].map(c=>c.dataset.val).filter(Boolean);
+}
+
+function selSit(el,val){
+  document.querySelectorAll('.sit-chip').forEach(c=>{c.classList.remove('sel');});
+  el.classList.add('sel');
+  document.getElementById('situacao').value=val;
+}
+
+function updateAdes(){
+  const v=parseInt(document.getElementById('ades-slider').value);
+  document.getElementById('ades-val').textContent=v;
+  const el=document.getElementById('ades-cls');
+  if(v>=6){el.textContent='Boa';el.style.background='#dcfce7';el.style.color='#166534';}
+  else if(v>=4){el.textContent='Moderada';el.style.background='#fef3c7';el.style.color='#92400e';}
+  else{el.textContent='Baixa';el.style.background='#fee2e2';el.style.color='#991b1b';}
+}
+
+function gerarNota(){
+  const sintomas=getChips('chips-sintomas');const sintOut=document.getElementById('sint-outros').value.trim();
+  const adesDias=parseInt(document.getElementById('ades-slider').value);const adesFalha=getChips('chips-ades');
+  const ea=getChips('chips-ea');const eaDetalhe=document.getElementById('ea-detalhe').value.trim();
+  const duvidas=document.getElementById('duvidas').value.trim();
+  const sit=document.getElementById('situacao').value;
+  const sitObs=document.getElementById('sit-obs').value.trim();
+  const conduta=getChips('chips-conduta');const condutaDet=document.getElementById('conduta-detalhe').value.trim();
+  const data=document.getElementById('inp-data').value||hoje();
+  const prox=document.getElementById('inp-prox').value;
+  const farm=document.getElementById('inp-farm').value.trim();
+  const sitLabel={melhora:'Melhora',estavel:'Estável',piora:'Piora'}[sit]||'Estável';
+  const adLabel=adesDias>=6?'Boa adesão':adesDias>=4?'Adesão moderada':'Baixa adesão';
+
+  let nota=`NOTA DE RETORNO FARMACÊUTICO — VitaDose\n`;
+  nota+=`Data: ${data.split('-').reverse().join('/')}`;
+  if(farm) nota+=` | Farmacêutico: ${farm}`;
+  nota+=`\n${'─'.repeat(48)}\n`;
+  nota+=`1. SINTOMAS: ${sintomas.length?sintomas.join(', '):'Nenhum referido'}`;
+  if(sintOut) nota+=`; ${sintOut}`;
+  nota+=`\n2. ADESÃO: ${adesDias}/7 dias — ${adLabel}`;
+  if(adesFalha.length) nota+=` (falha por: ${adesFalha.join(', ')})`;
+  nota+=`\n3. EFEITOS ADVERSOS: ${ea.length?ea.join(', '):'Não referidos'}`;
+  if(eaDetalhe) nota+=` — ${eaDetalhe}`;
+  nota+=`\n4. DÚVIDAS: ${duvidas||'Nenhuma'}`;
+  nota+=`\n5. SITUAÇÃO CLÍNICA: ${sitLabel}`;
+  if(sitObs) nota+=` — ${sitObs}`;
+  nota+=`\n6. CONDUTA: ${conduta.length?conduta.join('; '):'Sem intervenção'}`;
+  if(condutaDet) nota+=` — ${condutaDet}`;
+  if(prox) nota+=`\nPRÓXIMO CONTATO: ${prox.split('-').reverse().join('/')}`;
+  nota+=`\n${'─'.repeat(48)}\nGerado pelo VitaDose`;
+
+  _notaAtual=nota;
+  const prev=document.getElementById('nota-preview');
+  prev.textContent=nota;prev.style.display='block';
+  document.getElementById('copy-btn').style.display='block';
+  document.getElementById('salvar-btn').style.display='block';
+  if(farm) _farmSalvo=farm;
+}
+
+async function salvar(){
+  if(!_pid||!_notaAtual){showToast('Gere a nota primeiro');return;}
+  const sit=document.getElementById('situacao').value;
+  const farm=document.getElementById('inp-farm').value.trim();
+  const obj={data:document.getElementById('inp-data').value||hoje(),sit,farm,nota:_notaAtual,ts:Date.now()};
+  _hist.unshift(obj);
+  await dbSetConfig('retorno_hist_'+_pid,_hist);
+  showToast('Retorno salvo!');
+  document.getElementById('salvar-btn').style.display='none';
+  renderHist();
+}
+
+function copiarNota(){
+  navigator.clipboard.writeText(_notaAtual).then(()=>showToast('Nota copiada!')).catch(()=>showToast('Erro ao copiar'));
+}
+
+async function deletarHist(idx){
+  if(!confirm('Remover este retorno?')) return;
+  _hist.splice(idx,1);
+  await dbSetConfig('retorno_hist_'+_pid,_hist);
+  renderHist();
+}
+
+function renderHist(){
+  const div=document.getElementById('hist-div');
+  if(!_hist.length){div.innerHTML='<div class="empty">Nenhum retorno registrado ainda.</div>';return;}
+  const SIT={melhora:{lbl:'Melhora',cor:'#166534',bg:'#dcfce7'},estavel:{lbl:'Estável',cor:'#1e40af',bg:'#dbeafe'},piora:{lbl:'Piora',cor:'#991b1b',bg:'#fee2e2'}};
+  div.innerHTML=_hist.map((r,i)=>{
+    const s=SIT[r.sit]||SIT.estavel;
+    return `<div class="hist-item" onclick="toggleHist(${i})">
+      <div class="hi-hdr">
+        <div class="hi-data">📅 ${r.data.split('-').reverse().join('/')}</div>
+        <div class="hi-sit" style="background:${s.bg};color:${s.cor}">${s.lbl}</div>
+        <div class="hi-farm">${esc(r.farm||'')}</div>
+        <button class="hi-del" onclick="event.stopPropagation();deletarHist(${i})">🗑️</button>
+      </div>
+      <div class="hi-nota" id="hn-${i}">${esc(r.nota)}</div>
+    </div>`;
+  }).join('');
+}
+
+function toggleHist(i){document.getElementById('hn-'+i)?.classList.toggle('open');}
+
+function hoje(){return new Date().toISOString().slice(0,10);}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+async function init(){
+  _pid=parseInt(document.getElementById('sel-pac').value)||null;
+  if(!_pid){document.getElementById('ctx-strip').style.display='none';return;}
+  _hist=await dbGetConfig('retorno_hist_'+_pid)||[];
+  // Contexto clínico recente
+  const [pac,meds,mmasH,bartH,paH]=await Promise.all([
+    dbGet('pacientes',_pid),
+    dbGetByIndex('medicamentos','pacienteId',_pid),
+    dbGetConfig('mmas8_hist_'+_pid)||Promise.resolve([]),
+    dbGetConfig('barthel_hist_'+_pid)||Promise.resolve([]),
+    dbGetConfig('pa_registros_'+_pid)||Promise.resolve([]),
+  ]);
+  const medsAtivos=((meds||[]).filter(m=>m.ativo!==false&&m.ativo!==0)).length;
+  const mmasU=(mmasH||[]).sort((a,b)=>(b.ts||0)-(a.ts||0))[0];
+  const bartU=(bartH||[]).sort((a,b)=>(b.ts||0)-(a.ts||0))[0];
+  const paU=(paH||[]).sort((a,b)=>new Date(b.data)-new Date(a.data))[0];
+  const ctx=document.getElementById('ctx-strip');
+  const partes=[];
+  if(pac?.nome) partes.push(`👤 ${pac.nome}`);
+  partes.push(`${medsAtivos} medicamentos`);
+  if(mmasU) partes.push(`MMAS-8: ${mmasU.score??mmasU.total}/8`);
+  if(bartU) partes.push(`Barthel: ${bartU.total}/100`);
+  if(paU)   partes.push(`Última PA: ${paU.s}/${paU.d}`);
+  if(_hist.length) partes.push(`Último retorno: ${_hist[0].data.split('-').reverse().join('/')}`);
+  if(partes.length){ctx.style.display='block';ctx.innerHTML='📋 Contexto: '+partes.join(' · ');}
+  // Farmacêutico salvo
+  if(_farmSalvo) document.getElementById('inp-farm').value=_farmSalvo;
+  const savedFarm=await dbGetConfig('farm_cfg');
+  if(savedFarm?.nome) document.getElementById('inp-farm').value=savedFarm.nome+(savedFarm.crf?' ('+savedFarm.crf+')':'');
+  document.getElementById('inp-data').value=hoje();
+  updateAdes();
+  renderHist();
+}
+
+// Init chips
+document.addEventListener('DOMContentLoaded',async()=>{
+  initChips('chips-sintomas');
+  initChips('chips-ades');
+  initChips('chips-ea');
+  initChips('chips-conduta');
+  const pacs=await dbGetAll('pacientes');
+  const sel=document.getElementById('sel-pac');
+  sel.innerHTML='<option value="">Selecione o paciente...</option>'+pacs.map(p=>`<option value="${p.id}">${esc(p.nome||'Paciente '+p.id)}</option>`).join('');
+  const pid=getActivePacienteId();
+  if(pid){sel.value=pid;await init();}
+});
+</script>
+</body>
+</html>
