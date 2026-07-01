@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>Mapa Posológico — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .topbar{display:flex;align-items:center;gap:10px;padding:12px 16px;background:#1e293b;position:sticky;top:0;z-index:100}
+    .back-btn{background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:8px;padding:6px 11px;cursor:pointer;font-size:1rem}
+    .topbar-title{font-size:.93rem;font-weight:800;color:#fff;flex:1}
+    .topbar-sub{font-size:.62rem;color:rgba(255,255,255,.7);margin-top:1px}
+    main{max-width:680px;margin:0 auto;padding:12px 14px 90px}
+    .pac-sel{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:12px;padding:11px 14px;font-size:.88rem;margin-bottom:10px;background:#fff}
+
+    /* Controles */
+    .ctrl-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+    .ctrl-btn{padding:9px 14px;border:none;border-radius:10px;font-size:.75rem;font-weight:800;cursor:pointer;transition:.12s}
+    .btn-print{background:#1e293b;color:#fff}
+    .btn-share{background:#dcfce7;color:#166534;border:1.5px solid #86efac}
+
+    /* Mapa */
+    .mapa-card{background:#fff;border-radius:16px;box-shadow:0 4px 20px rgba(0,0,0,.1);overflow:hidden;margin-bottom:12px}
+    .mapa-header{background:linear-gradient(135deg,#1e293b,#334155);padding:14px 16px;display:flex;justify-content:space-between;align-items:center}
+    .mapa-pac-nome{font-size:1rem;font-weight:900;color:#fff}
+    .mapa-data{font-size:.65rem;color:rgba(255,255,255,.6)}
+    .mapa-logo{font-size:.65rem;color:rgba(255,255,255,.5);font-weight:700}
+
+    /* Período */
+    .periodo{border-bottom:1px solid #f1f5f9}
+    .periodo:last-child{border:none}
+    .periodo-hdr{display:flex;align-items:center;gap:10px;padding:11px 14px 4px}
+    .periodo-ico{font-size:1.3rem;flex-shrink:0}
+    .periodo-nome{font-size:.72rem;font-weight:900;color:#0f172a;flex:1}
+    .periodo-hora{font-size:.62rem;color:#94a3b8;font-weight:700}
+    .meds-list{padding:0 14px 12px;display:flex;flex-direction:column;gap:6px}
+    .med-pill{display:flex;align-items:flex-start;gap:10px;background:#f8fafc;border-radius:10px;padding:8px 10px}
+    .med-pill-cor{width:4px;border-radius:2px;flex-shrink:0;align-self:stretch;min-height:20px}
+    .med-pill-info{flex:1}
+    .mp-nome{font-size:.8rem;font-weight:900;color:#0f172a}
+    .mp-dose{font-size:.68rem;color:#475569;margin-top:1px}
+    .mp-hora{font-size:.65rem;font-weight:800;color:#0369a1;background:#e0f2fe;border-radius:4px;padding:1px 6px;flex-shrink:0}
+    .mp-badges{display:flex;gap:4px;flex-wrap:wrap;margin-top:4px}
+    .mp-badge{font-size:.57rem;font-weight:800;padding:2px 7px;border-radius:4px}
+    .vazio{padding:8px 14px 12px;font-size:.7rem;color:#cbd5e1;font-style:italic}
+
+    /* Instruções especiais */
+    .instrucoes-box{background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:10px 13px;margin:10px 14px}
+    .instr-title{font-size:.62rem;font-weight:800;color:#92400e;text-transform:uppercase;margin-bottom:6px}
+    .instr-item{font-size:.7rem;color:#78350f;padding:3px 0;border-bottom:1px solid #fef3c7;line-height:1.4}
+    .instr-item:last-child{border:none}
+
+    /* Sem meds */
+    .empty{text-align:center;padding:40px;color:#94a3b8;font-size:.78rem}
+
+    /* PRINT */
+    @media print{
+      .topbar,.pac-sel,.ctrl-row,nav{display:none!important}
+      body{background:#fff;margin:0}
+      main{padding:0;max-width:100%}
+      .mapa-card{box-shadow:none;border:1px solid #e2e8f0;max-width:148mm;margin:0 auto}
+      .mapa-header{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+      @page{size:A5 portrait;margin:6mm}
+    }
+  </style>
+</head>
+<body>
+<div class="topbar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <div style="flex:1">
+    <div class="topbar-title">🗓️ Mapa Posológico</div>
+    <div class="topbar-sub">Horários de todos os medicamentos · para o cuidador</div>
+  </div>
+</div>
+<main>
+  <select class="pac-sel" id="sel-pac" onchange="init()"><option value="">Selecione o paciente...</option></select>
+
+  <div class="ctrl-row" id="ctrl-row" style="display:none">
+    <button class="ctrl-btn btn-print" onclick="window.print()">🖨️ Imprimir / Salvar PDF</button>
+    <button class="ctrl-btn btn-share" onclick="compartilhar()">💬 Compartilhar WhatsApp</button>
+  </div>
+
+  <div id="mapa-div"></div>
+</main>
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+<script src="js/db.js"></script>
+<script src="js/utils.js"></script>
+<script>
+let _pid=null, _pac=null, _meds=[];
+
+const PERIODOS=[
+  {id:'jejum',   ico:'🌅', nome:'Jejum / Antes do café',   range:[0,7],   cor:'#f59e0b', bg:'#fffbeb'},
+  {id:'cafe',    ico:'☕', nome:'Com o café da manhã',      range:[7,9],   cor:'#0369a1', bg:'#e0f2fe'},
+  {id:'manha',   ico:'🌞', nome:'Meio da manhã',            range:[9,12],  cor:'#16a34a', bg:'#dcfce7'},
+  {id:'almoco',  ico:'🍽️', nome:'Com o almoço',             range:[12,14], cor:'#d97706', bg:'#fef3c7'},
+  {id:'tarde',   ico:'🌤️', nome:'Tarde',                    range:[14,18], cor:'#7c3aed', bg:'#ede9fe'},
+  {id:'jantar',  ico:'🌙', nome:'Com o jantar',             range:[18,21], cor:'#0f766e', bg:'#ccfbf1'},
+  {id:'dormir',  ico:'🌃', nome:'Antes de dormir',          range:[21,24], cor:'#1e3a5f', bg:'#dbeafe'},
+  {id:'madrugada',ico:'🌑',nome:'Madrugada',                range:[0,5],   cor:'#374151', bg:'#f9fafb'},
+];
+
+// Inferir horários a partir de frequência
+function inferirHorarios(freq){
+  const f=String(freq||'').toLowerCase();
+  if(/1x|1\s*vez|uma\s*vez|1\s*ao\s*dia|diário|diario/.test(f)) return['08:00'];
+  if(/2x|2\s*vez|duas\s*vez|de\s*12/.test(f)) return['08:00','20:00'];
+  if(/3x|3\s*vez|três\s*vez|de\s*8/.test(f)) return['08:00','14:00','20:00'];
+  if(/4x|4\s*vez|de\s*6/.test(f)) return['06:00','12:00','18:00','00:00'];
+  if(/semanal/.test(f)) return['08:00'];
+  if(/quinzenal/.test(f)) return['08:00'];
+  if(/mensal/.test(f)) return['08:00'];
+  return['08:00'];
+}
+
+function horToMin(h){const[hh,mm]=(h||'').split(':').map(Number);return(hh||0)*60+(mm||0);}
+
+function periodoDeHora(hora){
+  const min=horToMin(hora);
+  const h=min/60;
+  // madrugada: 0-5h
+  if(h<5) return 'madrugada';
+  if(h<7) return 'jejum';
+  if(h<9) return 'cafe';
+  if(h<12) return 'manha';
+  if(h<14) return 'almoco';
+  if(h<18) return 'tarde';
+  if(h<21) return 'jantar';
+  return 'dormir';
+}
+
+// Detectar instruções especiais
+function detectarInstrucoes(med){
+  const txt=([med.posologia,med.observacoes,med.instrucoes,med.nome,med.medicamento].join(' ')||'').toLowerCase();
+  const badges=[];
+  if(/jejum|antes (da|das|do) ref|em jejum|antes das refeic/.test(txt)) badges.push({lbl:'Em jejum',cor:'#92400e',bg:'#fef3c7'});
+  if(/com (alimento|comida|refeicao|refeição|leite)|após (a|o) ref|depois da ref/.test(txt)) badges.push({lbl:'Com alimento',cor:'#166534',bg:'#dcfce7'});
+  if(/não partir|nao partir|deglutir inteiro|engolir inteiro|não mastigar/.test(txt)) badges.push({lbl:'Não partir',cor:'#dc2626',bg:'#fee2e2'});
+  if(/sublingual|sob a língua|sob a lingua/.test(txt)) badges.push({lbl:'Sublingual',cor:'#5b21b6',bg:'#ede9fe'});
+  if(/evitar leite|não tomar com leite/.test(txt)) badges.push({lbl:'Evitar leite',cor:'#b45309',bg:'#fff7ed'});
+  if(/controla(do|da)|receita azul|receita amarela/.test(txt)) badges.push({lbl:'Controlado',cor:'#dc2626',bg:'#fee2e2'});
+  if(/refrigerar|geladeira/.test(txt)) badges.push({lbl:'Refrigerar',cor:'#0369a1',bg:'#e0f2fe'});
+  return badges;
+}
+
+const CORES_FIXAS=['#0369a1','#16a34a','#d97706','#7c3aed','#0f766e','#b45309','#9f1239','#065f46','#1e40af','#6d28d9','#0e7490','#92400e'];
+
+function init(){
+  _pid=parseInt(document.getElementById('sel-pac').value)||null;
+  document.getElementById('ctrl-row').style.display='none';
+  if(!_pid){document.getElementById('mapa-div').innerHTML='';return;}
+  carregarMapa();
+}
+
+async function carregarMapa(){
+  _pac=await dbGet('pacientes',_pid);
+  const meds=await dbGetByIndex('medicamentos','pacienteId',_pid);
+  _meds=(meds||[]).filter(m=>m.ativo!==false&&m.ativo!==0);
+  if(!_meds.length){document.getElementById('mapa-div').innerHTML='<div class="empty">Nenhum medicamento ativo cadastrado para este paciente.</div>';return;}
+  document.getElementById('ctrl-row').style.display='flex';
+  renderMapa();
+}
+
+function renderMapa(){
+  // Distribui medicamentos por período
+  const grupos={};
+  PERIODOS.forEach(p=>grupos[p.id]=[]);
+
+  _meds.forEach((m,idx)=>{
+    const cor=CORES_FIXAS[idx%CORES_FIXAS.length];
+    const horarios=m.horarios&&m.horarios.length?m.horarios:inferirHorarios(m.frequencia||m.intervalo||'');
+    const badges=detectarInstrucoes(m);
+    const nome=m.nome||m.medicamento||'—';
+    const dose=m.dose||'';
+    const forma=m.formaFarma||'';
+    horarios.forEach(hora=>{
+      const pid=periodoDeHora(hora);
+      if(grupos[pid]) grupos[pid].push({nome,dose,forma,hora,cor,badges,freq:m.frequencia||m.intervalo||''});
+    });
+  });
+
+  // Coleta instruções especiais globais
+  const instrucoes=[];
+  _meds.forEach(m=>{
+    detectarInstrucoes(m).forEach(b=>{
+      if(!instrucoes.find(i=>i.med===m.nome&&i.lbl===b.lbl)){
+        instrucoes.push({med:m.nome||m.medicamento||'',lbl:b.lbl});
+      }
+    });
+  });
+
+  const hoje=new Date().toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'2-digit',year:'numeric'});
+  const periodosFiltrados=PERIODOS.filter(p=>grupos[p.id].length>0);
+
+  let html=`<div class="mapa-card">
+    <div class="mapa-header">
+      <div>
+        <div class="mapa-pac-nome">💊 ${esc(_pac?.nome||'Paciente')}</div>
+        <div class="mapa-data">Mapa Posológico · ${hoje}</div>
+      </div>
+      <div class="mapa-logo">💊 VitaDose</div>
+    </div>`;
+
+  periodosFiltrados.forEach(p=>{
+    const meds=grupos[p.id];
+    html+=`<div class="periodo" style="border-left:4px solid ${p.cor}">
+      <div class="periodo-hdr">
+        <div class="periodo-ico">${p.ico}</div>
+        <div class="periodo-nome" style="color:${p.cor}">${p.nome}</div>
+        <div class="periodo-hora">${meds.map(m=>m.hora).filter((h,i,a)=>a.indexOf(h)===i).join(' · ')}</div>
+      </div>
+      <div class="meds-list">
+        ${meds.map(m=>`<div class="med-pill">
+          <div class="med-pill-cor" style="background:${m.cor}"></div>
+          <div class="med-pill-info">
+            <div class="mp-nome">${esc(m.nome)}</div>
+            <div class="mp-dose">${esc(m.dose)}${m.forma?' · '+esc(m.forma):''}</div>
+            ${m.badges.length?`<div class="mp-badges">${m.badges.map(b=>`<span class="mp-badge" style="background:${b.bg};color:${b.cor}">${esc(b.lbl)}</span>`).join('')}</div>`:''}
+          </div>
+          <div class="mp-hora">${m.hora}</div>
+        </div>`).join('')}
+      </div>
+    </div>`;
+  });
+
+  if(instrucoes.length){
+    html+=`<div class="instrucoes-box">
+      <div class="instr-title">⚠️ Instruções especiais</div>
+      ${instrucoes.map(i=>`<div class="instr-item">• <strong>${esc(i.med)}</strong>: ${esc(i.lbl)}</div>`).join('')}
+    </div>`;
+  }
+
+  html+=`<div style="padding:10px 14px;background:#f8fafc;display:flex;justify-content:space-between;align-items:center">
+    <div style="font-size:.58rem;color:#94a3b8">${_meds.length} medicamento${_meds.length!==1?'s':''} · Atualizado ${new Date().toLocaleDateString('pt-BR')}</div>
+    <div style="font-size:.6rem;color:#94a3b8;font-weight:700">💊 VitaDose</div>
+  </div></div>`;
+
+  document.getElementById('mapa-div').innerHTML=html;
+}
+
+function compartilhar(){
+  if(!_pac) return;
+  let txt=`*Mapa Posológico — ${_pac.nome||'Paciente'}*\n`;
+  txt+=`📅 ${new Date().toLocaleDateString('pt-BR')}\n\n`;
+  const grupos={};
+  PERIODOS.forEach(p=>grupos[p.id]=[]);
+  _meds.forEach(m=>{
+    const horarios=m.horarios&&m.horarios.length?m.horarios:inferirHorarios(m.frequencia||'');
+    horarios.forEach(hora=>{
+      const pid=periodoDeHora(hora);
+      if(grupos[pid]) grupos[pid].push(`${m.nome||m.medicamento||'—'} ${m.dose||''} — ${hora}`);
+    });
+  });
+  PERIODOS.filter(p=>grupos[p.id].length).forEach(p=>{
+    txt+=`${p.ico} *${p.nome}*\n${grupos[p.id].map(x=>`• ${x}`).join('\n')}\n\n`;
+  });
+  txt+=`_VitaDose_`;
+  window.open('https://wa.me/?text='+encodeURIComponent(txt),'_blank');
+}
+
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+document.addEventListener('DOMContentLoaded',async()=>{
+  const pacs=await dbGetAll('pacientes');
+  const sel=document.getElementById('sel-pac');
+  sel.innerHTML='<option value="">Selecione o paciente...</option>'+pacs.map(p=>`<option value="${p.id}">${esc(p.nome||'Paciente '+p.id)}</option>`).join('');
+  const pid=getActivePacienteId();
+  if(pid){sel.value=pid;await init();}
+});
+</script>
+</body>
+</html>

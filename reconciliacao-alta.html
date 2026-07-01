@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>Reconciliação Pós-Alta — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .topbar{display:flex;align-items:center;gap:10px;padding:12px 16px;background:#0f3460;position:sticky;top:0;z-index:100}
+    .back-btn{background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:8px;padding:6px 11px;cursor:pointer;font-size:1rem}
+    .topbar-title{font-size:.93rem;font-weight:800;color:#fff;flex:1}
+    .topbar-sub{font-size:.62rem;color:rgba(255,255,255,.7);margin-top:1px}
+    main{max-width:680px;margin:0 auto;padding:12px 14px 90px}
+    .pac-sel{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:12px;padding:11px 14px;font-size:.88rem;margin-bottom:10px;background:#fff}
+
+    .tabs{display:flex;gap:4px;background:#f8fafc;border-radius:12px;padding:4px;margin-bottom:12px}
+    .tab{flex:1;text-align:center;padding:9px 4px;border-radius:9px;font-size:.72rem;font-weight:800;cursor:pointer;color:#64748b;border:none;background:none}
+    .tab.active{background:#0f3460;color:#fff}
+
+    .card{background:#fff;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,.08);padding:14px 15px;margin-bottom:12px}
+    .card-title{font-size:.7rem;font-weight:900;color:#0f172a;text-transform:uppercase;letter-spacing:.04em;margin-bottom:12px;display:flex;align-items:center;gap:6px}
+    .form-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+    label.lbl{font-size:.65rem;font-weight:700;color:#64748b;display:block;margin-bottom:3px}
+    input.inp,select.inp,textarea.inp{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:10px;padding:9px 11px;font-size:.82rem;background:#fff}
+    input.inp:focus,select.inp:focus,textarea.inp:focus{outline:none;border-color:#0f3460}
+    .f-half{flex:1;min-width:140px}
+    .f-third{flex:1;min-width:100px}
+    .f-full{flex:1 1 100%}
+    .btn-primary{background:#0f3460;color:#fff;border:none;border-radius:10px;padding:10px 18px;font-size:.78rem;font-weight:900;cursor:pointer}
+    .btn-sec{background:#e2e8f0;color:#0f172a;border:none;border-radius:10px;padding:9px 14px;font-size:.75rem;font-weight:700;cursor:pointer}
+    .btn-danger{background:#fee2e2;color:#dc2626;border:1.5px solid #fca5a5;border-radius:8px;padding:5px 10px;font-size:.68rem;font-weight:800;cursor:pointer}
+
+    /* Med row */
+    .med-row{background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:10px 12px;margin-bottom:8px}
+    .med-row-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+    .med-nome{font-size:.8rem;font-weight:800;color:#0f172a;flex:1}
+    .med-dose-info{font-size:.65rem;color:#64748b}
+    .status-sel{border:none;border-radius:8px;padding:5px 8px;font-size:.65rem;font-weight:900;cursor:pointer;appearance:none;-webkit-appearance:none}
+    .status-CONTINUADO{background:#dcfce7;color:#166534}
+    .status-SUSPENSO{background:#fee2e2;color:#dc2626}
+    .status-NOVO{background:#dbeafe;color:#1e40af}
+    .status-DOSE_ALTERADA{background:#fef3c7;color:#92400e}
+    .status-TEMP_SUSPENSO{background:#f3e8ff;color:#6b21a8}
+    .med-row-detalhe{display:flex;gap:8px;margin-top:6px;flex-wrap:wrap}
+    .detalhe-inp{flex:1;min-width:120px;border:1px solid #e2e8f0;border-radius:8px;padding:5px 8px;font-size:.68rem;background:#fff;color:#0f172a}
+
+    /* Discrepâncias */
+    .disc-banner{background:#fef3c7;border:2px solid #fde68a;border-radius:12px;padding:12px 14px;margin-bottom:12px;display:none}
+    .disc-title{font-size:.7rem;font-weight:900;color:#92400e;margin-bottom:8px}
+    .disc-item{font-size:.7rem;color:#78350f;padding:4px 0;border-bottom:1px solid #fde68a;line-height:1.4}
+    .disc-item:last-child{border:none}
+
+    /* Nota gerada */
+    .nota-box{background:#0f172a;color:#e2e8f0;border-radius:12px;padding:14px;font-family:monospace;font-size:.7rem;white-space:pre-wrap;line-height:1.6;max-height:340px;overflow-y:auto;margin-bottom:10px}
+    .copy-btn{background:#1e40af;color:#fff;border:none;border-radius:10px;padding:9px 18px;font-size:.75rem;font-weight:900;cursor:pointer;width:100%}
+
+    /* Histórico */
+    .hist-item{background:#fff;border-radius:12px;padding:12px 14px;box-shadow:0 2px 8px rgba(0,0,0,.07);margin-bottom:8px}
+    .hist-hdr{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+    .hist-hosp{font-size:.78rem;font-weight:800;color:#0f3460}
+    .hist-data{font-size:.63rem;color:#94a3b8;font-weight:700}
+    .hist-chips{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:5px}
+    .hist-chip{font-size:.6rem;font-weight:800;padding:2px 8px;border-radius:6px}
+    .hist-actions{display:flex;gap:6px}
+    .empty{text-align:center;padding:30px;color:#94a3b8;font-size:.75rem}
+
+    /* Steps */
+    .step-indicator{display:flex;gap:0;margin-bottom:14px}
+    .step{flex:1;text-align:center;font-size:.62rem;font-weight:800;padding:7px 4px;color:#94a3b8;border-bottom:3px solid #e2e8f0}
+    .step.active{color:#0f3460;border-color:#0f3460}
+    .step.done{color:#16a34a;border-color:#16a34a}
+  </style>
+</head>
+<body>
+<div class="topbar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <div style="flex:1">
+    <div class="topbar-title">🏥 Reconciliação Pós-Alta</div>
+    <div class="topbar-sub">Comparação medicamentos pré e pós-internação</div>
+  </div>
+</div>
+<main>
+  <select class="pac-sel" id="sel-pac" onchange="init()"><option value="">Selecione o paciente...</option></select>
+
+  <div class="tabs">
+    <button class="tab active" id="tab-rec" onclick="aba('rec')">Nova Reconciliação</button>
+    <button class="tab" id="tab-hist" onclick="aba('hist')">Histórico</button>
+  </div>
+
+  <!-- RECONCILIAÇÃO -->
+  <div id="aba-rec">
+    <div class="step-indicator">
+      <div class="step active" id="step1">1. Informações</div>
+      <div class="step" id="step2">2. Medicamentos</div>
+      <div class="step" id="step3">3. Nota Clínica</div>
+    </div>
+
+    <!-- PASSO 1: Info da internação -->
+    <div id="passo1">
+      <div class="card">
+        <div class="card-title">🏥 Dados da internação</div>
+        <div class="form-row">
+          <div class="f-half">
+            <label class="lbl">Data de alta *</label>
+            <input type="date" class="inp" id="dt-alta">
+          </div>
+          <div class="f-half">
+            <label class="lbl">Hospital / Instituição *</label>
+            <input type="text" class="inp" id="hospital" placeholder="Nome do hospital">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="f-half">
+            <label class="lbl">CID da internação</label>
+            <input type="text" class="inp" id="cid" placeholder="Ex: J18.9 (Pneumonia)">
+          </div>
+          <div class="f-half">
+            <label class="lbl">Tempo de internação</label>
+            <input type="text" class="inp" id="tempo-intern" placeholder="Ex: 7 dias">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="f-half">
+            <label class="lbl">Médico responsável pela alta</label>
+            <input type="text" class="inp" id="medico-alta" placeholder="Dr(a)...">
+          </div>
+          <div class="f-half">
+            <label class="lbl">Farmacêutico responsável</label>
+            <input type="text" class="inp" id="farm-resp" placeholder="Nome...">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="f-full">
+            <label class="lbl">Condições novas diagnosticadas na internação</label>
+            <input type="text" class="inp" id="cond-novas" placeholder="Ex: IRC grau 3, Fibrilação atrial...">
+          </div>
+        </div>
+        <button class="btn-primary" onclick="irPasso2()" style="width:100%;padding:12px;font-size:.82rem">Próximo: Medicamentos →</button>
+      </div>
+    </div>
+
+    <!-- PASSO 2: Medicamentos -->
+    <div id="passo2" style="display:none">
+      <div class="card">
+        <div class="card-title">💊 Medicamentos pré-internação</div>
+        <div style="font-size:.65rem;color:#64748b;margin-bottom:10px">Classifique cada medicamento conforme a prescrição de alta. Edite a lista se necessário.</div>
+        <div id="lista-pre"></div>
+        <div style="display:flex;gap:8px;margin-top:8px">
+          <button class="btn-sec" onclick="adicionarMedPre()">+ Adicionar medicamento</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">➕ Medicamentos NOVOS da alta hospitalar</div>
+        <div style="font-size:.65rem;color:#64748b;margin-bottom:10px">Medicamentos iniciados durante a internação e mantidos na alta.</div>
+        <div id="lista-novos"></div>
+        <button class="btn-sec" onclick="adicionarMedNovo()" style="margin-top:4px">+ Adicionar novo medicamento</button>
+      </div>
+      <div id="disc-banner" class="disc-banner">
+        <div class="disc-title">⚠️ Discrepâncias potencialmente não intencionais</div>
+        <div id="disc-list"></div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn-sec" onclick="voltarPasso1()">← Voltar</button>
+        <button class="btn-primary" onclick="irPasso3()" style="flex:1;padding:12px">Gerar Nota Clínica →</button>
+      </div>
+    </div>
+
+    <!-- PASSO 3: Nota -->
+    <div id="passo3" style="display:none">
+      <div class="card">
+        <div class="card-title">📄 Nota de Reconciliação Medicamentosa</div>
+        <div id="nota-box" class="nota-box"></div>
+        <button class="copy-btn" onclick="copiarNota()">📋 Copiar Nota</button>
+        <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn-sec" onclick="voltarPasso2()">← Editar</button>
+          <button class="btn-primary" onclick="salvarHistorico()" style="flex:1;padding:10px">✔ Salvar no histórico</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- HISTÓRICO -->
+  <div id="aba-hist" style="display:none">
+    <div id="hist-list"></div>
+  </div>
+</main>
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+<script src="js/db.js"></script>
+<script src="js/utils.js"></script>
+<script>
+let _pid=null, _pac=null, _medsPac=[], _medsRec=[], _novosRec=[];
+
+const STATUS_OPTS=[
+  {v:'CONTINUADO',      lbl:'Continuado',           cls:'status-CONTINUADO'},
+  {v:'SUSPENSO',        lbl:'Suspenso',              cls:'status-SUSPENSO'},
+  {v:'DOSE_ALTERADA',   lbl:'Dose alterada',         cls:'status-DOSE_ALTERADA'},
+  {v:'TEMP_SUSPENSO',   lbl:'Temp. suspenso',        cls:'status-TEMP_SUSPENSO'},
+];
+
+function aba(t){
+  ['rec','hist'].forEach(id=>{
+    document.getElementById('aba-'+id).style.display=id===t?'':'none';
+    document.getElementById('tab-'+id).classList.toggle('active',id===t);
+  });
+  if(t==='hist') renderHistorico();
+}
+
+function setStep(n){
+  [1,2,3].forEach(i=>{
+    const el=document.getElementById('step'+i);
+    if(i<n) el.className='step done';
+    else if(i===n) el.className='step active';
+    else el.className='step';
+  });
+  document.getElementById('passo1').style.display=n===1?'':'none';
+  document.getElementById('passo2').style.display=n===2?'':'none';
+  document.getElementById('passo3').style.display=n===3?'':'none';
+}
+
+function irPasso2(){
+  const hosp=document.getElementById('hospital').value.trim();
+  const dt=document.getElementById('dt-alta').value;
+  if(!hosp||!dt){alert('Preencha data de alta e hospital.');return;}
+  renderListaPre();
+  setStep(2);
+}
+
+function voltarPasso1(){setStep(1);}
+function voltarPasso2(){setStep(2);}
+
+function irPasso3(){
+  detectarDiscrepancias();
+  gerarNota();
+  setStep(3);
+}
+
+// ----- Lista pré-internação -----
+function renderListaPre(){
+  const container=document.getElementById('lista-pre');
+  if(!_medsRec.length&&_medsPac.length){
+    _medsRec=_medsPac.map(m=>({
+      id:m.id,
+      nome:m.nome||m.medicamento||'Medicamento',
+      dose:m.dose||'',
+      freq:m.frequencia||m.intervalo||'',
+      status:'CONTINUADO',
+      novaDose:'',
+      indicacao:'',
+      obs:'',
+      _original:m
+    }));
+  }
+  container.innerHTML=_medsRec.map((r,i)=>renderMedPreRow(r,i)).join('');
+}
+
+function renderMedPreRow(r,i){
+  const opts=STATUS_OPTS.map(o=>`<option value="${o.v}" ${r.status===o.v?'selected':''}>${o.lbl}</option>`).join('');
+  return `<div class="med-row" id="mpr-${i}">
+    <div class="med-row-top">
+      <div>
+        <div class="med-nome">${esc(r.nome)}</div>
+        <div class="med-dose-info">${esc(r.dose)} · ${esc(r.freq)}</div>
+      </div>
+      <select class="status-sel ${r.status?'status-'+r.status:''}" onchange="mudarStatus(${i},this)">
+        ${opts}
+      </select>
+      <button class="btn-danger" onclick="removerPre(${i})">✕</button>
+    </div>
+    ${r.status!=='CONTINUADO'?`<div class="med-row-detalhe">
+      ${r.status==='DOSE_ALTERADA'?`<input class="detalhe-inp" placeholder="Nova dose / frequência" value="${esc(r.novaDose)}" oninput="_medsRec[${i}].novaDose=this.value">`:``}
+      <input class="detalhe-inp" placeholder="${r.status==='SUSPENSO'?'Motivo da suspensão':r.status==='TEMP_SUSPENSO'?'Período de suspensão / motivo':'Indicação / Observação'}" value="${esc(r.obs)}" oninput="_medsRec[${i}].obs=this.value">
+    </div>`:''}
+  </div>`;
+}
+
+function mudarStatus(i,sel){
+  _medsRec[i].status=sel.value;
+  sel.className='status-sel status-'+sel.value;
+  renderListaPre();
+}
+
+function removerPre(i){
+  _medsRec.splice(i,1);
+  renderListaPre();
+}
+
+function adicionarMedPre(){
+  const nome=prompt('Nome do medicamento (pré-internação):');
+  if(!nome) return;
+  const dose=prompt('Dose e frequência (ex: 50mg 1x/dia):')||'';
+  _medsRec.push({nome,dose,freq:'',status:'CONTINUADO',novaDose:'',obs:''});
+  renderListaPre();
+}
+
+// ----- Medicamentos novos -----
+function renderListaNovos(){
+  const c=document.getElementById('lista-novos');
+  c.innerHTML=_novosRec.map((r,i)=>`<div class="med-row" id="mnr-${i}">
+    <div class="med-row-top">
+      <div style="flex:1">
+        <div class="med-nome">🆕 ${esc(r.nome)}</div>
+        <div class="med-dose-info">${esc(r.dose)}</div>
+      </div>
+      <span class="status-sel status-NOVO">Novo</span>
+      <button class="btn-danger" onclick="removerNovo(${i})">✕</button>
+    </div>
+    <div class="med-row-detalhe">
+      <input class="detalhe-inp" placeholder="Indicação (Ex: profilaxia de TEV...)" value="${esc(r.indicacao)}" oninput="_novosRec[${i}].indicacao=this.value">
+    </div>
+  </div>`).join('');
+}
+
+function removerNovo(i){_novosRec.splice(i,1);renderListaNovos();}
+
+function adicionarMedNovo(){
+  const nome=prompt('Nome do medicamento (NOVO - iniciado na internação):');
+  if(!nome) return;
+  const dose=prompt('Dose e frequência:')||'';
+  const indicacao=prompt('Indicação clínica:')||'';
+  _novosRec.push({nome,dose,indicacao,_isNovo:true});
+  renderListaNovos();
+}
+
+// ----- Discrepâncias -----
+function detectarDiscrepancias(){
+  const discs=[];
+  _medsRec.forEach(r=>{
+    if(r.status==='SUSPENSO'&&!r.obs.trim()){
+      discs.push(`⚠️ <strong>${r.nome}</strong>: suspenso sem motivo documentado`);
+    }
+    if(r.status==='DOSE_ALTERADA'&&!r.novaDose.trim()){
+      discs.push(`⚠️ <strong>${r.nome}</strong>: dose alterada sem nova dose registrada`);
+    }
+  });
+  _novosRec.forEach(r=>{
+    if(!r.indicacao.trim()){
+      discs.push(`⚠️ <strong>${r.nome}</strong> (novo): sem indicação documentada`);
+    }
+  });
+  const banner=document.getElementById('disc-banner');
+  const list=document.getElementById('disc-list');
+  if(discs.length){
+    banner.style.display='block';
+    list.innerHTML=discs.map(d=>`<div class="disc-item">${d}</div>`).join('');
+  } else banner.style.display='none';
+}
+
+// ----- Nota clínica -----
+function gerarNota(){
+  const hosp=document.getElementById('hospital').value.trim();
+  const dtAlta=document.getElementById('dt-alta').value.split('-').reverse().join('/');
+  const cid=document.getElementById('cid').value.trim();
+  const tempo=document.getElementById('tempo-intern').value.trim();
+  const medico=document.getElementById('medico-alta').value.trim();
+  const farm=document.getElementById('farm-resp').value.trim();
+  const condNovas=document.getElementById('cond-novas').value.trim();
+  const pac=_pac?.nome||'Paciente';
+
+  const continuados=_medsRec.filter(r=>r.status==='CONTINUADO');
+  const suspensos=_medsRec.filter(r=>r.status==='SUSPENSO');
+  const tempSusp=_medsRec.filter(r=>r.status==='TEMP_SUSPENSO');
+  const alterados=_medsRec.filter(r=>r.status==='DOSE_ALTERADA');
+  const novos=_novosRec;
+  const total=_medsRec.length+_novosRec.length;
+
+  let nota=`===================================================
+NOTA DE RECONCILIAÇÃO MEDICAMENTOSA PÓS-ALTA
+===================================================
+Paciente : ${pac}
+Data Alta : ${dtAlta}
+Hospital  : ${hosp}
+${cid?'CID       : '+cid+'\n':''}${tempo?'Internação: '+tempo+'\n':''}${medico?'Médico    : '+medico+'\n':''}${condNovas?'Novas cond: '+condNovas+'\n':''}
+---------------------------------------------------
+RESUMO DA RECONCILIAÇÃO
+---------------------------------------------------
+Total de medicamentos analisados : ${total}
+  ✅ Continuados                 : ${continuados.length}
+  ❌ Suspensos                   : ${suspensos.length}
+  ⏸️  Temporariamente suspensos   : ${tempSusp.length}
+  🔄 Dose alterada               : ${alterados.length}
+  🆕 Novos (pós-alta)            : ${novos.length}
+---------------------------------------------------
+`;
+
+  if(continuados.length){
+    nota+=`\n✅ MEDICAMENTOS CONTINUADOS (${continuados.length})\n`;
+    continuados.forEach(r=>{nota+=`  • ${r.nome} ${r.dose}\n`;});
+  }
+  if(alterados.length){
+    nota+=`\n🔄 DOSE ALTERADA (${alterados.length})\n`;
+    alterados.forEach(r=>{nota+=`  • ${r.nome}: ANTES ${r.dose} → AGORA ${r.novaDose||'não informado'}${r.obs?' ('+r.obs+')':''}\n`;});
+  }
+  if(suspensos.length){
+    nota+=`\n❌ SUSPENSOS NA ALTA (${suspensos.length})\n`;
+    suspensos.forEach(r=>{nota+=`  • ${r.nome} ${r.dose}${r.obs?' — Motivo: '+r.obs:' — motivo não documentado'}\n`;});
+  }
+  if(tempSusp.length){
+    nota+=`\n⏸️ TEMPORARIAMENTE SUSPENSOS (${tempSusp.length})\n`;
+    tempSusp.forEach(r=>{nota+=`  • ${r.nome} ${r.dose}${r.obs?' — '+r.obs:''}\n`;});
+  }
+  if(novos.length){
+    nota+=`\n🆕 NOVOS MEDICAMENTOS (${novos.length})\n`;
+    novos.forEach(r=>{nota+=`  • ${r.nome} ${r.dose}${r.indicacao?' — Indicação: '+r.indicacao:' — sem indicação'}\n`;});
+  }
+
+  nota+=`\n---------------------------------------------------
+INTERVENÇÃO FARMACÊUTICA
+---------------------------------------------------
+Data     : ${new Date().toLocaleDateString('pt-BR')}
+Hora     : ${new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}
+${farm?'Farmac.  : '+farm+'\n':''}
+Nota: Esta reconciliação tem por objetivo garantir a
+continuidade do cuidado e prevenir erros de medicação
+no período de transição do cuidado hospitalar para o
+cuidado domiciliar ou ambulatorial.
+===================================================
+VitaDose • vitadose.app
+`;
+
+  document.getElementById('nota-box').textContent=nota;
+  _notaAtual=nota;
+}
+
+let _notaAtual='';
+
+function copiarNota(){
+  navigator.clipboard.writeText(_notaAtual).then(()=>alert('Nota copiada!')).catch(()=>{
+    const ta=document.createElement('textarea');
+    ta.value=_notaAtual;
+    document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);
+    alert('Nota copiada!');
+  });
+}
+
+async function salvarHistorico(){
+  if(!_pid){alert('Nenhum paciente selecionado.');return;}
+  const rec={
+    pacienteId:_pid,
+    hospital:document.getElementById('hospital').value.trim(),
+    dtAlta:document.getElementById('dt-alta').value,
+    cid:document.getElementById('cid').value.trim(),
+    tempo:document.getElementById('tempo-intern').value.trim(),
+    medico:document.getElementById('medico-alta').value.trim(),
+    farm:document.getElementById('farm-resp').value.trim(),
+    condNovas:document.getElementById('cond-novas').value.trim(),
+    medsAnalisados:_medsRec.map(r=>({nome:r.nome,dose:r.dose,status:r.status,novaDose:r.novaDose,obs:r.obs})),
+    novos:_novosRec.map(r=>({nome:r.nome,dose:r.dose,indicacao:r.indicacao})),
+    nota:_notaAtual,
+    ts:Date.now()
+  };
+  const key='reconciliacao_hist_'+_pid;
+  const arr=await dbGetConfig(key)||[];
+  arr.unshift(rec);
+  await dbSetConfig(key,arr);
+  alert('✔ Reconciliação salva no histórico!');
+  // Reset
+  _medsRec=[];_novosRec=[];_notaAtual='';
+  document.getElementById('hospital').value='';
+  document.getElementById('dt-alta').value='';
+  document.getElementById('cid').value='';
+  document.getElementById('tempo-intern').value='';
+  document.getElementById('medico-alta').value='';
+  document.getElementById('farm-resp').value='';
+  document.getElementById('cond-novas').value='';
+  setStep(1);
+  aba('hist');
+}
+
+async function renderHistorico(){
+  const key='reconciliacao_hist_'+_pid;
+  const arr=_pid?await dbGetConfig(key)||[]:[];
+  const list=document.getElementById('hist-list');
+  if(!arr.length){list.innerHTML='<div class="empty">Nenhuma reconciliação registrada.</div>';return;}
+  const STATUS_COR={CONTINUADO:'#dcfce7;color:#166534',SUSPENSO:'#fee2e2;color:#dc2626',NOVO:'#dbeafe;color:#1e40af',DOSE_ALTERADA:'#fef3c7;color:#92400e',TEMP_SUSPENSO:'#f3e8ff;color:#6b21a8'};
+  list.innerHTML=arr.map((r,i)=>{
+    const dt=(r.dtAlta||'').split('-').reverse().join('/');
+    const cont=r.medsAnalisados?.filter(m=>m.status==='CONTINUADO').length||0;
+    const susp=r.medsAnalisados?.filter(m=>m.status==='SUSPENSO').length||0;
+    const alt=r.medsAnalisados?.filter(m=>m.status==='DOSE_ALTERADA').length||0;
+    const nov=r.novos?.length||0;
+    return `<div class="hist-item">
+      <div class="hist-hdr">
+        <div style="flex:1">
+          <div class="hist-hosp">🏥 ${esc(r.hospital||'Hospital não informado')}</div>
+          <div class="hist-data">Alta: ${dt}${r.cid?' · CID: '+r.cid:''}</div>
+        </div>
+        <button class="btn-danger" onclick="deletarHist(${i})">✕</button>
+      </div>
+      <div class="hist-chips">
+        ${cont?`<span class="hist-chip" style="background:#dcfce7;color:#166534">✅ ${cont} cont.</span>`:''}
+        ${susp?`<span class="hist-chip" style="background:#fee2e2;color:#dc2626">❌ ${susp} susp.</span>`:''}
+        ${alt?`<span class="hist-chip" style="background:#fef3c7;color:#92400e">🔄 ${alt} dose alt.</span>`:''}
+        ${nov?`<span class="hist-chip" style="background:#dbeafe;color:#1e40af">🆕 ${nov} novos</span>`:''}
+      </div>
+      <div class="hist-actions">
+        <button class="btn-sec" style="font-size:.65rem" onclick="verNota(${i})">📄 Ver nota</button>
+        <button class="btn-sec" style="font-size:.65rem" onclick="copiarNotaHist(${i})">📋 Copiar</button>
+      </div>
+    </div>`;
+  }).join('');
+  _histArr=arr;
+}
+
+let _histArr=[];
+
+async function deletarHist(i){
+  if(!confirm('Excluir esta reconciliação?')) return;
+  const key='reconciliacao_hist_'+_pid;
+  _histArr.splice(i,1);
+  await dbSetConfig(key,_histArr);
+  renderHistorico();
+}
+
+function verNota(i){
+  const nota=_histArr[i]?.nota||'';
+  alert(nota);
+}
+
+function copiarNotaHist(i){
+  const nota=_histArr[i]?.nota||'';
+  navigator.clipboard.writeText(nota).then(()=>alert('Nota copiada!')).catch(()=>{
+    const ta=document.createElement('textarea');ta.value=nota;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);alert('Nota copiada!');
+  });
+}
+
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+async function init(){
+  _pid=parseInt(document.getElementById('sel-pac').value)||null;
+  _medsRec=[];_novosRec=[];
+  if(!_pid) return;
+  _pac=await dbGet('pacientes',_pid);
+  const meds=await dbGetByIndex('medicamentos','pacienteId',_pid);
+  _medsPac=(meds||[]).filter(m=>m.ativo!==false&&m.ativo!==0);
+  // Preencher farm com config
+  const farmNome=await dbGetConfig('farm_cfg');
+  if(farmNome&&!document.getElementById('farm-resp').value) document.getElementById('farm-resp').value=farmNome.nome||farmNome||'';
+  setStep(1);
+}
+
+document.addEventListener('DOMContentLoaded',async()=>{
+  document.getElementById('dt-alta').value=new Date().toISOString().slice(0,10);
+  const pacs=await dbGetAll('pacientes');
+  const sel=document.getElementById('sel-pac');
+  sel.innerHTML='<option value="">Selecione o paciente...</option>'+pacs.map(p=>`<option value="${p.id}">${esc(p.nome||'Paciente '+p.id)}</option>`).join('');
+  const pid=getActivePacienteId();
+  if(pid){sel.value=pid;await init();}
+});
+</script>
+</body>
+</html>

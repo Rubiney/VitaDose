@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>Diário de Temperatura — VitaDose</title>
+  <link rel="stylesheet" href="css/vitadose.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .topbar{display:flex;align-items:center;gap:10px;padding:12px 16px;background:#dc2626;position:sticky;top:0;z-index:100}
+    .back-btn{background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:8px;padding:6px 11px;cursor:pointer;font-size:1rem}
+    .topbar-title{font-size:.93rem;font-weight:800;color:#fff;flex:1}
+    .topbar-sub{font-size:.62rem;color:rgba(255,255,255,.75);margin-top:1px}
+    main{max-width:640px;margin:0 auto;padding:12px 14px 90px}
+    .pac-sel{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:12px;padding:11px 14px;font-size:.88rem;margin-bottom:10px;background:#fff}
+
+    /* Tabs */
+    .tabs{display:flex;gap:4px;background:#f8fafc;border-radius:12px;padding:4px;margin-bottom:12px}
+    .tab{flex:1;text-align:center;padding:9px 4px;border-radius:9px;font-size:.72rem;font-weight:800;cursor:pointer;color:#64748b;border:none;background:none;transition:.12s}
+    .tab.active{background:#dc2626;color:#fff}
+
+    /* Preview termômetro */
+    .preview-box{background:#0f172a;border-radius:16px;padding:16px;margin-bottom:12px;text-align:center;display:none}
+    .preview-temp{font-size:2.8rem;font-weight:900;letter-spacing:-1px}
+    .preview-class{font-size:.75rem;font-weight:800;margin-top:2px;padding:3px 16px;border-radius:20px;display:inline-block}
+    .preview-info{font-size:.65rem;color:rgba(255,255,255,.5);margin-top:6px}
+
+    /* Alert */
+    .alerta-febre{background:#fee2e2;border:2px solid #dc2626;border-radius:12px;padding:10px 14px;margin-bottom:10px;display:none}
+    .alerta-febre span{font-size:.78rem;font-weight:800;color:#7f1d1d}
+
+    /* Formulário */
+    .card{background:#fff;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,.08);padding:14px 15px;margin-bottom:12px}
+    .card-title{font-size:.7rem;font-weight:900;color:#0f172a;text-transform:uppercase;letter-spacing:.04em;margin-bottom:12px;display:flex;align-items:center;gap:6px}
+    .form-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+    label.lbl{font-size:.65rem;font-weight:700;color:#64748b;display:block;margin-bottom:3px}
+    input.inp,select.inp,textarea.inp{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:10px;padding:9px 11px;font-size:.82rem;background:#fff}
+    input.inp:focus,select.inp:focus,textarea.inp:focus{outline:none;border-color:#dc2626}
+    .f-half{flex:1;min-width:140px}
+    .f-third{flex:1;min-width:100px}
+    .chip-row{display:flex;flex-wrap:wrap;gap:6px}
+    .chip{padding:7px 14px;border:1.5px solid #e2e8f0;border-radius:20px;font-size:.7rem;font-weight:700;cursor:pointer;transition:.12s;background:#f8fafc;color:#334155}
+    .chip.sel{background:#dc2626;color:#fff;border-color:#dc2626}
+    .save-btn{width:100%;padding:13px;background:#dc2626;color:#fff;border:none;border-radius:12px;font-size:.88rem;font-weight:900;cursor:pointer;margin-top:8px}
+
+    /* Meds contexto */
+    .ctx-strip{background:#fef2f2;border-radius:10px;padding:8px 12px;margin-bottom:10px;font-size:.65rem;color:#991b1b;display:none}
+
+    /* KPIs */
+    .kpi-row{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+    .kpi{flex:1;min-width:110px;background:#fff;border-radius:12px;padding:12px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.07)}
+    .kpi-val{font-size:1.45rem;font-weight:900;color:#0f172a}
+    .kpi-lbl{font-size:.58rem;color:#94a3b8;font-weight:700;margin-top:2px}
+
+    /* Classificação referência */
+    .ref-table{width:100%;border-collapse:collapse;font-size:.65rem;margin-top:8px}
+    .ref-table th{background:#f1f5f9;padding:5px 8px;text-align:left;font-weight:800;color:#475569}
+    .ref-table td{padding:5px 8px;border-bottom:1px solid #f1f5f9;color:#334155}
+
+    /* Lista */
+    .reg-item{background:#fff;border-radius:12px;padding:11px 13px;margin-bottom:8px;box-shadow:0 2px 8px rgba(0,0,0,.07);display:flex;gap:12px;align-items:flex-start}
+    .reg-temp-badge{font-size:1.2rem;font-weight:900;min-width:64px;text-align:center;padding:6px 0;border-radius:10px}
+    .reg-info{flex:1}
+    .reg-data{font-size:.63rem;color:#94a3b8;font-weight:700;margin-bottom:2px}
+    .reg-class{font-size:.68rem;font-weight:800;margin-bottom:3px}
+    .reg-detalhe{font-size:.65rem;color:#64748b;line-height:1.5}
+    .reg-del{background:#fee2e2;border:none;border-radius:8px;padding:4px 9px;color:#dc2626;font-size:.7rem;cursor:pointer;font-weight:800}
+    .empty{text-align:center;padding:30px;color:#94a3b8;font-size:.75rem}
+
+    /* SVG chart */
+    .chart-wrap{background:#fff;border-radius:14px;padding:14px;box-shadow:0 2px 12px rgba(0,0,0,.08);margin-bottom:12px;overflow-x:auto}
+    .chart-title{font-size:.65rem;font-weight:900;color:#0f172a;text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px}
+    svg text{font-family:sans-serif}
+  </style>
+</head>
+<body>
+<div class="topbar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <div style="flex:1">
+    <div class="topbar-title">🌡️ Diário de Temperatura</div>
+    <div class="topbar-sub">Registro e monitoramento de temperatura corporal</div>
+  </div>
+</div>
+<main>
+  <select class="pac-sel" id="sel-pac" onchange="init()"><option value="">Selecione o paciente...</option></select>
+  <div id="ctx-strip" class="ctx-strip"></div>
+
+  <div class="tabs">
+    <button class="tab active" id="tab-reg" onclick="aba('reg')">Registrar</button>
+    <button class="tab" id="tab-hist" onclick="aba('hist')">Histórico</button>
+    <button class="tab" id="tab-ref" onclick="aba('ref')">Referência</button>
+  </div>
+
+  <!-- ABA REGISTRAR -->
+  <div id="aba-reg">
+    <div id="preview-box" class="preview-box">
+      <div id="pv-temp" class="preview-temp">—</div>
+      <div id="pv-class" class="preview-class">Digite a temperatura</div>
+      <div id="pv-info" class="preview-info">°C</div>
+    </div>
+    <div id="alerta-box" class="alerta-febre">
+      <span id="alerta-txt">⚠️ Febre alta — monitorar de perto. Se persistir, acionar equipe de saúde.</span>
+    </div>
+    <div class="card">
+      <div class="card-title">🌡️ Nova medição</div>
+      <div class="form-row">
+        <div class="f-third">
+          <label class="lbl">Data</label>
+          <input type="date" class="inp" id="dt">
+        </div>
+        <div class="f-third">
+          <label class="lbl">Hora</label>
+          <input type="time" class="inp" id="hr">
+        </div>
+        <div class="f-half">
+          <label class="lbl">Temperatura (°C) *</label>
+          <input type="number" class="inp" id="temp" min="30" max="45" step="0.1" placeholder="37.5" oninput="atualizarPreview()">
+        </div>
+      </div>
+      <div style="margin-bottom:10px">
+        <label class="lbl">Via de aferição</label>
+        <div class="chip-row" id="via-chips">
+          <div class="chip sel" data-v="axilar" onclick="selChip(this,'via')">Axilar</div>
+          <div class="chip" data-v="oral" onclick="selChip(this,'via')">Oral</div>
+          <div class="chip" data-v="timpanica" onclick="selChip(this,'via')">Timpânica</div>
+          <div class="chip" data-v="retal" onclick="selChip(this,'via')">Retal</div>
+        </div>
+      </div>
+      <div style="margin-bottom:10px">
+        <label class="lbl">Contexto</label>
+        <div class="chip-row" id="ctx-chips">
+          <div class="chip sel" data-v="repouso" onclick="selChipMulti(this,'ctx')">Repouso</div>
+          <div class="chip" data-v="apos_atividade" onclick="selChipMulti(this,'ctx')">Pós-atividade</div>
+          <div class="chip" data-v="apos_banho" onclick="selChipMulti(this,'ctx')">Pós-banho</div>
+          <div class="chip" data-v="sintomas" onclick="selChipMulti(this,'ctx')">Com sintomas</div>
+          <div class="chip" data-v="pos_antipiretico" onclick="selChipMulti(this,'ctx')">Pós-antip.</div>
+          <div class="chip" data-v="internacao" onclick="selChipMulti(this,'ctx')">Internação</div>
+        </div>
+      </div>
+      <div style="margin-bottom:10px">
+        <label class="lbl">Antipirético tomado?</label>
+        <div class="chip-row" id="antip-chips">
+          <div class="chip sel" data-v="nao" onclick="selChip(this,'antip')">Não</div>
+          <div class="chip" data-v="paracetamol" onclick="selChip(this,'antip')">Paracetamol</div>
+          <div class="chip" data-v="dipirona" onclick="selChip(this,'antip')">Dipirona</div>
+          <div class="chip" data-v="ibuprofeno" onclick="selChip(this,'antip')">Ibuprofeno</div>
+        </div>
+      </div>
+      <div style="margin-bottom:10px">
+        <label class="lbl">Observações</label>
+        <textarea class="inp" id="obs" rows="2" placeholder="Sintomas associados, calafrios, sudorese..."></textarea>
+      </div>
+      <button class="save-btn" onclick="salvar()">✔ Salvar Registro</button>
+    </div>
+  </div>
+
+  <!-- ABA HISTÓRICO -->
+  <div id="aba-hist" style="display:none">
+    <div class="kpi-row" id="kpi-row"></div>
+    <div class="chart-wrap" id="chart-wrap" style="display:none">
+      <div class="chart-title">📈 Tendência de temperatura</div>
+      <svg id="chart-svg" height="140" style="min-width:100%;display:block"></svg>
+    </div>
+    <div id="hist-list"></div>
+  </div>
+
+  <!-- ABA REFERÊNCIA -->
+  <div id="aba-ref" style="display:none">
+    <div class="card">
+      <div class="card-title">📋 Classificação da temperatura</div>
+      <table class="ref-table">
+        <tr><th>Faixa</th><th>Classificação</th><th>Conduta</th></tr>
+        <tr><td>&lt;36,0°C</td><td style="color:#0369a1;font-weight:800">Hipotermia ⚠️</td><td>Aquecimento, avaliação</td></tr>
+        <tr><td>36,0–37,2°C</td><td style="color:#16a34a;font-weight:800">Normal ✅</td><td>Monitorar rotina</td></tr>
+        <tr><td>37,3–37,9°C</td><td style="color:#d97706;font-weight:800">Subfebril 🟡</td><td>Observar, hidratação</td></tr>
+        <tr><td>38,0–38,9°C</td><td style="color:#f97316;font-weight:800">Febre 🟠</td><td>Antipirético se necessário</td></tr>
+        <tr><td>39,0–39,9°C</td><td style="color:#dc2626;font-weight:800">Febre alta 🔴</td><td>Antipirético + reavaliação</td></tr>
+        <tr><td>≥40,0°C</td><td style="color:#7f1d1d;font-weight:800">Hiperpirexia 🚨</td><td>Urgência médica</td></tr>
+      </table>
+    </div>
+    <div class="card">
+      <div class="card-title">ℹ️ Correção por via</div>
+      <table class="ref-table">
+        <tr><th>Via</th><th>Valor real ≈</th></tr>
+        <tr><td>Axilar (padrão)</td><td>Valor registrado</td></tr>
+        <tr><td>Oral</td><td>Axilar − 0,3°C</td></tr>
+        <tr><td>Timpânica</td><td>Axilar − 0,3°C</td></tr>
+        <tr><td>Retal</td><td>Axilar + 0,5°C</td></tr>
+      </table>
+      <div style="font-size:.62rem;color:#94a3b8;margin-top:8px">Os valores registrados já representam a via selecionada. A correção é somente para comparação clínica.</div>
+    </div>
+    <div class="card">
+      <div class="card-title">💊 Antipiréticos comuns</div>
+      <table class="ref-table">
+        <tr><th>Fármaco</th><th>Dose adulto</th><th>Intervalo</th></tr>
+        <tr><td>Paracetamol</td><td>500–1000 mg</td><td>4–6h (máx 4g/dia)</td></tr>
+        <tr><td>Dipirona</td><td>500–1000 mg</td><td>4–6h</td></tr>
+        <tr><td>Ibuprofeno</td><td>200–400 mg</td><td>6–8h (com alimento)</td></tr>
+        <tr><td>AAS</td><td>500–1000 mg</td><td>4–6h (evitar &lt;18 anos)</td></tr>
+      </table>
+    </div>
+  </div>
+</main>
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">🏠<span>Início</span></a>
+  <a href="historico.html" class="nav-item">📋<span>Histórico</span></a>
+  <a href="diario.html" class="nav-item">📓<span>Diário</span></a>
+  <a href="perfil.html" class="nav-item active">👤<span>Perfil</span></a>
+</nav>
+<script src="js/db.js"></script>
+<script src="js/utils.js"></script>
+<script>
+let _pid=null, _pac=null, _hist=[];
+const STORE_TEMP='temperatura_hist';
+
+function aba(t){
+  ['reg','hist','ref'].forEach(id=>{
+    document.getElementById('aba-'+id).style.display=id===t?'':'none';
+    document.getElementById('tab-'+id).classList.toggle('active',id===t);
+  });
+  if(t==='hist') renderHist();
+}
+
+function classificar(v){
+  const t=parseFloat(v);
+  if(isNaN(t)) return null;
+  if(t<36)  return {lbl:'Hipotermia ⚠️',   emoji:'🥶',cor:'#0369a1',bg:'#dbeafe',alerta:true};
+  if(t<37.3)return {lbl:'Normal ✅',         emoji:'✅',cor:'#16a34a',bg:'#dcfce7',alerta:false};
+  if(t<38)  return {lbl:'Subfebril 🟡',      emoji:'🌡',cor:'#d97706',bg:'#fef3c7',alerta:false};
+  if(t<39)  return {lbl:'Febre 🟠',          emoji:'🌡',cor:'#f97316',bg:'#ffedd5',alerta:true};
+  if(t<40)  return {lbl:'Febre alta 🔴',     emoji:'🔴',cor:'#dc2626',bg:'#fee2e2',alerta:true};
+  return       {lbl:'Hiperpirexia 🚨',        emoji:'🚨',cor:'#7f1d1d',bg:'#fecaca',alerta:true};
+}
+
+function atualizarPreview(){
+  const t=document.getElementById('temp').value;
+  const pb=document.getElementById('preview-box');
+  const ab=document.getElementById('alerta-box');
+  if(!t){pb.style.display='none';ab.style.display='none';return;}
+  const c=classificar(t);
+  pb.style.display='block';
+  document.getElementById('pv-temp').textContent=parseFloat(t).toFixed(1)+'°C';
+  document.getElementById('pv-temp').style.color=c?.cor||'#fff';
+  document.getElementById('pv-class').textContent=c?.lbl||'';
+  document.getElementById('pv-class').style.background=c?.bg||'#374151';
+  document.getElementById('pv-class').style.color=c?.cor||'#fff';
+  const viaChip=document.querySelector('#via-chips .chip.sel');
+  const via=viaChip?viaChip.dataset.v:'axilar';
+  const viaMap={axilar:'Axilar',oral:'Oral',timpanica:'Timpânica',retal:'Retal'};
+  document.getElementById('pv-info').textContent='Via: '+viaMap[via];
+  if(c?.alerta&&parseFloat(t)>=38.5){
+    ab.style.display='block';
+    if(parseFloat(t)>=40) document.getElementById('alerta-txt').textContent='🚨 Hiperpirexia! Buscar atendimento médico imediatamente.';
+    else if(parseFloat(t)>=39) document.getElementById('alerta-txt').textContent='🔴 Febre alta — administrar antipirético e monitorar de perto. Se persistir >30min, acionar médico.';
+    else document.getElementById('alerta-txt').textContent='🟠 Febre — monitorar e considerar antipirético.';
+  } else ab.style.display='none';
+}
+
+function selChip(el,grupo){
+  el.closest('.chip-row').querySelectorAll('.chip').forEach(c=>c.classList.remove('sel'));
+  el.classList.add('sel');
+  if(grupo==='antip') verificarDuplicidade();
+}
+function selChipMulti(el){el.classList.toggle('sel');}
+
+function verificarDuplicidade(){
+  // Verifica se o antipirético selecionado já está na medicação do paciente
+  // Apenas informativo, sem bloquear
+}
+
+async function salvar(){
+  if(!_pid){alert('Selecione um paciente.');return;}
+  const t=parseFloat(document.getElementById('temp').value);
+  if(isNaN(t)||t<30||t>45){alert('Temperatura inválida (30–45°C).');return;}
+  const via=document.querySelector('#via-chips .chip.sel')?.dataset.v||'axilar';
+  const ctxSels=[...document.querySelectorAll('#ctx-chips .chip.sel')].map(c=>c.dataset.v);
+  const antip=document.querySelector('#antip-chips .chip.sel')?.dataset.v||'nao';
+  const c=classificar(t);
+  const reg={
+    pacienteId:_pid,
+    data:document.getElementById('dt').value,
+    hora:document.getElementById('hr').value,
+    temp:t,
+    via,
+    ctx:ctxSels,
+    antipiretico:antip,
+    classificacao:c?.lbl||'',
+    obs:document.getElementById('obs').value.trim(),
+    ts:Date.now()
+  };
+  const key='temperatura_hist_'+_pid;
+  const arr=await dbGetConfig(key)||[];
+  arr.unshift(reg);
+  await dbSetConfig(key,arr);
+  _hist=arr;
+  document.getElementById('temp').value='';
+  document.getElementById('obs').value='';
+  document.getElementById('preview-box').style.display='none';
+  document.getElementById('alerta-box').style.display='none';
+  // Reset ctx chips
+  document.querySelectorAll('#ctx-chips .chip').forEach((c,i)=>{c.classList.toggle('sel',i===0);});
+  document.querySelectorAll('#antip-chips .chip').forEach((c,i)=>{c.classList.toggle('sel',i===0);});
+  alert('✔ Temperatura registrada!');
+}
+
+async function deletar(idx){
+  if(!confirm('Excluir este registro?')) return;
+  const key='temperatura_hist_'+_pid;
+  const arr=await dbGetConfig(key)||[];
+  arr.splice(idx,1);
+  await dbSetConfig(key,arr);
+  _hist=arr;
+  renderHist();
+}
+
+function renderKPIs(){
+  const box=document.getElementById('kpi-row');
+  if(!_hist.length){box.innerHTML='';return;}
+  const ultimo=_hist[0];
+  const maxTemp=Math.max(..._hist.map(r=>r.temp));
+  const episodioFebre=_hist.filter(r=>r.temp>=38).length;
+  const ultFebre=_hist.find(r=>r.temp>=38);
+  const c=classificar(ultimo.temp);
+  box.innerHTML=`
+    <div class="kpi"><div class="kpi-val" style="color:${c?.cor||'#0f172a'}">${ultimo.temp.toFixed(1)}°C</div><div class="kpi-lbl">Última medição</div></div>
+    <div class="kpi"><div class="kpi-val" style="color:#dc2626">${maxTemp.toFixed(1)}°C</div><div class="kpi-lbl">Máxima registrada</div></div>
+    <div class="kpi"><div class="kpi-val" style="color:#f97316">${episodioFebre}</div><div class="kpi-lbl">Episódios febre (≥38°C)</div></div>
+    <div class="kpi"><div class="kpi-val" style="font-size:.85rem">${ultFebre?ultFebre.data.split('-').reverse().join('/'):'-'}</div><div class="kpi-lbl">Última febre</div></div>
+  `;
+}
+
+function renderChart(){
+  const cw=document.getElementById('chart-wrap');
+  const dados=_hist.slice(0,20).reverse();
+  if(dados.length<2){cw.style.display='none';return;}
+  cw.style.display='block';
+  const W=Math.max(300,dados.length*40);
+  const H=140;
+  const pad={t:15,b:35,l:36,r:10};
+  const iW=W-pad.l-pad.r, iH=H-pad.t-pad.b;
+  const vals=dados.map(r=>r.temp);
+  const minV=Math.floor(Math.min(...vals,36)-0.5);
+  const maxV=Math.ceil(Math.max(...vals,40)+0.5);
+  const toX=i=>pad.l+i*iW/(dados.length-1);
+  const toY=v=>pad.t+iH*(1-(v-minV)/(maxV-minV));
+  const svg=document.getElementById('chart-svg');
+  svg.style.width=W+'px';
+  // Zonas de cor
+  const febZoneH=Math.max(0,toY(minV)-toY(38));
+  const subZoneH=Math.max(0,toY(37.3)-toY(38));
+  const hypZoneH=Math.max(0,toY(minV)-toY(40));
+  // Linha do gráfico
+  const pts=dados.map((r,i)=>`${toX(i)},${toY(r.temp)}`).join(' ');
+  // Zona de febre
+  const y38=toY(38), y373=toY(37.3), y40=toY(40), yB=toY(minV);
+  let html=`<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}">`;
+  // Zona verde normal
+  html+=`<rect x="${pad.l}" y="${y373}" width="${iW}" height="${Math.max(0,yB-y373)}" fill="#dcfce7" opacity=".5"/>`;
+  // Zona amarela subfebril
+  html+=`<rect x="${pad.l}" y="${y38}" width="${iW}" height="${Math.max(0,y373-y38)}" fill="#fef3c7" opacity=".6"/>`;
+  // Zona laranja febre
+  html+=`<rect x="${pad.l}" y="${y40}" width="${iW}" height="${Math.max(0,y38-y40)}" fill="#ffedd5" opacity=".6"/>`;
+  // Zona vermelha hiperpirexia
+  html+=`<rect x="${pad.l}" y="${pad.t}" width="${iW}" height="${Math.max(0,y40-pad.t)}" fill="#fee2e2" opacity=".6"/>`;
+  // Linhas de referência
+  [{v:37.3,cor:'#d97706'},{v:38,cor:'#f97316'},{v:39,cor:'#dc2626'},{v:40,cor:'#7f1d1d'}].forEach(({v,cor})=>{
+    if(v>minV&&v<maxV){const y=toY(v);html+=`<line x1="${pad.l}" y1="${y}" x2="${W-pad.r}" y2="${y}" stroke="${cor}" stroke-width="1" stroke-dasharray="4,3" opacity=".7"/><text x="${pad.l-2}" y="${y+4}" font-size="8" fill="${cor}" text-anchor="end">${v}</text>`;}
+  });
+  // Área preenchida
+  html+=`<polygon points="${pad.l},${toY(minV)} ${pts} ${W-pad.r},${toY(minV)}" fill="#dc2626" opacity=".07"/>`;
+  // Linha
+  html+=`<polyline points="${pts}" fill="none" stroke="#dc2626" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>`;
+  // Pontos
+  dados.forEach((r,i)=>{
+    const c=classificar(r.temp);
+    html+=`<circle cx="${toX(i)}" cy="${toY(r.temp)}" r="4" fill="${c?.cor||'#dc2626'}" stroke="#fff" stroke-width="1.5"/>`;
+    html+=`<text x="${toX(i)}" y="${H-5}" font-size="7" fill="#94a3b8" text-anchor="middle">${(r.data||'').slice(5).replace('-','/')}</text>`;
+  });
+  // Eixo Y labels
+  for(let v=Math.ceil(minV);v<=Math.floor(maxV);v++){
+    if(v%1===0){const y=toY(v);html+=`<text x="${pad.l-4}" y="${y+4}" font-size="7" fill="#94a3b8" text-anchor="end">${v}</text>`;}
+  }
+  html+='</svg>';
+  svg.outerHTML=html;
+}
+
+function renderHist(){
+  renderKPIs();
+  renderChart();
+  const list=document.getElementById('hist-list');
+  if(!_hist.length){list.innerHTML='<div class="empty">Nenhuma temperatura registrada.</div>';return;}
+  const viaMap={axilar:'Axilar',oral:'Oral',timpanica:'Timpânica',retal:'Retal'};
+  const antipMap={nao:'Sem antip.',paracetamol:'Paracetamol',dipirona:'Dipirona',ibuprofeno:'Ibuprofeno'};
+  list.innerHTML=_hist.map((r,i)=>{
+    const c=classificar(r.temp);
+    const dt=(r.data||'').split('-').reverse().join('/')+(r.hora?' '+r.hora:'');
+    const ctxStr=(r.ctx||[]).map(v=>v.replace('_',' ')).join(', ');
+    return `<div class="reg-item">
+      <div class="reg-temp-badge" style="background:${c?.bg||'#f1f5f9'};color:${c?.cor||'#0f172a'}">${r.temp.toFixed(1)}°C</div>
+      <div class="reg-info">
+        <div class="reg-data">${dt} · ${viaMap[r.via]||r.via}</div>
+        <div class="reg-class" style="color:${c?.cor||'#0f172a'}">${c?.lbl||''}</div>
+        <div class="reg-detalhe">${ctxStr?ctxStr+' · ':''}${antipMap[r.antipiretico]||''}${r.obs?' · '+r.obs:''}</div>
+      </div>
+      <button class="reg-del" onclick="deletar(${i})">✕</button>
+    </div>`;
+  }).join('');
+}
+
+async function init(){
+  _pid=parseInt(document.getElementById('sel-pac').value)||null;
+  if(!_pid){document.getElementById('ctx-strip').style.display='none';return;}
+  _pac=await dbGet('pacientes',_pid);
+  _hist=await dbGetConfig('temperatura_hist_'+_pid)||[];
+  // Detectar antipiréticos e antibióticos
+  const meds=await dbGetByIndex('medicamentos','pacienteId',_pid);
+  const rxAntip=/paracetamol|dipirona|ibuprofeno|metamizol|nimesulida/i;
+  const rxAbx=/amoxicilina|azitromicina|cefalexina|ciprofloxacino|levofloxacino|doxiciclina|metronidazol|amoxicilina|claritromicina/i;
+  const antips=(meds||[]).filter(m=>rxAntip.test(m.nome||'')).map(m=>m.nome);
+  const abxs=(meds||[]).filter(m=>rxAbx.test(m.nome||'')).map(m=>m.nome);
+  const strip=document.getElementById('ctx-strip');
+  const partes=[];
+  if(antips.length) partes.push('💊 Antipiréticos em uso: '+antips.join(', '));
+  if(abxs.length) partes.push('🧪 Antibióticos em uso: '+abxs.join(', '));
+  if(partes.length){strip.innerHTML=partes.join(' · ');strip.style.display='block';}
+  else strip.style.display='none';
+}
+
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+document.addEventListener('DOMContentLoaded',async()=>{
+  const now=new Date();
+  document.getElementById('dt').value=now.toISOString().slice(0,10);
+  document.getElementById('hr').value=now.toTimeString().slice(0,5);
+  const pacs=await dbGetAll('pacientes');
+  const sel=document.getElementById('sel-pac');
+  sel.innerHTML='<option value="">Selecione o paciente...</option>'+pacs.map(p=>`<option value="${p.id}">${esc(p.nome||'Paciente '+p.id)}</option>`).join('');
+  const pid=getActivePacienteId();
+  if(pid){sel.value=pid;await init();}
+});
+</script>
+</body>
+</html>

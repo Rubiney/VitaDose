@@ -319,7 +319,7 @@ async function renderHist(){
   const hist=await dbGetConfig('mnasf_hist_'+_pid)||[];
   if(hist.length<2){document.getElementById('hist-section').style.display='none';return;}
   document.getElementById('hist-section').style.display='block';
-  const W=380,H=130,pad={t:18,b:28,l:28,r=10};
+  const W=380,H=130,pad={t:18,b:28,l:28,r:10};
   const pts=hist.slice(-10);
   const xS=(W-pad.l-pad.r)/(pts.length-1||1);
   const yS=v=>pad.t+(1-v/14)*(H-pad.t-pad.b);
